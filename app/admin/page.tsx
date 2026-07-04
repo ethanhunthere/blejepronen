@@ -63,26 +63,26 @@ export default async function AdminPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Titulli</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Shitësi</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Qyteti</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Çmimi</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Statusi</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Veprimet</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Titulli</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Shitësi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Qyteti</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Çmimi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Statusi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Veprimet</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {typedListings.map(listing => (
                   <tr key={listing.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate">
+                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-gray-900 max-w-xs truncate">
                       {listing.title}
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">
                       {listing.profiles?.first_name} {listing.profiles?.last_name}
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{listing.city}</td>
-                    <td className="px-6 py-4 text-gray-900 font-medium">€{listing.price.toLocaleString()}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{listing.city}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-900 font-medium">€{listing.price.toLocaleString()}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={listing.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
                         {listing.is_active ? 'Aktiv' : 'Joaktiv'}
                       </Badge>
@@ -108,25 +108,25 @@ export default async function AdminPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Emri</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Telefoni</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Verifikuar</th>
-                  <th className="text-left px-6 py-3 text-gray-500 font-medium">Regjistruar</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Emri</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Telefoni</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Verifikuar</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Regjistruar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {typedProfiles.map(profile => (
                   <tr key={profile.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-gray-900">
                       {profile.first_name} {profile.last_name}
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{profile.phone || '—'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{profile.phone || '—'}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={profile.phone_verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
                         {profile.phone_verified ? 'Po' : 'Jo'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">
                       {new Date(profile.created_at).toLocaleDateString('sq-AL')}
                     </td>
                   </tr>

@@ -112,7 +112,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
           {/* Left: Images + Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Main Image */}
-            <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden bg-gray-200">
+            <div className="relative h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden bg-gray-200">
               {listing.images?.[0] ? (
                 <Image
                   src={listing.images[0]}
@@ -136,7 +136,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
             {/* Image Gallery */}
             {listing.images && listing.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {listing.images.slice(1).map((img: string, i: number) => (
                   <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-200">
                     <Image src={img} alt={`Foto ${i + 2}`} fill sizes="(max-width: 640px) 25vw, 15vw" className="object-cover" />
@@ -153,7 +153,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                 <span>{listing.city} · {listing.address}</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 py-4 border-y border-gray-100 mb-4">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-gray-100 mb-4">
                 <div className="text-center">
                   <BedDouble className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.rooms}</p>
@@ -178,7 +178,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
           {/* Right: Price + Contact */}
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 sticky top-24">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 lg:sticky lg:top-24">
               <p className="text-3xl font-bold text-[#1B4FFF] mb-1">
                 {formatPrice(listing.price)}
                 {listing.type === 'qira' && <span className="text-base font-normal text-gray-500">/muaj</span>}

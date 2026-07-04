@@ -216,7 +216,7 @@ export default function PostoBanesePage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="price">
                   Çmimi (€) {formData.type === 'qira' ? '/muaj' : ''} *
@@ -247,7 +247,7 @@ export default function PostoBanesePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="rooms">Numri i dhomave *</Label>
                 <select
@@ -316,7 +316,7 @@ export default function PostoBanesePage() {
 
             {/* Preview Grid */}
             {previews.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
                 {previews.map((preview, i) => (
                   <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
                     <img src={preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />

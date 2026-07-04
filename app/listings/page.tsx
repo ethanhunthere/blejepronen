@@ -92,8 +92,8 @@ function ListingsContent() {
         </div>
 
         {/* Search + Filter Toggle */}
-        <div className="flex gap-3 mb-4">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Kërko banesa..."
@@ -109,11 +109,12 @@ function ListingsContent() {
               }}
             />
           </div>
-          <Button
-            variant="outline"
-            className="h-11 px-4 border-gray-200 bg-white"
-            onClick={() => setShowFilters(!showFilters)}
-          >
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="h-11 px-4 border-gray-200 bg-white whitespace-nowrap"
+              onClick={() => setShowFilters(!showFilters)}
+            >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filtro
             {hasActiveFilters && (
@@ -129,16 +130,17 @@ function ListingsContent() {
             </Button>
           )}
         </div>
+        </div>
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
               <label htmlFor="filter-city" className="text-xs font-medium text-gray-500 mb-2 block">Qyteti</label>
               <select
                 id="filter-city"
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.city}
                 onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
               >
@@ -154,7 +156,7 @@ function ListingsContent() {
               <label htmlFor="filter-type" className="text-xs font-medium text-gray-500 mb-2 block">Lloji</label>
               <select
                 id="filter-type"
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
               >
@@ -171,7 +173,7 @@ function ListingsContent() {
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="h-10 text-sm"
+                className="min-h-11 h-11 text-sm"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -184,7 +186,7 @@ function ListingsContent() {
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="h-10 text-sm"
+                className="min-h-11 h-11 text-sm"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -195,7 +197,7 @@ function ListingsContent() {
               <label htmlFor="filter-rooms" className="text-xs font-medium text-gray-500 mb-2 block">Dhoma</label>
               <select
                 id="filter-rooms"
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.rooms}
                 onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
               >

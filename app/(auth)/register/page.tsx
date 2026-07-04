@@ -143,7 +143,7 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleRegister} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Emri</Label>
                   <div className="relative">

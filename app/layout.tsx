@@ -47,11 +47,11 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="border-t bg-white py-8 mt-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-              <p className="text-sm text-gray-500">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+              <p className="text-sm text-gray-500 text-center sm:text-left">
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
-              <div className="flex gap-6 text-sm text-gray-500">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-500">
                 <a href="/kushtet" className="hover:text-[#1B4FFF] transition-colors">
                   Kushtet e përdorimit
                 </a>

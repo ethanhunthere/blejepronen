@@ -85,7 +85,7 @@ export default function HomePage() {
   const staticSections = (
     <>
       {/* How it works */}
-      <section className="bg-white border-y border-gray-100 py-16">
+      <section className="bg-white border-y border-gray-100 py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-12">Si funksionon?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -106,7 +106,7 @@ export default function HomePage() {
       </section>
 
       {/* Why us */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">Pse Bleje Banesën?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
@@ -127,7 +127,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-gradient-to-r from-[#1B4FFF] to-[#2D6FFF] text-white py-16 mx-4 sm:mx-6 lg:mx-8 rounded-3xl mb-16 max-w-7xl lg:mx-auto">
+      <section className="bg-gradient-to-r from-[#1B4FFF] to-[#2D6FFF] text-white py-12 sm:py-16 mx-0 sm:mx-4 lg:mx-8 rounded-none sm:rounded-2xl lg:rounded-3xl mb-16 max-w-7xl lg:mx-auto">
         <div className="text-center px-6">
           <h2 className="text-3xl font-bold mb-4">Gati për të shitur ose dhënë me qira?</h2>
           <p className="text-blue-100 mb-8 text-lg">Posto banesën tënde sot — falas për 30 ditët e para.</p>
@@ -152,12 +152,12 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#F8F9FF]">
       {/* Hero — always renders instantly (no data dependency) */}
       <section className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center bg-white/10 rounded-full px-4 py-2 text-sm mb-6 backdrop-blur-sm">
               🇽🇰 🇦🇱 🇲🇰 Platforma kryesore shqipfolëse e banesave
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Gjej shtëpinë e{' '}
               <span className="text-yellow-300">ëndrrave</span>
             </h1>
@@ -184,7 +184,7 @@ export default function HomePage() {
         {/* Stats Bar — shows skeleton while loading */}
         <div className="bg-white/5 backdrop-blur-sm border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
                 <>
                   {['Banesa aktive', 'Shitës të besuar', 'Qytete', 'Falas për fillim'].map(label => (
@@ -234,7 +234,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Listings — skeleton while loading */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">⭐ Të rekomanduara</h2>
@@ -259,7 +259,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : data && data.featuredListings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {data.featuredListings.map((listing, index) => (
               <ListingCard key={listing.id} listing={listing} priority={index < 4} />
             ))}
@@ -272,7 +272,7 @@ export default function HomePage() {
       </section>
 
       {/* Latest Listings — skeleton while loading */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">🏠 Banesat më të reja</h2>

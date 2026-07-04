@@ -25,7 +25,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
     <Link href={`/listings/${listing.id}`}>
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 border border-gray-100 cursor-pointer">
         {/* Image */}
-        <div className="relative h-52 bg-gray-100">
+        <div className="relative h-48 sm:h-52 bg-gray-100">
           <Image
             src={mainImage}
             alt={listing.title}
@@ -57,7 +57,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
             </h3>
           </div>
 
-          <p className="text-2xl font-bold text-[#1B4FFF] mb-3">
+          <p className="text-xl sm:text-2xl font-bold text-[#1B4FFF] mb-3">
             {formatPrice(listing.price)}
             {listing.type === 'qira' && <span className="text-sm font-normal text-gray-500">/muaj</span>}
           </p>
@@ -89,7 +89,7 @@ export default ListingCard
 export function ListingCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-      <div className="h-52 animate-pulse bg-gray-200" />
+      <div className="h-48 sm:h-52 animate-pulse bg-gray-200" />
       <div className="p-4 space-y-3">
         <div className="h-5 w-48 animate-pulse rounded bg-gray-200" />
         <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />

@@ -94,8 +94,8 @@ export default function ProfilePage() {
           {/* Left: Profile Form */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <div className="flex items-center mb-6">
-                <div className="w-14 h-14 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center mr-4">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start mb-6">
+                <div className="w-14 h-14 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center mr-0 sm:mr-4 mb-3 sm:mb-0">
                   <User className="h-7 w-7 text-[#1B4FFF]" />
                 </div>
                 <div>
