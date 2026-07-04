@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import CookieBanner from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/sonner";
-import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,30 +11,20 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://blejebanesen.com'),
-  title: {
-    default: 'Bleje Banesën – Banesa në Kosovë',
-    template: '%s | Bleje Banesën',
-  },
+  title: "Bleje Banesën – Banesa në Kosovë",
   description:
-    'Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.',
-  openGraph: {
-    type: 'website',
-    locale: 'sq_AL',
-    url: 'https://blejebanesen.com',
-    siteName: 'Bleje Banesën',
-    title: 'Bleje Banesën – Banesa në Kosovë',
-    description: 'Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Bleje Banesën' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Bleje Banesën',
-    description: 'Platforma kryesore shqipfolëse e banesave.',
-    images: ['/og-image.png'],
-  },
-  robots: { index: true, follow: true },
+    "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
 };
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Bleje Banesën',
+  url: 'https://blejebanesen.com',
+  logo: 'https://blejebanesen.com/og-image.png',
+  description: 'Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.',
+  areaServed: ['XK', 'AL', 'MK'],
+}
 
 export default function RootLayout({
   children,
@@ -49,12 +39,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
       <body className="min-h-full flex flex-col bg-[#F8F9FF]">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Toaster richColors position="top-center" />
-        <Analytics />
         {/* Footer */}
         <footer className="border-t bg-white py-8 mt-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -63,19 +53,20 @@ export default function RootLayout({
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
               <div className="flex gap-6 text-sm text-gray-500">
-                <a href="#" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/kushtet" className="hover:text-[#1B4FFF] transition-colors">
                   Kushtet e përdorimit
                 </a>
-                <a href="#" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/privatesia" className="hover:text-[#1B4FFF] transition-colors">
                   Privatësia
                 </a>
-                <a href="#" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/kontakti" className="hover:text-[#1B4FFF] transition-colors">
                   Kontakti
                 </a>
               </div>
             </div>
           </div>
         </footer>
+        <CookieBanner />
       </body>
     </html>
   );

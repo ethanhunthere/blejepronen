@@ -10,11 +10,14 @@ import { Search, SlidersHorizontal, X, Loader2 } from 'lucide-react'
 import type { Listing } from '@/lib/supabase'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
+const PAGE_SIZE = 12
 
 function ListingsContent() {
   const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
   const [filters, setFilters] = useState({
     city: searchParams.get('city') || '',
     type: searchParams.get('type') || '',
@@ -28,14 +31,14 @@ function ListingsContent() {
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
 
-  const fetchListings = useCallback(async () => {
+  const fetchListings = useCallback(async (pageNum = 0) => {
     setLoading(true)
     let query = supabase
       .from('listings')
       .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(48)
+      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
 
     if (filters.city) query = query.eq('city', filters.city)
     if (filters.type) query = query.eq('type', filters.type)
@@ -45,12 +48,25 @@ function ListingsContent() {
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
 
     const { data } = await query
-    setListings((data || []) as unknown as Listing[])
+    const results = (data || []) as unknown as Listing[]
+
+    if (pageNum === 0) {
+      setListings(results)
+    } else {
+      setListings(prev => [...prev, ...results])
+    }
+
+    if (results.length < PAGE_SIZE) {
+      setHasMore(false)
+    }
+
     setLoading(false)
-  }, [filters])
+  }, [filters, supabase])
 
   useEffect(() => {
-    fetchListings()
+    setPage(0)
+    setHasMore(true)
+    fetchListings(0)
   }, [fetchListings])
 
   useEffect(() => {
@@ -119,8 +135,9 @@ function ListingsContent() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Qyteti</label>
+              <label htmlFor="filter-city" className="text-xs font-medium text-gray-500 mb-2 block">Qyteti</label>
               <select
+                id="filter-city"
                 className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.city}
                 onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
@@ -134,8 +151,9 @@ function ListingsContent() {
 
             {/* Type */}
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Lloji</label>
+              <label htmlFor="filter-type" className="text-xs font-medium text-gray-500 mb-2 block">Lloji</label>
               <select
+                id="filter-type"
                 className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
@@ -148,8 +166,9 @@ function ListingsContent() {
 
             {/* Min Price */}
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Çmimi min (€)</label>
+              <label htmlFor="filter-min-price" className="text-xs font-medium text-gray-500 mb-2 block">Çmimi min (€)</label>
               <Input
+                id="filter-min-price"
                 type="number"
                 placeholder="0"
                 className="h-10 text-sm"
@@ -160,8 +179,9 @@ function ListingsContent() {
 
             {/* Max Price */}
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Çmimi max (€)</label>
+              <label htmlFor="filter-max-price" className="text-xs font-medium text-gray-500 mb-2 block">Çmimi max (€)</label>
               <Input
+                id="filter-max-price"
                 type="number"
                 placeholder="500,000"
                 className="h-10 text-sm"
@@ -172,8 +192,9 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Dhoma</label>
+              <label htmlFor="filter-rooms" className="text-xs font-medium text-gray-500 mb-2 block">Dhoma</label>
               <select
+                id="filter-rooms"
                 className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.rooms}
                 onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
@@ -212,12 +233,27 @@ function ListingsContent() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">{listings.length} banesa të gjetura</p>
+            <p aria-live="polite" className="text-sm text-gray-500 mb-4">{listings.length} banesa të gjetura</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {listings.map(listing => (
-                <ListingCard key={listing.id} listing={listing} />
+              {listings.map((listing, index) => (
+                <ListingCard key={listing.id} listing={listing} priority={index < 4} />
               ))}
             </div>
+            {hasMore && !loading && listings.length > 0 && (
+              <div className="text-center mt-10">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const nextPage = page + 1
+                    setPage(nextPage)
+                    fetchListings(nextPage)
+                  }}
+                  className="px-8 h-11 border-gray-200"
+                >
+                  Ngarko më shumë banesa
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

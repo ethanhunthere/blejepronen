@@ -75,8 +75,32 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: listing.title,
+    description: listing.description,
+    url: `https://blejebanesen.com/listings/${listing.id}`,
+    price: listing.price,
+    priceCurrency: 'EUR',
+    image: listing.images?.[0] || '',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: listing.city,
+      addressCountry: 'XK',
+      streetAddress: listing.address,
+    },
+    numberOfRooms: listing.rooms,
+    floorSize: {
+      '@type': 'QuantitativeValue',
+      value: listing.area_m2,
+      unitCode: 'MTK',
+    },
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
         <Link href="/listings" className="inline-flex items-center text-gray-500 hover:text-[#1B4FFF] mb-6 transition-colors">
@@ -94,6 +118,8 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                   src={listing.images[0]}
                   alt={listing.title}
                   fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 66vw"
                   className="object-cover"
                 />
               ) : (
@@ -113,7 +139,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               <div className="grid grid-cols-4 gap-3">
                 {listing.images.slice(1).map((img: string, i: number) => (
                   <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-200">
-                    <Image src={img} alt={`Foto ${i + 2}`} fill className="object-cover" />
+                    <Image src={img} alt={`Foto ${i + 2}`} fill sizes="(max-width: 640px) 25vw, 15vw" className="object-cover" />
                   </div>
                 ))}
               </div>

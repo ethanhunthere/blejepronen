@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Building2, Mail, Lock, User, Phone, Globe } from 'lucide-react'
+import { Mail, Lock, User, Phone, Globe } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -105,8 +106,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
-          <Building2 className="h-8 w-8 text-[#1B4FFF] mr-2" />
-          <span className="text-2xl font-bold text-gray-900">Bleje Banesën</span>
+          <Logo variant="auth" />
         </div>
 
         <Card className="shadow-lg border-0">

@@ -35,24 +35,24 @@ export default function HomePage() {
         ] = await Promise.all([
           supabase
             .from('listings')
-            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
+            .select('*')
             .eq('is_active', true)
             .eq('is_featured', true)
             .order('created_at', { ascending: false })
             .limit(4),
           supabase
             .from('listings')
-            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
+            .select('*')
             .eq('is_active', true)
             .order('created_at', { ascending: false })
             .limit(8),
           supabase
             .from('listings')
-            .select('id', { count: 'exact', head: true })
+            .select('*', { count: 'exact', head: true })
             .eq('is_active', true),
           supabase
             .from('profiles')
-            .select('id', { count: 'exact', head: true }),
+            .select('*', { count: 'exact', head: true }),
         ])
 
         if (!cancelled) {
@@ -149,7 +149,7 @@ export default function HomePage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <main className="min-h-screen bg-[#F8F9FF]">
       {/* Hero — always renders instantly (no data dependency) */}
       <section className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
@@ -260,8 +260,8 @@ export default function HomePage() {
           </div>
         ) : data && data.featuredListings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data.featuredListings.map(listing => (
-              <ListingCard key={listing.id} listing={listing} />
+            {data.featuredListings.map((listing, index) => (
+              <ListingCard key={listing.id} listing={listing} priority={index < 4} />
             ))}
           </div>
         ) : !loading ? (
@@ -298,8 +298,8 @@ export default function HomePage() {
           </div>
         ) : data && data.latestListings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {data.latestListings.map(listing => (
-              <ListingCard key={listing.id} listing={listing} />
+            {data.latestListings.map((listing, index) => (
+              <ListingCard key={listing.id} listing={listing} priority={index < 4} />
             ))}
           </div>
         ) : !loading ? (
@@ -317,6 +317,6 @@ export default function HomePage() {
       </section>
 
       {staticSections}
-    </div>
+    </main>
   )
 }

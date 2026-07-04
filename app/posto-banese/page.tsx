@@ -15,7 +15,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PRICE = 10_000_000
 
-interface ListingFormData {
+interface FormData {
   title: string
   description: string
   price: string
@@ -27,7 +27,7 @@ interface ListingFormData {
 }
 
 export default function PostoBanesePage() {
-  const [formData, setFormData] = useState<ListingFormData>({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     price: '',
@@ -101,7 +101,7 @@ export default function PostoBanesePage() {
       // Upload images in parallel
       const uploadPromises = images.map(async (image) => {
         const ext = image.name.split('.').pop()
-        const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(path, image, { contentType: image.type })
@@ -166,11 +166,13 @@ export default function PostoBanesePage() {
           {/* Type Toggle */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100">
             <Label className="text-base font-semibold mb-3 block">Lloji i listimit</Label>
-            <div className="flex gap-3">
+            <div role="radiogroup" aria-label="Lloji i listimit" className="flex gap-3">
               {(['shitje', 'qira'] as const).map(t => (
                 <button
                   key={t}
                   type="button"
+                  role="radio"
+                  aria-checked={formData.type === t}
                   onClick={() => setFormData(prev => ({ ...prev, type: t }))}
                   className={`flex-1 py-3 rounded-xl font-medium transition-all text-sm ${
                     formData.type === t
@@ -326,6 +328,7 @@ export default function PostoBanesePage() {
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
+                      aria-label={`Hiq foton ${i + 1}`}
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-3 w-3" />

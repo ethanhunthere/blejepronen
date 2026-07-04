@@ -29,6 +29,7 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder="Kërko banesa..."
+          aria-label="Kërko banesa"
           className="w-full text-gray-700 outline-none text-sm bg-transparent"
           value={value}
           onChange={(e) => setValue(e.target.value)}

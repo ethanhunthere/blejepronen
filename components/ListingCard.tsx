@@ -7,9 +7,10 @@ import type { Listing } from '@/lib/supabase'
 
 interface ListingCardProps {
   listing: Listing
+  priority?: boolean
 }
 
-const ListingCard = React.memo(function ListingCard({ listing }: ListingCardProps) {
+const ListingCard = React.memo(function ListingCard({ listing, priority = false }: ListingCardProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('sq-AL', {
       style: 'currency',
@@ -29,6 +30,8 @@ const ListingCard = React.memo(function ListingCard({ listing }: ListingCardProp
             src={mainImage}
             alt={listing.title}
             fill
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover"
             onError={(e) => {
               e.currentTarget.src = '/placeholder-house.jpg'

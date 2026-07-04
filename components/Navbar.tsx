@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Building2, Plus, User, LogOut, Menu, X } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { Logo } from '@/components/Logo'
 
 export default function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -46,9 +47,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Building2 className="h-7 w-7 text-[#1B4FFF]" />
-            <span className="text-xl font-bold text-gray-900">Bleje Banesën</span>
+          <Link href="/" className="flex items-center">
+            <Logo variant="navbar" />
           </Link>
 
           {/* Desktop Nav */}
@@ -65,7 +65,7 @@ export default function Navbar() {
                   </Button>
                 </Link>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 hover:bg-gray-100 transition-colors cursor-pointer">
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 hover:bg-gray-100 transition-colors cursor-pointer" aria-label="Menyja e përdoruesit">
                     <User className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -99,6 +99,8 @@ export default function Navbar() {
           <button
             className="md:hidden p-2 rounded-md text-gray-600"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
+            aria-expanded={menuOpen}
           >
             {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -106,7 +108,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-gray-100 py-4 space-y-3">
+          <div id="mobile-menu" className="md:hidden border-t border-gray-100 py-4 space-y-3">
             <Link href="/listings" className="block text-gray-600 hover:text-[#1B4FFF] font-medium py-2">
               Shiko banesat
             </Link>
