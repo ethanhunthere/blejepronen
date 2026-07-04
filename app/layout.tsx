@@ -25,6 +25,10 @@ export default function RootLayout({
       lang="sq"
       className={`${inter.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
+        <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#F8F9FF]">
         <Navbar />
         <main className="flex-1">{children}</main>

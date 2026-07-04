@@ -11,6 +11,10 @@ import { Building2, Upload, X, Loader2 } from 'lucide-react'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_PRICE = 10_000_000
+
 interface FormData {
   title: string
   description: string
@@ -50,6 +54,19 @@ export default function PostoBanesePage() {
       setError('Maksimumi 10 foto lejohen.')
       return
     }
+
+    // Validate file type and size
+    for (const file of files) {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        setError('Vetëm foto në format JPEG, PNG, WebP ose GIF lejohen.')
+        return
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setError('Çdo foto duhet të jetë më e vogël se 10MB.')
+        return
+      }
+    }
+
     const newPreviews = files.map(f => URL.createObjectURL(f))
     setImages(prev => [...prev, ...files])
     setPreviews(prev => [...prev, ...newPreviews])
@@ -73,9 +90,16 @@ export default function PostoBanesePage() {
         return
       }
 
-      // Upload images
-      const imageUrls: string[] = []
-      for (const image of images) {
+      // Validate price
+      const priceNum = Number(formData.price)
+      if (isNaN(priceNum) || priceNum <= 0 || priceNum > MAX_PRICE) {
+        setError(`Çmimi duhet të jetë mes 1 dhe ${MAX_PRICE.toLocaleString()}€.`)
+        setUploading(false)
+        return
+      }
+
+      // Upload images in parallel
+      const uploadPromises = images.map(async (image) => {
         const ext = image.name.split('.').pop()
         const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error: uploadError } = await supabase.storage
@@ -88,19 +112,21 @@ export default function PostoBanesePage() {
           .from('listings')
           .getPublicUrl(path)
 
-        imageUrls.push(publicUrl)
-      }
+        return publicUrl
+      })
+
+      const imageUrls = await Promise.all(uploadPromises)
 
       // Insert listing
       const { data: listing, error: insertError } = await supabase
         .from('listings')
         .insert({
           user_id: user.id,
-          title: formData.title,
-          description: formData.description,
-          price: Number(formData.price),
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          price: priceNum,
           city: formData.city,
-          address: formData.address,
+          address: formData.address.trim(),
           rooms: Number(formData.rooms),
           area_m2: Number(formData.area_m2),
           type: formData.type,
@@ -114,7 +140,6 @@ export default function PostoBanesePage() {
       router.push(`/listings/${listing.id}`)
     } catch (err) {
       setError('Gabim gjatë postimit. Provo përsëri.')
-      console.error(err)
     } finally {
       setUploading(false)
     }

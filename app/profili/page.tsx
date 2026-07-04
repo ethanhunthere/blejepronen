@@ -10,10 +10,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import ListingCard from '@/components/ListingCard'
 import { User, Phone, CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import type { Listing } from '@/lib/supabase'
+import type { Listing, Profile } from '@/lib/supabase'
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -43,6 +43,7 @@ export default function ProfilePage() {
         .from('listings')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
       setListings(myListings || [])
@@ -71,7 +72,9 @@ export default function ProfilePage() {
 
   const handleDeleteListing = async (id: string) => {
     if (!confirm('A jeni të sigurt që doni ta fshini këtë listim?')) return
-    await supabase.from('listings').update({ is_active: false }).eq('id', id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('listings').update({ is_active: false }).eq('id', id).eq('user_id', user.id)
     setListings(prev => prev.filter(l => l.id !== id))
   }
 

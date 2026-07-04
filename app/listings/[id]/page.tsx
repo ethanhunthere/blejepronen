@@ -28,7 +28,11 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
   const listing = data as ListingWithProfile | null
 
-  if (error || !listing) notFound()
+  // Only 404 on "not found" error; surface other errors
+  if (!listing) notFound()
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`Failed to load listing: ${error.message}`)
+  }
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
@@ -118,7 +122,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                 {formatPrice(listing.price)}
                 {listing.type === 'qira' && <span className="text-base font-normal text-gray-500">/muaj</span>}
               </p>
-              {listing.area_m2 && listing.type === 'shitje' && (
+              {listing.area_m2 > 0 && listing.type === 'shitje' && (
                 <p className="text-sm text-gray-400 mb-4">
                   {formatPrice(Math.round(listing.price / listing.area_m2))}/m²
                 </p>

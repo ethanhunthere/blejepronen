@@ -22,10 +22,6 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Debug: log whether Supabase env vars are set
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
-    console.log('Supabase ANON KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
-
     let cancelled = false
     const supabase = createClient()
 
@@ -69,7 +65,6 @@ export default function HomePage() {
         }
       } catch (err) {
         if (!cancelled) {
-          console.error('Homepage data fetch failed:', err)
           setError('Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.')
         }
       } finally {

@@ -65,10 +65,8 @@ export default function Navbar() {
                   </Button>
                 </Link>
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button variant="outline" size="icon" className="rounded-full border-gray-200" type="button">
-                      <User className="h-4 w-4" />
-                    </Button>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 hover:bg-gray-100 transition-colors cursor-pointer">
+                    <User className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem>
