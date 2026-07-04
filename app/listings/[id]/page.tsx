@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -26,7 +26,7 @@ interface ListingMetadata {
 
 export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
   const { id } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = createClient()
   const { data } = await supabase
     .from('listings')
     .select('title,description,price,city,images')
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: ListingDetailPageProps): Prom
 
 export default async function ListingDetailPage({ params }: ListingDetailPageProps) {
   const { id } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = createClient()
 
   const { data, error } = await supabase
     .from('listings')
@@ -61,13 +61,14 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     .eq('is_active', true)
     .single()
 
-  const listing = data as ListingWithProfile | null
-
-  // Only 404 on "not found" error; surface other errors
-  if (!listing) notFound()
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
+    console.error('Supabase query error:', error.code, error.message)
     throw new Error(`Failed to load listing: ${error.message}`)
   }
+
+  const listing = (data as ListingWithProfile | null) ?? null
+
+  if (!listing) notFound()
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
