@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, BedDouble, Maximize2, Tag } from 'lucide-react'
@@ -8,7 +9,7 @@ interface ListingCardProps {
   listing: Listing
 }
 
-export default function ListingCard({ listing }: ListingCardProps) {
+const ListingCard = React.memo(function ListingCard({ listing }: ListingCardProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('sq-AL', {
       style: 'currency',
@@ -80,7 +81,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
       </div>
     </Link>
   )
-}
+})
+
+export default ListingCard
 
 /** Skeleton loader for ListingCard */
 export function ListingCardSkeleton() {

@@ -135,6 +135,11 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-2">
             <p className="text-sm text-gray-500 text-center">
+              <Link href="/forgot-password" className="text-[#1B4FFF] hover:underline font-medium">
+                Keni harruar fjalëkalimin?
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500 text-center">
               Nuk ke llogari?{' '}
               <Link href="/register" className="text-[#1B4FFF] hover:underline font-medium">
                 Regjistrohu falas

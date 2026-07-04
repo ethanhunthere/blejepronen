@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
@@ -24,15 +24,18 @@ function ListingsContent() {
     search: searchParams.get('search') || ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [searchInput, setSearchInput] = useState(filters.search)
+  const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
 
   const fetchListings = useCallback(async () => {
     setLoading(true)
     let query = supabase
       .from('listings')
-      .select('*')
+      .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
+      .limit(48)
 
     if (filters.city) query = query.eq('city', filters.city)
     if (filters.type) query = query.eq('type', filters.type)
@@ -42,7 +45,7 @@ function ListingsContent() {
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
 
     const { data } = await query
-    setListings(data || [])
+    setListings((data || []) as unknown as Listing[])
     setLoading(false)
   }, [filters])
 
@@ -50,7 +53,14 @@ function ListingsContent() {
     fetchListings()
   }, [fetchListings])
 
+  useEffect(() => {
+    return () => {
+      clearTimeout(searchDebounceRef.current)
+    }
+  }, [])
+
   const clearFilters = () => {
+    setSearchInput('')
     setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '' })
   }
 
@@ -72,8 +82,15 @@ function ListingsContent() {
             <Input
               placeholder="Kërko banesa..."
               className="pl-10 h-11 bg-white border-gray-200"
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              value={searchInput}
+              onChange={(e) => {
+                const value = e.target.value
+                setSearchInput(value)
+                clearTimeout(searchDebounceRef.current)
+                searchDebounceRef.current = setTimeout(() => {
+                  setFilters(prev => ({ ...prev, search: value }))
+                }, 400)
+              }}
             />
           </div>
           <Button

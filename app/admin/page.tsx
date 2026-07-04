@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import type { Profile, Listing } from '@/lib/supabase'
 
-const ADMIN_EMAIL = 'hereisfrescoid@gmail.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 
 interface ListingWithSeller extends Listing {
   profiles: { first_name: string; last_name: string } | null
@@ -14,17 +14,19 @@ export default async function AdminPage() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/')
+  if (!user || !ADMIN_EMAIL || user.email !== ADMIN_EMAIL) redirect('/')
 
   const { data: listings } = await supabase
     .from('listings')
     .select('*, profiles(first_name, last_name)')
     .order('created_at', { ascending: false })
+    .limit(200)
 
   const { data: profiles } = await supabase
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false })
+    .limit(200)
 
   const typedListings = (listings || []) as unknown as ListingWithSeller[]
   const typedProfiles = (profiles || []) as unknown as Profile[]

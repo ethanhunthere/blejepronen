@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -13,6 +14,40 @@ interface ListingDetailPageProps {
 
 interface ListingWithProfile extends Listing {
   profiles: { first_name: string; last_name: string; phone: string } | null
+}
+
+interface ListingMetadata {
+  title: string
+  description: string | null
+  price: number
+  city: string
+  images: string[] | null
+}
+
+export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createServerSupabaseClient()
+  const { data } = await supabase
+    .from('listings')
+    .select('title,description,price,city,images')
+    .eq('id', id)
+    .single()
+
+  if (!data) {
+    return { title: 'Listim | Bleje Banesën' }
+  }
+
+  const listing = data as ListingMetadata
+
+  return {
+    title: `${listing.title} – ${listing.city} | Bleje Banesën`,
+    description: listing.description?.slice(0, 155),
+    openGraph: {
+      title: listing.title,
+      description: listing.description?.slice(0, 155),
+      images: listing.images?.[0] ? [{ url: listing.images[0], width: 1200, height: 630 }] : [],
+    },
+  }
 }
 
 export default async function ListingDetailPage({ params }: ListingDetailPageProps) {

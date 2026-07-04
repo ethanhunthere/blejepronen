@@ -35,24 +35,24 @@ export default function HomePage() {
         ] = await Promise.all([
           supabase
             .from('listings')
-            .select('*')
+            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
             .eq('is_active', true)
             .eq('is_featured', true)
             .order('created_at', { ascending: false })
             .limit(4),
           supabase
             .from('listings')
-            .select('*')
+            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
             .eq('is_active', true)
             .order('created_at', { ascending: false })
             .limit(8),
           supabase
             .from('listings')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('is_active', true),
           supabase
             .from('profiles')
-            .select('*', { count: 'exact', head: true }),
+            .select('id', { count: 'exact', head: true }),
         ])
 
         if (!cancelled) {
@@ -149,7 +149,7 @@ export default function HomePage() {
   )
 
   return (
-    <main className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-[#F8F9FF]">
       {/* Hero — always renders instantly (no data dependency) */}
       <section className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
@@ -317,6 +317,6 @@ export default function HomePage() {
       </section>
 
       {staticSections}
-    </main>
+    </div>
   )
 }

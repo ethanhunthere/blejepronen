@@ -30,23 +30,24 @@ export default function ProfilePage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id,first_name,last_name,phone,phone_verified,created_at,updated_at')
         .eq('id', user.id)
         .single()
 
       if (prof) {
-        setProfile(prof)
+        setProfile(prof as Profile)
         setFormData({ first_name: prof.first_name, last_name: prof.last_name, phone: prof.phone || '' })
       }
 
       const { data: myListings } = await supabase
         .from('listings')
-        .select('*')
+        .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
+        .limit(50)
 
-      setListings(myListings || [])
+      setListings((myListings || []) as unknown as Listing[])
       setLoading(false)
     }
     load()

@@ -15,7 +15,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PRICE = 10_000_000
 
-interface FormData {
+interface ListingFormData {
   title: string
   description: string
   price: string
@@ -27,7 +27,7 @@ interface FormData {
 }
 
 export default function PostoBanesePage() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ListingFormData>({
     title: '',
     description: '',
     price: '',
@@ -101,7 +101,7 @@ export default function PostoBanesePage() {
       // Upload images in parallel
       const uploadPromises = images.map(async (image) => {
         const ext = image.name.split('.').pop()
-        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(path, image, { contentType: image.type })
