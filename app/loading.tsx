@@ -4,16 +4,16 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero skeleton */}
-      <div className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] py-28">
+      <div className="bg-white border-b border-gray-100 py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="h-6 w-64 bg-white/10 rounded-full animate-pulse mx-auto mb-6" />
-            <div className="h-12 w-96 bg-white/10 rounded-xl animate-pulse mx-auto mb-4" />
-            <div className="h-12 w-72 bg-white/10 rounded-xl animate-pulse mx-auto mb-10" />
-            <div className="h-16 max-w-2xl bg-white/10 rounded-2xl animate-pulse mx-auto" />
+            <div className="h-6 w-64 bg-gray-200 rounded-full animate-pulse mx-auto mb-6" />
+            <div className="h-12 w-96 bg-gray-200 rounded-xl animate-pulse mx-auto mb-4" />
+            <div className="h-12 w-72 bg-gray-200 rounded-xl animate-pulse mx-auto mb-10" />
+            <div className="h-16 max-w-2xl bg-gray-200 rounded-2xl animate-pulse mx-auto" />
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-9 w-24 bg-white/10 rounded-full animate-pulse" />
+                <div key={i} className="h-9 w-24 bg-gray-200 rounded-full animate-pulse" />
               ))}
             </div>
           </div>
@@ -21,13 +21,13 @@ export default function Loading() {
       </div>
 
       {/* Stats skeleton */}
-      <div className="bg-white/5 backdrop-blur-sm border-t border-white/10">
+      <div className="bg-gray-50 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="text-center">
-                <div className="h-8 w-16 bg-white/10 rounded animate-pulse mx-auto mb-1" />
-                <div className="h-4 w-24 bg-white/10 rounded animate-pulse mx-auto" />
+                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mx-auto mb-1" />
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
               </div>
             ))}
           </div>

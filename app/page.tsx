@@ -127,18 +127,18 @@ export default function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-gradient-to-r from-[#1B4FFF] to-[#2D6FFF] text-white py-12 sm:py-16 mx-0 sm:mx-4 lg:mx-8 rounded-none sm:rounded-2xl lg:rounded-3xl mb-16 max-w-7xl lg:mx-auto">
+      <section className="bg-gray-50 border border-gray-100 py-12 sm:py-16 mx-0 sm:mx-4 lg:mx-8 rounded-none sm:rounded-2xl lg:rounded-3xl mb-16 max-w-7xl lg:mx-auto">
         <div className="text-center px-6">
-          <h2 className="text-3xl font-bold mb-4">Gati për të shitur ose dhënë me qira?</h2>
-          <p className="text-blue-100 mb-8 text-lg">Posto banesën tënde sot — falas për 30 ditët e para.</p>
+          <h2 className="text-3xl font-bold mb-4 text-gray-900">Gati për të shitur ose dhënë me qira?</h2>
+          <p className="text-gray-500 mb-8 text-lg">Posto banesën tënde sot — falas për 30 ditët e para.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/posto-banese">
-              <Button className="bg-white text-[#1B4FFF] hover:bg-blue-50 font-semibold px-8 h-12">
+              <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-semibold px-8 h-12">
                 Posto banesën falas
               </Button>
             </Link>
             <Link href="/listings">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 h-12">
+              <Button variant="outline" className="border-[#1B4FFF] text-[#1B4FFF] hover:bg-[#1B4FFF]/5 px-8 h-12">
                 Shiko banesat
               </Button>
             </Link>
@@ -151,17 +151,17 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero — always renders instantly (no data dependency) */}
-      <section className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] text-white">
+      <section className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center bg-white/10 rounded-full px-4 py-2 text-sm mb-6 backdrop-blur-sm">
+            <div className="inline-flex items-center bg-[#1B4FFF]/5 rounded-full px-4 py-2 text-sm mb-6 text-[#1B4FFF] font-medium">
               🇽🇰 🇦🇱 🇲🇰 Platforma kryesore shqipfolëse e banesave
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-gray-900">
               Gjej shtëpinë e{' '}
-              <span className="text-yellow-300">ëndrrave</span>
+              <span className="text-[#1B4FFF]">ëndrrave</span>
             </h1>
-            <p className="text-xl text-blue-100 mb-10">
+            <p className="text-xl text-gray-500 mb-10">
               Bli, shit ose jep me qira banesën tënde në Prishtinë, Prizren, Pejë dhe gjithë rajonin.
             </p>
 
@@ -172,7 +172,7 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë'].map(city => (
                 <Link key={city} href={`/listings?city=${encodeURIComponent(city)}`}>
-                  <span className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full cursor-pointer transition-all">
+                  <span className="bg-[#1B4FFF]/5 hover:bg-[#1B4FFF]/10 text-[#1B4FFF] text-sm px-4 py-2 rounded-full cursor-pointer transition-all">
                     {city}
                   </span>
                 </Link>
@@ -182,15 +182,15 @@ export default function HomePage() {
         </div>
 
         {/* Stats Bar — shows skeleton while loading */}
-        <div className="bg-white/5 backdrop-blur-sm border-t border-white/10">
+        <div className="bg-gray-50 border-t border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
                 <>
                   {['Banesa aktive', 'Shitës të besuar', 'Qytete', 'Falas për fillim'].map(label => (
                     <div key={label} className="text-center">
-                      <div className="h-8 w-16 bg-white/10 rounded animate-pulse mx-auto mb-1" />
-                      <p className="text-blue-200 text-sm">{label}</p>
+                      <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mx-auto mb-1" />
+                      <p className="text-gray-400 text-sm">{label}</p>
                     </div>
                   ))}
                 </>
@@ -203,8 +203,8 @@ export default function HomePage() {
                     { value: '30 ditë', label: 'Falas për fillim' },
                   ].map(stat => (
                     <div key={stat.label} className="text-center">
-                      <p className="text-2xl font-bold text-white">{stat.value}</p>
-                      <p className="text-blue-200 text-sm">{stat.label}</p>
+                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-gray-400 text-sm">{stat.label}</p>
                     </div>
                   ))}
                 </>
