@@ -40,7 +40,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#F8F9FF]">
+      <body className="min-h-full flex flex-col bg-white">
         <Navbar />
         <main className="flex-1">{children}</main>
         <Toaster richColors position="top-center" />

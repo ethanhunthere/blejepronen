@@ -2,7 +2,7 @@ import { ListingCardSkeleton } from '@/components/ListingCard'
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-white">
       {/* Hero skeleton */}
       <div className="bg-gradient-to-br from-[#1B4FFF] via-[#2D5FFF] to-[#1B4FFF] py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

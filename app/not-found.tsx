@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center px-4">
         <div className="text-7xl mb-6">🏚️</div>
         <h1 className="text-4xl font-bold text-gray-900 mb-3">Faqja nuk u gjet</h1>

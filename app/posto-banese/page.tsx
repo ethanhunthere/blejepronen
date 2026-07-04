@@ -146,7 +146,7 @@ export default function PostoBanesePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
         <div className="flex items-center mb-8">
           <Building2 className="h-7 w-7 text-[#1B4FFF] mr-3" />
