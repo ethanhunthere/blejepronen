@@ -6,18 +6,13 @@ interface LogoProps {
 }
 
 export function Logo({ variant = 'navbar', className }: LogoProps) {
-  const containerClasses =
-    variant === 'navbar'
-      ? 'relative h-9 w-36'
-      : 'relative h-16 w-64'
-
   return (
-    <div className={`${containerClasses} ${className || ''}`}>
+    <div className={`relative ${variant === 'navbar' ? 'h-14 w-72' : 'h-16 w-80'} ${className || ''}`}>
       <Image
         src="/logo.png"
         alt="Bleje Banesën"
         fill
-        className="object-contain"
+        className="object-contain object-left"
         priority
       />
     </div>

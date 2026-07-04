@@ -21,7 +21,6 @@ const organizationJsonLd = {
   '@type': 'Organization',
   name: 'Bleje Banesën',
   url: 'https://blejebanesen.com',
-  logo: 'https://blejebanesen.com/og-image.png',
   description: 'Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.',
   areaServed: ['XK', 'AL', 'MK'],
 }

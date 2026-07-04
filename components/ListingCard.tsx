@@ -19,7 +19,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
     }).format(price)
   }
 
-  const mainImage = listing.images?.[0] || '/placeholder-house.jpg'
+  const mainImage = listing.images?.[0] || ''
 
   return (
     <Link href={`/listings/${listing.id}`}>
@@ -33,9 +33,6 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
             priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder-house.jpg'
-            }}
           />
           <div className="absolute top-3 left-3">
             <Badge className={listing.type === 'shitje' ? 'bg-[#1B4FFF] text-white' : 'bg-emerald-500 text-white'}>
