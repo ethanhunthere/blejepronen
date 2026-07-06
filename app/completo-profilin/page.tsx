@@ -120,17 +120,24 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Send magic link to email (not OTP)
+    // Send magic link to email — no shouldCreateUser because users
+    // who signed up via Google OAuth have provider:'google', not 'email'.
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: userEmail,
       options: {
-        shouldCreateUser: false,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
     if (otpError) {
-      console.error('Magic link send error:', otpError)
+      console.error('OTP error:', JSON.stringify(otpError))
+      console.error('Magic link send error details:', {
+        message: otpError.message,
+        name: otpError.name,
+        status: (otpError as unknown as { status?: number }).status,
+        code: (otpError as unknown as { code?: string }).code,
+        email: userEmail,
+      })
       setError('Gabim gjatë dërgimit të linkut. Provo përsëri.')
       setLoading(false)
       return
@@ -148,12 +155,12 @@ export default function CompletoProfilinPage() {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: userEmail,
       options: {
-        shouldCreateUser: false,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
     if (otpError) {
+      console.error('Resend OTP error:', JSON.stringify(otpError))
       toast.error('Gabim gjatë ridërgimit të linkut.')
     } else {
       toast.success('Linku u ridërgua me email!')
