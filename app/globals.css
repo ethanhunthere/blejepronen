@@ -160,3 +160,171 @@
 @utility to-brand-dark {
   --tw-gradient-to: var(--brand-dark);
 }
+
+/* Kosovo Skyline — cinematic hero background animations
+   All motion is compositor-only (transform/opacity). */
+
+.kosovo-layer {
+  will-change: transform;
+}
+
+.kosovo-layer-fg {
+  animation: kosovo-parallax-fg 60s linear infinite;
+}
+
+.kosovo-layer-mg {
+  animation: kosovo-parallax-mg 90s linear infinite;
+}
+
+.kosovo-layer-bg {
+  animation: kosovo-parallax-bg 140s linear infinite;
+}
+
+.kosovo-window {
+  animation: kosovo-window 3s ease-in-out infinite alternate;
+  opacity: 0.55;
+}
+
+.kosovo-star {
+  animation: kosovo-star 4s ease-in-out infinite alternate;
+  opacity: 0.35;
+}
+
+.kosovo-cloud {
+  will-change: transform;
+  opacity: 0.35;
+}
+
+.kosovo-cloud-1 {
+  animation: kosovo-cloud-drift 100s linear infinite;
+}
+
+.kosovo-cloud-2 {
+  animation: kosovo-cloud-drift 130s linear infinite reverse;
+}
+
+.kosovo-cloud-3 {
+  animation: kosovo-cloud-drift 85s linear infinite;
+  animation-delay: -40s;
+}
+
+.kosovo-crane {
+  animation: kosovo-crane 20s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: 22px 24px;
+}
+
+.kosovo-bird {
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+.kosovo-bird-1 {
+  animation: kosovo-bird 32s linear infinite;
+  animation-delay: 4s;
+}
+
+.kosovo-bird-2 {
+  animation: kosovo-bird 40s linear infinite;
+  animation-delay: 18s;
+}
+
+@keyframes kosovo-parallax-fg {
+  from { transform: translateX(0); }
+  to { transform: translateX(-1920px); }
+}
+
+@keyframes kosovo-parallax-mg {
+  from { transform: translateX(0); }
+  to { transform: translateX(-1920px); }
+}
+
+@keyframes kosovo-parallax-bg {
+  from { transform: translateX(0); }
+  to { transform: translateX(-1920px); }
+}
+
+@keyframes kosovo-window {
+  0% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
+@keyframes kosovo-star {
+  0% { opacity: 0.2; }
+  100% { opacity: 0.95; }
+}
+
+@keyframes kosovo-cloud-drift {
+  from { transform: translate3d(110vw, 0, 0); }
+  to { transform: translate3d(-130vw, 0, 0); }
+}
+
+@keyframes kosovo-crane {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(8deg); }
+}
+
+@keyframes kosovo-bird {
+  0% {
+    opacity: 0;
+    transform: translate3d(110vw, 90px, 0);
+  }
+  4% {
+    opacity: 0.9;
+  }
+  22% {
+    opacity: 0.9;
+    transform: translate3d(-40vw, 50px, 0);
+  }
+  23% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-40vw, 50px, 0);
+  }
+}
+
+/* Reduced motion: freeze to a still, beautiful frame */
+@media (prefers-reduced-motion: reduce) {
+  .kosovo-layer,
+  .kosovo-window,
+  .kosovo-star,
+  .kosovo-cloud,
+  .kosovo-crane,
+  .kosovo-bird {
+    animation: none !important;
+  }
+
+  .kosovo-window {
+    opacity: 0.75;
+  }
+
+  .kosovo-star {
+    opacity: 0.6;
+  }
+
+  .kosovo-cloud {
+    opacity: 0.28;
+    transform: translate3d(20vw, 0, 0);
+  }
+
+  .kosovo-bird {
+    opacity: 0.6;
+    transform: translate3d(30vw, 70px, 0);
+  }
+}
+
+/* Mobile: slower clouds, pause birds to save battery */
+@media (max-width: 639px) {
+  .kosovo-cloud-1,
+  .kosovo-cloud-2,
+  .kosovo-cloud-3 {
+    animation-duration: 240s;
+  }
+
+  .kosovo-bird {
+    animation: none;
+    opacity: 0;
+  }
+}

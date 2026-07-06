@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
+import KosovoSkyline from '@/components/KosovoSkyline'
 import { Button } from '@/components/ui/button'
 import { Building2, Shield, Globe, Star } from 'lucide-react'
 
@@ -149,40 +150,50 @@ export default function HomePage() {
   )
 
   return (
-    <main className="min-h-screen bg-white">
-      {/* Hero — always renders instantly (no data dependency) */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center bg-[#1B4FFF]/5 rounded-full px-4 py-2 text-sm mb-6 text-[#1B4FFF] font-medium">
-              🇽🇰 🇦🇱 🇲🇰 Platforma kryesore shqipfolëse e banesave
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-gray-900">
-              Gjej shtëpinë e{' '}
-              <span className="text-[#1B4FFF]">ëndrrave</span>
-            </h1>
-            <p className="text-xl text-gray-500 mb-10">
-              Bli, shit ose jep me qira banesën tënde në Prishtinë, Prizren, Pejë dhe gjithë rajonin.
-            </p>
+    <main className="min-h-screen bg-[#F8F9FF]">
+      {/* Hero — cinematic Kosovo skyline background */}
+      <section className="relative overflow-hidden border-b border-white/10 bg-[#0F1D4D] min-h-[760px] flex flex-col">
+        <KosovoSkyline />
 
-            {/* Search Bar */}
-            <SearchBar />
+        {/* Top contrast gradient for white text */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-[rgba(15,29,77,0.6)] to-transparent z-10" />
 
-            {/* Quick filters */}
-            <div className="flex flex-wrap justify-center gap-3 mt-6">
-              {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë'].map(city => (
-                <Link key={city} href={`/listings?city=${encodeURIComponent(city)}`}>
-                  <span className="bg-[#1B4FFF]/5 hover:bg-[#1B4FFF]/10 text-[#1B4FFF] text-sm px-4 py-2 rounded-full cursor-pointer transition-all">
-                    {city}
-                  </span>
-                </Link>
-              ))}
+        {/* Bottom fade into page background */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8F9FF] via-[#F8F9FF]/85 to-transparent z-10" />
+
+        <div className="relative z-20 flex-1 flex items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+            <div className="text-center max-w-3xl mx-auto">
+              <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm mb-6 text-white font-medium border border-white/10">
+                🇽🇰 🇦🇱 🇲🇰 Platforma kryesore shqipfolëse e banesave
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-lg">
+                Gjej shtëpinë e{' '}
+                <span className="text-white">ëndrrave</span>
+              </h1>
+              <p className="text-xl text-white/90 mb-10 drop-shadow">
+                Bli, shit ose jep me qira banesën tënde në Prishtinë, Prizren, Pejë dhe gjithë rajonin.
+              </p>
+
+              {/* Search Bar */}
+              <SearchBar />
+
+              {/* Quick filters */}
+              <div className="flex flex-wrap justify-center gap-3 mt-6">
+                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë'].map(city => (
+                  <Link key={city} href={`/listings?city=${encodeURIComponent(city)}`}>
+                    <span className="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full cursor-pointer transition-all border border-white/10 backdrop-blur-sm">
+                      {city}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats Bar — shows skeleton while loading */}
-        <div className="bg-gray-50 border-t border-gray-100">
+        <div className="relative z-20 bg-[#F8F9FF] border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
