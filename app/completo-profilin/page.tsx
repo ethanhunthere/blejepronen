@@ -8,8 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Phone, KeyRound, CheckCircle2, ArrowRight } from 'lucide-react'
+import { User, Phone, Mail, KeyRound, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+
+// NOTE: SMS OTP via phone provider is disabled. Email OTP is used instead.
+// Supabase Dashboard → Authentication → Providers → Phone: disable if not using SMS.
+// Supabase Dashboard → Authentication → Email → enable "Enable email OTP" / "Confirm email" as needed.
 
 type Step = 1 | 2 | 3
 
@@ -23,12 +27,13 @@ export default function CompletoProfilinPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
+  const [userEmail, setUserEmail] = useState('')
 
   // Step 2 fields
   const [otp, setOtp] = useState('')
 
   useEffect(() => {
-    const prefillFromGoogle = async () => {
+    const init = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
@@ -36,6 +41,9 @@ export default function CompletoProfilinPage() {
         router.push('/login')
         return
       }
+
+      // Store email for OTP
+      setUserEmail(user.email ?? '')
 
       // Pre-fill from Google user_metadata if available
       const meta = user.user_metadata
@@ -69,7 +77,7 @@ export default function CompletoProfilinPage() {
       }
     }
 
-    prefillFromGoogle()
+    init()
   }, [router])
 
   const handleStep1Submit = async (e: React.FormEvent) => {
@@ -86,10 +94,13 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Basic phone validation: allow + prefix, digits, spaces
-    const phoneDigits = phone.replace(/[\s\-()]/g, '')
-    if (!/^\+?\d{7,15}$/.test(phoneDigits)) {
+    if (!/^\+?\d{7,15}$/.test(phone.replace(/[\s\-()]/g, ''))) {
       setError('Numri i telefonit nuk është i vlefshëm.')
+      return
+    }
+
+    if (!userEmail) {
+      setError('Nuk u gjet email-i i përdoruesit. Ju lutemi ri-regjistrohuni.')
       return
     }
 
@@ -104,14 +115,14 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Save profile data (first_name, last_name)
+    // Save profile data (first_name, last_name, phone)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
         id: user.id,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        phone: phoneDigits,
+        phone: phone.replace(/[\s\-()]/g, ''),
       })
 
     if (profileError) {
@@ -121,22 +132,22 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Send OTP
+    // Send OTP to email
     const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone: phoneDigits,
+      email: userEmail,
       options: {
         shouldCreateUser: false,
       },
     })
 
     if (otpError) {
-      console.error('OTP send error:', otpError)
-      setError('Gabim gjatë dërgimit të kodit SMS. Verifiko numrin dhe provo përsëri.')
+      console.error('Email OTP send error:', otpError)
+      setError('Gabim gjatë dërgimit të kodit me email. Provo përsëri.')
       setLoading(false)
       return
     }
 
-    toast.success('Kodi i verifikimit u dërgua me SMS!')
+    toast.success('Kodi i verifikimit u dërgua me email!')
     setStep(2)
     setLoading(false)
   }
@@ -147,6 +158,11 @@ export default function CompletoProfilinPage() {
 
     if (otp.length < 6) {
       setError('Kodi duhet të ketë të paktën 6 shifra.')
+      return
+    }
+
+    if (!userEmail) {
+      setError('Nuk u gjet email-i. Ju lutemi ri-filloni procesin.')
       return
     }
 
@@ -161,29 +177,28 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Verify OTP
-    const phoneDigits = phone.replace(/[\s\-()]/g, '')
+    // Verify OTP via email
     const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: phoneDigits,
+      email: userEmail,
       token: otp,
-      type: 'sms',
+      type: 'email',
     })
 
     if (verifyError) {
-      console.error('OTP verify error:', verifyError)
+      console.error('Email OTP verify error:', verifyError)
       setError('Kodi i gabuar ose ka skaduar. Provo përsëri.')
       setLoading(false)
       return
     }
 
-    // Mark phone as verified in profiles
+    // Email OTP verified — mark profile as verified
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ phone_verified: true })
       .eq('id', user.id)
 
     if (updateError) {
-      console.error('Phone verify update error:', updateError)
+      console.error('Profile verify update error:', updateError)
       // Don't block — OTP was verified, profile update is non-critical
     }
 
@@ -203,17 +218,17 @@ export default function CompletoProfilinPage() {
   }, [step, router])
 
   const handleResendOtp = async () => {
+    if (!userEmail) return
     const supabase = createClient()
-    const phoneDigits = phone.replace(/[\s\-()]/g, '')
     const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone: phoneDigits,
+      email: userEmail,
       options: { shouldCreateUser: false },
     })
 
     if (otpError) {
       toast.error('Gabim gjatë ridërgimit të kodit.')
     } else {
-      toast.success('Kodi u ridërgua me SMS!')
+      toast.success('Kodi u ridërgua me email!')
     }
   }
 
@@ -246,7 +261,7 @@ export default function CompletoProfilinPage() {
             <p className="text-sm text-gray-500">Hapi 1 — Plotëso të dhënat e profilit</p>
           )}
           {step === 2 && (
-            <p className="text-sm text-gray-500">Hapi 2 — Verifiko numrin e telefonit</p>
+            <p className="text-sm text-gray-500">Hapi 2 — Verifiko email-in</p>
           )}
           {step === 3 && (
             <p className="text-sm text-gray-500">Hapi 3 — Profili u kompletua</p>
@@ -316,9 +331,6 @@ export default function CompletoProfilinPage() {
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-400">
-                      Do të dërgohet një kod verifikimi me SMS
-                    </p>
                   </div>
 
                   <Button
@@ -338,14 +350,14 @@ export default function CompletoProfilinPage() {
             </>
           )}
 
-          {/* === STEP 2: OTP Verification === */}
+          {/* === STEP 2: Email OTP Verification === */}
           {step === 2 && (
             <>
               <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-center">Verifiko numrin</CardTitle>
+                <CardTitle className="text-2xl font-bold text-center">Verifiko email-in</CardTitle>
                 <CardDescription className="text-center">
-                  Vendos kodin 6-shifror të dërguar me SMS në{' '}
-                  <strong>{phone}</strong>
+                  Dërguam një kod 6-shifror te email-i juaj:{' '}
+                  <strong>{userEmail}</strong>
                 </CardDescription>
               </CardHeader>
 
@@ -416,3 +428,4 @@ export default function CompletoProfilinPage() {
     </div>
   )
 }
+
