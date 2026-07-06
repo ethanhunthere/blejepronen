@@ -16,10 +16,11 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const supabaseRef = useRef(createClient())
   const router = useRouter()
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = supabaseRef.current
 
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -42,6 +43,14 @@ export default function Navbar() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setProfileIncomplete(false)
+          setProfileFirstName('')
+          router.refresh()
+          return
+        }
+
         const currentUser = session?.user ?? null
         setUser(currentUser)
 
@@ -86,11 +95,22 @@ export default function Navbar() {
   const closeDropdown = useCallback(() => setDropdownOpen(false), [])
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    const supabase = supabaseRef.current
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      }
+    } catch (err) {
+      console.error('Sign out exception:', err)
+    }
     setDropdownOpen(false)
     router.push('/')
     router.refresh()
+    // Hard fallback — ensure redirect happens even if router.push is no-op
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 300)
   }, [router])
 
   return (
