@@ -91,7 +91,7 @@ export default function HomePage() {
       <section className="relative border-y border-gray-100 py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#F0F4FF] via-[#EEF2FF] to-[#F8F9FF]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll className="aos-fade-up">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-12">Si funksionon?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-12">Si të Blesh apo Shesësh?</h2>
           </AnimateOnScroll>
 
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -114,9 +114,9 @@ export default function HomePage() {
             </svg>
 
             {[
-              { step: '01', icon: '🔍', title: 'Kërko', desc: 'Shfleto qindra banesa dhe filtro sipas qytetit, çmimit dhe numrit të dhomave.', direction: 'aos-from-left' },
-              { step: '02', icon: '📞', title: 'Kontakto', desc: 'Kontakto direkt shitësin me telefon ose WhatsApp, pa ndërmjetës.', direction: 'aos-from-bottom' },
-              { step: '03', icon: '🏠', title: 'Merr çelësin', desc: 'Bije dakord me shitësin dhe kryej transaksionin në mënyrën që ju përshtatet.', direction: 'aos-from-right' },
+              { step: '01', icon: '🔍', title: 'Kërko & Filtro', desc: 'Shfleto qindra banesa sipas qytetit, çmimit, numrit të dhomave dhe shumë kritereve të tjera.', direction: 'aos-from-left' },
+              { step: '02', icon: '📞', title: 'Kontakto Direkt', desc: 'Fol direkt me pronarin ose agjentin. Pa ndërmjetës të panevojshëm, pa komisione të fshehura.', direction: 'aos-from-bottom' },
+              { step: '03', icon: '🏠', title: 'Merr Çelësat', desc: 'Bie dakord, nënshkruaj kontratën dhe merr çelësat e shtëpisë tënde të re.', direction: 'aos-from-right' },
             ].map(item => (
               <AnimateOnScroll key={item.step} className={item.direction}>
                 <div className="text-center relative z-10">
@@ -135,7 +135,10 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-[#FFFFFF] to-[#F5F8FF] py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll className="aos-fade-up">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">Pse Bleje Banesën?</h2>
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Pse Na Zgjedhin?</h2>
+              <p className="text-gray-500 text-sm max-w-2xl mx-auto">Platforma që i bashkon shitësit, blerësit dhe qiramarrësit shqipfolës në një vend të vetëm, të thjeshtë dhe të sigurt.</p>
+            </div>
           </AnimateOnScroll>
 
           <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -207,22 +210,24 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm mb-6 text-white font-medium border border-white/10">
-                🇽🇰 🇦🇱 🇲🇰 Platforma kryesore shqipfolëse e banesave
+                🇽🇰 Platforma #1 e Banesave në Kosovë
               </div>
               <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-lg">
-                Gjej shtëpinë e{' '}
-                <span className="text-white">ëndrrave</span>
+                Gjej Banesën e Ëndrrave
               </h1>
               <p className="text-xl text-white/90 mb-10 drop-shadow">
-                Bli, shit ose jep me qira banesën tënde në Prishtinë, Prizren, Pejë dhe gjithë rajonin.
+                Blej, shit ose jep me qira. Qindra banesa në Prishtinë, Prizren, Pejë dhe gjithë Kosovën — pa ndërmjetës, drejtpërdrejt me pronarët.
               </p>
 
               {/* Search Bar */}
-              <SearchBar />
+              <SearchBar
+                placeholder="Kërko sipas qytetit, lagjes ose çmimit..."
+                buttonText="Kërko Banesë"
+              />
 
               {/* Quick filters */}
               <div className="flex flex-wrap justify-center gap-3 mt-6">
-                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë'].map(city => (
+                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan'].map(city => (
                   <Link key={city} href={`/listings?city=${encodeURIComponent(city)}`}>
                     <span className="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full cursor-pointer transition-all border border-white/10 backdrop-blur-sm">
                       {city}
@@ -240,7 +245,7 @@ export default function HomePage() {
             <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
                 <>
-                  {['Banesa aktive', 'Shitës të besuar', 'Qytete', 'Falas për fillim'].map(label => (
+                  {['Banesa aktive', 'Shitës të besuar', 'Qytete të mbuluara', 'Ditë falas'].map(label => (
                     <div key={label} className="text-center">
                       <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mx-auto mb-1" />
                       <p className="text-gray-400 text-sm">{label}</p>
@@ -250,10 +255,13 @@ export default function HomePage() {
               ) : (
                 <>
                   {[
-                    { value: `+${data?.totalListings ?? 0}`, label: 'Banesa aktive' },
+                    {
+                      value: (data?.totalListings ?? 0) > 1 ? `+${data?.totalListings ?? 0}` : 'Duke u rritur',
+                      label: 'Banesa aktive',
+                    },
                     { value: `+${data?.totalUsers ?? 0}`, label: 'Shitës të besuar' },
-                    { value: '7', label: 'Qytete' },
-                    { value: '30 ditë', label: 'Falas për fillim' },
+                    { value: '7', label: 'Qytete të mbuluara' },
+                    { value: '30 ditë', label: 'Ditë falas' },
                   ].map(stat => (
                     <div key={stat.label} className="text-center">
                       <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
@@ -330,8 +338,8 @@ export default function HomePage() {
       <section className="dot-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">🏠 Banesat më të reja</h2>
-            <p className="text-gray-500 text-sm mt-1">Listimet e fundit në platformë</p>
+            <h2 className="text-2xl font-bold text-gray-900">🏠 Banesat e Fundit</h2>
+            <p className="text-gray-500 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
           </div>
           <Link href="/listings">
             <Button variant="outline" className="border-gray-200">Shiko të gjitha →</Button>
@@ -362,8 +370,8 @@ export default function HomePage() {
         ) : !loading ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <div className="text-5xl mb-4">🏠</div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ende nuk ka listrime</h3>
-            <p className="text-gray-500 mb-6">Bëhu i pari që poston një banesë!</p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ende nuk ka listime</h3>
+            <p className="text-gray-500 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
               <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                 Posto banesën tënde falas
