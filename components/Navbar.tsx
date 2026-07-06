@@ -81,7 +81,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 overflow-visible">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -89,97 +89,100 @@ export default function Navbar() {
             <Logo variant="navbar" />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/listings" className="text-gray-600 hover:text-[#1B4FFF] font-medium transition-colors">
-              Shiko banesat
-            </Link>
-            {user ? (
-              <>
-                <Link href="/posto-banese">
-                  <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Posto banesë
-                  </Button>
-                </Link>
-                {profileIncomplete && (
-                  <Link href="/completo-profilin">
-                    <Button
-                      variant="outline"
-                      className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 animate-pulse"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Verifiko profilin
-                    </Button>
-                  </Link>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none focus:outline-none ring-0 focus:ring-0 focus-visible:ring-0"
-                    aria-label="Menyja e përdoruesit"
-                  >
-                    {(profileFirstName || user?.email || '?')[0].toUpperCase()}
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-3 py-2 text-sm border-b border-gray-100 mb-1">
-                      <p className="font-medium text-gray-900 truncate">
-                        {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
-                      </p>
-                      <p className="text-gray-500 text-xs truncate">{user?.email}</p>
-                    </div>
-                    <DropdownMenuItem
-                      onClick={() => router.push('/posto-banese')}
-                      className="py-2.5 cursor-pointer"
-                    >
+          {/* Right nav section */}
+          <div className="flex items-center flex-shrink-0 min-w-fit">
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center space-x-6">
+              <Link href="/listings" className="text-gray-600 hover:text-[#1B4FFF] font-medium transition-colors">
+                Shiko banesat
+              </Link>
+              {user ? (
+                <>
+                  <Link href="/posto-banese">
+                    <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                       <Plus className="h-4 w-4 mr-2" />
                       Posto banesë
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => router.push('/profili')}
-                      className="py-2.5 cursor-pointer"
+                    </Button>
+                  </Link>
+                  {profileIncomplete && (
+                    <Link href="/completo-profilin">
+                      <Button
+                        variant="outline"
+                        className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 animate-pulse"
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Verifiko profilin
+                      </Button>
+                    </Link>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      className="inline-flex items-center justify-center rounded-full w-9 h-9 min-w-9 min-h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 shrink-0 outline-none focus:outline-none ring-0 focus:ring-0 focus-visible:ring-0"
+                      aria-label="Menyja e përdoruesit"
                     >
-                      <User className="h-4 w-4 mr-2" />
-                      Banesat e mia
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => router.push('/profili')}
-                      className="py-2.5 cursor-pointer"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Cilësimet
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-red-600 cursor-pointer py-2.5 focus:bg-red-50 focus:text-red-700"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Dil
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Link href="/login">
-                  <Button variant="ghost" className="text-gray-700">Hyr</Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
-                </Link>
-              </div>
-            )}
-          </div>
+                      {(profileFirstName || user?.email || '?')[0].toUpperCase()}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="px-3 py-2 text-sm border-b border-gray-100 mb-1">
+                        <p className="font-medium text-gray-900 truncate">
+                          {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                        </p>
+                        <p className="text-gray-500 text-xs truncate">{user?.email}</p>
+                      </div>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/posto-banese')}
+                        className="py-2.5 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Posto banesë
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/profili')}
+                        className="py-2.5 cursor-pointer"
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Banesat e mia
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/profili')}
+                        className="py-2.5 cursor-pointer"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Cilësimet
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="text-red-600 cursor-pointer py-2.5 focus:bg-red-50 focus:text-red-700"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Dil
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <Link href="/login">
+                    <Button variant="ghost" className="text-gray-700">Hyr</Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
+                  </Link>
+                </div>
+              )}
+            </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 rounded-md text-gray-600 min-h-11 min-w-11 flex items-center justify-center"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden p-2 rounded-md text-gray-600 min-h-11 min-w-11 flex items-center justify-center"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
