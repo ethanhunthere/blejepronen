@@ -23,7 +23,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 border border-gray-100 cursor-pointer">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-pointer listing-card-hover">
         {/* Image */}
         <div className="relative h-48 sm:h-52 bg-gray-100">
           <Image
