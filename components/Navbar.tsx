@@ -116,18 +116,23 @@ export default function Navbar() {
     setProfileIncomplete(false)
     setProfileFirstName('')
 
-    // 2. Sign out from Supabase (clears cookies + session)
-    const supabase = supabaseRef.current
+    // 2. Also sign out on the client side to clear in-memory auth state
     try {
-      await supabase.auth.signOut()
+      await supabaseRef.current.auth.signOut()
     } catch (err) {
-      console.error('Sign out exception:', err)
+      console.error('Client sign out exception:', err)
     }
 
-    // 3. Navigate to home and refresh to clear server-side cache
+    // 3. Call server-side logout to clear cookies with correct domain
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+    } catch (err) {
+      console.error('Server logout API call failed:', err)
+    }
+
+    // 4. Navigate to home and refresh to clear middleware cache
     router.push('/')
-    // Small delay ensures React commits the state changes before refresh
-    setTimeout(() => router.refresh(), 50)
+    setTimeout(() => router.refresh(), 100)
   }, [router])
 
   return (
