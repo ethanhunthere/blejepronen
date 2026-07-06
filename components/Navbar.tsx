@@ -10,12 +10,13 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
 export default function Navbar() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  // Tri-state: undefined = loading, null = logged out, object = logged in.
+  // This avoids a separate authLoading boolean that can get out of sync.
+  const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [authLoading, setAuthLoading] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(createClient())
   const router = useRouter()
@@ -38,7 +39,6 @@ export default function Navbar() {
 
           if (profileErr) {
             console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
-            // Don't block — still show the logged-in UI even if profile fetch fails
           }
 
           setProfileIncomplete(!profile?.first_name)
@@ -46,10 +46,8 @@ export default function Navbar() {
         }
       } catch (err) {
         console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
-      } finally {
-        // ALWAYS clear loading — even if getSession throws, we must show
-        // the logged-out UI, not an empty placeholder forever.
-        setAuthLoading(false)
+        // getSession threw — treat as logged out
+        setUser(null)
       }
     }
 
@@ -148,8 +146,8 @@ export default function Navbar() {
               <Link href="/listings" className="text-gray-600 hover:text-[#1B4FFF] font-medium transition-colors">
                 Shiko banesat
               </Link>
-              {authLoading ? (
-                /* Placeholder while session is loading — prevents flash of wrong auth state */
+              {user === undefined ? (
+                /* Loading — session hasn't been checked yet */
                 <div className="w-[152px] h-9" aria-hidden="true" />
               ) : user ? (
                 <>
@@ -264,8 +262,8 @@ export default function Navbar() {
             <Link href="/listings" className="block text-gray-600 hover:text-[#1B4FFF] font-medium py-3">
               Shiko banesat
             </Link>
-            {authLoading ? (
-              /* Placeholder while session is loading — prevents flash of wrong auth state */
+            {user === undefined ? (
+              /* Loading — session hasn't been checked yet */
               <div className="h-11" aria-hidden="true" />
             ) : user ? (
               <>
