@@ -151,22 +151,22 @@ export default function Navbar() {
                 <div className="w-[152px] h-9" aria-hidden="true" />
               ) : user ? (
                 <>
-                  <Link href="/posto-banese">
-                    <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Posto banesë
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={() => router.push('/posto-banese')}
+                    className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Posto banesë
+                  </Button>
                   {profileIncomplete && (
-                    <Link href="/completo-profilin">
-                      <Button
-                        variant="outline"
-                        className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 animate-pulse"
-                      >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Verifiko profilin
-                      </Button>
-                    </Link>
+                    <Button
+                      onClick={() => router.push('/completo-profilin')}
+                      variant="outline"
+                      className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 animate-pulse"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Verifiko profilin
+                    </Button>
                   )}
                   {/* Custom dropdown — no Base UI, no layout shifts */}
                   <div className="relative flex-shrink-0" ref={dropdownRef}>
@@ -234,12 +234,8 @@ export default function Navbar() {
                 </>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <Link href="/login">
-                    <Button variant="ghost" className="text-gray-700">Hyr</Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
-                  </Link>
+                  <Button onClick={() => router.push('/login')} variant="ghost" className="text-gray-700">Hyr</Button>
+                  <Button onClick={() => router.push('/register')} className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
                 </div>
               )}
             </div>
@@ -268,15 +264,14 @@ export default function Navbar() {
             ) : user ? (
               <>
                 {profileIncomplete && (
-                  <Link href="/completo-profilin" className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full min-h-11 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Verifiko profilin
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={() => { router.push('/completo-profilin'); setMenuOpen(false) }}
+                    variant="outline"
+                    className="w-full min-h-11 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Verifiko profilin
+                  </Button>
                 )}
                 <div className="flex items-center gap-3 px-1 py-2">
                   <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
@@ -286,12 +281,13 @@ export default function Navbar() {
                     {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
                 </div>
-                <Link href="/posto-banese" className="block py-2">
-                  <Button className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Posto banesë
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
+                  className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Posto banesë
+                </Button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
                   className="flex items-center gap-2 w-full text-left text-gray-600 py-3"
@@ -315,12 +311,8 @@ export default function Navbar() {
               </>
             ) : (
               <div className="space-y-2">
-                <Link href="/login" className="block">
-                  <Button variant="outline" className="w-full min-h-11">Hyr</Button>
-                </Link>
-                <Link href="/register" className="block">
-                  <Button className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
-                </Link>
+                <Button onClick={() => { router.push('/login'); setMenuOpen(false) }} variant="outline" className="w-full min-h-11">Hyr</Button>
+                <Button onClick={() => { router.push('/register'); setMenuOpen(false) }} className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
               </div>
             )}
           </div>
