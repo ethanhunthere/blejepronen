@@ -231,7 +231,7 @@ export default function KosovoSkyline() {
         {foregroundLayer(1920)}
       </g>
 
-      <g className="kosovo-birds" fill="none" stroke="#0A153A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <g className="kosovo-birds" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75">
         <path d="M0,0 L12,8 L24,0" className="kosovo-bird kosovo-bird-1" />
         <path d="M0,0 L10,7 L20,0" className="kosovo-bird kosovo-bird-2" />
       </g>
