@@ -15,6 +15,7 @@ export default function Navbar() {
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(createClient())
   const router = useRouter()
@@ -37,6 +38,8 @@ export default function Navbar() {
         setProfileIncomplete(!profile?.first_name)
         setProfileFirstName(profile?.first_name || '')
       }
+
+      setAuthLoading(false)
     }
 
     checkSession()
@@ -134,7 +137,10 @@ export default function Navbar() {
               <Link href="/listings" className="text-gray-600 hover:text-[#1B4FFF] font-medium transition-colors">
                 Shiko banesat
               </Link>
-              {user ? (
+              {authLoading ? (
+                /* Placeholder while session is loading — prevents flash of wrong auth state */
+                <div className="w-[152px] h-9" aria-hidden="true" />
+              ) : user ? (
                 <>
                   <Link href="/posto-banese">
                     <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
@@ -247,7 +253,10 @@ export default function Navbar() {
             <Link href="/listings" className="block text-gray-600 hover:text-[#1B4FFF] font-medium py-3">
               Shiko banesat
             </Link>
-            {user ? (
+            {authLoading ? (
+              /* Placeholder while session is loading — prevents flash of wrong auth state */
+              <div className="h-11" aria-hidden="true" />
+            ) : user ? (
               <>
                 {profileIncomplete && (
                   <Link href="/completo-profilin" className="block">
