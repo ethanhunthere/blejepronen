@@ -47,6 +47,8 @@ export default function Navbar() {
           setUser(null)
           setProfileIncomplete(false)
           setProfileFirstName('')
+          setDropdownOpen(false)
+          setMenuOpen(false)
           router.refresh()
           return
         }
@@ -95,22 +97,25 @@ export default function Navbar() {
   const closeDropdown = useCallback(() => setDropdownOpen(false), [])
 
   const handleLogout = useCallback(async () => {
+    // 1. Reset ALL UI state immediately so the navbar flips to Login/Register
+    setDropdownOpen(false)
+    setMenuOpen(false)
+    setUser(null)
+    setProfileIncomplete(false)
+    setProfileFirstName('')
+
+    // 2. Sign out from Supabase (clears cookies + session)
     const supabase = supabaseRef.current
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-      }
+      await supabase.auth.signOut()
     } catch (err) {
       console.error('Sign out exception:', err)
     }
-    setDropdownOpen(false)
+
+    // 3. Navigate to home and refresh to clear server-side cache
     router.push('/')
-    router.refresh()
-    // Hard fallback — ensure redirect happens even if router.push is no-op
-    setTimeout(() => {
-      window.location.href = '/'
-    }, 300)
+    // Small delay ensures React commits the state changes before refresh
+    setTimeout(() => router.refresh(), 50)
   }, [router])
 
   return (
