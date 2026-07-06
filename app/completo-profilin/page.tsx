@@ -8,14 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Mail, KeyRound, CheckCircle2, ArrowRight } from 'lucide-react'
+import { User, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
-// NOTE: SMS OTP via phone provider is disabled. Email OTP is used instead.
-// Supabase Dashboard → Authentication → Providers → Phone: disable if not using SMS.
-// Supabase Dashboard → Authentication → Email → enable "Enable email OTP" / "Confirm email" as needed.
+// NOTE: Magic link verification is used instead of OTP.
+// The callback route handles token_hash for magic link verification.
+// Supabase Dashboard → Authentication → Email → enable magic link.
 
-type Step = 1 | 2 | 3
+type Step = 1 | 2
 
 export default function CompletoProfilinPage() {
   const router = useRouter()
@@ -23,14 +23,12 @@ export default function CompletoProfilinPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [resending, setResending] = useState(false)
 
   // Step 1 fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [userEmail, setUserEmail] = useState('')
-
-  // Step 2 fields
-  const [otp, setOtp] = useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -122,105 +120,45 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Send OTP to email
+    // Send magic link to email (not OTP)
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: userEmail,
       options: {
         shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
     if (otpError) {
-      console.error('Email OTP send error:', otpError)
-      setError('Gabim gjatë dërgimit të kodit me email. Provo përsëri.')
+      console.error('Magic link send error:', otpError)
+      setError('Gabim gjatë dërgimit të linkut. Provo përsëri.')
       setLoading(false)
       return
     }
 
-    toast.success('Kodi i verifikimit u dërgua me email!')
+    toast.success('Linku i verifikimit u dërgua me email!')
     setStep(2)
     setLoading(false)
   }, [firstName, lastName, userEmail])
 
-  const handleStep2Submit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSubmitted(true)
-
-    if (otp.length < 6) {
-      setError('Kodi duhet të ketë të paktën 6 shifra.')
-      return
-    }
-
-    if (!userEmail) {
-      setError('Nuk u gjet email-i. Ju lutemi ri-filloni procesin.')
-      return
-    }
-
-    setLoading(true)
-
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      setError('Sesioni ka skaduar.')
-      setLoading(false)
-      return
-    }
-
-    // Verify OTP via email
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: userEmail,
-      token: otp,
-      type: 'email',
-    })
-
-    if (verifyError) {
-      console.error('Email OTP verify error:', verifyError)
-      setError('Kodi i gabuar ose ka skaduar. Provo përsëri.')
-      setLoading(false)
-      return
-    }
-
-    // Email OTP verified — mark profile as verified
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ phone_verified: true })
-      .eq('id', user.id)
-
-    if (updateError) {
-      console.error('Profile verify update error:', updateError)
-      // Don't block — OTP was verified, profile update is non-critical
-    }
-
-    setStep(3)
-    setLoading(false)
-  }, [otp, userEmail])
-
-  // Auto-redirect after step 3
-  useEffect(() => {
-    if (step === 3) {
-      const timer = setTimeout(() => {
-        router.push('/')
-        router.refresh()
-      }, 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [step, router])
-
-  const handleResendOtp = async () => {
+  const handleResendMagicLink = async () => {
     if (!userEmail) return
+    setResending(true)
     const supabase = createClient()
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: userEmail,
-      options: { shouldCreateUser: false },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
 
     if (otpError) {
-      toast.error('Gabim gjatë ridërgimit të kodit.')
+      toast.error('Gabim gjatë ridërgimit të linkut.')
     } else {
-      toast.success('Kodi u ridërgua me email!')
+      toast.success('Linku u ridërgua me email!')
     }
+    setResending(false)
   }
 
   return (
@@ -228,7 +166,7 @@ export default function CompletoProfilinPage() {
       <div className="w-full max-w-md">
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {([1, 2, 3] as Step[]).map((s) => (
+          {([1, 2] as Step[]).map((s) => (
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
@@ -239,7 +177,7 @@ export default function CompletoProfilinPage() {
               >
                 {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
               </div>
-              {s < 3 && (
+              {s < 2 && (
                 <div className={`w-8 h-0.5 ${s < step ? 'bg-[#1B4FFF]' : 'bg-gray-200'}`} />
               )}
             </div>
@@ -253,9 +191,6 @@ export default function CompletoProfilinPage() {
           )}
           {step === 2 && (
             <p className="text-sm text-gray-500">Hapi 2 — Verifiko email-in</p>
-          )}
-          {step === 3 && (
-            <p className="text-sm text-gray-500">Hapi 3 — Profili u kompletua</p>
           )}
         </div>
 
@@ -325,76 +260,54 @@ export default function CompletoProfilinPage() {
             </>
           )}
 
-          {/* === STEP 2: Email OTP Verification === */}
+          {/* === STEP 2: Magic Link Sent === */}
           {step === 2 && (
             <>
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold text-center">Verifiko email-in</CardTitle>
                 <CardDescription className="text-center">
-                  Dërguam një kod 6-shifror te email-i juaj:{' '}
-                  <strong>{userEmail}</strong>
+                  Kontrollo email-in tuaj! Klikoni linkun që ju dërguam te{' '}
+                  <strong>{userEmail}</strong> për të verifikuar llogarinë tuaj.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent>
-                {submitted && error && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <form onSubmit={handleStep2Submit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="otp">Kodi i verifikimit</Label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="otp"
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={7}
-                        placeholder="000000"
-                        className="pl-10 h-14 text-center text-2xl tracking-[0.5em] font-mono"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        autoFocus
-                        required
-                      />
-                    </div>
+              <CardContent className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Mail className="h-8 w-8 text-[#1B4FFF]" />
                   </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
-                    disabled={loading || otp.length < 6}
-                  >
-                    {loading ? 'Duke verifikuar...' : 'Verifiko'}
-                  </Button>
-
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    className="w-full text-sm text-[#1B4FFF] hover:underline py-2"
-                    disabled={loading}
-                  >
-                    Ridërgo kodin
-                  </button>
-                </form>
-              </CardContent>
-            </>
-          )}
-
-          {/* === STEP 3: Success === */}
-          {step === 3 && (
-            <>
-              <CardContent className="pt-8 pb-8 text-center space-y-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Profili u kompletua!</h2>
-                <p className="text-gray-500">
-                  Të dhënat u ruajtën me sukses. Po të ridrejtojmë në faqen kryesore...
+
+                <p className="text-sm text-center text-gray-500">
+                  Nëse nuk e shihni email-in, kontrolloni dosjen e spam-it.
                 </p>
+
+                <button
+                  type="button"
+                  onClick={handleResendMagicLink}
+                  className="w-full text-sm text-[#1B4FFF] hover:underline py-2"
+                  disabled={resending}
+                >
+                  {resending ? 'Duke u ridërguar...' : 'Ridërgo linkun'}
+                </button>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white px-2 text-gray-400">ose</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => { router.push('/'); router.refresh() }}
+                  variant="outline"
+                  className="w-full h-11"
+                >
+                  Vazhdo pa verifikim
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
               </CardContent>
             </>
           )}
