@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -12,13 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, User, LogOut, Menu, X, AlertTriangle } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
 export default function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profileIncomplete, setProfileIncomplete] = useState(false)
+  const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
 
@@ -38,6 +39,7 @@ export default function Navbar() {
           .single()
 
         setProfileIncomplete(!profile?.first_name)
+        setProfileFirstName(profile?.first_name || '')
       }
     }
 
@@ -60,8 +62,10 @@ export default function Navbar() {
             .single()
 
           setProfileIncomplete(!profile?.first_name)
+          setProfileFirstName(profile?.first_name || '')
         } else {
           setProfileIncomplete(false)
+          setProfileFirstName('')
         }
       }
     )
@@ -110,18 +114,45 @@ export default function Navbar() {
                   </Link>
                 )}
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 hover:bg-gray-100 transition-colors cursor-pointer" aria-label="Menyja e përdoruesit">
-                    <User className="h-4 w-4" />
+                  <DropdownMenuTrigger
+                    className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer border-0"
+                    aria-label="Menyja e përdoruesit"
+                  >
+                    {(profileFirstName || user?.email || '?')[0].toUpperCase()}
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem className="py-3">
-                      <Link href="/profili">Profili im</Link>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-3 py-2 text-sm border-b border-gray-100 mb-1">
+                      <p className="font-medium text-gray-900 truncate">
+                        {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                      </p>
+                      <p className="text-gray-500 text-xs truncate">{user?.email}</p>
+                    </div>
+                    <DropdownMenuItem
+                      onClick={() => router.push('/posto-banese')}
+                      className="py-2.5 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Posto banesë
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="py-3">
-                      <Link href="/posto-banese">Posto banesë</Link>
+                    <DropdownMenuItem
+                      onClick={() => router.push('/profili')}
+                      className="py-2.5 cursor-pointer"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Banesat e mia
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => router.push('/profili')}
+                      className="py-2.5 cursor-pointer"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Cilësimet
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer py-3">
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-600 cursor-pointer py-2.5 focus:bg-red-50 focus:text-red-700"
+                    >
                       <LogOut className="h-4 w-4 mr-2" />
                       Dil
                     </DropdownMenuItem>
@@ -170,16 +201,40 @@ export default function Navbar() {
                     </Button>
                   </Link>
                 )}
+                <div className="flex items-center gap-3 px-1 py-2">
+                  <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
+                    {(profileFirstName || user?.email || '?')[0].toUpperCase()}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 truncate">
+                    {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                  </span>
+                </div>
                 <Link href="/posto-banese" className="block py-2">
                   <Button className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Posto banesë
                   </Button>
                 </Link>
-                <Link href="/profili" className="block text-gray-600 py-3">Profili im</Link>
-                <button onClick={handleLogout} className="block text-red-600 py-3 font-medium">
-                  Dil nga llogaria
+                <button
+                  onClick={() => { router.push('/profili'); setMenuOpen(false) }}
+                  className="flex items-center gap-2 w-full text-left text-gray-600 py-3"
+                >
+                  <User className="h-4 w-4" />
+                  Banesat e mia
                 </button>
+                <button
+                  onClick={() => { router.push('/profili'); setMenuOpen(false) }}
+                  className="flex items-center gap-2 w-full text-left text-gray-600 py-3"
+                >
+                  <Settings className="h-4 w-4" />
+                  Cilësimet
+                </button>
+                <div className="border-t border-gray-100 pt-2">
+                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 py-3 font-medium">
+                    <LogOut className="h-4 w-4" />
+                    Dil
+                  </button>
+                </div>
               </>
             ) : (
               <div className="space-y-2">
