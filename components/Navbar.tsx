@@ -24,22 +24,33 @@ export default function Navbar() {
     const supabase = supabaseRef.current
 
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const currentUser = session?.user ?? null
-      setUser(currentUser)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const currentUser = session?.user ?? null
+        setUser(currentUser)
 
-      if (currentUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, phone_verified')
-          .eq('id', currentUser.id)
-          .single()
+        if (currentUser) {
+          const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('first_name, phone_verified')
+            .eq('id', currentUser.id)
+            .single()
 
-        setProfileIncomplete(!profile?.first_name)
-        setProfileFirstName(profile?.first_name || '')
+          if (profileErr) {
+            console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
+            // Don't block — still show the logged-in UI even if profile fetch fails
+          }
+
+          setProfileIncomplete(!profile?.first_name)
+          setProfileFirstName(profile?.first_name || '')
+        }
+      } catch (err) {
+        console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
+      } finally {
+        // ALWAYS clear loading — even if getSession throws, we must show
+        // the logged-out UI, not an empty placeholder forever.
+        setAuthLoading(false)
       }
-
-      setAuthLoading(false)
     }
 
     checkSession()
