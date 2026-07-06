@@ -83,30 +83,78 @@ export default function PostoBanesePage() {
     setUploading(true)
     setError('')
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+    // --- Step 0: Validate authentication ---
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-      // Validate price
-      const priceNum = Number(formData.price)
-      if (isNaN(priceNum) || priceNum <= 0 || priceNum > MAX_PRICE) {
-        setError(`Çmimi duhet të jetë mes 1 dhe ${MAX_PRICE.toLocaleString()}€.`)
+    if (authError) {
+      console.error('Auth error during posto-banese submit:', JSON.stringify(authError))
+      setError('Sesioni ka skaduar. Ju lutemi ri-regjistrohuni.')
+      setUploading(false)
+      return
+    }
+
+    if (!user) {
+      console.error('No user session found during posto-banese submit')
+      router.push('/login')
+      return
+    }
+
+    // --- Step 0.5: Ensure profile row exists (FK listings.user_id → profiles.id) ---
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id, first_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileCheckError) {
+      console.error('Profile check error:', JSON.stringify(profileCheckError))
+      setError('Gabim gjatë verifikimit të profilit. Provo përsëri.')
+      setUploading(false)
+      return
+    }
+
+    if (!existingProfile) {
+      // Create minimal profile row so the FK constraint passes
+      console.warn('Profile missing for user, creating minimal row:', user.id)
+      const { error: createProfileErr } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          first_name: user.user_metadata?.given_name || user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Përdorues',
+          last_name: user.user_metadata?.family_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+        })
+
+      if (createProfileErr) {
+        console.error('Failed to create missing profile row:', JSON.stringify(createProfileErr))
+        setError('Nuk mund të krijohet profili. Ju lutemi plotësoni profilin së pari.')
         setUploading(false)
         return
       }
+    }
 
-      // Upload images in parallel
-      const uploadPromises = images.map(async (image) => {
-        const ext = image.name.split('.').pop()
-        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    // --- Step 1: Validate price ---
+    const priceNum = Number(formData.price)
+    if (isNaN(priceNum) || priceNum <= 0 || priceNum > MAX_PRICE) {
+      setError(`Çmimi duhet të jetë mes 1 dhe ${MAX_PRICE.toLocaleString()}€.`)
+      setUploading(false)
+      return
+    }
+
+    // --- Step 2: Upload images ---
+    let imageUrls: string[] = []
+
+    try {
+      const uploadPromises = images.map(async (image, idx) => {
+        const ext = image.name.split('.').pop() || 'jpg'
+        const path = `${user.id}/${Date.now()}-${idx}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(path, image, { contentType: image.type })
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Image upload error for', image.name, ':', JSON.stringify(uploadError))
+          throw new Error(uploadError.message || 'Upload failed')
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('listings')
@@ -115,34 +163,55 @@ export default function PostoBanesePage() {
         return publicUrl
       })
 
-      const imageUrls = await Promise.all(uploadPromises)
-
-      // Insert listing
-      const { data: listing, error: insertError } = await supabase
-        .from('listings')
-        .insert({
-          user_id: user.id,
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          price: priceNum,
-          city: formData.city,
-          address: formData.address.trim(),
-          rooms: Number(formData.rooms),
-          area_m2: Number(formData.area_m2),
-          type: formData.type,
-          images: imageUrls
-        })
-        .select()
-        .single()
-
-      if (insertError) throw insertError
-
-      router.push(`/listings/${listing.id}`)
-    } catch (err) {
-      setError('Gabim gjatë postimit. Provo përsëri.')
-    } finally {
+      imageUrls = await Promise.all(uploadPromises)
+    } catch (uploadErr) {
+      const message = uploadErr instanceof Error ? uploadErr.message : 'Gabim i panjohur'
+      console.error('Image upload batch failed:', message)
+      setError(`Ngarkimi i fotove dështoi: ${message}. Sigurohu që "listings" bucket ekziston në Supabase Storage.`)
       setUploading(false)
+      return
     }
+
+    // --- Step 3: Insert listing ---
+    const { data: listing, error: insertError } = await supabase
+      .from('listings')
+      .insert({
+        user_id: user.id,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        price: priceNum,
+        city: formData.city,
+        address: formData.address.trim(),
+        rooms: Number(formData.rooms),
+        area_m2: Number(formData.area_m2),
+        type: formData.type,
+        images: imageUrls,
+      })
+      .select('id')
+      .single()
+
+    if (insertError) {
+      console.error('Listing insert error:', JSON.stringify(insertError))
+      // Map common Supabase errors to Albanian messages
+      if (insertError.code === '42501') {
+        setError('Nuk keni leje për të postuar. Kontaktoni mbështetjen.')
+      } else if (insertError.code === '23503') {
+        setError('Profili juaj nuk është kompletuar. Vizitoni /completo-profilin së pari.')
+      } else if (insertError.code === '23505') {
+        setError('Ky listim ekziston tashmë.')
+      } else if (insertError.code === '23502') {
+        setError('Disa fusha të detyrueshme mungojnë. Plotësoni të gjitha fushat.')
+      } else if (insertError.code === '23514') {
+        setError('Të dhëna të pavlefshme. Kontrolloni qytetin ose llojin e listimit.')
+      } else {
+        setError(`Gabim gjatë ruajtjes së listimit (${insertError.code || 'e panjohur'}). Provo përsëri.`)
+      }
+      setUploading(false)
+      return
+    }
+
+    // --- Success ---
+    router.push(`/listings/${listing.id}`)
   }
 
   return (
