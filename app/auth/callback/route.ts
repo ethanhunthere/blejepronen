@@ -30,11 +30,27 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+    if (error) {
+      console.error('OAuth callback error:', error.message)
+      return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
     }
 
-    console.error('OAuth callback error:', error.message)
+    // Check if profile is complete
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, phone')
+        .eq('id', user.id)
+        .single()
+
+      if (profile && (!profile.first_name || !profile.phone)) {
+        return NextResponse.redirect(`${origin}/completo-profilin`)
+      }
+    }
+
+    return NextResponse.redirect(`${origin}${next}`)
   }
 
   return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)

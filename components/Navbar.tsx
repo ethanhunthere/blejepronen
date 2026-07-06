@@ -12,31 +12,65 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, User, LogOut, Menu, X } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X, AlertTriangle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
 export default function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    getUser()
+    const supabase = createClient()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, phone_verified')
+          .eq('id', currentUser.id)
+          .single()
+
+        setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
+      }
+    }
+
+    checkSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const currentUser = session?.user ?? null
+        setUser(currentUser)
+
+        if (event === 'SIGNED_IN') {
+          router.refresh()
+        }
+
+        if (currentUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, phone_verified')
+            .eq('id', currentUser.id)
+            .single()
+
+          setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
+        } else {
+          setProfileIncomplete(false)
+        }
+      }
+    )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [router])
 
   const handleLogout = async () => {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
     router.refresh()
@@ -58,6 +92,17 @@ export default function Navbar() {
             </Link>
             {user ? (
               <>
+                {profileIncomplete && (
+                  <Link href="/completo-profilin">
+                    <Button
+                      variant="outline"
+                      className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Verifiko profilin
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/posto-banese">
                   <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                     <Plus className="h-4 w-4 mr-2" />
@@ -114,6 +159,17 @@ export default function Navbar() {
             </Link>
             {user ? (
               <>
+                {profileIncomplete && (
+                  <Link href="/completo-profilin" className="block">
+                    <Button
+                      variant="outline"
+                      className="w-full min-h-11 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Verifiko profilin
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/posto-banese" className="block py-2">
                   <Button className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                     <Plus className="h-4 w-4 mr-2" />
