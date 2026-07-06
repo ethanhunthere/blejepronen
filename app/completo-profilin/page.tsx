@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Phone, Mail, KeyRound, CheckCircle2, ArrowRight } from 'lucide-react'
+import { User, Mail, KeyRound, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 // NOTE: SMS OTP via phone provider is disabled. Email OTP is used instead.
@@ -22,11 +22,11 @@ export default function CompletoProfilinPage() {
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   // Step 1 fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState('')
   const [userEmail, setUserEmail] = useState('')
 
   // Step 2 fields
@@ -80,22 +80,13 @@ export default function CompletoProfilinPage() {
     init()
   }, [router])
 
-  const handleStep1Submit = async (e: React.FormEvent) => {
+  const handleStep1Submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSubmitted(true)
 
     if (!firstName.trim() || !lastName.trim()) {
       setError('Emri dhe mbiemri janë të detyrueshëm.')
-      return
-    }
-
-    if (!phone.trim()) {
-      setError('Numri i telefonit është i detyrueshëm.')
-      return
-    }
-
-    if (!/^\+?\d{7,15}$/.test(phone.replace(/[\s\-()]/g, ''))) {
-      setError('Numri i telefonit nuk është i vlefshëm.')
       return
     }
 
@@ -115,14 +106,13 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Save profile data (first_name, last_name, phone)
+    // Save profile data (first_name and last_name only)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
         id: user.id,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        phone: phone.replace(/[\s\-()]/g, ''),
       })
 
     if (profileError) {
@@ -150,11 +140,12 @@ export default function CompletoProfilinPage() {
     toast.success('Kodi i verifikimit u dërgua me email!')
     setStep(2)
     setLoading(false)
-  }
+  }, [firstName, lastName, userEmail])
 
-  const handleStep2Submit = async (e: React.FormEvent) => {
+  const handleStep2Submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSubmitted(true)
 
     if (otp.length < 6) {
       setError('Kodi duhet të ketë të paktën 6 shifra.')
@@ -204,7 +195,7 @@ export default function CompletoProfilinPage() {
 
     setStep(3)
     setLoading(false)
-  }
+  }, [otp, userEmail])
 
   // Auto-redirect after step 3
   useEffect(() => {
@@ -280,7 +271,7 @@ export default function CompletoProfilinPage() {
               </CardHeader>
 
               <CardContent>
-                {error && (
+                {submitted && error && (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
@@ -317,22 +308,6 @@ export default function CompletoProfilinPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Numri i telefonit</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+383 44 123 456"
-                        className="pl-10 h-11"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-
                   <Button
                     type="submit"
                     className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
@@ -362,7 +337,7 @@ export default function CompletoProfilinPage() {
               </CardHeader>
 
               <CardContent>
-                {error && (
+                {submitted && error && (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>

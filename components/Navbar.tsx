@@ -37,7 +37,7 @@ export default function Navbar() {
           .eq('id', currentUser.id)
           .single()
 
-        setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
+        setProfileIncomplete(!profile?.first_name)
       }
     }
 
@@ -59,7 +59,7 @@ export default function Navbar() {
             .eq('id', currentUser.id)
             .single()
 
-          setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
+          setProfileIncomplete(!profile?.first_name)
         } else {
           setProfileIncomplete(false)
         }
@@ -92,23 +92,23 @@ export default function Navbar() {
             </Link>
             {user ? (
               <>
-                {profileIncomplete && (
-                  <Link href="/completo-profilin">
-                    <Button
-                      variant="outline"
-                      className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Verifiko profilin
-                    </Button>
-                  </Link>
-                )}
                 <Link href="/posto-banese">
                   <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Posto banesë
                   </Button>
                 </Link>
+                {profileIncomplete && (
+                  <Link href="/completo-profilin">
+                    <Button
+                      variant="outline"
+                      className="border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 animate-pulse"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Verifiko profilin
+                    </Button>
+                  </Link>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 hover:bg-gray-100 transition-colors cursor-pointer" aria-label="Menyja e përdoruesit">
                     <User className="h-4 w-4" />
