@@ -49,21 +49,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
     }
 
-    // Check if profile is complete
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name, phone')
-        .eq('id', user.id)
-        .single()
-
-      if (profile && (!profile.first_name || !profile.phone)) {
-        return NextResponse.redirect(`${origin}/completo-profilin`)
-      }
-    }
-
     return NextResponse.redirect(`${origin}${next}`)
   }
 
