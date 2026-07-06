@@ -239,8 +239,8 @@ export default function Navbar() {
                 </>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <Button onClick={() => router.push('/login')} variant="ghost" className="text-gray-700">Hyr</Button>
-                  <Button onClick={() => router.push('/register')} className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
+                  <a href="/login" className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">Hyr</a>
+                  <a href="/register" className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium bg-[#1B4FFF] hover:bg-[#1640CC] text-white transition-colors">Regjistrohu</a>
                 </div>
               )}
             </div>
@@ -316,8 +316,8 @@ export default function Navbar() {
               </>
             ) : (
               <div className="space-y-2">
-                <Button onClick={() => { router.push('/login'); setMenuOpen(false) }} variant="outline" className="w-full min-h-11">Hyr</Button>
-                <Button onClick={() => { router.push('/register'); setMenuOpen(false) }} className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white">Regjistrohu</Button>
+                <a href="/login" className="block w-full min-h-11 rounded-lg border border-gray-200 bg-white text-center leading-[2.75rem] text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Hyr</a>
+                <a href="/register" className="block w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center leading-[2.75rem] text-sm font-medium text-white transition-colors">Regjistrohu</a>
               </div>
             )}
           </div>
