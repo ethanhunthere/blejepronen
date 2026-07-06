@@ -1,17 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
@@ -21,6 +14,8 @@ export default function Navbar() {
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -73,12 +68,30 @@ export default function Navbar() {
     return () => subscription.unsubscribe()
   }, [router])
 
-  const handleLogout = async () => {
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+
+    // Use mousedown so we catch the click before it reaches other handlers
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [dropdownOpen])
+
+  const closeDropdown = useCallback(() => setDropdownOpen(false), [])
+
+  const handleLogout = useCallback(async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    setDropdownOpen(false)
     router.push('/')
     router.refresh()
-  }
+  }, [router])
 
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 overflow-visible">
@@ -115,51 +128,69 @@ export default function Navbar() {
                       </Button>
                     </Link>
                   )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      className="inline-flex items-center justify-center rounded-full w-9 h-9 min-w-9 min-h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 shrink-0 outline-none focus:outline-none ring-0 focus:ring-0 focus-visible:ring-0"
+                  {/* Custom dropdown — no Base UI, no layout shifts */}
+                  <div className="relative flex-shrink-0" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
+                      aria-expanded={dropdownOpen}
+                      aria-haspopup="true"
                     >
                       {(profileFirstName || user?.email || '?')[0].toUpperCase()}
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <div className="px-3 py-2 text-sm border-b border-gray-100 mb-1">
-                        <p className="font-medium text-gray-900 truncate">
-                          {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
-                        </p>
-                        <p className="text-gray-500 text-xs truncate">{user?.email}</p>
+                    </button>
+
+                    {dropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        {/* User info header */}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => { closeDropdown(); router.push('/posto-banese') }}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Plus className="h-4 w-4 mr-3 text-gray-400" />
+                          Posto banesë
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => { closeDropdown(); router.push('/profili') }}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <User className="h-4 w-4 mr-3 text-gray-400" />
+                          Banesat e mia
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => { closeDropdown(); router.push('/profili') }}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Settings className="h-4 w-4 mr-3 text-gray-400" />
+                          Cilësimet
+                        </button>
+
+                        <div className="border-t border-gray-100 my-1" />
+
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4 mr-3" />
+                          Dil
+                        </button>
                       </div>
-                      <DropdownMenuItem
-                        onClick={() => router.push('/posto-banese')}
-                        className="py-2.5 cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Posto banesë
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push('/profili')}
-                        className="py-2.5 cursor-pointer"
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Banesat e mia
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => router.push('/profili')}
-                        className="py-2.5 cursor-pointer"
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Cilësimet
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={handleLogout}
-                        className="text-red-600 cursor-pointer py-2.5 focus:bg-red-50 focus:text-red-700"
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Dil
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="flex items-center space-x-3">
