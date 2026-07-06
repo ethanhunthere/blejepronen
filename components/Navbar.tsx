@@ -115,7 +115,7 @@ export default function Navbar() {
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer border-0"
+                    className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none focus:outline-none ring-0 focus:ring-0 focus-visible:ring-0"
                     aria-label="Menyja e përdoruesit"
                   >
                     {(profileFirstName || user?.email || '?')[0].toUpperCase()}
