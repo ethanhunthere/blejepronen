@@ -26,6 +26,10 @@ function getStoredUser(): SupabaseUser | null {
     const raw = localStorage.getItem(key)
     if (!raw) return null
     const parsed = JSON.parse(raw)
+    const nowSeconds = Date.now() / 1000
+    if (parsed?.expires_at && nowSeconds > parsed.expires_at) {
+      return null
+    }
     return parsed?.user ?? null
   } catch {
     return null
@@ -144,6 +148,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     } catch (err) {
       console.error('Client sign out exception:', err)
     }
+
+    // 2b. Manually clear the Supabase localStorage token so the next render
+    // doesn't flash the old user while waiting for getSession().
+    const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
+    if (key) localStorage.removeItem(key)
 
     // 3. Call server-side logout to clear cookies with correct domain
     try {
