@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Work_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const workSans = Work_Sans({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-work-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="sq"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${workSans.variable} h-full antialiased`}
     >
       <head>
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
