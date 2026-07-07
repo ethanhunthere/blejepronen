@@ -219,13 +219,22 @@ export default function HomePage() {
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#0A0F2E] z-10" />
 
         <div className="relative z-20 flex-1 flex items-center pt-12 md:pt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-lg">
-                Gjej Banesën e Ëndrrave
+              <div className="inline-flex items-center border border-white/15 bg-white/5 text-white/70 text-xs px-4 py-1.5 rounded-full mb-6">
+                🇽🇰 Platforma e Banesave në Kosovë
+              </div>
+
+              <h1 className="text-5xl md:text-6xl font-black text-white leading-tight tracking-tight text-center">
+                Gjej banesën e duhur në Kosovë
               </h1>
-              <p className="text-xl text-white/90 mb-10 drop-shadow">
-                Blej, shit ose jep me qira. Qindra banesa në Prishtinë, Prizren, Pejë dhe gjithë Kosovën — pa ndërmjetës, drejtpërdrejt me pronarët.
+
+              <p className="text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto">
+                Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Nuk ka komisione dhe nuk ka ndërmjetës të panevojshëm.
+              </p>
+
+              <p className="text-white/40 text-sm text-center mb-3 mt-10">
+                Kërko sipas qytetit ose lagjes
               </p>
 
               {/* Search Bar */}
@@ -234,51 +243,33 @@ export default function HomePage() {
                 buttonText="Kërko Banesë"
               />
 
-              {/* Quick filters */}
-              <div className="flex flex-wrap justify-center gap-3 mt-6">
-                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan'].map(city => (
-                  <Link key={city} href={`/listings?city=${encodeURIComponent(city)}`}>
-                    <span className="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full cursor-pointer transition-all border border-white/10 backdrop-blur-sm">
+              {/* City links */}
+              <div className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm">
+                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city, i, arr) => (
+                  <span key={city}>
+                    <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/60 hover:text-white transition-colors">
                       {city}
-                    </span>
-                  </Link>
+                    </Link>
+                    {i < arr.length - 1 && <span className="ml-2">/</span>}
+                  </span>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats Bar — shows skeleton while loading */}
-        <div className="relative z-20 bg-[#0A0F2E]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
-              {loading ? (
-                <>
-                  {['Banesa aktive', 'Shitës të besuar', 'Qytete të mbuluara', 'Ditë falas'].map(label => (
-                    <div key={label} className="text-center">
-                      <div className="h-8 w-16 bg-slate-700 rounded animate-pulse mx-auto mb-1" />
-                      <p className="text-slate-400 text-sm">{label}</p>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {[
-                    {
-                      value: (data?.totalListings ?? 0) > 1 ? `+${data?.totalListings ?? 0}` : 'Duke u rritur',
-                      label: 'Banesa aktive',
-                    },
-                    { value: `+${data?.totalUsers ?? 0}`, label: 'Shitës të besuar' },
-                    { value: '7', label: 'Qytete të mbuluara' },
-                    { value: '30 ditë', label: 'Ditë falas' },
-                  ].map(stat => (
-                    <div key={stat.label} className="text-center">
-                      <p className="text-2xl font-bold text-white">{stat.value}</p>
-                      <p className="text-slate-400 text-sm">{stat.label}</p>
-                    </div>
-                  ))}
-                </>
-              )}
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                <Link
+                  href="/listings"
+                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                >
+                  Shfleto banesat
+                </Link>
+                <Link
+                  href="/posto-banese"
+                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
+                >
+                  Posto banesën tënde
+                </Link>
+              </div>
             </div>
           </div>
         </div>
