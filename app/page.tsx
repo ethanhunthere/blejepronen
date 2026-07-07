@@ -197,7 +197,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
-      <section className="relative overflow-hidden border-b border-white/10 min-h-[85vh] flex flex-col">
+      <section className="relative overflow-hidden min-h-[85vh] flex flex-col">
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"
@@ -212,7 +212,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
 
         {/* Bottom fade into page background */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0A0F2E] via-[#0A0F2E]/85 to-transparent z-10" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#0A0F2E] z-10" />
 
         <div className="relative z-20 flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
@@ -248,7 +248,7 @@ export default function HomePage() {
         </div>
 
         {/* Stats Bar — shows skeleton while loading */}
-        <div className="relative z-20 bg-[#0A0F2E] border-t border-white/10">
+        <div className="relative z-20 bg-[#0A0F2E]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
@@ -304,7 +304,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Listings — skeleton while loading */}
-      <section className="dot-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <section className="dot-grid bg-[#0A0F2E] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">⭐ Të rekomanduara</h2>
