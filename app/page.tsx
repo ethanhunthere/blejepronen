@@ -218,8 +218,8 @@ export default function HomePage() {
         {/* Bottom fade into page background */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#0A0F2E] z-10" />
 
-        <div className="relative z-20 flex-1 flex items-center pt-20 md:pt-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+        <div className="relative z-20 flex-1 flex items-center pt-12 md:pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-lg">
                 Gjej Banesën e Ëndrrave
