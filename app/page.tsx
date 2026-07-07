@@ -101,6 +101,12 @@ export default function HomePage() {
         {/* Dark blue gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
 
+        {/* Top fade from page background to blend navbar seamlessly */}
+        <div
+          className="pointer-events-none absolute top-0 left-0 right-0 h-64 z-10"
+          style={{ background: 'linear-gradient(to top, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
+        />
+
         {/* Bottom fade into page background */}
         <div
           className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 z-10"
