@@ -136,7 +136,7 @@ export default function Navbar() {
   }, [router])
 
   return (
-    <nav className="sticky top-0 z-50 overflow-visible bg-transparent">
+    <nav className="fixed top-0 left-0 right-0 z-50 overflow-visible border-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -187,48 +187,48 @@ export default function Navbar() {
                     </button>
 
                     {dropdownOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-[#0A0F2E] rounded-lg shadow-lg border border-white/10 py-1 z-50">
                         {/* User info header */}
-                        <div className="px-4 py-3 border-b border-gray-100">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                        <div className="px-4 py-3 border-b border-white/10">
+                          <p className="text-sm font-medium text-white truncate">
                             {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                          <p className="text-xs text-slate-400 truncate">{user?.email}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/posto-banese') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
                         >
-                          <Plus className="h-4 w-4 mr-3 text-gray-400" />
+                          <Plus className="h-4 w-4 mr-3 text-slate-400" />
                           Posto banesë
                         </button>
 
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
                         >
-                          <User className="h-4 w-4 mr-3 text-gray-400" />
+                          <User className="h-4 w-4 mr-3 text-slate-400" />
                           Banesat e mia
                         </button>
 
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
                         >
-                          <Settings className="h-4 w-4 mr-3 text-gray-400" />
+                          <Settings className="h-4 w-4 mr-3 text-slate-400" />
                           Cilësimet
                         </button>
 
-                        <div className="border-t border-gray-100 my-1" />
+                        <div className="border-t border-white/10 my-1" />
 
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                           <LogOut className="h-4 w-4 mr-3" />
                           Dil
@@ -241,7 +241,7 @@ export default function Navbar() {
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium border border-white text-white hover:bg-white/10 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
                   >
                     Hyr
                   </a>
@@ -269,8 +269,8 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="md:hidden border-t border-gray-100 py-4 space-y-3">
-            <Link href="/listings" className="block text-gray-600 hover:text-[#1B4FFF] font-medium py-3">
+          <div id="mobile-menu" className="md:hidden border-t border-white/10 bg-[#0A0F2E]/95 backdrop-blur-md py-4 space-y-3">
+            <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
               Shiko banesat
             </Link>
             {user === undefined ? (
@@ -292,7 +292,7 @@ export default function Navbar() {
                   <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
                     {(profileFirstName || user?.email || '?')[0].toUpperCase()}
                   </span>
-                  <span className="text-sm font-medium text-gray-900 truncate">
+                  <span className="text-sm font-medium text-white truncate">
                     {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
                 </div>
@@ -305,20 +305,20 @@ export default function Navbar() {
                 </Button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-600 py-3"
+                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white py-3"
                 >
                   <User className="h-4 w-4" />
                   Banesat e mia
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-600 py-3"
+                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white py-3"
                 >
                   <Settings className="h-4 w-4" />
                   Cilësimet
                 </button>
-                <div className="border-t border-gray-100 pt-2">
-                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 py-3 font-medium">
+                <div className="border-t border-white/10 pt-2">
+                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:text-red-300 py-3 font-medium">
                     <LogOut className="h-4 w-4" />
                     Dil
                   </button>
@@ -326,7 +326,7 @@ export default function Navbar() {
               </>
             ) : (
               <div className="space-y-2">
-                <a href="/login" className="block w-full min-h-11 rounded-lg border border-gray-200 bg-white text-center leading-[2.75rem] text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Hyr</a>
+                <a href="/login" className="block w-full min-h-11 rounded-lg border border-white/20 bg-transparent text-center leading-[2.75rem] text-sm font-medium text-white hover:bg-white/10 transition-colors">Hyr</a>
                 <a href="/register" className="block w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center leading-[2.75rem] text-sm font-medium text-white transition-colors">Regjistrohu</a>
               </div>
             )}
