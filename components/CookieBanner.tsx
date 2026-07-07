@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 
 export default function CookieBanner() {
   const [show, setShow] = useState(false)
@@ -25,12 +24,20 @@ export default function CookieBanner() {
           <a href="/privatesia" className="text-[#4d7cff] underline">Mëso më shumë</a>
         </p>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={() => setShow(false)}>
+          <button
+            type="button"
+            onClick={() => setShow(false)}
+            className="inline-flex items-center justify-center rounded-md border border-white/20 bg-transparent px-3 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+          >
             Refuzo
-          </Button>
-          <Button size="sm" className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white" onClick={accept}>
+          </button>
+          <button
+            type="button"
+            onClick={accept}
+            className="inline-flex items-center justify-center rounded-md bg-[#1B4FFF] px-3 py-2 text-sm font-medium text-white hover:bg-[#1640CC] transition-colors"
+          >
             Prano
-          </Button>
+          </button>
         </div>
       </div>
     </div>

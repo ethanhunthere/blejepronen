@@ -40,7 +40,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground">
         <div className="relative [&>main>*:first-child]:-mt-16 [&>main>*:first-child]:pt-16 md:[&>main>*:first-child]:-mt-20 md:[&>main>*:first-child]:pt-20">
           <Navbar />
           <main className="flex-1">{children}</main>

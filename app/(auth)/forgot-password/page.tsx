@@ -3,12 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { buttonVariants } from '@/components/ui/button'
 import { Mail, ArrowLeft } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 
@@ -40,18 +38,18 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-lg border-0">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="h-8 w-8 text-green-600" />
+            <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
+              <Mail className="h-8 w-8 text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Kontrollo email-in!</h2>
-            <p className="text-gray-500">
+            <h2 className="text-2xl font-bold text-white">Kontrollo email-in!</h2>
+            <p className="text-gray-400">
               Dërguam linkun e rivendosjes te <strong>{email}</strong>.
               Kliko linkun për të vendosur fjalëkalimin e ri.
             </p>
-            <Link href="/login" className={`${buttonVariants({ variant: 'outline' })} mt-4`}>
+            <Link href="/login" className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors">
               Shko te hyrja
             </Link>
           </CardContent>
@@ -61,7 +59,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo variant="auth" />
@@ -86,12 +84,12 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -99,18 +97,18 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              <Button
+              <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke dërguar...' : 'Dërgo linkun'}
-              </Button>
+              </button>
             </form>
           </CardContent>
 
           <CardFooter>
-            <Link href="/login" className={`${buttonVariants({ variant: 'ghost' })} w-full text-gray-500`}>
+            <Link href="/login" className="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te hyrja
             </Link>

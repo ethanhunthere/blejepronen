@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -52,7 +51,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo variant="auth" />
@@ -73,21 +72,21 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full h-11 border-gray-200 hover:bg-gray-50"
+            <button
+              type="button"
+              className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
               Hyr me Google
-            </Button>
+            </button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
+                <span className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">ose</span>
+                <span className="bg-[#0A0F2E] px-2 text-gray-500">ose</span>
               </div>
             </div>
 
@@ -95,12 +94,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -111,12 +110,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">Fjalëkalimi</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -124,23 +123,23 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button
+              <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke hyrë...' : 'Hyr'}
-              </Button>
+              </button>
             </form>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-2">
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-gray-400 text-center">
               <Link href="/forgot-password" className="text-[#1B4FFF] hover:underline font-medium">
                 Keni harruar fjalëkalimin?
               </Link>
             </p>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-gray-400 text-center">
               Nuk ke llogari?{' '}
               <Link href="/register" className="text-[#1B4FFF] hover:underline font-medium">
                 Regjistrohu falas

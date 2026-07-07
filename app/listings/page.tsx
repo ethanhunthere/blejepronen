@@ -83,21 +83,21 @@ function ListingsContent() {
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0A0F2E]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Banesat në shitje dhe me qira</h1>
-          <p className="text-gray-500">Gjej banesën e përsosur për ty</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Banesat në shitje dhe me qira</h1>
+          <p className="text-gray-400">Gjej banesën e përsosur për ty</p>
         </div>
 
         {/* Search + Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
             <Input
               placeholder="Kërko banesa..."
-              className="pl-10 h-11 bg-white border-gray-200"
+              className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
               value={searchInput}
               onChange={(e) => {
                 const value = e.target.value
@@ -110,9 +110,9 @@ function ListingsContent() {
             />
           </div>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="h-11 px-4 border-gray-200 bg-white whitespace-nowrap"
+            <button
+              type="button"
+              className="h-11 px-4 border border-white/20 bg-transparent text-white hover:bg-white/10 whitespace-nowrap rounded-xl font-medium transition-colors inline-flex items-center justify-center"
               onClick={() => setShowFilters(!showFilters)}
             >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -122,25 +122,25 @@ function ListingsContent() {
                 {Object.values(filters).filter(v => v !== '').length}
               </span>
             )}
-          </Button>
+          </button>
           {hasActiveFilters && (
-            <Button variant="ghost" onClick={clearFilters} className="h-11 text-gray-500">
+            <button type="button" onClick={clearFilters} className="h-11 px-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center">
               <X className="h-4 w-4 mr-1" />
               Pastro
-            </Button>
+            </button>
           )}
         </div>
         </div>
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-[#111936] rounded-2xl border border-white/10 p-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label htmlFor="filter-city" className="text-xs font-medium text-gray-500 mb-2 block">Qyteti</label>
+              <label htmlFor="filter-city" className="text-xs font-medium text-gray-400 mb-2 block">Qyteti</label>
               <select
                 id="filter-city"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.city}
                 onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
               >
@@ -153,10 +153,10 @@ function ListingsContent() {
 
             {/* Type */}
             <div>
-              <label htmlFor="filter-type" className="text-xs font-medium text-gray-500 mb-2 block">Lloji</label>
+              <label htmlFor="filter-type" className="text-xs font-medium text-gray-400 mb-2 block">Lloji</label>
               <select
                 id="filter-type"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
               >
@@ -168,12 +168,12 @@ function ListingsContent() {
 
             {/* Min Price */}
             <div>
-              <label htmlFor="filter-min-price" className="text-xs font-medium text-gray-500 mb-2 block">Çmimi min (€)</label>
+              <label htmlFor="filter-min-price" className="text-xs font-medium text-gray-400 mb-2 block">Çmimi min (€)</label>
               <Input
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="min-h-11 h-11 text-sm"
+                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -181,12 +181,12 @@ function ListingsContent() {
 
             {/* Max Price */}
             <div>
-              <label htmlFor="filter-max-price" className="text-xs font-medium text-gray-500 mb-2 block">Çmimi max (€)</label>
+              <label htmlFor="filter-max-price" className="text-xs font-medium text-gray-400 mb-2 block">Çmimi max (€)</label>
               <Input
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="min-h-11 h-11 text-sm"
+                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -194,10 +194,10 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label htmlFor="filter-rooms" className="text-xs font-medium text-gray-500 mb-2 block">Dhoma</label>
+              <label htmlFor="filter-rooms" className="text-xs font-medium text-gray-400 mb-2 block">Dhoma</label>
               <select
                 id="filter-rooms"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.rooms}
                 onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
               >
@@ -214,12 +214,12 @@ function ListingsContent() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
-                <div className="h-52 bg-gray-200" />
+              <div key={i} className="bg-[#111936] rounded-2xl overflow-hidden animate-pulse border border-white/10">
+                <div className="h-52 bg-gray-700" />
                 <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 rounded w-full" />
+                  <div className="h-4 bg-gray-700 rounded w-3/4" />
+                  <div className="h-6 bg-gray-700 rounded w-1/2" />
+                  <div className="h-4 bg-gray-700 rounded w-full" />
                 </div>
               </div>
             ))}
@@ -227,15 +227,15 @@ function ListingsContent() {
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🏠</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Nuk u gjetën banesa</h3>
-            <p className="text-gray-500 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
+            <h3 className="text-xl font-semibold text-gray-200 mb-2">Nuk u gjetën banesa</h3>
+            <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <Button onClick={clearFilters} variant="outline">Pastro filtrat</Button>
+              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors">Pastro filtrat</button>
             )}
           </div>
         ) : (
           <>
-            <p aria-live="polite" className="text-sm text-gray-500 mb-4">{listings.length} banesa të gjetura</p>
+            <p aria-live="polite" className="text-sm text-gray-400 mb-4">{listings.length} banesa të gjetura</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {listings.map((listing, index) => (
                 <ListingCard key={listing.id} listing={listing} priority={index < 4} />
@@ -243,17 +243,17 @@ function ListingsContent() {
             </div>
             {hasMore && !loading && listings.length > 0 && (
               <div className="text-center mt-10">
-                <Button
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={() => {
                     const nextPage = page + 1
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="px-8 h-11 border-gray-200"
+                  className="px-8 h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
                 >
                   Ngarko më shumë banesa
-                </Button>
+                </button>
               </div>
             )}
           </>
@@ -266,7 +266,7 @@ function ListingsContent() {
 export default function ListingsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
       </div>
     }>

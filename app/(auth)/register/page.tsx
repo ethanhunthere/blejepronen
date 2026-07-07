@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -79,24 +78,24 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-lg border-0">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="h-8 w-8 text-green-600" />
+            <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
+              <Mail className="h-8 w-8 text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Kontrollo email-in!</h2>
-            <p className="text-gray-500">
+            <h2 className="text-2xl font-bold text-white">Kontrollo email-in!</h2>
+            <p className="text-gray-400">
               Dërguam një link konfirmimi te <strong>{formData.email}</strong>.
               Kliko linkun për të aktivizuar llogarinë tënde.
             </p>
-            <Button
-              variant="outline"
-              className="mt-4"
+            <button
+              type="button"
+              className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
-            </Button>
+            </button>
           </CardContent>
         </Card>
       </div>
@@ -104,7 +103,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo variant="auth" />
@@ -125,21 +124,21 @@ export default function RegisterPage() {
               </Alert>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full h-11 border-gray-200 hover:bg-gray-50"
+            <button
+              type="button"
+              className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
               Regjistrohu me Google
-            </Button>
+            </button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
+                <span className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">ose</span>
+                <span className="bg-[#0A0F2E] px-2 text-gray-500">ose</span>
               </div>
             </div>
 
@@ -148,12 +147,12 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Emri</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                     <Input
                       id="firstName"
                       name="firstName"
                       placeholder="Arben"
-                      className="pl-10 h-11"
+                      className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                       value={formData.firstName}
                       onChange={handleChange}
                       required
@@ -166,7 +165,7 @@ export default function RegisterPage() {
                     id="lastName"
                     name="lastName"
                     placeholder="Krasniqi"
-                    className="h-11"
+                    className="h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
@@ -177,13 +176,13 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="phone">Numri i telefonit</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="phone"
                     name="phone"
                     type="tel"
                     placeholder="+383 44 123 456"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.phone}
                     onChange={handleChange}
                     required
@@ -194,13 +193,13 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -211,13 +210,13 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">Fjalëkalimi</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password"
                     name="password"
                     type="password"
                     placeholder="Minimum 6 karaktere"
-                    className="pl-10 h-11"
+                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -225,18 +224,18 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <Button
+              <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white mt-2"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white mt-2 rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Krijo llogari falas'}
-              </Button>
+              </button>
             </form>
           </CardContent>
 
           <CardFooter>
-            <p className="text-sm text-gray-500 text-center w-full">
+            <p className="text-sm text-gray-400 text-center w-full">
               Ke llogari?{' '}
               <Link href="/login" className="text-[#1B4FFF] hover:underline font-medium">
                 Hyr këtu

@@ -80,33 +80,33 @@ export default function ProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0A0F2E]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Profili im</h1>
+        <h1 className="text-2xl font-bold text-white mb-8">Profili im</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Profile Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
               <div className="flex flex-col sm:flex-row items-center sm:items-start mb-6">
                 <div className="w-14 h-14 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center mr-0 sm:mr-4 mb-3 sm:mb-0">
                   <User className="h-7 w-7 text-[#1B4FFF]" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">{profile?.first_name} {profile?.last_name}</p>
+                  <p className="font-semibold text-white">{profile?.first_name} {profile?.last_name}</p>
                   <div className="flex items-center mt-1">
                     {profile?.phone_verified ? (
-                      <Badge className="bg-green-100 text-green-700 text-xs">
+                      <Badge className="bg-green-500/20 text-green-400 text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" /> Verifikuar
                       </Badge>
                     ) : (
-                      <Badge className="bg-yellow-100 text-yellow-700 text-xs">
+                      <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">
                         <XCircle className="h-3 w-3 mr-1" /> Pa verifikim
                       </Badge>
                     )}
@@ -115,8 +115,8 @@ export default function ProfilePage() {
               </div>
 
               {success && (
-                <Alert className="mb-4 bg-green-50 border-green-200">
-                  <AlertDescription className="text-green-700">Profili u ruajt!</AlertDescription>
+                <Alert className="mb-4 bg-green-900/20 border-green-800">
+                  <AlertDescription className="text-green-300">Profili u ruajt!</AlertDescription>
                 </Alert>
               )}
               {error && (
@@ -130,7 +130,7 @@ export default function ProfilePage() {
                   <Label htmlFor="first_name">Emri</Label>
                   <Input
                     id="first_name"
-                    className="mt-1 h-10"
+                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.first_name}
                     onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
                   />
@@ -139,7 +139,7 @@ export default function ProfilePage() {
                   <Label htmlFor="last_name">Mbiemri</Label>
                   <Input
                     id="last_name"
-                    className="mt-1 h-10"
+                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.last_name}
                     onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
                   />
@@ -151,7 +151,7 @@ export default function ProfilePage() {
                   </Label>
                   <Input
                     id="phone"
-                    className="mt-1 h-10"
+                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     placeholder="+383 44 123 456"
                     value={formData.phone}
                     onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
@@ -170,12 +170,12 @@ export default function ProfilePage() {
 
           {/* Right: My Listings */}
           <div className="lg:col-span-2">
-            <h2 className="font-semibold text-gray-900 mb-4">
+            <h2 className="font-semibold text-white mb-4">
               Listimet e mia ({listings.length})
             </h2>
             {listings.length === 0 ? (
-              <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
-                <p className="text-gray-400 mb-4">Nuk keni listuar asnjë banesë ende.</p>
+              <div className="bg-[#111936] rounded-2xl p-10 text-center border border-white/10">
+                <p className="text-gray-500 mb-4">Nuk keni listuar asnjë banesë ende.</p>
                 <Button
                   onClick={() => router.push('/posto-banese')}
                   className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white"

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface SearchBarProps {
   className?: string
@@ -46,12 +45,13 @@ export default function SearchBar({
           onKeyDown={handleKeyDown}
         />
       </div>
-      <Button
+      <button
+        type="button"
         onClick={handleSearch}
-        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-8 h-11 rounded-xl"
+        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-8 h-11 rounded-xl font-medium transition-colors"
       >
         {buttonText}
-      </Button>
+      </button>
     </div>
   )
 }

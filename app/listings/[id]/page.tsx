@@ -100,11 +100,11 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0A0F2E]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
-        <Link href="/listings" className="inline-flex items-center text-gray-500 hover:text-[#1B4FFF] mb-6 transition-colors">
+        <Link href="/listings" className="inline-flex items-center text-gray-400 hover:text-[#4d7cff] mb-6 transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Kthehu te banesat
         </Link>
@@ -113,7 +113,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
           {/* Left: Images + Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Main Image */}
-            <div className="relative h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden bg-gray-200">
+            <div className="relative h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden bg-gray-800">
               {listing.images?.[0] ? (
                 <Image
                   src={listing.images[0]}
@@ -124,7 +124,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                   className="object-cover"
                 />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400 text-lg">
+                <div className="flex items-center justify-center h-full text-gray-500 text-lg">
                   Pa foto
                 </div>
               )}
@@ -139,7 +139,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
             {listing.images && listing.images.length > 1 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {listing.images.slice(1).map((img: string, i: number) => (
-                  <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-200">
+                  <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-800">
                     <Image src={img} alt={`Foto ${i + 2}`} fill sizes="(max-width: 640px) 25vw, 15vw" className="object-cover" />
                   </div>
                 ))}
@@ -147,52 +147,52 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
             )}
 
             {/* Title + Info */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">{listing.title}</h1>
-              <div className="flex items-center text-gray-500 mb-4">
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
+              <h1 className="text-2xl font-bold text-white mb-3">{listing.title}</h1>
+              <div className="flex items-center text-gray-400 mb-4">
                 <MapPin className="h-4 w-4 mr-2" />
                 <span>{listing.city} · {listing.address}</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-gray-100 mb-4">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">
                 <div className="text-center">
                   <BedDouble className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.rooms}</p>
-                  <p className="text-xs text-gray-500">Dhoma</p>
+                  <p className="text-xs text-gray-400">Dhoma</p>
                 </div>
                 <div className="text-center">
                   <Maximize2 className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.area_m2} m²</p>
-                  <p className="text-xs text-gray-500">Sipërfaqe</p>
+                  <p className="text-xs text-gray-400">Sipërfaqe</p>
                 </div>
                 <div className="text-center">
                   <Calendar className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-sm font-semibold">{formatDate(listing.created_at)}</p>
-                  <p className="text-xs text-gray-500">Postuar</p>
+                  <p className="text-xs text-gray-400">Postuar</p>
                 </div>
               </div>
 
-              <h2 className="font-semibold text-gray-900 mb-2">Përshkrimi</h2>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{listing.description}</p>
+              <h2 className="font-semibold text-white mb-2">Përshkrimi</h2>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{listing.description}</p>
             </div>
           </div>
 
           {/* Right: Price + Contact */}
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 lg:sticky lg:top-24">
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 lg:sticky lg:top-24">
               <p className="text-3xl font-bold text-[#1B4FFF] mb-1">
                 {formatPrice(listing.price)}
-                {listing.type === 'qira' && <span className="text-base font-normal text-gray-500">/muaj</span>}
+                {listing.type === 'qira' && <span className="text-base font-normal text-gray-400">/muaj</span>}
               </p>
               {listing.area_m2 > 0 && listing.type === 'shitje' && (
-                <p className="text-sm text-gray-400 mb-4">
+                <p className="text-sm text-gray-500 mb-4">
                   {formatPrice(Math.round(listing.price / listing.area_m2))}/m²
                 </p>
               )}
 
-              <div className="border-t border-gray-100 pt-4 mb-4">
-                <p className="text-sm text-gray-500 mb-1">Shitësi</p>
-                <p className="font-semibold text-gray-900">
+              <div className="border-t border-white/10 pt-4 mb-4">
+                <p className="text-sm text-gray-400 mb-1">Shitësi</p>
+                <p className="font-semibold text-white">
                   {listing.profiles?.first_name} {listing.profiles?.last_name}
                 </p>
               </div>
@@ -211,9 +211,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                     rel="noopener noreferrer"
                     className="block mt-3"
                   >
-                    <Button variant="outline" className="w-full h-11 border-gray-200">
+                    <button type="button" className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center">
                       Kontakto me WhatsApp
-                    </Button>
+                    </button>
                   </a>
                 </>
               )}
