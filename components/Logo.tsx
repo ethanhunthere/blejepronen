@@ -7,7 +7,7 @@ interface LogoProps {
 
 export function Logo({ variant = 'navbar', className }: LogoProps) {
   return (
-    <div className={`relative ${variant === 'navbar' ? 'h-8 w-44' : 'h-14 max-w-[240px] w-full'} ${className || ''}`}>
+    <div className={`relative ${variant === 'navbar' ? 'h-10 w-52' : 'h-16 max-w-[280px] w-full'} ${className || ''}`}>
       <Image
         src="/logo.png"
         alt="Bleje Banesën"
