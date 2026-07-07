@@ -216,7 +216,10 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
 
         {/* Bottom fade into page background */}
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#0A0F2E] z-10" />
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 z-10"
+          style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
+        />
 
         <div className="relative z-20 flex-1 flex items-center pt-12 md:pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
