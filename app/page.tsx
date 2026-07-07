@@ -88,10 +88,10 @@ export default function HomePage() {
   const staticSections = (
     <>
       {/* How it works */}
-      <section className="relative border-y border-gray-100 py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#F0F4FF] via-[#EEF2FF] to-[#F8F9FF]">
+      <section className="relative border-y border-white/10 py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#0D1235] via-[#0A0F2E] to-[#0A0F2E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll className="aos-fade-up">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-12">Si të Blesh apo Shesësh?</h2>
+            <h2 className="text-2xl font-bold text-white text-center mb-12">Si të Blesh apo Shesësh?</h2>
           </AnimateOnScroll>
 
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -119,11 +119,11 @@ export default function HomePage() {
               { step: '03', icon: '🏠', title: 'Merr Çelësat', desc: 'Bie dakord, nënshkruaj kontratën dhe merr çelësat e shtëpisë tënde të re.', direction: 'aos-from-right' },
             ].map(item => (
               <AnimateOnScroll key={item.step} className={item.direction}>
-                <div className="text-center relative z-10">
+                <div className="text-center relative z-10 bg-[#111936] border border-white/10 rounded-2xl p-6 h-full">
                   <div className="text-4xl mb-4 step-icon-pulse inline-block">{item.icon}</div>
                   <div className="text-xs font-bold text-[#1B4FFF] mb-2">HAPI {item.step}</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
                 </div>
               </AnimateOnScroll>
             ))}
@@ -132,12 +132,12 @@ export default function HomePage() {
       </section>
 
       {/* Why us */}
-      <section className="bg-gradient-to-br from-[#FFFFFF] to-[#F5F8FF] py-8 sm:py-12 lg:py-16">
+      <section className="bg-gradient-to-br from-[#0A0F2E] to-[#0D1235] py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateOnScroll className="aos-fade-up">
             <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Pse Na Zgjedhin?</h2>
-              <p className="text-gray-500 text-sm max-w-2xl mx-auto">Platforma që i bashkon shitësit, blerësit dhe qiramarrësit shqipfolës në një vend të vetëm, të thjeshtë dhe të sigurt.</p>
+              <h2 className="text-2xl font-bold text-white mb-3">Pse Na Zgjedhin?</h2>
+              <p className="text-slate-400 text-sm max-w-2xl mx-auto">Platforma që i bashkon shitësit, blerësit dhe qiramarrësit shqipfolës në një vend të vetëm, të thjeshtë dhe të sigurt.</p>
             </div>
           </AnimateOnScroll>
 
@@ -148,12 +148,12 @@ export default function HomePage() {
               { icon: <Globe className="h-6 w-6 text-[#1B4FFF]" />, title: 'Gjithë rajoni', desc: 'Kosovë, Shqipëri, Maqedoni e Veriut — një platformë.' },
               { icon: <Building2 className="h-6 w-6 text-[#1B4FFF]" />, title: 'Vetëm shqip', desc: 'Platforma e vetme e dedikuar plotësisht për tregun shqipfolës.' },
             ].map(item => (
-              <div key={item.title} className="aos-fade-up why-card bg-white rounded-2xl p-6 border border-gray-100 text-center">
+              <div key={item.title} className="aos-fade-up why-card bg-[#111936] rounded-2xl p-6 border border-white/10 text-center">
                 <div className="why-icon w-12 h-12 bg-[#1B4FFF]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                   {item.icon}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm">{item.desc}</p>
+                <h3 className="font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-slate-400 text-sm">{item.desc}</p>
               </div>
             ))}
           </AnimateOnScroll>
@@ -195,7 +195,7 @@ export default function HomePage() {
   )
 
   return (
-    <main className="min-h-screen bg-[#F8F9FF]">
+    <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
       <section className="relative overflow-hidden border-b border-white/10 min-h-[85vh] flex flex-col">
         {/* Background photo with Ken Burns zoom */}
@@ -212,7 +212,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
 
         {/* Bottom fade into page background */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8F9FF] via-[#F8F9FF]/85 to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0A0F2E] via-[#0A0F2E]/85 to-transparent z-10" />
 
         <div className="relative z-20 flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
@@ -248,15 +248,15 @@ export default function HomePage() {
         </div>
 
         {/* Stats Bar — shows skeleton while loading */}
-        <div className="relative z-20 bg-[#F8F9FF] border-t border-white/10">
+        <div className="relative z-20 bg-[#0A0F2E] border-t border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
               {loading ? (
                 <>
                   {['Banesa aktive', 'Shitës të besuar', 'Qytete të mbuluara', 'Ditë falas'].map(label => (
                     <div key={label} className="text-center">
-                      <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mx-auto mb-1" />
-                      <p className="text-gray-400 text-sm">{label}</p>
+                      <div className="h-8 w-16 bg-slate-700 rounded animate-pulse mx-auto mb-1" />
+                      <p className="text-slate-400 text-sm">{label}</p>
                     </div>
                   ))}
                 </>
@@ -272,8 +272,8 @@ export default function HomePage() {
                     { value: '30 ditë', label: 'Ditë falas' },
                   ].map(stat => (
                     <div key={stat.label} className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className="text-gray-400 text-sm">{stat.label}</p>
+                      <p className="text-2xl font-bold text-white">{stat.value}</p>
+                      <p className="text-slate-400 text-sm">{stat.label}</p>
                     </div>
                   ))}
                 </>
@@ -286,10 +286,11 @@ export default function HomePage() {
       {/* Error state */}
       {error && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <p className="text-red-700 mb-3">{error}</p>
+          <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 text-center">
+            <p className="text-red-300 mb-3">{error}</p>
             <Button
               variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
               onClick={() => {
                 setError(null)
                 setLoading(true)
@@ -306,23 +307,23 @@ export default function HomePage() {
       <section className="dot-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">⭐ Të rekomanduara</h2>
-            <p className="text-gray-500 text-sm mt-1">Listimet e zgjedhura me kujdes</p>
+            <h2 className="text-2xl font-bold text-white">⭐ Të rekomanduara</h2>
+            <p className="text-slate-400 text-sm mt-1">Listimet e zgjedhura me kujdes</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="border-gray-200">Shiko të gjitha →</Button>
+            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
           </Link>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+              <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
+                <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
                 <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
+                  <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
+                  <div className="h-6 bg-slate-700 rounded animate-pulse w-1/3" />
+                  <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2" />
                 </div>
               </div>
             ))}
@@ -336,8 +337,8 @@ export default function HomePage() {
             ))}
           </AnimateOnScroll>
         ) : !loading ? (
-          <div className="text-center py-10 bg-white rounded-2xl border border-gray-100">
-            <p className="text-gray-400">Asnjë listim i rekomanduar për momentin.</p>
+          <div className="text-center py-10 bg-[#111936] rounded-2xl border border-white/10">
+            <p className="text-slate-400">Asnjë listim i rekomanduar për momentin.</p>
           </div>
         ) : null}
       </section>
@@ -346,23 +347,23 @@ export default function HomePage() {
       <section className="dot-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">🏠 Banesat e Fundit</h2>
-            <p className="text-gray-500 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
+            <h2 className="text-2xl font-bold text-white">🏠 Banesat e Fundit</h2>
+            <p className="text-slate-400 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="border-gray-200">Shiko të gjitha →</Button>
+            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
           </Link>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+              <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
+                <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
                 <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
+                  <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
+                  <div className="h-6 bg-slate-700 rounded animate-pulse w-1/3" />
+                  <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2" />
                 </div>
               </div>
             ))}
@@ -376,10 +377,10 @@ export default function HomePage() {
             ))}
           </AnimateOnScroll>
         ) : !loading ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="text-center py-16 bg-[#111936] rounded-2xl border border-white/10">
             <div className="text-5xl mb-4">🏠</div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ende nuk ka listime</h3>
-            <p className="text-gray-500 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Ende nuk ka listime</h3>
+            <p className="text-slate-400 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
               <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                 Posto banesën tënde falas

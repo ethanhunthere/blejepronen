@@ -40,20 +40,20 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-transparent">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         <div className="relative [&>main>*:first-child]:-mt-16 [&>main>*:first-child]:pt-16 md:[&>main>*:first-child]:-mt-20 md:[&>main>*:first-child]:pt-20">
           <Navbar />
           <main className="flex-1">{children}</main>
         </div>
         <Toaster richColors position="top-center" />
         {/* Footer */}
-        <footer className="border-t bg-white py-8 mt-16">
+        <footer className="border-t border-white/10 bg-[#060B1E] py-8 mt-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-              <p className="text-sm text-gray-500 text-center sm:text-left">
+              <p className="text-sm text-slate-400 text-center sm:text-left">
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-500">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-slate-400">
                 <a href="/kushtet" className="hover:text-[#1B4FFF] transition-colors">
                   Kushtet e përdorimit
                 </a>

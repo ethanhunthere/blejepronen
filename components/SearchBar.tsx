@@ -33,14 +33,14 @@ export default function SearchBar({
   }
 
   return (
-    <div className={`bg-white rounded-2xl p-3 flex flex-col sm:flex-row gap-3 shadow-2xl max-w-2xl mx-auto ${className}`}>
+    <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 flex flex-col sm:flex-row gap-3 shadow-2xl max-w-2xl mx-auto border border-white/15 ${className}`}>
       <div className="flex-1 flex items-center px-3 gap-2">
-        <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
+        <Search className="h-5 w-5 text-white/50 flex-shrink-0" />
         <input
           type="text"
           placeholder={placeholder}
           aria-label="Kërko banesa"
-          className="w-full text-gray-700 outline-none text-sm bg-transparent"
+          className="w-full text-white placeholder:text-white/50 outline-none text-sm bg-transparent"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}

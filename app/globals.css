@@ -52,25 +52,26 @@
   /* Brand: Bleje Banesën */
   --brand: #1b4fff;
   --brand-foreground: #ffffff;
-  --brand-light: #e8edff;
+  --brand-light: #1a2348;
   --brand-dark: #1438c4;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  /* Navy dark theme */
+  --background: #0a0f2e;
+  --foreground: #f8f9ff;
+  --card: #111936;
+  --card-foreground: #f8f9ff;
+  --popover: #111936;
+  --popover-foreground: #f8f9ff;
   --primary: #1b4fff;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.957 0.008 270);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.957 0.008 270);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.957 0.008 270);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --primary-foreground: #ffffff;
+  --secondary: #111936;
+  --secondary-foreground: #f8f9ff;
+  --muted: #0d1235;
+  --muted-foreground: #94a3b8;
+  --accent: #1a2348;
+  --accent-foreground: #f8f9ff;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
   --ring: var(--brand);
   --chart-1: var(--brand);
   --chart-2: oklch(0.556 0 0);
@@ -407,7 +408,7 @@ html {
 
 /* Listing sections dot grid */
 .dot-grid {
-  background-image: radial-gradient(circle, #1B4FFF15 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -417,7 +418,7 @@ html {
 }
 .listing-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(15, 29, 77, 0.18);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.45);
 }
 
 /* How it works step icon pulse */
@@ -448,13 +449,13 @@ html {
 }
 .why-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 32px -12px rgba(15, 29, 77, 0.12);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.4);
 }
 .why-icon {
   transition: box-shadow 300ms ease;
 }
 .why-card:hover .why-icon {
-  box-shadow: 0 0 20px rgba(27, 79, 255, 0.2);
+  box-shadow: 0 0 20px rgba(27, 79, 255, 0.25);
 }
 
 /* CTA banner shimmer */
