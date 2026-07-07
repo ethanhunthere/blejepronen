@@ -147,7 +147,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} overflow-visible border-none ${className || ''}`}>
+    <nav className={`${positionClasses} bg-transparent overflow-visible border-none ${className || ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -156,7 +156,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           </Link>
 
           {/* Right nav section */}
-          <div className="flex items-center flex-shrink-0 min-w-fit">
+          <div className="flex items-center flex-shrink-0 min-w-0">
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-6">
               <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors">

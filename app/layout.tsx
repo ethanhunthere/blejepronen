@@ -34,6 +34,7 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${inter.variable} h-full antialiased`}
+      style={{ overflowX: 'hidden' }}
     >
       <head>
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
