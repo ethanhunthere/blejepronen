@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
+import Image from 'next/image'
 import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
-import KosovoSkyline from '@/components/KosovoSkyline'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import ScrollToTop from '@/components/ScrollToTop'
 import { Button } from '@/components/ui/button'
@@ -196,15 +196,45 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#F8F9FF]">
-      {/* Hero — cinematic Kosovo skyline background */}
-      <section className="relative overflow-hidden border-b border-white/10 bg-[#0F1D4D] min-h-screen flex flex-col">
-        <KosovoSkyline />
+      {/* Hero — photorealistic Pristina background */}
+      <section className="relative overflow-hidden border-b border-white/10 min-h-screen flex flex-col">
+        {/* Background photo with Ken Burns zoom */}
+        <Image
+          src="/pristinalandscape.jpg"
+          alt="Prishtina"
+          fill
+          priority
+          className="object-cover ken-burns -z-10"
+          sizes="100vw"
+        />
 
-        {/* Top contrast gradient for white text */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-[rgba(15,29,77,0.6)] to-transparent z-10" />
+        {/* Dark blue gradient overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
 
         {/* Bottom fade into page background */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8F9FF] via-[#F8F9FF]/85 to-transparent z-10" />
+
+        {/* Warm light particles */}
+        {[
+          { left: '12%', top: '18%', size: 5, delay: '0s' },
+          { left: '28%', top: '34%', size: 4, delay: '2s' },
+          { left: '55%', top: '22%', size: 6, delay: '4s' },
+          { left: '74%', top: '40%', size: 4, delay: '1s' },
+          { left: '86%', top: '16%', size: 5, delay: '3s' },
+          { left: '42%', top: '55%', size: 3, delay: '5s' },
+        ].map((p, i) => (
+          <span
+            key={i}
+            className="light-particle pointer-events-none absolute z-10 rounded-full"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              animationDelay: p.delay,
+            }}
+          />
+        ))}
 
         <div className="relative z-20 flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
