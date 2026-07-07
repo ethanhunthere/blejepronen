@@ -197,14 +197,14 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#F8F9FF]">
       {/* Hero — photorealistic Pristina background */}
-      <section className="relative overflow-hidden border-b border-white/10 min-h-screen flex flex-col">
+      <section className="relative overflow-hidden border-b border-white/10 min-h-[85vh] flex flex-col">
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"
           alt="Prishtina"
           fill
           priority
-          className="object-cover ken-burns -z-10"
+          className="object-cover ken-burns z-0"
           sizes="100vw"
         />
 
