@@ -156,15 +156,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           </Link>
 
           {/* Right nav section */}
-          <div className="flex items-center flex-shrink-0 min-w-0">
+          <div className="flex items-center min-w-0">
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden lg:flex items-center space-x-6">
               <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors">
                 Shiko banesat
               </Link>
               {user === undefined ? (
                 /* Loading — session hasn't been checked yet */
-                <div className="w-[152px] h-9" aria-hidden="true" />
+                <div className="w-24 h-9" aria-hidden="true" />
               ) : user ? (
                 <>
                   <Button
@@ -268,7 +268,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-md min-h-11 min-w-11 flex items-center justify-center text-white transition-colors"
+              className="lg:hidden p-2 rounded-md min-h-11 min-w-11 flex items-center justify-center text-white transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
@@ -280,7 +280,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="md:hidden border-t border-white/10 bg-[#0A0F2E]/95 backdrop-blur-md py-4 space-y-3">
+          <div id="mobile-menu" className="lg:hidden border-t border-white/10 bg-[#0A0F2E]/95 backdrop-blur-md py-4 space-y-3">
             <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
               Shiko banesat
             </Link>

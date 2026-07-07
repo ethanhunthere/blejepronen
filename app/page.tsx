@@ -199,6 +199,9 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
       <section className="relative overflow-hidden min-h-screen flex flex-col">
+        {/* Navbar sits inside hero so it stays pinned over the photo */}
+        <Navbar variant="absolute" />
+
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"

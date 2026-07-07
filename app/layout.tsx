@@ -34,14 +34,13 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${inter.variable} h-full antialiased`}
-      style={{ overflowX: 'hidden' }}
     >
       <head>
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground">
+      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden">
         <NavWrapper />
         <div className="relative">
           <main className="flex-1">{children}</main>
