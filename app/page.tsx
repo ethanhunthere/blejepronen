@@ -113,13 +113,9 @@ export default function HomePage() {
           style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
         />
 
-        <div className="relative z-20 flex-1 flex items-center pt-12 md:pt-16">
+        <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center border border-white/15 bg-white/5 text-white/70 text-xs px-4 py-1.5 rounded-full mb-6">
-                🇽🇰 Platforma e Banesave në Kosovë
-              </div>
-
               <h1 className="text-5xl md:text-6xl font-black text-white leading-tight tracking-tight text-center">
                 Gjej banesën e duhur në Kosovë
               </h1>
