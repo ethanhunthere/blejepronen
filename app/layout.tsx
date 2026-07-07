@@ -43,7 +43,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground">
         <div className="relative">
           <Navbar />
-          <main className="flex-1 pt-16 md:pt-20">{children}</main>
+          <main className="flex-1">{children}</main>
         </div>
         <Toaster richColors position="top-center" />
         {/* Footer */}

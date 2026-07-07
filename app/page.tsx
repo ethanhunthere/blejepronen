@@ -197,7 +197,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
-      <section className="relative overflow-hidden min-h-[85vh] flex flex-col">
+      <section className="relative overflow-hidden min-h-screen flex flex-col">
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"
@@ -214,7 +214,7 @@ export default function HomePage() {
         {/* Bottom fade into page background */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#0A0F2E] z-10" />
 
-        <div className="relative z-20 flex-1 flex items-center">
+        <div className="relative z-20 flex-1 flex items-center pt-20 md:pt-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm mb-6 text-white font-medium border border-white/10">
