@@ -41,8 +41,8 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
       <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground">
+        <Navbar />
         <div className="relative">
-          <Navbar />
           <main className="flex-1">{children}</main>
         </div>
         <Toaster richColors position="top-center" />
