@@ -41,8 +41,10 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
       <body className="min-h-full flex flex-col bg-white">
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <div className="relative [&>main>*:first-child]:-mt-16 [&>main>*:first-child]:pt-16 md:[&>main>*:first-child]:-mt-20 md:[&>main>*:first-child]:pt-20">
+          <Navbar />
+          <main className="flex-1">{children}</main>
+        </div>
         <Toaster richColors position="top-center" />
         {/* Footer */}
         <footer className="border-t bg-white py-8 mt-16">

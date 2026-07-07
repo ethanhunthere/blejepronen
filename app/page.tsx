@@ -197,7 +197,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#F8F9FF]">
       {/* Hero — cinematic Kosovo skyline background */}
-      <section className="relative overflow-hidden border-b border-white/10 bg-[#0F1D4D] min-h-[760px] flex flex-col pt-20 md:pt-24">
+      <section className="relative overflow-hidden border-b border-white/10 bg-[#0F1D4D] min-h-screen flex flex-col">
         <KosovoSkyline />
 
         {/* Top contrast gradient for white text */}

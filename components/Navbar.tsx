@@ -17,7 +17,6 @@ export default function Navbar() {
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(createClient())
   const router = useRouter()
@@ -92,14 +91,6 @@ export default function Navbar() {
     return () => subscription.unsubscribe()
   }, [router])
 
-  // Toggle navbar background after scrolling past the hero edge
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 80)
-    handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
   // Close dropdown on outside click
   useEffect(() => {
     if (!dropdownOpen) return
@@ -145,15 +136,11 @@ export default function Navbar() {
   }, [router])
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 overflow-visible transition-all duration-300 ${
-        scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent border-none'
-      }`}
-    >
+    <nav className="sticky top-0 z-50 overflow-visible bg-transparent border-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className={`flex items-center flex-shrink-0 transition-all duration-300 ${scrolled ? '' : '[&_img]:brightness-0 [&_img]:invert'}`}>
+          <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0 [&_img]:invert">
             <Logo variant="navbar" />
           </Link>
 
@@ -161,12 +148,7 @@ export default function Navbar() {
           <div className="flex items-center flex-shrink-0 min-w-fit">
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-6">
-              <Link
-                href="/listings"
-                className={`font-medium transition-colors ${
-                  scrolled ? 'text-gray-600 hover:text-[#1B4FFF]' : 'text-white hover:text-white/80'
-                }`}
-              >
+              <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors">
                 Shiko banesat
               </Link>
               {user === undefined ? (
@@ -176,9 +158,7 @@ export default function Navbar() {
                 <>
                   <Button
                     onClick={() => router.push('/posto-banese')}
-                    className={`transition-colors ${
-                      scrolled ? 'bg-[#1B4FFF] hover:bg-[#1640CC] text-white' : 'bg-white text-[#1B4FFF] hover:bg-white/90'
-                    }`}
+                    className="bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Posto banesë
@@ -187,11 +167,7 @@ export default function Navbar() {
                     <Button
                       onClick={() => router.push('/completo-profilin')}
                       variant="outline"
-                      className={`animate-pulse ${
-                        scrolled
-                          ? 'border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700'
-                          : 'border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200'
-                      }`}
+                      className="animate-pulse border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2" />
                       Verifiko profilin
@@ -265,17 +241,13 @@ export default function Navbar() {
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
-                    className={`inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium transition-colors ${
-                      scrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white border border-white/50 hover:bg-white/10'
-                    }`}
+                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className={`inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium transition-colors ${
-                      scrolled ? 'bg-[#1B4FFF] hover:bg-[#1640CC] text-white' : 'bg-white text-[#1B4FFF] hover:bg-white/90'
-                    }`}
+                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                   >
                     Regjistrohu
                   </a>
@@ -285,9 +257,7 @@ export default function Navbar() {
 
             {/* Mobile menu button */}
             <button
-              className={`md:hidden p-2 rounded-md min-h-11 min-w-11 flex items-center justify-center transition-colors ${
-                scrolled ? 'text-gray-600' : 'text-white'
-              }`}
+              className="md:hidden p-2 rounded-md min-h-11 min-w-11 flex items-center justify-center text-white transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
