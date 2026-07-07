@@ -9,45 +9,53 @@ import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-rea
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
+// Singleton Supabase client so we don't recreate it on every mount
+const _supabaseClient = createClient()
+
 interface NavbarProps {
   variant?: 'fixed' | 'absolute' | 'static'
   className?: string
 }
 
 export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
-  // Tri-state: undefined = loading, null = logged out, object = logged in.
-  // This avoids a separate authLoading boolean that can get out of sync.
+  // undefined = still checking, null = logged out, object = logged in.
+  // Logged-out UI is shown as the default so the navbar never appears empty.
   const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const supabaseRef = useRef(createClient())
+  const supabaseRef = useRef(_supabaseClient)
   const router = useRouter()
 
   useEffect(() => {
     const supabase = supabaseRef.current
 
+    const loadProfile = async (userId: string) => {
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('first_name, phone_verified')
+        .eq('id', userId)
+        .single()
+
+      if (profileErr) {
+        console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
+      }
+
+      setProfileIncomplete(!profile?.first_name)
+      setProfileFirstName(profile?.first_name || '')
+    }
+
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         const currentUser = session?.user ?? null
+        // Show navbar buttons immediately; don't wait for profile
         setUser(currentUser)
 
         if (currentUser) {
-          const { data: profile, error: profileErr } = await supabase
-            .from('profiles')
-            .select('first_name, phone_verified')
-            .eq('id', currentUser.id)
-            .single()
-
-          if (profileErr) {
-            console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
-          }
-
-          setProfileIncomplete(!profile?.first_name)
-          setProfileFirstName(profile?.first_name || '')
+          loadProfile(currentUser.id)
         }
       } catch (err) {
         console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
@@ -71,6 +79,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         }
 
         const currentUser = session?.user ?? null
+        // Update UI immediately; profile loads in the background
         setUser(currentUser)
 
         if (event === 'SIGNED_IN') {
@@ -78,14 +87,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         }
 
         if (currentUser) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, phone_verified')
-            .eq('id', currentUser.id)
-            .single()
-
-          setProfileIncomplete(!profile?.first_name)
-          setProfileFirstName(profile?.first_name || '')
+          loadProfile(currentUser.id)
         } else {
           setProfileIncomplete(false)
           setProfileFirstName('')
@@ -162,10 +164,22 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors">
                 Shiko banesat
               </Link>
-              {user === undefined ? (
-                /* Loading — session hasn't been checked yet */
-                <div className="w-24 h-9" aria-hidden="true" />
-              ) : user ? (
+              {!user ? (
+                <div className="flex items-center space-x-3">
+                  <a
+                    href="/login"
+                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
+                  >
+                    Hyr
+                  </a>
+                  <a
+                    href="/register"
+                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                  >
+                    Regjistrohu
+                  </a>
+                </div>
+              ) : (
                 <>
                   <Button
                     onClick={() => router.push('/posto-banese')}
@@ -248,21 +262,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     )}
                   </div>
                 </>
-              ) : (
-                <div className="flex items-center space-x-3">
-                  <a
-                    href="/login"
-                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
-                  >
-                    Hyr
-                  </a>
-                  <a
-                    href="/register"
-                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
-                  >
-                    Regjistrohu
-                  </a>
-                </div>
               )}
             </div>
 
@@ -284,10 +283,12 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
               Shiko banesat
             </Link>
-            {user === undefined ? (
-              /* Loading — session hasn't been checked yet */
-              <div className="h-11" aria-hidden="true" />
-            ) : user ? (
+            {!user ? (
+              <div className="space-y-2">
+                <a href="/login" className="block w-full min-h-11 rounded-lg border border-white/20 bg-transparent text-center leading-[2.75rem] text-sm font-medium text-white hover:bg-white/10 transition-colors">Hyr</a>
+                <a href="/register" className="block w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center leading-[2.75rem] text-sm font-medium text-white transition-colors">Regjistrohu</a>
+              </div>
+            ) : (
               <>
                 {profileIncomplete && (
                   <Button
@@ -335,11 +336,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   </button>
                 </div>
               </>
-            ) : (
-              <div className="space-y-2">
-                <a href="/login" className="block w-full min-h-11 rounded-lg border border-white/20 bg-transparent text-center leading-[2.75rem] text-sm font-medium text-white hover:bg-white/10 transition-colors">Hyr</a>
-                <a href="/register" className="block w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center leading-[2.75rem] text-sm font-medium text-white transition-colors">Regjistrohu</a>
-              </div>
             )}
           </div>
         )}

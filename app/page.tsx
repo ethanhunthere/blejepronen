@@ -11,7 +11,7 @@ import AnimateOnScroll from '@/components/AnimateOnScroll'
 import ScrollToTop from '@/components/ScrollToTop'
 import Navbar from '@/components/Navbar'
 import { Button } from '@/components/ui/button'
-import { Building2, Shield, Globe, Star } from 'lucide-react'
+
 
 interface HomeData {
   featuredListings: Listing[]
@@ -84,116 +84,6 @@ export default function HomePage() {
       cancelled = true
     }
   }, [])
-
-  // Static sections that render instantly even while data loads
-  const staticSections = (
-    <>
-      {/* How it works */}
-      <section className="relative border-y border-white/10 py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#0D1235] via-[#0A0F2E] to-[#0A0F2E]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateOnScroll className="aos-fade-up">
-            <h2 className="text-2xl font-bold text-white text-center mb-12">Si të Blesh apo Shesësh?</h2>
-          </AnimateOnScroll>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Connecting dotted line — hidden on mobile */}
-            <svg
-              className="absolute top-[4.5rem] left-0 w-full h-6 hidden md:block pointer-events-none"
-              preserveAspectRatio="none"
-            >
-              <line
-                x1="17%"
-                y1="50%"
-                x2="83%"
-                y2="50%"
-                stroke="#1B4FFF"
-                strokeWidth="2"
-                strokeDasharray="8 10"
-                strokeLinecap="round"
-                className="dotted-line"
-              />
-            </svg>
-
-            {[
-              { step: '01', icon: '🔍', title: 'Kërko & Filtro', desc: 'Shfleto qindra banesa sipas qytetit, çmimit, numrit të dhomave dhe shumë kritereve të tjera.', direction: 'aos-from-left' },
-              { step: '02', icon: '📞', title: 'Kontakto Direkt', desc: 'Fol direkt me pronarin ose agjentin. Pa ndërmjetës të panevojshëm, pa komisione të fshehura.', direction: 'aos-from-bottom' },
-              { step: '03', icon: '🏠', title: 'Merr Çelësat', desc: 'Bie dakord, nënshkruaj kontratën dhe merr çelësat e shtëpisë tënde të re.', direction: 'aos-from-right' },
-            ].map(item => (
-              <AnimateOnScroll key={item.step} className={item.direction}>
-                <div className="text-center relative z-10 bg-[#111936] border border-white/10 rounded-2xl p-6 h-full">
-                  <div className="text-4xl mb-4 step-icon-pulse inline-block">{item.icon}</div>
-                  <div className="text-xs font-bold text-[#1B4FFF] mb-2">HAPI {item.step}</div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </AnimateOnScroll>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why us */}
-      <section className="bg-gradient-to-br from-[#0A0F2E] to-[#0D1235] py-8 sm:py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateOnScroll className="aos-fade-up">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-white mb-3">Pse Na Zgjedhin?</h2>
-              <p className="text-slate-400 text-sm max-w-2xl mx-auto">Platforma që i bashkon shitësit, blerësit dhe qiramarrësit shqipfolës në një vend të vetëm, të thjeshtë dhe të sigurt.</p>
-            </div>
-          </AnimateOnScroll>
-
-          <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: <Star className="h-6 w-6 text-[#1B4FFF]" />, title: '30 ditë falas', desc: 'Posto banesën pa paguar asgjë për muajin e parë.' },
-              { icon: <Shield className="h-6 w-6 text-[#1B4FFF]" />, title: 'Siguri e plotë', desc: 'Çdo shitës verifikohet me numër telefoni real.' },
-              { icon: <Globe className="h-6 w-6 text-[#1B4FFF]" />, title: 'Gjithë rajoni', desc: 'Kosovë, Shqipëri, Maqedoni e Veriut — një platformë.' },
-              { icon: <Building2 className="h-6 w-6 text-[#1B4FFF]" />, title: 'Vetëm shqip', desc: 'Platforma e vetme e dedikuar plotësisht për tregun shqipfolës.' },
-            ].map(item => (
-              <div key={item.title} className="aos-fade-up why-card bg-[#111936] rounded-2xl p-6 border border-white/10 text-center">
-                <div className="why-icon w-12 h-12 bg-[#1B4FFF]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  {item.icon}
-                </div>
-                <h3 className="font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-slate-400 text-sm">{item.desc}</p>
-              </div>
-            ))}
-          </AnimateOnScroll>
-        </div>
-      </section>
-
-      {/* CTA Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-[#1B4FFF] to-[#1640CC] py-12 sm:py-16 mx-0 sm:mx-4 lg:mx-8 rounded-none sm:rounded-2xl lg:rounded-3xl mb-16 max-w-7xl lg:mx-auto">
-        {/* Shimmer overlay */}
-        <div className="cta-shimmer" />
-
-        {/* Floating dots */}
-        <div className="absolute inset-0 pointer-events-none">
-          <span className="cta-dot" />
-          <span className="cta-dot" />
-          <span className="cta-dot" />
-          <span className="cta-dot" />
-          <span className="cta-dot" />
-        </div>
-
-        <AnimateOnScroll className="relative z-10 text-center px-6 aos-fade-up">
-          <h2 className="text-3xl font-bold mb-4 text-white drop-shadow-sm">Gati për të shitur ose dhënë me qira?</h2>
-          <p className="text-white/90 mb-8 text-lg">Posto banesën tënde sot — falas për 30 ditët e para.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/posto-banese">
-              <Button className="cta-glow bg-white text-[#1B4FFF] hover:bg-white/95 font-semibold px-8 h-12">
-                Posto banesën falas
-              </Button>
-            </Link>
-            <Link href="/listings">
-              <Button variant="outline" className="cta-glow border-white text-white hover:bg-white/10 px-8 h-12">
-                Shiko banesat
-              </Button>
-            </Link>
-          </div>
-        </AnimateOnScroll>
-      </section>
-    </>
-  )
 
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
@@ -384,8 +274,6 @@ export default function HomePage() {
           </div>
         ) : null}
       </section>
-
-      {staticSections}
 
       <ScrollToTop />
     </main>
