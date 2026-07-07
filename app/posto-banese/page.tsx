@@ -115,7 +115,6 @@ export default function PostoBanesePage() {
 
     if (!existingProfile) {
       // Create minimal profile row so the FK constraint passes
-      console.warn('Profile missing for user, creating minimal row:', user.id)
       const { error: createProfileErr } = await supabase
         .from('profiles')
         .insert({

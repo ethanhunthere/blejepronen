@@ -66,7 +66,7 @@ export default function HomePage() {
             totalUsers: totalUsers ?? 0,
           })
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setError('Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.')
         }
