@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Work_Sans } from "next/font/google";
+import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const workSans = Work_Sans({
+const albertSans = Albert_Sans({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-work-sans",
+  variable: "--font-albert-sans",
   display: "swap",
 });
 
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="sq"
-      className={`${workSans.variable} h-full antialiased`}
+      className={`${albertSans.variable} h-full antialiased`}
     >
       <head>
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
