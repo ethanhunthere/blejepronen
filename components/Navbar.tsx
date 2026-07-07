@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
 import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
@@ -17,10 +16,26 @@ interface NavbarProps {
   className?: string
 }
 
+// Synchronously read the Supabase auth token from localStorage so the navbar
+// can render the right-side buttons immediately on hydration.
+function getStoredUser(): SupabaseUser | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
+    if (!key) return null
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed?.user ?? null
+  } catch {
+    return null
+  }
+}
+
 export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
-  // undefined = still checking, null = logged out, object = logged in.
-  // Logged-out UI is shown as the default so the navbar never appears empty.
-  const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
+  // null = logged out, object = logged in. Initial value is read synchronously
+  // from localStorage so the buttons never wait for getSession().
+  const [user, setUser] = useState<SupabaseUser | null>(() => getStoredUser())
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -181,22 +196,23 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </div>
               ) : (
                 <>
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg h-8 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4" />
                     Posto banesë
-                  </Button>
+                  </button>
                   {profileIncomplete && (
-                    <Button
+                    <button
+                      type="button"
                       onClick={() => router.push('/completo-profilin')}
-                      variant="outline"
-                      className="animate-pulse border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200"
+                      className="inline-flex items-center justify-center rounded-lg h-8 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap border border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200 animate-pulse"
                     >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      <AlertTriangle className="h-4 w-4" />
                       Verifiko profilin
-                    </Button>
+                    </button>
                   )}
                   {/* Custom dropdown — no Base UI, no layout shifts */}
                   <div className="relative flex-shrink-0" ref={dropdownRef}>
@@ -291,14 +307,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             ) : (
               <>
                 {profileIncomplete && (
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => { router.push('/completo-profilin'); setMenuOpen(false) }}
-                    variant="outline"
-                    className="w-full min-h-11 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                    className="inline-flex items-center justify-center w-full min-h-11 rounded-lg border border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-sm font-medium"
                   >
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Verifiko profilin
-                  </Button>
+                  </button>
                 )}
                 <div className="flex items-center gap-3 px-1 py-2">
                   <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
@@ -308,13 +324,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
                 </div>
-                <Button
+                <button
+                  type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="w-full min-h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  className="inline-flex items-center justify-center w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-sm font-medium"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Posto banesë
-                </Button>
+                </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
                   className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white py-3"

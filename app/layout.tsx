@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import NavWrapper from "@/components/NavWrapper";
+import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -41,7 +41,7 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
       <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden">
-        <NavWrapper />
+        <Navbar variant="static" />
         <div className="relative">
           <main className="flex-1">{children}</main>
         </div>

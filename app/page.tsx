@@ -9,7 +9,6 @@ import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import ScrollToTop from '@/components/ScrollToTop'
-import Navbar from '@/components/Navbar'
 import { Button } from '@/components/ui/button'
 
 
@@ -89,9 +88,6 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
       <section className="relative overflow-hidden min-h-screen flex flex-col">
-        {/* Navbar sits inside hero so it stays pinned over the photo */}
-        <Navbar variant="absolute" />
-
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"
