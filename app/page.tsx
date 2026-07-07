@@ -9,6 +9,7 @@ import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import ScrollToTop from '@/components/ScrollToTop'
+import Navbar from '@/components/Navbar'
 import { Button } from '@/components/ui/button'
 import { Building2, Shield, Globe, Star } from 'lucide-react'
 

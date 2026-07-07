@@ -9,7 +9,12 @@ import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-rea
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
-export default function Navbar() {
+interface NavbarProps {
+  variant?: 'fixed' | 'absolute' | 'static'
+  className?: string
+}
+
+export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   // Tri-state: undefined = loading, null = logged out, object = logged in.
   // This avoids a separate authLoading boolean that can get out of sync.
   const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
@@ -135,8 +140,14 @@ export default function Navbar() {
     setTimeout(() => router.refresh(), 100)
   }, [router])
 
+  const positionClasses = {
+    fixed: 'fixed top-0 left-0 right-0 z-50',
+    absolute: 'absolute top-0 left-0 right-0 z-50',
+    static: 'relative z-50',
+  }[variant]
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 overflow-visible border-none">
+    <nav className={`${positionClasses} overflow-visible border-none ${className || ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
