@@ -191,7 +191,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Listings — skeleton while loading */}
-      <section className="dot-grid bg-[#0A0F2E] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <section className="bg-[#0A0F2E] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">⭐ Të rekomanduara</h2>
@@ -231,7 +231,7 @@ export default function HomePage() {
       </section>
 
       {/* Latest Listings — skeleton while loading */}
-      <section className="dot-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">🏠 Banesat e Fundit</h2>

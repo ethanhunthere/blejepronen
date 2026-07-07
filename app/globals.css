@@ -406,12 +406,6 @@ html {
 .stagger-children > *:nth-child(7) { transition-delay: 600ms; }
 .stagger-children > *:nth-child(8) { transition-delay: 700ms; }
 
-/* Listing sections dot grid */
-.dot-grid {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
 /* ListingCard hover polish */
 .listing-card-hover {
   transition: transform 200ms ease, box-shadow 200ms ease;
