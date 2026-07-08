@@ -101,7 +101,7 @@ export default function HomePage() {
         {/* Soft radial vignette */}
         <div
           className="pointer-events-none absolute inset-0 z-10"
-          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.15) 0%, transparent 100%)' }}
+          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.22) 0%, transparent 100%)' }}
         />
 
         {/* Top fade from page background to blend navbar seamlessly */}
@@ -134,7 +134,7 @@ export default function HomePage() {
               </p>
 
               <p
-                className="inline-block text-white/40 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
+                className="inline-block text-white/60 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
                 style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
               >
                 Kërko sipas qytetit ose lagjes
