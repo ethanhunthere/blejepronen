@@ -192,13 +192,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg h-10 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-lg h-8 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg h-10 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                   >
                     Regjistrohu
                   </a>
@@ -208,7 +208,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg h-8 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg h-10 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -217,7 +217,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => router.push('/completo-profilin')}
-                      className="inline-flex items-center justify-center rounded-lg h-8 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap border border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200 animate-pulse"
+                      className="inline-flex items-center justify-center rounded-lg h-10 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap border border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200 animate-pulse"
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Verifiko profilin
@@ -228,7 +228,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center rounded-full w-10 h-10 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"

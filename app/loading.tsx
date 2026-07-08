@@ -7,9 +7,9 @@ export default function Loading() {
       <div className="bg-white border-b border-gray-100 py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="h-6 w-64 bg-gray-200 rounded-full animate-pulse mx-auto mb-6" />
-            <div className="h-12 w-96 bg-gray-200 rounded-xl animate-pulse mx-auto mb-4" />
-            <div className="h-12 w-72 bg-gray-200 rounded-xl animate-pulse mx-auto mb-10" />
+            <div className="h-6 max-w-xs w-full bg-gray-200 rounded-full animate-pulse mx-auto mb-6" />
+            <div className="h-12 max-w-sm w-full bg-gray-200 rounded-xl animate-pulse mx-auto mb-4" />
+            <div className="h-12 max-w-xs w-full bg-gray-200 rounded-xl animate-pulse mx-auto mb-10" />
             <div className="h-16 max-w-2xl bg-gray-200 rounded-2xl animate-pulse mx-auto" />
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {[1, 2, 3, 4].map(i => (
@@ -37,7 +37,7 @@ export default function Loading() {
       {/* Featured skeleton */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-8" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <ListingCardSkeleton key={i} />
           ))}
@@ -47,7 +47,7 @@ export default function Loading() {
       {/* Latest skeleton */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-8" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <ListingCardSkeleton key={i} />
           ))}

@@ -42,7 +42,7 @@ export default function SearchBar({
           type="text"
           placeholder={placeholder}
           aria-label="Kërko banesa"
-          className="w-full text-white placeholder:text-white/50 outline-none text-sm bg-transparent"
+          className="w-full text-white placeholder:text-white/50 outline-none text-base sm:text-sm bg-transparent"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -242,7 +242,7 @@ export default function PostoBanesePage() {
                   role="radio"
                   aria-checked={formData.type === t}
                   onClick={() => setFormData(prev => ({ ...prev, type: t }))}
-                  className={`flex-1 py-3 rounded-xl font-medium transition-all text-sm ${
+                  className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm ${
                     formData.type === t
                       ? 'bg-[#1B4FFF] text-white shadow-sm'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
@@ -397,9 +397,9 @@ export default function PostoBanesePage() {
                       type="button"
                       onClick={() => removeImage(i)}
                       aria-label={`Hiq foton ${i + 1}`}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500 text-white rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
@@ -423,7 +423,7 @@ export default function PostoBanesePage() {
             )}
           </Button>
 
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-center text-sm text-gray-500">
             Duke postuar, pranon{' '}
             <a href="/kushtet" className="underline hover:text-[#1B4FFF]">kushtet e shërbimit</a>
           </p>

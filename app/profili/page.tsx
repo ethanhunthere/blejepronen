@@ -130,7 +130,7 @@ export default function ProfilePage() {
                   <Label htmlFor="first_name">Emri</Label>
                   <Input
                     id="first_name"
-                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.first_name}
                     onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
                   />
@@ -139,7 +139,7 @@ export default function ProfilePage() {
                   <Label htmlFor="last_name">Mbiemri</Label>
                   <Input
                     id="last_name"
-                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     value={formData.last_name}
                     onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
                   />
@@ -151,7 +151,7 @@ export default function ProfilePage() {
                   </Label>
                   <Input
                     id="phone"
-                    className="mt-1 h-10 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                     placeholder="+383 44 123 456"
                     value={formData.phone}
                     onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
@@ -160,7 +160,7 @@ export default function ProfilePage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="w-full bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                 </Button>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                 <p className="text-gray-500 mb-4">Nuk keni listuar asnjë banesë ende.</p>
                 <Button
                   onClick={() => router.push('/posto-banese')}
-                  className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  className="h-11 w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
                 >
                   Posto banesën tënde
                 </Button>
@@ -190,7 +190,7 @@ export default function ProfilePage() {
                     <ListingCard listing={listing} />
                     <button
                       onClick={() => handleDeleteListing(listing.id)}
-                      className="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg hover:bg-red-600 transition-colors z-10"
+                      className="absolute top-3 right-3 h-11 px-3 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors z-10 inline-flex items-center justify-center"
                     >
                       Fshi
                     </button>

@@ -149,26 +149,26 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
             {/* Title + Info */}
             <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
               <h1 className="text-2xl font-bold text-white mb-3">{listing.title}</h1>
-              <div className="flex items-center text-gray-400 mb-4">
-                <MapPin className="h-4 w-4 mr-2" />
-                <span>{listing.city} · {listing.address}</span>
+              <div className="flex items-center text-gray-400 mb-4 min-w-0">
+                <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="break-words min-w-0">{listing.city} · {listing.address}</span>
               </div>
 
               <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">
                 <div className="text-center">
                   <BedDouble className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.rooms}</p>
-                  <p className="text-xs text-gray-400">Dhoma</p>
+                  <p className="text-sm text-gray-400">Dhoma</p>
                 </div>
                 <div className="text-center">
                   <Maximize2 className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.area_m2} m²</p>
-                  <p className="text-xs text-gray-400">Sipërfaqe</p>
+                  <p className="text-sm text-gray-400">Sipërfaqe</p>
                 </div>
                 <div className="text-center">
                   <Calendar className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-sm font-semibold">{formatDate(listing.created_at)}</p>
-                  <p className="text-xs text-gray-400">Postuar</p>
+                  <p className="text-sm text-gray-400">Postuar</p>
                 </div>
               </div>
 
@@ -211,7 +211,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                     rel="noopener noreferrer"
                     className="block mt-3"
                   >
-                    <button type="button" className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center">
+                    <button type="button" className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center whitespace-nowrap">
                       Kontakto me WhatsApp
                     </button>
                   </a>

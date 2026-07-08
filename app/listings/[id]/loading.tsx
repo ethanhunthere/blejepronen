@@ -12,7 +12,7 @@ export default function ListingDetailLoading() {
             <div className="h-80 md:h-96 bg-gray-200 rounded-2xl animate-pulse" />
 
             {/* Gallery skeleton */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
               ))}

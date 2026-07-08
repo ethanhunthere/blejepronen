@@ -11,7 +11,7 @@ export default function ListingsLoading() {
         </div>
 
         {/* Search + Filter skeleton */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="flex-1 h-11 bg-gray-200 rounded-lg animate-pulse" />
           <div className="h-11 w-24 bg-gray-200 rounded-lg animate-pulse" />
         </div>

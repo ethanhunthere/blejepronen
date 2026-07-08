@@ -116,15 +116,15 @@ export default function HomePage() {
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
+              <h1 className="inline-block uppercase text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-4 py-2">
                 Gjej banesën e duhur në Kosovë
               </h1>
 
-              <p className="inline-block text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
+              <p className="inline-block text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-4 py-2">
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
               </p>
 
-              <p className="inline-block text-white/40 text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1">
+              <p className="inline-block text-white/40 text-xs sm:text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1">
                 Kërko sipas qytetit ose lagjes
               </p>
 
@@ -150,13 +150,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <Link
                   href="/listings"
-                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
                 >
                   Shfleto banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
                 >
                   Posto banesën tënde
                 </Link>
@@ -173,7 +173,7 @@ export default function HomePage() {
             <p className="text-red-300 mb-3">{error}</p>
             <Button
               variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
+              className="h-11 w-full sm:w-auto border-white/20 text-white hover:bg-white/10"
               onClick={() => {
                 setError(null)
                 setLoading(true)
@@ -194,12 +194,12 @@ export default function HomePage() {
             <p className="text-slate-400 text-sm mt-1">Listimet e zgjedhura me kujdes</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
+            <Button variant="outline" className="h-11 border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
           </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
                 <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
@@ -234,7 +234,7 @@ export default function HomePage() {
             <p className="text-slate-400 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
+            <Button variant="outline" className="h-11 border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
           </Link>
         </div>
 
@@ -265,7 +265,7 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold text-white mb-2">Ende nuk ka listime</h3>
             <p className="text-slate-400 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
-              <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
+              <Button className="h-11 w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
                 Posto banesën tënde falas
               </Button>
             </Link>

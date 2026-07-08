@@ -88,7 +88,7 @@ export default async function AdminPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/listings/${listing.id}`} className="text-[#1B4FFF] hover:underline text-sm">
+                      <Link href={`/listings/${listing.id}`} className="text-[#1B4FFF] hover:underline text-sm whitespace-nowrap">
                         Shiko →
                       </Link>
                     </td>

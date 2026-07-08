@@ -23,18 +23,18 @@ export default function CookieBanner() {
           Ne përdorim cookies për të përmirësuar përvojën tuaj.{' '}
           <a href="/privatesia" className="text-[#4d7cff] underline">Mëso më shumë</a>
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setShow(false)}
-            className="inline-flex items-center justify-center rounded-md border border-white/20 bg-transparent px-3 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md border border-white/20 bg-transparent px-4 text-sm font-medium text-white hover:bg-white/10 transition-colors"
           >
             Refuzo
           </button>
           <button
             type="button"
             onClick={accept}
-            className="inline-flex items-center justify-center rounded-md bg-[#1B4FFF] px-3 py-2 text-sm font-medium text-white hover:bg-[#1640CC] transition-colors"
+            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#1B4FFF] px-4 text-sm font-medium text-white hover:bg-[#1640CC] transition-colors"
           >
             Prano
           </button>

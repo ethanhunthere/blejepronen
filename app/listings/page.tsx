@@ -136,7 +136,7 @@ function ListingsContent() {
           <div className="bg-[#111936] rounded-2xl border border-white/10 p-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label htmlFor="filter-city" className="text-xs font-medium text-gray-400 mb-2 block">Qyteti</label>
+              <label htmlFor="filter-city" className="text-sm font-medium text-gray-400 mb-2 block">Qyteti</label>
               <select
                 id="filter-city"
                 className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
@@ -152,7 +152,7 @@ function ListingsContent() {
 
             {/* Type */}
             <div>
-              <label htmlFor="filter-type" className="text-xs font-medium text-gray-400 mb-2 block">Lloji</label>
+              <label htmlFor="filter-type" className="text-sm font-medium text-gray-400 mb-2 block">Lloji</label>
               <select
                 id="filter-type"
                 className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
@@ -167,7 +167,7 @@ function ListingsContent() {
 
             {/* Min Price */}
             <div>
-              <label htmlFor="filter-min-price" className="text-xs font-medium text-gray-400 mb-2 block">Çmimi min (€)</label>
+              <label htmlFor="filter-min-price" className="text-sm font-medium text-gray-400 mb-2 block">Çmimi min (€)</label>
               <Input
                 id="filter-min-price"
                 type="number"
@@ -180,7 +180,7 @@ function ListingsContent() {
 
             {/* Max Price */}
             <div>
-              <label htmlFor="filter-max-price" className="text-xs font-medium text-gray-400 mb-2 block">Çmimi max (€)</label>
+              <label htmlFor="filter-max-price" className="text-sm font-medium text-gray-400 mb-2 block">Çmimi max (€)</label>
               <Input
                 id="filter-max-price"
                 type="number"
@@ -193,7 +193,7 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label htmlFor="filter-rooms" className="text-xs font-medium text-gray-400 mb-2 block">Dhoma</label>
+              <label htmlFor="filter-rooms" className="text-sm font-medium text-gray-400 mb-2 block">Dhoma</label>
               <select
                 id="filter-rooms"
                 className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
@@ -229,7 +229,7 @@ function ListingsContent() {
             <h3 className="text-xl font-semibold text-gray-200 mb-2">Nuk u gjetën banesa</h3>
             <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors">Pastro filtrat</button>
+              <button type="button" onClick={clearFilters} className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 text-sm font-medium text-white hover:bg-white/10 transition-colors">Pastro filtrat</button>
             )}
           </div>
         ) : (
@@ -249,7 +249,7 @@ function ListingsContent() {
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="px-8 h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
+                  className="w-full sm:w-auto px-8 h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
                 >
                   Ngarko më shumë banesa
                 </button>
