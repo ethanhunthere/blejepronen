@@ -63,7 +63,7 @@ function ListingsContent() {
 
     if (searchTerm) {
       listingQuery = listingQuery.or(
-        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,neighborhood.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
       )
     }
 

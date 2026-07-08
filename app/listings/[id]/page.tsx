@@ -151,7 +151,11 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               <h1 className="text-2xl font-bold text-white mb-3">{listing.title}</h1>
               <div className="flex items-center text-gray-400 mb-4 min-w-0">
                 <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="break-words min-w-0">{listing.city} · {listing.address}</span>
+                <span className="break-words min-w-0">
+                  {listing.city}
+                  {listing.neighborhood && ` · ${listing.neighborhood}`}
+                  {' · '}{listing.address}
+                </span>
               </div>
 
               <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">

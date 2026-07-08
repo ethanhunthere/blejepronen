@@ -10,161 +10,230 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Building2, Upload, X, Loader2 } from 'lucide-react'
 
-const KOSOVO_CITIES_NEIGHBORHOODS: Record<string, string[]> = {
+const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Prishtinë': [
-    'Qendër', 'Dardania', 'Ulpiana', 'Arbëria', 'Bregu i Diellit',
-    'Lakërishta', 'Kodra e Trimave', 'Tophane', 'Aktashi', 'Pejton',
-    'Mati 1', 'Mati 2', 'Emshiri', 'Kalabria', 'Taslixhe', 'Velania',
-    'Sofali', 'Kolovica', 'Dodona', 'Lagjja e Muhaxherëve', 'Vreshtat',
-    'Veternik', 'Hajvali', 'Besia', 'Graçanica', 'Fushë Kosovë',
-    'Prishtina e Re', 'Ramiz Sadiku', 'Çagllavicë', 'Mramuri',
-    'Bërnica', 'Barileva', 'Gërmia', 'Zllatari', 'Taukbahçe',
-    'Zona Industriale', 'Lagjja e Spitalit', 'Lagjja e Re'
+    'Qendër', 'Dardania', 'Ulpiana', 'Ulpiana 1', 'Arbëria',
+    'Bregu i Diellit', 'Kodra e Diellit', 'Lakërishta', 'Lakrishtja',
+    'Kodra e Trimave', 'Tophane', 'Aktashi', 'Pejton',
+    'Mati 1', 'Mati 2', 'Emshiri', 'Kalabria', 'Taslixhe',
+    'Velania', 'Sofali', 'Kolovica', 'Dodona',
+    'Lagjja e Muhaxherëve', 'Vreshtat', 'Veternik',
+    'Hajvali', 'Besia', 'Prishtina e Re', 'Ramiz Sadiku',
+    'Çagllavicë', 'Mramuri', 'Bërnica', 'Barileva',
+    'Gërmia', 'Zllatari', 'Taukbahçe', 'Zona Industriale',
+    'Lagjja e Spitalit', 'Lagjja e Re', 'Arbëria e Re',
+    'Fusha e Pajtimit', 'Lagjja e Medresesë', 'Perroi i Njelmet',
+    'Qyteza Pejton', 'Parku i Qytetit', 'Vellusha',
+    'Graçanicë', 'Matiqan', 'Çagllavicë', 'Fushë Kosovë'
   ],
   'Prizren': [
-    'Qendër', 'Ortakoll', 'Varosh', 'Çarshia e Vjetër', 'Uka',
+    'Qendër', 'Ortakoll', 'Varosh', 'Çarshia e Vjetër',
     'Lugja e Bajrakut', 'Jeta e Re', 'Shkoza', 'Mali i Gjerë',
-    'Mushnikova', 'Arbëria', 'Remzi Ademi', 'Lagja e Re',
-    'Vranishtë', 'Rahovecit', 'Blloku i Ri', 'Xhemajl Berisha',
-    'Lagja Spitali', 'Hoça e Qytetit', 'Piranë'
+    'Mushnikova', 'Arbëria', 'Blloku i Ri', 'Lagja e Re',
+    'Lagjja e Spitalit', 'Hoça e Qytetit', 'Piranë',
+    'Vranidoll', 'Xhemajl Berisha', 'Remzi Ademi',
+    'Bregu i Diellit', 'Tugare', 'Zhur', 'Studime',
+    'Runjevë', 'Nashec', 'Rahovecit', 'Zonë Industriale'
   ],
   'Pejë': [
-    'Qendër', 'Çarshia e Vjetër', 'Kapeshnica', 'Kroni i Bardhë',
-    'Blloku i Ri', 'Lagjja e Re', 'Arbëria', 'Ramiz Sadiku',
-    'Lagja e Muhaxherëve', 'Kodra e Trimave', 'Bredhëza',
-    'Terzialiu', 'Rugova', 'Lagja Spitali', 'Zona Industriale',
-    'Ura e Tabakëve', 'Kosove', 'Shtupel', 'Llapushnik'
+    'Qendër', 'Çarshia e Vjetër', 'Kapeshnica',
+    'Kroni i Bardhë', 'Blloku i Ri', 'Lagjja e Re',
+    'Arbëria', 'Ramiz Sadiku', 'Lagjja e Muhaxherëve',
+    'Kodra e Trimave', 'Bredhëza', 'Terzialiu',
+    'Rugova', 'Lagjja e Spitalit', 'Zona Industriale',
+    'Ura e Tabakëve', 'Kosovë', 'Shtupel', 'Llapushnik',
+    'Blloku i Spitalit', 'Lagjja e Policisë', 'Zahaq',
+    'Vitomiricë', 'Klinë e Pejës', 'Poterç'
   ],
   'Gjakovë': [
-    'Qendër', 'Çarshia e Madhe', 'Varosh', 'Lagja e Re',
+    'Qendër', 'Çarshia e Madhe', 'Varosh', 'Lagjja e Re',
     'Çabrati', 'Arbëria', 'Rexhep Mala', 'Kodra e Trimave',
-    'Lagjja e Muhaxherëve', 'Blloku i Ri', 'Rr. UÇK-së',
-    'Lagja e Spitalit', 'Zona Industriale', 'Cermjan',
-    'Dobrosin', 'Orize', 'Bec', 'Lubeniq'
+    'Lagjja e Muhaxherëve', 'Blloku i Ri', 'Lagjja UÇK-së',
+    'Lagjja e Spitalit', 'Zona Industriale', 'Cërmjan',
+    'Dobrosin', 'Orize', 'Bec', 'Lubeniq', 'Lagjja e Vjetër',
+    'Bishtazhin', 'Molliqan', 'Suka', 'Trava',
+    'Rr. Nënë Tereza', 'Lagjja e Tabakëve'
   ],
   'Gjilan': [
-    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
+    'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
     'Lagjja e Muhaxherëve', 'Dardania', 'Liria', 'Partizani',
-    'Lagja e Spitalit', 'Kodra e Trimave', 'Zona Industriale',
+    'Lagjja e Spitalit', 'Kodra e Trimave', 'Zona Industriale',
     'Zhegër', 'Llashticë', 'Miradi e Epërme', 'Miradi e Poshtme',
-    'Bresalci', 'Shashkar'
+    'Bresalci', 'Shashkar', 'Bujanovac', 'Shillovë',
+    'Kotlinë', 'Llapllasellë', 'Domorovc', 'Parteš'
   ],
   'Mitrovicë': [
-    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
+    'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
     'Suhodoll', 'Lagjja e Boshnjakëve', 'Kodra e Trimave',
-    'Lagja e Spitalit', 'Zona Industriale', 'Trepça',
+    'Lagjja e Spitalit', 'Zona Industriale', 'Trepça',
     'Dardania', 'Sipolje', 'Mikronaselje', 'Draga',
-    'Uglare', 'Bairami', 'Lagja Muharremaj'
+    'Uglare', 'Bairami', 'Lagjja Muharremaj',
+    'Lagjja e Minatorëve', 'Bregu i Diellit', 'Sunkovë',
+    'Çabra', 'Sheremetë', 'Vushtrri i Poshtëm'
   ],
   'Ferizaj': [
-    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
-    'Dardania', 'Liria', 'Lagja e Spitalit', 'Zona Industriale',
+    'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
+    'Dardania', 'Liria', 'Lagjja e Spitalit', 'Zona Industriale',
     'Kodra e Trimave', 'Lagjja e Muhaxherëve', 'Sojeva',
     'Babush i Poshtëm', 'Babush i Epërm', 'Varosh',
-    'Kotlina', 'Softë', 'Glloboçicë'
+    'Kotlina', 'Softë', 'Glloboçicë', 'Lagjja e Policisë',
+    'Ramiz Sadiku', 'Nëntori', 'Lagjja Aktive',
+    'Doganaj', 'Elez Han', 'Komogllavë'
   ],
   'Vushtrri': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Dardania', 'Zona Industriale',
-    'Sfaraçak i Epërm', 'Sfaraçak i Poshtëm', 'Dobratin'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Dardania', 'Zona Industriale',
+    'Sfaraçak i Epërm', 'Sfaraçak i Poshtëm', 'Dobratin',
+    'Bajqina', 'Studime i Epërm', 'Studime i Poshtëm',
+    'Pantinë', 'Rubovc', 'Llapasticë', 'Llausha'
   ],
   'Podujevë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Dardania', 'Lluzhan', 'Orllan',
-    'Bajçina', 'Dobratin', 'Obranë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Dardania', 'Lluzhan',
+    'Orllan', 'Bajçina', 'Dobratin', 'Obranë',
+    'Sllovi', 'Herticë', 'Vojnik', 'Mirosalë',
+    'Livoc i Epërm', 'Livoc i Poshtëm', 'Llukar'
   ],
   'Lipjan': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Dardania', 'Gadime', 'Sllatinë',
-    'Rufc', 'Magure'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Dardania', 'Gadime e Epërme',
+    'Gadime e Poshtme', 'Sllatinë e Epërme', 'Sllatinë e Poshtme',
+    'Rufc', 'Magure', 'Grabovc', 'Krushë e Vogël',
+    'Bernicë e Epërme', 'Bernicë e Poshtme'
   ],
   'Fushë Kosovë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Dardania', 'Zona Industriale',
-    'Matiqan', 'Dobërçan'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Dardania', 'Zona Industriale',
+    'Matiqan', 'Dobërçan', 'Miradi', 'Llukar',
+    'Bresje', 'Dobroshi'
   ],
   'Drenas': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Kijeva', 'Komorane', 'Opterusha'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Kijeva', 'Komorane',
+    'Opterusha', 'Klina e Re', 'Lladroc',
+    'Lapushnik', 'Tërstenik'
   ],
   'Skënderaj': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Turiqevc', 'Llaushë', 'Izbicë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Turiqevc', 'Llaushë',
+    'Izbicë', 'Polac', 'Klladernicë', 'Abri e Epërme',
+    'Rixhevë', 'Vojnik'
   ],
   'Malishevë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Banja', 'Panorc', 'Dragobilje'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Banja', 'Panorc',
+    'Dragobilje', 'Gjakovicë', 'Gurë i Zi',
+    'Ratkovë', 'Klecka', 'Bellacërkë'
   ],
   'Rahovec': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Cërgë', 'Xerxë', 'Krushedol'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Cërgë', 'Xerxë',
+    'Krushedol', 'Hoçë e Madhe', 'Hoçë e Vogël',
+    'Dobërdolan', 'Zllatar', 'Tërmë'
   ],
   'Suharekë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Burim', 'Sopi', 'Samadrexhë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Burim', 'Sopi',
+    'Samadrexhë', 'Mushtisht', 'Krushë e Madhe',
+    'Krushë e Vogël', 'Brod', 'Popovë'
   ],
   'Shtimë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Krajkova', 'Slivovë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Krajkova', 'Slivovë',
+    'Komoran', 'Doganaj', 'Greme', 'Varë'
   ],
   'Kaçanik': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Kotlina', 'Stagova', 'Ivaja'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Kotlina', 'Stagova',
+    'Ivaja', 'Kotlinë', 'Brod', 'Runjevë',
+    'Vrajë', 'Gajre', 'Dobrë'
   ],
   'Hani i Elezit': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Elez Han'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri',
+    'Elez Han', 'Muçibabë', 'Zhivinjë', 'Gllobocicë'
   ],
   'Deçan': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Gllogjan', 'Irzniq', 'Prapaqan'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Gllogjan', 'Irzniq',
+    'Prapaqan', 'Baran', 'Lloçan', 'Rzniq',
+    'Poterq', 'Strellc i Epërm', 'Strellc i Poshtëm'
   ],
   'Istog': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Cerrcë', 'Budisalc', 'Lubovë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Cerrcë', 'Budisalc',
+    'Lubovë', 'Gornje Selo', 'Klina e Istogut',
+    'Banjë', 'Shupkovc', 'Oshlan', 'Baicë'
   ],
   'Klinë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Pavljan', 'Dollc', 'Loxhë'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Pavljan', 'Dollc',
+    'Loxhë', 'Gllarevë', 'Budisalc', 'Llapçevë',
+    'Shupkovc', 'Junik', 'Gjakovicë'
   ],
   'Junik': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri',
+    'Jasiq', 'Gjonaj', 'Nivokaz'
   ],
   'Dragash': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Krushevë', 'Restelicë', 'Brod'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Krushevë', 'Restelicë',
+    'Brod', 'Zlipotok', 'Orçushë', 'Rapçë',
+    'Shishtavc', 'Gorancë'
   ],
-  'Prizren (Mamushë)': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+  'Mamushë': [
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri'
   ],
   'Obiliq': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Mirash', 'Shkabaj', 'Kosovo Polje'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Mirash', 'Shkabaj',
+    'Kosovë Polje', 'Dardhishtë', 'Milloshevë',
+    'Sibovc', 'Carallevë'
   ],
   'Graçanicë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Kishna Rekë', 'Dobratin', 'Prishtevë',
+    'Uglarë', 'Gornje Kuševce'
   ],
   'Novobërdë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri',
+    'Staro Selo', 'Krilevë'
   ],
   'Kamenicë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Cernicë', 'Reshtan'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Cernicë', 'Reshtan',
+    'Ranoc', 'Gornje Kusce', 'Bostane',
+    'Lug i Bahçës', 'Rahovicë'
   ],
-  'Vitia': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
-    'Lagja e Spitalit', 'Verboc', 'Pozheran', 'Letnicë'
+  'Viti': [
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagjja e Spitalit', 'Verboc', 'Pozheran',
+    'Letnicë', 'Binçë', 'Gërnçar',
+    'Mogillë', 'Ljubinjë', 'Novosellë'
   ],
   'Shtërpcë': [
-    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Sebce'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri',
+    'Sebce', 'Sazli', 'Gotovusha', 'Nerod'
   ],
   'Ranillug': [
-    'Qendër', 'Lagja e Re'
+    'Qendër', 'Lagjja e Re', 'Pasjane', 'Preoce'
   ],
   'Partesh': [
-    'Qendër', 'Lagja e Re'
+    'Qendër', 'Lagjja e Re', 'Pasjan'
   ],
   'Kllokot': [
-    'Qendër', 'Lagja e Re'
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Vrbovac'
+  ],
+  'Mitrovicë Veriore': [
+    'Qendër', 'Lagjja e Re', 'Mikronaselje', 'Bregu i Diellit'
+  ],
+  'Leposaviq': [
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri'
+  ],
+  'Zubin Potok': [
+    'Qendër', 'Lagjja e Re'
+  ],
+  'Zveçan': [
+    'Qendër', 'Lagjja e Re', 'Blloku i Ri'
   ]
 }
 
@@ -599,29 +668,29 @@ export default function PostoBanesePage() {
                   required
                 >
                   <option value="">Zgjedh qytetin</option>
-                  {Object.keys(KOSOVO_CITIES_NEIGHBORHOODS).map(city => (
+                  {Object.keys(KOSOVO_LOCATIONS).map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <Label htmlFor="neighborhood">Lagjja *</Label>
+                <Label htmlFor="neighborhood">Lagjja / Zona</Label>
                 <select
                   id="neighborhood"
                   name="neighborhood"
                   className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF] disabled:opacity-50 disabled:cursor-not-allowed"
                   value={formData.neighborhood}
                   onChange={handleChange}
-                  required
                   disabled={!formData.city}
                 >
                   <option value="">
-                    {formData.city ? 'Zgjedh lagjen' : 'Zgjidh qytetin së pari'}
+                    {formData.city ? 'Zgjedh lagjen...' : 'Zgjidh qytetin së pari'}
                   </option>
-                  {(KOSOVO_CITIES_NEIGHBORHOODS[formData.city] || []).map(neighborhood => (
+                  {(KOSOVO_LOCATIONS[formData.city] || []).map(neighborhood => (
                     <option key={neighborhood} value={neighborhood}>{neighborhood}</option>
                   ))}
                 </select>
+                <p className="text-xs text-white/40 mt-1">Opsionale - por ndihmon blerësit të gjejnë banesën</p>
               </div>
             </div>
 
