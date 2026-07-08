@@ -38,6 +38,11 @@ export default function RootLayout({
       style={{ backgroundColor: '#0A0F2E' }}
     >
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.style.backgroundColor='#0A0F2E';document.body&&(document.body.style.backgroundColor='#0A0F2E')",
+          }}
+        />
         <meta name="theme-color" content="#0A0F2E" />
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
