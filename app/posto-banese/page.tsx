@@ -495,12 +495,9 @@ export default function PostoBanesePage() {
   return (
     <div className="min-h-screen bg-[#0A0F2E]">
       <div className="max-w-2xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 py-10">
-        <div className="flex items-center mb-8">
-          <Building2 className="h-7 w-7 text-[#1B4FFF] mr-3" />
-          <div>
-            <h1 className="text-2xl font-bold text-white">Posto banesën tënde</h1>
-            <p className="text-gray-400 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white">Posto banesën tënde</h1>
+          <p className="text-gray-400 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>
         </div>
 
         {error && (
