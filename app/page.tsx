@@ -116,15 +116,15 @@ export default function HomePage() {
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
+              <h1 className="inline-block uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-xl px-4 py-2">
                 Gjej banesën e duhur në Kosovë
               </h1>
 
-              <p className="inline-block text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
+              <p className="inline-block text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-xl px-4 py-2">
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Nuk ka komisione dhe nuk ka ndërmjetës të panevojshëm.
               </p>
 
-              <p className="inline-block text-white/40 text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1">
+              <p className="inline-block text-white/40 text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-lg px-3 py-1">
                 Kërko sipas qytetit ose lagjes
               </p>
 
