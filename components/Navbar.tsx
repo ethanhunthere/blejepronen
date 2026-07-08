@@ -279,7 +279,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
                         <button
                           type="button"
-                          onClick={() => { closeDropdown(); router.push('/profili') }}
+                          onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
                           className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <User className="h-4 w-4 mr-3 text-slate-400" />
