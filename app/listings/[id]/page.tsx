@@ -102,7 +102,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   return (
     <div className="min-h-screen bg-[#0A0F2E]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
         <Link href="/listings" className="inline-flex items-center text-gray-400 hover:text-[#4d7cff] mb-6 transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" />

@@ -56,7 +56,7 @@ export default function RootLayout({
         <Toaster richColors position="top-center" />
         {/* Footer */}
         <footer className="border-t border-white/10 bg-[#060B1E] py-8 mt-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1800px] 2xl:max-w-[2200px] px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
               <p className="text-sm text-slate-400 text-center sm:text-left">
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.

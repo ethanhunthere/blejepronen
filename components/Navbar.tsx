@@ -174,31 +174,31 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
   return (
     <nav className={`${positionClasses} bg-transparent overflow-visible border-none ${className || ''}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+      <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 md:h-20 2xl:h-24">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0 [&_img]:invert">
-            <Logo variant="navbar" />
+            <Logo variant="navbar" className="h-8 2xl:h-10 2xl:w-56" />
           </Link>
 
           {/* Right nav section */}
           <div className="flex items-center min-w-0">
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors">
+              <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors 2xl:text-base">
                 Shiko banesat
               </Link>
               {!user ? (
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 text-sm font-semibold text-white border border-white/70 hover:bg-white/10 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 text-sm font-semibold text-white border border-white/70 hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 text-sm font-semibold bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 text-sm font-semibold bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -208,7 +208,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -217,7 +217,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => router.push('/completo-profilin')}
-                      className="inline-flex items-center justify-center rounded-lg px-5 py-2 gap-1.5 text-sm font-semibold whitespace-nowrap border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-colors cursor-pointer"
+                      className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-colors cursor-pointer"
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Verifiko profilin

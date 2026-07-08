@@ -117,17 +117,17 @@ export default function HomePage() {
         />
 
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
+          <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 md:py-18 2xl:py-24 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1
-                className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
+                className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
                 style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
               >
                 Gjej banesën e duhur në Kosovë
               </h1>
 
               <p
-                className="inline-block text-lg md:text-xl text-white max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
+                className="inline-block text-lg md:text-xl 2xl:text-2xl text-white max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
                 style={{ textShadow: '0 2px 20px rgba(0,0,0,0.9)' }}
               >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
@@ -144,6 +144,7 @@ export default function HomePage() {
               <SearchBar
                 placeholder="Kërko sipas qytetit, lagjes ose çmimit..."
                 buttonText="Kërko Banesë"
+                className="2xl:max-w-4xl 2xl:h-16"
               />
 
               {/* City links */}
@@ -180,7 +181,7 @@ export default function HomePage() {
 
       {/* Error state */}
       {error && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8">
           <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 text-center">
             <p className="text-red-300 mb-3">{error}</p>
             <Button
@@ -198,7 +199,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Listings — skeleton while loading */}
-      <section className="bg-[#0A0F2E] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <section className="bg-[#0A0F2E] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">⭐ Të rekomanduara</h2>
@@ -238,7 +239,7 @@ export default function HomePage() {
       </section>
 
       {/* Latest Listings — skeleton while loading */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">🏠 Banesat e Fundit</h2>

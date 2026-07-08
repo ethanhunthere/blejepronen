@@ -83,7 +83,7 @@ function ListingsContent() {
 
   return (
     <div className="min-h-screen bg-[#0A0F2E]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Banesat në shitje dhe me qira</h1>

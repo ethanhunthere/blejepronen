@@ -246,6 +246,14 @@ html {
 }
 
 
+/* Large screen font scaling */
+@media (min-width: 2560px) {
+  html { font-size: 18px; }
+}
+@media (min-width: 3840px) {
+  html { font-size: 22px; }
+}
+
 /* Reduced motion: disable all scroll-triggered motion */
 @media (prefers-reduced-motion: reduce) {
   html {
