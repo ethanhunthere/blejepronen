@@ -35,13 +35,15 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${albertSans.variable} h-full antialiased`}
+      style={{ backgroundColor: '#0A0F2E' }}
     >
       <head>
+        <meta name="theme-color" content="#0A0F2E" />
         <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden">
+      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden" style={{ backgroundColor: '#0A0F2E' }}>
         <Navbar variant="static" />
         <div className="relative">
           <main className="flex-1">{children}</main>
