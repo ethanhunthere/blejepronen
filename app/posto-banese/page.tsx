@@ -13,7 +13,7 @@ import { Building2, Upload, X, Loader2 } from 'lucide-react'
 const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Prishtinë': [
     'Qendër', 'Dardania', 'Ulpiana', 'Ulpiana 1', 'Arbëria',
-    'Bregu i Diellit', 'Kodra e Diellit', 'Lakërishta', 'Lakrishtja',
+    'Bregu i Diellit', 'Kodra e Diellit', 'Lakërishta',
     'Kodra e Trimave', 'Tophane', 'Aktashi', 'Pejton',
     'Mati 1', 'Mati 2', 'Emshiri', 'Kalabria', 'Taslixhe',
     'Velania', 'Sofali', 'Kolovica', 'Dodona',
@@ -23,8 +23,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Gërmia', 'Zllatari', 'Taukbahçe', 'Zona Industriale',
     'Lagjja e Spitalit', 'Lagjja e Re', 'Arbëria e Re',
     'Fusha e Pajtimit', 'Lagjja e Medresesë', 'Perroi i Njelmet',
-    'Qyteza Pejton', 'Parku i Qytetit', 'Vellusha',
-    'Graçanicë', 'Matiqan', 'Çagllavicë', 'Fushë Kosovë'
+    'Qyteza Pejton', 'Parku i Qytetit', 'Vellusha', 'Matiqan'
   ],
   'Prizren': [
     'Qendër', 'Ortakoll', 'Varosh', 'Çarshia e Vjetër',
@@ -33,7 +32,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Lagjja e Spitalit', 'Hoça e Qytetit', 'Piranë',
     'Vranidoll', 'Xhemajl Berisha', 'Remzi Ademi',
     'Bregu i Diellit', 'Tugare', 'Zhur', 'Studime',
-    'Runjevë', 'Nashec', 'Rahovecit', 'Zonë Industriale'
+    'Runjevë', 'Nashec', 'Zona Industriale'
   ],
   'Pejë': [
     'Qendër', 'Çarshia e Vjetër', 'Kapeshnica',
@@ -41,26 +40,25 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Arbëria', 'Ramiz Sadiku', 'Lagjja e Muhaxherëve',
     'Kodra e Trimave', 'Bredhëza', 'Terzialiu',
     'Rugova', 'Lagjja e Spitalit', 'Zona Industriale',
-    'Ura e Tabakëve', 'Kosovë', 'Shtupel', 'Llapushnik',
+    'Ura e Tabakëve', 'Shtupel', 'Llapushnik',
     'Blloku i Spitalit', 'Lagjja e Policisë', 'Zahaq',
-    'Vitomiricë', 'Klinë e Pejës', 'Poterç'
+    'Vitomiricë', 'Poterç'
   ],
   'Gjakovë': [
     'Qendër', 'Çarshia e Madhe', 'Varosh', 'Lagjja e Re',
     'Çabrati', 'Arbëria', 'Rexhep Mala', 'Kodra e Trimave',
-    'Lagjja e Muhaxherëve', 'Blloku i Ri', 'Lagjja UÇK-së',
-    'Lagjja e Spitalit', 'Zona Industriale', 'Cërmjan',
-    'Dobrosin', 'Orize', 'Bec', 'Lubeniq', 'Lagjja e Vjetër',
-    'Bishtazhin', 'Molliqan', 'Suka', 'Trava',
-    'Rr. Nënë Tereza', 'Lagjja e Tabakëve'
+    'Lagjja e Muhaxherëve', 'Blloku i Ri', 'Lagjja e Spitalit',
+    'Zona Industriale', 'Cërmjan', 'Dobrosin', 'Orize', 'Bec',
+    'Lubeniq', 'Lagjja e Vjetër', 'Bishtazhin', 'Molliqan',
+    'Suka', 'Rr. Nënë Tereza', 'Lagjja e Tabakëve'
   ],
   'Gjilan': [
     'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
     'Lagjja e Muhaxherëve', 'Dardania', 'Liria', 'Partizani',
     'Lagjja e Spitalit', 'Kodra e Trimave', 'Zona Industriale',
     'Zhegër', 'Llashticë', 'Miradi e Epërme', 'Miradi e Poshtme',
-    'Bresalci', 'Shashkar', 'Bujanovac', 'Shillovë',
-    'Kotlinë', 'Llapllasellë', 'Domorovc', 'Parteš'
+    'Bresalci', 'Shashkar', 'Shillovë', 'Kotlinë',
+    'Llapllasellë', 'Domorovc'
   ],
   'Mitrovicë': [
     'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
@@ -69,7 +67,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Dardania', 'Sipolje', 'Mikronaselje', 'Draga',
     'Uglare', 'Bairami', 'Lagjja Muharremaj',
     'Lagjja e Minatorëve', 'Bregu i Diellit', 'Sunkovë',
-    'Çabra', 'Sheremetë', 'Vushtrri i Poshtëm'
+    'Çabra', 'Sheremetë'
   ],
   'Ferizaj': [
     'Qendër', 'Blloku i Ri', 'Lagjja e Re', 'Arbëria',
@@ -77,8 +75,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Kodra e Trimave', 'Lagjja e Muhaxherëve', 'Sojeva',
     'Babush i Poshtëm', 'Babush i Epërm', 'Varosh',
     'Kotlina', 'Softë', 'Glloboçicë', 'Lagjja e Policisë',
-    'Ramiz Sadiku', 'Nëntori', 'Lagjja Aktive',
-    'Doganaj', 'Elez Han', 'Komogllavë'
+    'Ramiz Sadiku', 'Nëntori', 'Doganaj', 'Komogllavë'
   ],
   'Vushtrri': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
@@ -98,20 +95,18 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Dardania', 'Gadime e Epërme',
     'Gadime e Poshtme', 'Sllatinë e Epërme', 'Sllatinë e Poshtme',
-    'Rufc', 'Magure', 'Grabovc', 'Krushë e Vogël',
+    'Rufc', 'Magure', 'Grabovc',
     'Bernicë e Epërme', 'Bernicë e Poshtme'
   ],
   'Fushë Kosovë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Dardania', 'Zona Industriale',
-    'Matiqan', 'Dobërçan', 'Miradi', 'Llukar',
-    'Bresje', 'Dobroshi'
+    'Matiqan', 'Dobërçan', 'Miradi', 'Bresje', 'Dobroshi'
   ],
   'Drenas': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Kijeva', 'Komorane',
-    'Opterusha', 'Klina e Re', 'Lladroc',
-    'Lapushnik', 'Tërstenik'
+    'Opterusha', 'Lladroc', 'Lapushnik', 'Tërstenik'
   ],
   'Skënderaj': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
@@ -122,7 +117,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Malishevë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Banja', 'Panorc',
-    'Dragobilje', 'Gjakovicë', 'Gurë i Zi',
+    'Dragobilje', 'Gurë i Zi',
     'Ratkovë', 'Klecka', 'Bellacërkë'
   ],
   'Rahovec': [
@@ -145,7 +140,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Kaçanik': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Kotlina', 'Stagova',
-    'Ivaja', 'Kotlinë', 'Brod', 'Runjevë',
+    'Ivaja', 'Brod', 'Runjevë',
     'Vrajë', 'Gajre', 'Dobrë'
   ],
   'Hani i Elezit': [
@@ -161,14 +156,12 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Istog': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Cerrcë', 'Budisalc',
-    'Lubovë', 'Gornje Selo', 'Klina e Istogut',
-    'Banjë', 'Shupkovc', 'Oshlan', 'Baicë'
+    'Lubovë', 'Banjë', 'Shupkovc', 'Oshlan', 'Baicë'
   ],
   'Klinë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Pavljan', 'Dollc',
-    'Loxhë', 'Gllarevë', 'Budisalc', 'Llapçevë',
-    'Shupkovc', 'Junik', 'Gjakovicë'
+    'Loxhë', 'Gllarevë', 'Llapçevë', 'Shupkovc'
   ],
   'Junik': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri',
@@ -191,8 +184,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
   ],
   'Graçanicë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
-    'Kishna Rekë', 'Dobratin', 'Prishtevë',
-    'Uglarë', 'Gornje Kuševce'
+    'Kishna Rekë', 'Dobratin', 'Prishtevë', 'Uglarë'
   ],
   'Novobërdë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri',
@@ -201,7 +193,7 @@ const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Kamenicë': [
     'Qendër', 'Lagjja e Re', 'Blloku i Ri', 'Arbëria',
     'Lagjja e Spitalit', 'Cernicë', 'Reshtan',
-    'Ranoc', 'Gornje Kusce', 'Bostane',
+    'Ranoc', 'Bostane',
     'Lug i Bahçës', 'Rahovicë'
   ],
   'Viti': [
