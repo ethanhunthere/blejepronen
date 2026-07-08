@@ -10,9 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { User, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
-// NOTE: Magic link verification is used instead of OTP.
-// The callback route handles token_hash for magic link verification.
-// Supabase Dashboard → Authentication → Email → enable magic link.
+// NOTE: 6-digit OTP email verification is used for profile verification.
+// Supabase Dashboard → Authentication → Email Templates → "Magic Link"
+// is used to send the OTP code when signInWithOtp is called.
 
 type Step = 1 | 2
 
@@ -29,6 +29,11 @@ export default function CompletoProfilinPage() {
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [userEmail, setUserEmail] = useState('')
+
+  // Step 2 fields
+  const [otp, setOtp] = useState('')
+  const [countdown, setCountdown] = useState(60)
+  const [canResend, setCanResend] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -78,6 +83,95 @@ export default function CompletoProfilinPage() {
     init()
   }, [router])
 
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    if (step !== 2) return
+    setCountdown(60)
+    setCanResend(false)
+
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setCanResend(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [step])
+
+  // Auto-submit when 6 digits are entered
+  useEffect(() => {
+    if (otp.length === 6) {
+      handleVerifyOtp(otp)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp])
+
+  const sendOtp = async () => {
+    const supabase = createClient()
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: userEmail,
+      options: {
+        shouldCreateUser: false,
+      },
+    })
+
+    if (otpError) {
+      console.error('OTP send error:', JSON.stringify(otpError))
+      setError('Gabim gjatë dërgimit të kodit. Provo përsëri.')
+      return false
+    }
+
+    return true
+  }
+
+  const handleVerifyOtp = async (code: string) => {
+    setLoading(true)
+    setError('')
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setError('Sesioni ka skaduar. Ju lutemi regjistrohuni përsëri.')
+      setLoading(false)
+      return
+    }
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email: userEmail,
+      token: code,
+      type: 'email',
+    })
+
+    if (verifyError) {
+      console.error('OTP verify error:', JSON.stringify(verifyError))
+      setError('Kodi i verifikimit është i pasaktë ose ka skaduar.')
+      setLoading(false)
+      return
+    }
+
+    // Mark profile as verified
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ phone_verified: true })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Profile verify update error:', updateError)
+      setError('Gabim gjatë përditësimit të profilit.')
+      setLoading(false)
+      return
+    }
+
+    toast.success('Profili u verifikua me sukses!')
+    router.push('/')
+  }
+
   const handleStep1Submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -121,50 +215,28 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Send magic link to email — no shouldCreateUser because users
-    // who signed up via Google OAuth have provider:'google', not 'email'.
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: userEmail,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (otpError) {
-      console.error('OTP error:', JSON.stringify(otpError))
-      console.error('Magic link send error details:', {
-        message: otpError.message,
-        name: otpError.name,
-        status: (otpError as unknown as { status?: number }).status,
-        code: (otpError as unknown as { code?: string }).code,
-        email: userEmail,
-      })
-      setError('Gabim gjatë dërgimit të linkut. Provo përsëri.')
+    // Send 6-digit OTP code to email
+    const sent = await sendOtp()
+    if (!sent) {
       setLoading(false)
       return
     }
 
-    toast.success('Linku i verifikimit u dërgua me email!')
+    toast.success('Kodi i verifikimit u dërgua me email!')
+    setOtp('')
     setStep(2)
     setLoading(false)
   }, [firstName, lastName, phone, userEmail])
 
-  const handleResendMagicLink = async () => {
-    if (!userEmail) return
+  const handleResendOtp = async () => {
+    if (!userEmail || !canResend) return
     setResending(true)
-    const supabase = createClient()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: userEmail,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (otpError) {
-      console.error('Resend OTP error:', JSON.stringify(otpError))
-      toast.error('Gabim gjatë ridërgimit të linkut.')
-    } else {
-      toast.success('Linku u ridërgua me email!')
+    const sent = await sendOtp()
+    if (sent) {
+      toast.success('Kodi u ridërgua me email!')
+      setOtp('')
+      setCountdown(60)
+      setCanResend(false)
     }
     setResending(false)
   }
@@ -271,44 +343,60 @@ export default function CompletoProfilinPage() {
             </>
           )}
 
-          {/* === STEP 2: Magic Link Sent === */}
+          {/* === STEP 2: OTP Verification === */}
           {step === 2 && (
             <>
               <div className="mb-8 text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">Verifiko email-in</h2>
                 <p className="text-white/50 text-sm">
-                  Klikoni linkun në email-in tuaj për të verifikuar llogarinë.
+                  Shkruani kodin 6-shifror që dërguam në {userEmail}
                 </p>
               </div>
 
-              <div className="space-y-5">
+              {error && (
+                <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400 rounded-xl">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-6">
                 <div className="flex justify-center">
                   <div className="w-20 h-20 bg-[#1B4FFF]/15 rounded-2xl flex items-center justify-center">
                     <Mail className="h-10 w-10 text-[#1B4FFF]" />
                   </div>
                 </div>
 
-                <p className="text-sm text-center text-white/40">
-                  Nëse nuk e shihni email-in, kontrolloni dosjen e spam-it.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleResendMagicLink}
-                  className="w-full h-12 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-medium transition-colors cursor-pointer"
-                  disabled={resending}
-                >
-                  {resending ? 'Duke u ridërguar...' : 'Ridërgo linkun'}
-                </button>
-
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/10" />
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-[#0A0F2E] px-3 text-white/30">ose</span>
-                  </div>
+                <div className="flex justify-center">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={otp}
+                    disabled={loading}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                      setOtp(value)
+                      if (error) setError('')
+                    }}
+                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white/8 border border-white/15 rounded-xl text-white placeholder:text-white/20 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                  />
                 </div>
+
+                <p className="text-sm text-center text-white/40">
+                  {canResend ? (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resending}
+                      className="text-[#1B4FFF] hover:text-[#1640CC] font-medium cursor-pointer disabled:opacity-50"
+                    >
+                      {resending ? 'Duke u ridërguar...' : 'Ridërgo kodin'}
+                    </button>
+                  ) : (
+                    <>Kodi skadon pas {countdown} sekondave</>
+                  )}
+                </p>
 
                 <button
                   type="button"
@@ -326,4 +414,3 @@ export default function CompletoProfilinPage() {
     </div>
   )
 }
-
