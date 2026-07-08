@@ -16,36 +16,9 @@ interface NavbarProps {
   className?: string
 }
 
-// Synchronously read the Supabase auth token from localStorage so the navbar
-// can render the right-side buttons immediately on hydration.
-function getStoredUser(): SupabaseUser | null {
-  if (typeof window === 'undefined') return null
-  try {
-    // Guard against showing the old user immediately after a logout redirect.
-    const logoutAt = sessionStorage.getItem('__logout')
-    if (logoutAt && Date.now() - parseInt(logoutAt, 10) < 5000) {
-      return null
-    }
-
-    const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
-    if (!key) return null
-    const raw = localStorage.getItem(key)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    const nowSeconds = Date.now() / 1000
-    if (parsed?.expires_at && nowSeconds > parsed.expires_at) {
-      return null
-    }
-    return parsed?.user ?? null
-  } catch {
-    return null
-  }
-}
-
 export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
-  // null = logged out, object = logged in. Initial value is read synchronously
-  // from localStorage so the buttons never wait for getSession().
-  const [user, setUser] = useState<SupabaseUser | null>(() => getStoredUser())
+  // undefined = still checking session, null = logged out, object = logged in
+  const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
   const [profileAvatarUrl, setProfileAvatarUrl] = useState('')
@@ -106,6 +79,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           setProfileAvatarUrl('')
           setDropdownOpen(false)
           setMenuOpen(false)
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sb-')) {
+              localStorage.removeItem(key)
+            }
+          })
           router.refresh()
           return
         }
@@ -193,7 +171,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     }
 
     // 6. Hard redirect to home so middleware runs with fully cleared state
-    window.location.href = '/'
+    window.location.replace('/')
   }, [])
 
   const positionClasses = {
@@ -218,7 +196,9 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors 2xl:text-base">
                 Shiko banesat
               </Link>
-              {!user ? (
+              {user === undefined ? (
+                <div className="w-48 h-9" />
+              ) : user === null ? (
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
@@ -347,7 +327,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
               Shiko banesat
             </Link>
-            {!user ? (
+            {user === undefined ? null : user === null ? (
               <div className="space-y-2">
                 <a href="/login" className="block w-full rounded-lg border border-white/70 bg-transparent px-5 py-2 text-center text-sm font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer">Hyr</a>
                 <a href="/register" className="block w-full rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer">Regjistrohu</a>
