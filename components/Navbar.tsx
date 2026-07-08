@@ -64,7 +64,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       }
 
       setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
-      setProfileFirstName(profile?.first_name || '')
+      setProfileFirstName(profile?.phone_verified ? profile?.first_name || '' : '')
       setProfileAvatarUrl(profile?.avatar_url || '')
     }
 
@@ -251,9 +251,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs text-white/40 group-hover:text-white/60 font-medium mb-1">Profili im →</p>
-                              <p className="text-sm font-medium text-white truncate">
-                                {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
-                              </p>
+                              {!profileIncomplete && (
+                                <p className="text-sm font-medium text-white truncate">
+                                  {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                                </p>
+                              )}
                               <p className="text-xs text-slate-400 truncate">{user?.email}</p>
                               {profileIncomplete && (
                                 <span className="inline-flex items-center mt-1 text-xs text-orange-400">
