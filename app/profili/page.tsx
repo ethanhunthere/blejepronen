@@ -8,18 +8,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import ListingCard from '@/components/ListingCard'
-import { Camera, CheckCircle2, Mail, Phone, Calendar, User, Loader2, AlertTriangle } from 'lucide-react'
-import type { Listing, Profile } from '@/lib/supabase'
+import { Camera, CheckCircle2, Mail, Phone, Calendar, Loader2, AlertTriangle } from 'lucide-react'
+import type { Profile } from '@/lib/supabase'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [deleteMessage, setDeleteMessage] = useState('')
+  const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({ first_name: '', last_name: '', phone: '' })
   const [userEmail, setUserEmail] = useState('')
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -43,16 +42,6 @@ export default function ProfilePage() {
         setFormData({ first_name: prof.first_name, last_name: prof.last_name, phone: prof.phone || '' })
       }
       setUserEmail(user?.email || '')
-
-      const { data: myListings } = await supabase
-        .from('listings')
-        .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      setListings((myListings || []) as unknown as Listing[])
       setLoading(false)
     }
     load()
@@ -71,7 +60,9 @@ export default function ProfilePage() {
       .eq('id', user.id)
 
     if (err) { setError('Gabim gjatë ruajtjes.'); setSaving(false); return }
+    setProfile(prev => prev ? { ...prev, ...formData } : prev)
     setSuccess(true)
+    setEditMode(false)
     setTimeout(() => setSuccess(false), 3000)
     setSaving(false)
   }
@@ -123,14 +114,6 @@ export default function ProfilePage() {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
-  }
-
-  const handleDeleteListing = async (id: string) => {
-    if (!confirm('A jeni të sigurt që doni ta fshini këtë listim?')) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('listings').update({ is_active: false }).eq('id', id).eq('user_id', user.id)
-    setListings(prev => prev.filter(l => l.id !== id))
   }
 
   const handleDeleteAccount = async () => {
@@ -275,49 +258,82 @@ export default function ProfilePage() {
         {isVerified && (
           <>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
-              <h3 className="text-white font-semibold text-lg mb-5">Të dhënat e profilit</h3>
-              <form onSubmit={handleSave} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first_name" className="text-white/40 text-xs uppercase tracking-wider">Emri</Label>
-                    <Input
-                      id="first_name"
-                      className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
-                      value={formData.first_name}
-                      onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="last_name" className="text-white/40 text-xs uppercase tracking-wider">Mbiemri</Label>
-                    <Input
-                      id="last_name"
-                      className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
-                      value={formData.last_name}
-                      onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
-                    />
-                  </div>
+              {!editMode ? (
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white font-semibold text-lg">Të dhënat e profilit</h3>
+                  <button
+                    type="button"
+                    onClick={() => setEditMode(true)}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+                  >
+                    Ndrysho profilin
+                  </button>
                 </div>
-                <div>
-                  <Label htmlFor="phone" className="text-white/40 text-xs uppercase tracking-wider">
-                    <Phone className="h-3 w-3 inline mr-1" />
-                    Numri i telefonit
-                  </Label>
-                  <Input
-                    id="phone"
-                    className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
-                    placeholder="+383 44 123 456"
-                    value={formData.phone}
-                    onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
-                </Button>
-              </form>
+              ) : (
+                <>
+                  <h3 className="text-white font-semibold text-lg mb-5">Ndrysho të dhënat</h3>
+                  <form onSubmit={handleSave} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="first_name" className="text-white/40 text-xs uppercase tracking-wider">Emri</Label>
+                        <Input
+                          id="first_name"
+                          className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                          value={formData.first_name}
+                          onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="last_name" className="text-white/40 text-xs uppercase tracking-wider">Mbiemri</Label>
+                        <Input
+                          id="last_name"
+                          className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                          value={formData.last_name}
+                          onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="phone" className="text-white/40 text-xs uppercase tracking-wider">
+                        <Phone className="h-3 w-3 inline mr-1" />
+                        Numri i telefonit
+                      </Label>
+                      <Input
+                        id="phone"
+                        className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                        placeholder="+383 44 123 456"
+                        value={formData.phone}
+                        onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button
+                        type="submit"
+                        disabled={saving}
+                        className="flex-1 h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditMode(false)
+                          if (profile) {
+                            setFormData({
+                              first_name: profile.first_name,
+                              last_name: profile.last_name,
+                              phone: profile.phone || '',
+                            })
+                          }
+                        }}
+                        className="flex-1 h-11 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-semibold transition-colors cursor-pointer"
+                      >
+                        Anulo
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
             </div>
 
             {/* Danger Zone */}
@@ -337,35 +353,6 @@ export default function ProfilePage() {
           </>
         )}
 
-        {/* My Listings */}
-        <div className="mb-8">
-          <h2 className="text-white font-semibold text-lg mb-4">Listimet e mia ({listings.length})</h2>
-          {listings.length === 0 ? (
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-10 text-center">
-              <p className="text-white/50 mb-4">Nuk keni listuar asnjë banesë ende.</p>
-              <Button
-                onClick={() => router.push('/posto-banese')}
-                className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
-              >
-                Posto banesën tënde
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {listings.map(listing => (
-                <div key={listing.id} className="relative">
-                  <ListingCard listing={listing} />
-                  <button
-                    onClick={() => handleDeleteListing(listing.id)}
-                    className="absolute top-3 right-3 h-11 px-3 bg-red-500/20 text-red-400 text-sm border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors z-10 inline-flex items-center justify-center cursor-pointer font-semibold"
-                  >
-                    Fshi
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )
