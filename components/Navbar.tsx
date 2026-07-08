@@ -237,20 +237,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     {dropdownOpen && (
                       <div className="absolute right-0 top-full mt-2 w-56 bg-[#0A0F2E] rounded-lg shadow-lg border border-white/10 py-1 z-50">
                         {/* User info header */}
-                        <div className="px-4 py-3 border-b border-white/10">
+                        <div
+                          className="px-4 py-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                          onClick={() => { closeDropdown(); router.push('/profili') }}
+                        >
                           <p className="text-sm font-medium text-white truncate">
                             {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                           </p>
                           <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-                          {profileIncomplete && (
-                            <button
-                              type="button"
-                              onClick={() => { closeDropdown(); router.push('/completo-profilin') }}
-                              className="mt-2 inline-flex items-center text-xs font-medium text-orange-400 border border-orange-400/50 rounded-full px-2 py-0.5 hover:bg-orange-400/10 cursor-pointer transition-colors"
-                            >
-                              Verifiko profilin
-                            </button>
-                          )}
                         </div>
 
                         <button
@@ -268,7 +262,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <User className="h-4 w-4 mr-3 text-slate-400" />
-                          Profili & Banesat e Mia
+                          Banesat e mia
                         </button>
 
                         {profileIncomplete && (
