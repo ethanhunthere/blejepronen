@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
+import { User, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 // NOTE: Magic link verification is used instead of OTP.
@@ -27,6 +27,7 @@ export default function CompletoProfilinPage() {
   // Step 1 fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
@@ -103,13 +104,14 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Save profile data (first_name and last_name only)
+    // Save profile data
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
         id: user.id,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        phone: phone.trim(),
       })
 
     if (profileError) {
@@ -145,7 +147,7 @@ export default function CompletoProfilinPage() {
     toast.success('Linku i verifikimit u dërgua me email!')
     setStep(2)
     setLoading(false)
-  }, [firstName, lastName, userEmail])
+  }, [firstName, lastName, phone, userEmail])
 
   const handleResendMagicLink = async () => {
     if (!userEmail) return
@@ -234,6 +236,21 @@ export default function CompletoProfilinPage() {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="phone" className="text-white/60 text-sm font-medium mb-1.5">Numri i telefonit</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+383 44 123 456"
+                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                     />
                   </div>
                 </div>
