@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 interface AnimateOnScrollProps {
   children: React.ReactNode
@@ -10,7 +10,7 @@ interface AnimateOnScrollProps {
   once?: boolean
 }
 
-export default function AnimateOnScroll({
+function AnimateOnScroll({
   children,
   className = '',
   threshold = 0.15,
@@ -53,3 +53,5 @@ export default function AnimateOnScroll({
     </div>
   )
 }
+
+export default React.memo(AnimateOnScroll)

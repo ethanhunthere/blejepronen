@@ -29,7 +29,7 @@ export default function HomePage() {
       try {
         const { data: listings } = await supabase
           .from('listings')
-          .select('*')
+          .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
           .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(12)

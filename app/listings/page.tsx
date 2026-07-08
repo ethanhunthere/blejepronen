@@ -18,9 +18,8 @@ function ListingsContent() {
   const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [agentResults, setAgentResults] = useState<AgentResult[]>([])
-  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
+  const [fetchState, setFetchState] = useState({ loading: true, hasMore: true })
   const [filters, setFilters] = useState({
     city: searchParams.get('city') || '',
     type: searchParams.get('type') || '',
@@ -50,14 +49,14 @@ function ListingsContent() {
   }
 
   const fetchListings = useCallback(async (pageNum = 0) => {
-    setLoading(true)
+    setFetchState(prev => ({ ...prev, loading: true }))
 
     const searchTerm = filters.search.trim()
 
     let listingQuery = applyCommonFilters(
       supabase
         .from('listings')
-        .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
+        .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
         .eq('is_active', true)
     )
 
@@ -85,8 +84,6 @@ function ListingsContent() {
     const listingResults = (listingData || []) as unknown as Listing[]
     const agentResultsData = (profileData || []) as unknown as AgentResult[]
 
-    console.log('Agent search results:', profileData, 'Search term:', searchTerm)
-
     if (pageNum === 0) {
       setListings(listingResults)
       setAgentResults(agentResultsData)
@@ -98,13 +95,12 @@ function ListingsContent() {
       })
     }
 
-    setHasMore(listingResults.length === PAGE_SIZE)
-    setLoading(false)
+    setFetchState({ loading: false, hasMore: listingResults.length === PAGE_SIZE })
   }, [filters, supabase])
 
   useEffect(() => {
     setPage(0)
-    setHasMore(true)
+    setFetchState(prev => ({ ...prev, hasMore: true }))
     fetchListings(0)
   }, [fetchListings])
 
@@ -280,7 +276,7 @@ function ListingsContent() {
         )}
 
         {/* Agent Results */}
-        {!loading && agentResults.length > 0 && !filters.agentId && (
+        {!fetchState.loading && agentResults.length > 0 && !filters.agentId && (
           <div className="mb-8">
             <h2 className="text-white/60 text-sm font-medium mb-3">Agjentë & Shitës</h2>
             <div className="space-y-3">
@@ -334,7 +330,7 @@ function ListingsContent() {
         )}
 
         {/* Selected Agent */}
-        {!loading && filters.agentId && selectedAgent && (
+        {!fetchState.loading && filters.agentId && selectedAgent && (
           <div className="mb-8">
             <div className="bg-white/8 border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -378,7 +374,7 @@ function ListingsContent() {
         )}
 
         {/* Results */}
-        {loading ? (
+        {fetchState.loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-[#111936] rounded-2xl overflow-hidden animate-pulse border border-white/10">
@@ -408,7 +404,7 @@ function ListingsContent() {
                 <ListingCard key={listing.id} listing={listing} priority={index < 4} />
               ))}
             </div>
-            {hasMore && !loading && listings.length > 0 && (
+            {fetchState.hasMore && !fetchState.loading && listings.length > 0 && (
               <div className="text-center mt-10">
                 <button
                   type="button"

@@ -10,15 +10,14 @@ interface ListingCardProps {
   priority?: boolean
 }
 
-const ListingCard = React.memo(function ListingCard({ listing, priority = false }: ListingCardProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('sq-AL', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(price)
-  }
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('sq-AL', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(price)
 
+const ListingCard = React.memo(function ListingCard({ listing, priority = false }: ListingCardProps) {
   const mainImage = listing.images?.[0] || ''
 
   return (

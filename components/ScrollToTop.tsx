@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowUp } from 'lucide-react'
 
-export default function ScrollToTop() {
+function ScrollToTop() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -30,3 +30,5 @@ export default function ScrollToTop() {
     </button>
   )
 }
+
+export default React.memo(ScrollToTop)

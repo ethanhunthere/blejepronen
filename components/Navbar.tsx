@@ -19,9 +19,7 @@ interface NavbarProps {
 export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   // undefined = still checking session, null = logged out, object = logged in
   const [user, setUser] = useState<SupabaseUser | null | undefined>(undefined)
-  const [profileIncomplete, setProfileIncomplete] = useState(false)
-  const [profileFirstName, setProfileFirstName] = useState('')
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState('')
+  const [profile, setProfile] = useState({ incomplete: false, firstName: '', avatarUrl: '' })
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -43,9 +41,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
       }
 
-      setProfileIncomplete(!profile?.first_name || !profile?.email_verified)
-      setProfileFirstName(profile?.email_verified ? profile?.first_name || '' : '')
-      setProfileAvatarUrl(profile?.avatar_url || '')
+      setProfile({
+        incomplete: !profile?.first_name || !profile?.email_verified,
+        firstName: profile?.email_verified ? profile?.first_name || '' : '',
+        avatarUrl: profile?.avatar_url || '',
+      })
     }
 
     const checkSession = async () => {
@@ -88,9 +88,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           if (event === 'SIGNED_OUT') {
             setUser(null)
             currentUserId = null
-            setProfileIncomplete(false)
-            setProfileFirstName('')
-            setProfileAvatarUrl('')
+            setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
             setDropdownOpen(false)
             setMenuOpen(false)
             Object.keys(localStorage).forEach(key => {
@@ -119,9 +117,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           if (currentUser) {
             loadProfile(currentUser.id)
           } else {
-            setProfileIncomplete(false)
-            setProfileFirstName('')
-            setProfileAvatarUrl('')
+            setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
           }
         }
       )
@@ -159,9 +155,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     setDropdownOpen(false)
     setMenuOpen(false)
     setUser(null)
-    setProfileIncomplete(false)
-    setProfileFirstName('')
-    setProfileAvatarUrl('')
+    setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
 
     // 2. Sign out on the client (global scope clears both local and server session)
     try {
@@ -247,10 +241,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
                     >
-                      {profileAvatarUrl ? (
-                        <img src={profileAvatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                      {profile.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
                       ) : (
-                        (profileFirstName || user?.email || '?')[0].toUpperCase()
+                        (profile.firstName || user?.email || '?')[0].toUpperCase()
                       )}
                     </button>
 
@@ -263,21 +257,21 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0 overflow-hidden">
-                              {profileAvatarUrl ? (
-                                <img src={profileAvatarUrl} alt="" className="w-full h-full object-cover" />
+                              {profile.avatarUrl ? (
+                                <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                (profileFirstName || user?.email || '?')[0].toUpperCase()
+                                (profile.firstName || user?.email || '?')[0].toUpperCase()
                               )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs text-white/40 group-hover:text-white/60 font-medium mb-1">Profili im →</p>
-                              {!profileIncomplete && (
+                              {!profile.incomplete && (
                                 <p className="text-sm font-medium text-white truncate">
-                                  {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                                  {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
                                 </p>
                               )}
                               <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-                              {profileIncomplete && (
+                              {profile.incomplete && (
                                 <span className="inline-flex items-center mt-1 text-xs text-orange-400">
                                   ⚠️ Verifiko profilin
                                 </span>
@@ -349,15 +343,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             ) : (
               <>
                 <div className="flex items-center gap-3 px-1 py-2">
-                  {profileAvatarUrl ? (
-                    <img src={profileAvatarUrl} alt="" className="rounded-full w-9 h-9 object-cover shrink-0" />
+                  {profile.avatarUrl ? (
+                    <img src={profile.avatarUrl} alt="" className="rounded-full w-9 h-9 object-cover shrink-0" />
                   ) : (
                     <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
-                      {(profileFirstName || user?.email || '?')[0].toUpperCase()}
+                      {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                     </span>
                   )}
                   <span className="text-sm font-medium text-white truncate">
-                    {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                    {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
                 </div>
                 <button

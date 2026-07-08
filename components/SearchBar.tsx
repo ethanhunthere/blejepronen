@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 
@@ -10,7 +10,7 @@ interface SearchBarProps {
   buttonText?: string
 }
 
-export default function SearchBar({
+function SearchBar({
   className = '',
   placeholder = 'Kërko banesë, agjent, kompani, adresë...',
   buttonText = 'Kërko',
@@ -58,3 +58,5 @@ export default function SearchBar({
     </div>
   )
 }
+
+export default React.memo(SearchBar)

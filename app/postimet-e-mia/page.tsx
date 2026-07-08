@@ -35,9 +35,10 @@ export default function PostimetEMiaPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('listings')
-      .select('*')
+      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
       .eq('user_id', uid)
       .order('created_at', { ascending: false })
+      .limit(500)
 
     if (error) {
       console.error('Fetch listings error:', error)

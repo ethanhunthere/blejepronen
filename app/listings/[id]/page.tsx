@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, BedDouble, Maximize2, Phone, ArrowLeft, Calendar } from 'lucide-react'
 
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
+
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
+
 interface ListingDetailPageProps {
   params: Promise<{ id: string }>
 }
@@ -56,7 +62,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
   const { data, error } = await supabase
     .from('listings')
-    .select('*, profiles(first_name, last_name, phone)')
+    .select('id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,profiles(first_name,last_name,phone)')
     .eq('id', id)
     .eq('is_active', true)
     .single()
@@ -66,15 +72,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     throw new Error(`Failed to load listing: ${error.message}`)
   }
 
-  const listing = (data as ListingWithProfile | null) ?? null
+  const listing = (data as unknown as ListingWithProfile | null) ?? null
 
   if (!listing) notFound()
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
-
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const conditionLabels: Record<string, string> = {
     'e-re': 'E re',
@@ -147,7 +147,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {listing.images.slice(1).map((img: string, i: number) => (
                   <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-800">
-                    <Image src={img} alt={`Foto ${i + 2}`} fill sizes="(max-width: 640px) 25vw, 15vw" className="object-cover" />
+                    <Image src={img} alt={`Foto ${i + 2}`} fill sizes="25vw" className="object-cover" />
                   </div>
                 ))}
               </div>

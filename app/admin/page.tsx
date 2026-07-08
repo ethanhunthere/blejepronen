@@ -16,17 +16,18 @@ export default async function AdminPage() {
 
   if (!user || !ADMIN_EMAIL || user.email !== ADMIN_EMAIL) redirect('/')
 
-  const { data: listings } = await supabase
-    .from('listings')
-    .select('*, profiles(first_name, last_name)')
-    .order('created_at', { ascending: false })
-    .limit(200)
-
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(200)
+  const [{ data: listings }, { data: profiles }] = await Promise.all([
+    supabase
+      .from('listings')
+      .select('id,title,price,city,type,is_active,created_at,user_id,profiles(first_name,last_name)')
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabase
+      .from('profiles')
+      .select('id,first_name,last_name,phone,email_verified,created_at')
+      .order('created_at', { ascending: false })
+      .limit(200),
+  ])
 
   const typedListings = (listings || []) as unknown as ListingWithSeller[]
   const typedProfiles = (profiles || []) as unknown as Profile[]
