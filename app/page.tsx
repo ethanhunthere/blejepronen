@@ -101,7 +101,7 @@ export default function HomePage() {
         {/* Soft radial vignette */}
         <div
           className="pointer-events-none absolute inset-0 z-10"
-          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.25) 0%, transparent 100%)' }}
+          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.15) 0%, transparent 100%)' }}
         />
 
         {/* Top fade from page background to blend navbar seamlessly */}
