@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { Input } from '@/components/ui/input'
-import { Search, SlidersHorizontal, X, Loader2, User, CheckCircle2 } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Loader2, CheckCircle2 } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
@@ -27,10 +27,13 @@ function ListingsContent() {
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
     rooms: searchParams.get('rooms') || '',
-    search: searchParams.get('search') || ''
+    search: searchParams.get('search') || '',
+    agentId: searchParams.get('agentId') || ''
   })
   const [showFilters, setShowFilters] = useState(false)
   const [searchInput, setSearchInput] = useState(filters.search)
+  const [selectedAgent, setSelectedAgent] = useState<AgentResult | null>(null)
+  const router = useRouter()
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
 
@@ -40,72 +43,45 @@ function ListingsContent() {
     if (filters.minPrice) query = query.gte('price', Number(filters.minPrice))
     if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice))
     if (filters.rooms) query = query.eq('rooms', Number(filters.rooms))
+    if (filters.agentId) query = query.eq('user_id', filters.agentId)
     return query
   }
 
   const fetchListings = useCallback(async (pageNum = 0) => {
     setLoading(true)
 
-    let listingResults: Listing[] = []
-    let agentResultsData: AgentResult[] = []
+    const searchTerm = filters.search.trim()
 
-    const baseQuery = supabase
-      .from('listings')
-      .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
-      .eq('is_active', true)
+    let listingQuery = applyCommonFilters(
+      supabase
+        .from('listings')
+        .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
+        .eq('is_active', true)
+    )
 
-    if (filters.search && pageNum === 0) {
-      const searchTerm = filters.search
-
-      const [listingsRes, profilesRes] = await Promise.all([
-        applyCommonFilters(
-          supabase
-            .from('listings')
-            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
-        ).or(`title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`),
-        supabase
-          .from('profiles')
-          .select('id,first_name,last_name,email,avatar_url,email_verified')
-          .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
-          .limit(20)
-      ])
-
-      listingResults = (listingsRes.data || []) as unknown as Listing[]
-      agentResultsData = (profilesRes.data || []) as unknown as AgentResult[]
-
-      if (agentResultsData.length > 0) {
-        const userIds = agentResultsData.map(p => p.id)
-        let agentListingsQuery = applyCommonFilters(
-          supabase
-            .from('listings')
-            .select('id,title,price,city,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id')
-            .eq('is_active', true)
-        ).in('user_id', userIds)
-          .order('created_at', { ascending: false })
-          .limit(100)
-
-        const { data: agentListingsData } = await agentListingsQuery
-        const agentListings = (agentListingsData || []) as unknown as Listing[]
-
-        const seen = new Set(listingResults.map(l => l.id))
-        agentListings.forEach(listing => {
-          if (!seen.has(listing.id)) {
-            listingResults.push(listing)
-            seen.add(listing.id)
-          }
-        })
-      }
-    } else {
-      let query = applyCommonFilters(baseQuery)
-        .order('created_at', { ascending: false })
-        .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
-
-      const { data } = await query
-      listingResults = (data || []) as unknown as Listing[]
+    if (searchTerm) {
+      listingQuery = listingQuery.or(
+        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+      )
     }
+
+    listingQuery = listingQuery
+      .order('created_at', { ascending: false })
+      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
+
+    const [{ data: listingData }, { data: profileData }] = await Promise.all([
+      listingQuery,
+      searchTerm && pageNum === 0 && !filters.agentId
+        ? supabase
+            .from('profiles')
+            .select('id,first_name,last_name,email,avatar_url,email_verified')
+            .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+            .limit(20)
+        : Promise.resolve({ data: [] })
+    ])
+
+    const listingResults = (listingData || []) as unknown as Listing[]
+    const agentResultsData = (profileData || []) as unknown as AgentResult[]
 
     if (pageNum === 0) {
       setListings(listingResults)
@@ -118,12 +94,7 @@ function ListingsContent() {
       })
     }
 
-    if (listingResults.length < PAGE_SIZE) {
-      setHasMore(false)
-    } else {
-      setHasMore(true)
-    }
-
+    setHasMore(listingResults.length === PAGE_SIZE)
     setLoading(false)
   }, [filters, supabase])
 
@@ -139,9 +110,26 @@ function ListingsContent() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!filters.agentId) {
+      setSelectedAgent(null)
+      return
+    }
+
+    supabase
+      .from('profiles')
+      .select('id,first_name,last_name,email,avatar_url,email_verified')
+      .eq('id', filters.agentId)
+      .single()
+      .then(({ data }) => {
+        setSelectedAgent((data || null) as unknown as AgentResult | null)
+      })
+  }, [filters.agentId, supabase])
+
   const clearFilters = () => {
     setSearchInput('')
-    setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '' })
+    setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '' })
+    setSelectedAgent(null)
   }
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
@@ -275,17 +263,21 @@ function ListingsContent() {
         )}
 
         {/* Agent Results */}
-        {!loading && agentResults.length > 0 && (
+        {!loading && agentResults.length > 0 && !filters.agentId && (
           <div className="mb-8">
             <h2 className="text-white/60 text-sm font-medium mb-3">Agjentët & Shitësit</h2>
             <div className="flex gap-4 overflow-x-auto pb-2">
               {agentResults.map(agent => {
                 const initials = (agent.first_name?.[0] || agent.email?.[0] || '?').toUpperCase()
-                const searchQuery = encodeURIComponent(`${agent.first_name} ${agent.last_name}`.trim())
                 return (
-                  <div
+                  <button
                     key={agent.id}
-                    className="min-w-[280px] bg-white/8 border border-white/10 rounded-2xl p-4 flex items-center gap-3"
+                    type="button"
+                    onClick={() => {
+                      router.push(`/listings?agentId=${agent.id}`, { scroll: false })
+                      setFilters(prev => ({ ...prev, agentId: agent.id }))
+                    }}
+                    className="min-w-[280px] bg-white/8 border border-white/10 rounded-2xl p-4 flex items-center gap-3 text-left hover:bg-white/12 hover:border-white/20 transition-colors cursor-pointer"
                   >
                     {agent.avatar_url ? (
                       <img
@@ -309,15 +301,56 @@ function ListingsContent() {
                         </span>
                       )}
                     </div>
-                    <Link
-                      href={`/listings?search=${searchQuery}`}
-                      className="text-xs font-medium text-[#1B4FFF] hover:text-[#1640CC] whitespace-nowrap"
-                    >
+                    <span className="text-xs font-medium text-[#1B4FFF] whitespace-nowrap">
                       Shiko banesat
-                    </Link>
-                  </div>
+                    </span>
+                  </button>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Selected Agent */}
+        {!loading && filters.agentId && selectedAgent && (
+          <div className="mb-8">
+            <div className="bg-white/8 border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                {selectedAgent.avatar_url ? (
+                  <img
+                    src={selectedAgent.avatar_url}
+                    alt=""
+                    className="w-16 h-16 rounded-full object-cover border border-white/10"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white text-xl font-bold">
+                    {(selectedAgent.first_name?.[0] || selectedAgent.email?.[0] || '?').toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <h2 className="text-white font-semibold text-lg truncate">
+                    {selectedAgent.first_name} {selectedAgent.last_name}
+                  </h2>
+                  <p className="text-white/50 text-sm truncate">{selectedAgent.email}</p>
+                  {selectedAgent.email_verified && (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-1">
+                      <CheckCircle2 className="h-3 w-3" /> E verifikuar
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, agentId: '' }))
+                  setSelectedAgent(null)
+                  router.push('/listings', { scroll: false })
+                }}
+                className="h-10 px-4 border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Pastro filtrin e agjentit
+              </button>
             </div>
           </div>
         )}

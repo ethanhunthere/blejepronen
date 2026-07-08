@@ -52,6 +52,10 @@ export type Database = {
           rooms: number
           area_m2: number
           type: 'shitje' | 'qira'
+          condition: string | null
+          floor: string | null
+          apartment_type: string | null
+          features: string[]
           images: string[]
           is_active: boolean
           is_featured: boolean
@@ -69,6 +73,10 @@ export type Database = {
           rooms: number
           area_m2: number
           type: 'shitje' | 'qira'
+          condition?: string | null
+          floor?: string | null
+          apartment_type?: string | null
+          features?: string[]
           images?: string[]
         }
         Update: {
@@ -80,6 +88,10 @@ export type Database = {
           rooms?: number
           area_m2?: number
           type?: 'shitje' | 'qira'
+          condition?: string | null
+          floor?: string | null
+          apartment_type?: string | null
+          features?: string[]
           images?: string[]
           is_active?: boolean
           is_featured?: boolean

@@ -12,6 +12,39 @@ import { Building2, Upload, X, Loader2 } from 'lucide-react'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
 
+const CONDITIONS = [
+  { value: 'e-re', label: 'E re' },
+  { value: 'si-e-re', label: 'Si e re' },
+  { value: 'e-mire', label: 'E mirë' },
+  { value: 'rinovuar', label: 'Rinovuar' },
+  { value: 'ka-nevojë-për-rinovim', label: 'Ka nevojë për rinovim' },
+]
+
+const FLOORS = ['Bodrum', 'P/D', '1', '2', '3', '4', '5', '6', '7+']
+
+const APARTMENT_TYPES = ['Studio', '1+1', '2+1', '3+1', '4+1', '5+1', 'Vilë', 'Duplex']
+
+const FEATURES = [
+  'Parking',
+  'Ashensor',
+  'Ballkon',
+  'Bodrum',
+  'Ngrohje qendrore',
+  'Klimë',
+  'Mobilie',
+  'Siguri 24h',
+  'Panoramë',
+  'Kopësht',
+]
+
+const AREA_PRESETS = [
+  { label: '30-50', value: 40 },
+  { label: '50-80', value: 65 },
+  { label: '80-120', value: 100 },
+  { label: '120-200', value: 160 },
+  { label: '200+', value: 250 },
+]
+
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PRICE = 10_000_000
@@ -25,6 +58,10 @@ interface FormData {
   rooms: string
   area_m2: string
   type: 'shitje' | 'qira'
+  condition: string
+  floor: string
+  apartment_type: string
+  features: string[]
 }
 
 export default function PostoBanesePage() {
@@ -36,7 +73,11 @@ export default function PostoBanesePage() {
     address: '',
     rooms: '',
     area_m2: '',
-    type: 'shitje'
+    type: 'shitje',
+    condition: 'e-re',
+    floor: '',
+    apartment_type: '',
+    features: []
   })
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
@@ -194,6 +235,10 @@ export default function PostoBanesePage() {
         rooms: Number(formData.rooms),
         area_m2: Number(formData.area_m2),
         type: formData.type,
+        condition: formData.condition,
+        floor: formData.floor || null,
+        apartment_type: formData.apartment_type || null,
+        features: formData.features,
         images: imageUrls,
       })
       .select('id')
@@ -256,26 +301,50 @@ export default function PostoBanesePage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Type Toggle */}
-          <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
-            <Label className="text-base font-semibold mb-3 block">Lloji i listimit</Label>
-            <div role="radiogroup" aria-label="Lloji i listimit" className="flex gap-3">
-              {(['shitje', 'qira'] as const).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  role="radio"
-                  aria-checked={formData.type === t}
-                  onClick={() => setFormData(prev => ({ ...prev, type: t }))}
-                  className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
-                    formData.type === t
-                      ? 'bg-[#1B4FFF] text-white shadow-sm'
-                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  {t === 'shitje' ? '🏠 Shitje' : '🔑 Me qira'}
-                </button>
-              ))}
+          {/* Type & Condition */}
+          <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 space-y-6">
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Lloji i listimit</Label>
+              <div role="radiogroup" aria-label="Lloji i listimit" className="flex gap-3">
+                {(['shitje', 'qira'] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="radio"
+                    aria-checked={formData.type === t}
+                    onClick={() => setFormData(prev => ({ ...prev, type: t }))}
+                    className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
+                      formData.type === t
+                        ? 'bg-[#1B4FFF] text-white shadow-sm'
+                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    {t === 'shitje' ? '🏠 Shitje' : '🔑 Me qira'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Gjendja e banesës</Label>
+              <div role="radiogroup" aria-label="Gjendja e banesës" className="flex flex-wrap gap-2">
+                {CONDITIONS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={formData.condition === c.value}
+                    onClick={() => setFormData(prev => ({ ...prev, condition: c.value }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      formData.condition === c.value
+                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -337,6 +406,22 @@ export default function PostoBanesePage() {
                   onChange={handleChange}
                   required
                 />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {AREA_PRESETS.map(preset => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, area_m2: preset.value.toString() }))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                        formData.area_m2 === preset.value.toString()
+                          ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white'
+                          : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {preset.label} m²
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -385,6 +470,84 @@ export default function PostoBanesePage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+          </div>
+
+          {/* Extra Details */}
+          <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 space-y-6">
+            <h2 className="font-semibold text-white">Detaje shtesë</h2>
+
+            {/* Floor */}
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-3 block">Kati</Label>
+              <div className="flex flex-wrap gap-2">
+                {FLOORS.map(floor => (
+                  <button
+                    key={floor}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, floor: prev.floor === floor ? '' : floor }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      formData.floor === floor
+                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {floor}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Apartment Type */}
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-3 block">Tipologjia</Label>
+              <div className="flex flex-wrap gap-2">
+                {APARTMENT_TYPES.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, apartment_type: prev.apartment_type === type ? '' : type }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      formData.apartment_type === type
+                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Features */}
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-3 block">Karakteristikat</Label>
+              <div className="flex flex-wrap gap-2">
+                {FEATURES.map(feature => {
+                  const selected = formData.features.includes(feature)
+                  return (
+                    <button
+                      key={feature}
+                      type="button"
+                      onClick={() =>
+                        setFormData(prev => ({
+                          ...prev,
+                          features: selected
+                            ? prev.features.filter(f => f !== feature)
+                            : [...prev.features, feature]
+                        }))
+                      }
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                        selected
+                          ? 'bg-[#1B4FFF]/20 border border-[#1B4FFF]/50 text-[#1B4FFF]'
+                          : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {feature}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 

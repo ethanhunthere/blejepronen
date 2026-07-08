@@ -21,6 +21,13 @@ create table public.profiles (
 --   ADD COLUMN IF NOT EXISTS verification_code text,
 --   ADD COLUMN IF NOT EXISTS verification_code_expires_at timestamp with time zone;
 
+-- Migration for existing listings tables
+-- ALTER TABLE public.listings
+--   ADD COLUMN IF NOT EXISTS condition text,
+--   ADD COLUMN IF NOT EXISTS floor text,
+--   ADD COLUMN IF NOT EXISTS apartment_type text,
+--   ADD COLUMN IF NOT EXISTS features text[] DEFAULT '{}';
+
 -- Listings table
 create table public.listings (
   id uuid default uuid_generate_v4() primary key,
@@ -33,6 +40,10 @@ create table public.listings (
   rooms integer not null,
   area_m2 numeric not null,
   type text not null check (type in ('shitje', 'qira')),
+  condition text,
+  floor text,
+  apartment_type text,
+  features text[] default '{}',
   images text[] default '{}',
   is_active boolean default true,
   is_featured boolean default false,
