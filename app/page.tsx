@@ -115,7 +115,7 @@ export default function HomePage() {
 
               {/* Search Bar */}
               <SearchBar
-                placeholder="Kërko sipas qytetit, lagjes ose çmimit..."
+                placeholder="Kërko banesë, agjent, kompani, adresë..."
                 buttonText="Kërko Banesë"
                 className="2xl:max-w-4xl 2xl:h-16"
               />

@@ -44,7 +44,24 @@ function ListingsContent() {
     if (filters.minPrice) query = query.gte('price', Number(filters.minPrice))
     if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice))
     if (filters.rooms) query = query.eq('rooms', Number(filters.rooms))
-    if (filters.search) query = query.ilike('title', `%${filters.search}%`)
+    if (filters.search) {
+      const { data: matchingProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`)
+      const matchingUserIds = (matchingProfiles || []).map(p => p.id)
+
+      const orConditions = [
+        `title.ilike.%${filters.search}%`,
+        `address.ilike.%${filters.search}%`,
+        `city.ilike.%${filters.search}%`,
+        `description.ilike.%${filters.search}%`,
+      ]
+      if (matchingUserIds.length) {
+        orConditions.push(`user_id.in.(${matchingUserIds.join(',')})`)
+      }
+      query = query.or(orConditions.join(','))
+    }
 
     const { data } = await query
     const results = (data || []) as unknown as Listing[]
@@ -95,7 +112,7 @@ function ListingsContent() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Kërko banesa..."
+              placeholder="Kërko sipas banesës, adresës, qytetit..."
               className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
               value={searchInput}
               onChange={(e) => {

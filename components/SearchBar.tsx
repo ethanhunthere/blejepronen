@@ -12,7 +12,7 @@ interface SearchBarProps {
 
 export default function SearchBar({
   className = '',
-  placeholder = 'Kërko banesa...',
+  placeholder = 'Kërko banesë, agjent, kompani, adresë...',
   buttonText = 'Kërko',
 }: SearchBarProps) {
   const [value, setValue] = useState('')
