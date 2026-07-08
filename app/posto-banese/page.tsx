@@ -14,9 +14,8 @@ const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovi
 
 const CONDITIONS = [
   { value: 'e-re', label: 'E re' },
-  { value: 'si-e-re', label: 'Si e re' },
-  { value: 'e-mire', label: 'E mirë' },
-  { value: 'rinovuar', label: 'Rinovuar' },
+  { value: 'e-vjeter', label: 'E vjetër' },
+  { value: 'rinovuar', label: 'E rinovuar' },
   { value: 'ka-nevojë-për-rinovim', label: 'Ka nevojë për rinovim' },
 ]
 
