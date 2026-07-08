@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Lock, User, Phone, Globe } from 'lucide-react'
-import { Logo } from '@/components/Logo'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -105,10 +104,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center mb-8">
-          <Logo variant="auth" />
-        </div>
-
         <Card className="shadow-lg border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Krijo llogari</CardTitle>

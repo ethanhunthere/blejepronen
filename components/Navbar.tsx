@@ -21,6 +21,12 @@ interface NavbarProps {
 function getStoredUser(): SupabaseUser | null {
   if (typeof window === 'undefined') return null
   try {
+    // Guard against showing the old user immediately after a logout redirect.
+    const logoutAt = sessionStorage.getItem('__logout')
+    if (logoutAt && Date.now() - parseInt(logoutAt, 10) < 5000) {
+      return null
+    }
+
     const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
     if (!key) return null
     const raw = localStorage.getItem(key)
@@ -160,30 +166,35 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     setUser(null)
     setProfileIncomplete(false)
     setProfileFirstName('')
+    setProfileAvatarUrl('')
 
-    // 2. Also sign out on the client side to clear in-memory auth state
+    // 2. Sign out on the client (global scope clears both local and server session)
     try {
-      await supabaseRef.current.auth.signOut()
+      await supabaseRef.current.auth.signOut({ scope: 'global' })
     } catch (err) {
       console.error('Client sign out exception:', err)
     }
 
-    // 2b. Manually clear the Supabase localStorage token so the next render
-    // doesn't flash the old user while waiting for getSession().
-    const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
-    if (key) localStorage.removeItem(key)
+    // 3. Manually clear ALL Supabase localStorage keys
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) {
+        localStorage.removeItem(key)
+      }
+    })
 
-    // 3. Call server-side logout to clear cookies with correct domain
+    // 4. Mark that we just logged out so getStoredUser doesn't flash the old user
+    sessionStorage.setItem('__logout', Date.now().toString())
+
+    // 5. Call server-side logout to clear cookies with correct domain
     try {
       await fetch('/api/logout', { method: 'POST' })
     } catch (err) {
       console.error('Server logout API call failed:', err)
     }
 
-    // 4. Navigate to home and refresh to clear middleware cache
-    router.push('/')
-    setTimeout(() => router.refresh(), 100)
-  }, [router])
+    // 6. Hard redirect to home so middleware runs with fully cleared state
+    window.location.href = '/'
+  }, [])
 
   const positionClasses = {
     fixed: 'fixed top-0 left-0 right-0 z-50',
