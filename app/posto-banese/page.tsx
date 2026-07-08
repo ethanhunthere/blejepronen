@@ -704,11 +704,11 @@ export default function PostoBanesePage() {
             </div>
 
             <div>
-              <Label htmlFor="address">Adresa e saktë *</Label>
+              <Label htmlFor="address">Rruga dhe numri *</Label>
               <Input
                 id="address"
                 name="address"
-                placeholder="p.sh. Lagjja Dardania, Rruga Fehmi Agani"
+                placeholder="p.sh. Rruga Fehmi Agani"
                 className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                 value={formData.address}
                 onChange={handleChange}
