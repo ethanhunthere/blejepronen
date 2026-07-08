@@ -10,10 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { User, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
-// NOTE: 6-digit OTP email verification is used for profile verification.
-// Supabase sends a 6-digit code when emailRedirectTo is undefined.
-// Supabase Dashboard → Authentication → Email Templates → "Magic Link"
-// is used to send the OTP code when signInWithOtp is called.
+// NOTE: Custom 6-digit OTP email verification is handled via Resend API.
+// The verification code is stored in the profiles table and verified
+// through /api/send-otp and /api/verify-otp routes.
 
 type Step = 1 | 2
 
@@ -113,65 +112,50 @@ export default function CompletoProfilinPage() {
   }, [otp])
 
   const sendOtp = async () => {
-    const supabase = createClient()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: userEmail,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: undefined,
-      },
-    })
+    try {
+      const res = await fetch('/api/send-otp', { method: 'POST' })
+      const data = await res.json()
 
-    if (otpError) {
-      console.error('OTP send error:', JSON.stringify(otpError))
+      if (!res.ok || !data.success) {
+        console.error('Send OTP API error:', data.error)
+        setError(data.error || 'Gabim gjatë dërgimit të kodit. Provo përsëri.')
+        return false
+      }
+
+      return true
+    } catch (err) {
+      console.error('Send OTP fetch error:', err)
       setError('Gabim gjatë dërgimit të kodit. Provo përsëri.')
       return false
     }
-
-    return true
   }
 
   const handleVerifyOtp = async (code: string) => {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const res = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
 
-    if (!user) {
-      setError('Sesioni ka skaduar. Ju lutemi regjistrohuni përsëri.')
+      if (!res.ok || !data.success) {
+        console.error('Verify OTP API error:', data.error)
+        setError(data.error || 'Kodi i verifikimit është i pasaktë ose ka skaduar.')
+        setLoading(false)
+        return
+      }
+
+      toast.success('Profili u verifikua me sukses!')
+      router.push('/')
+    } catch (err) {
+      console.error('Verify OTP fetch error:', err)
+      setError('Gabim gjatë verifikimit. Provo përsëri.')
       setLoading(false)
-      return
     }
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: userEmail,
-      token: code,
-      type: 'email',
-    })
-
-    if (verifyError) {
-      console.error('OTP verify error:', JSON.stringify(verifyError))
-      setError('Kodi i verifikimit është i pasaktë ose ka skaduar.')
-      setLoading(false)
-      return
-    }
-
-    // Mark profile as verified
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ phone_verified: true })
-      .eq('id', user.id)
-
-    if (updateError) {
-      console.error('Profile verify update error:', updateError)
-      setError('Gabim gjatë përditësimit të profilit.')
-      setLoading(false)
-      return
-    }
-
-    toast.success('Profili u verifikua me sukses!')
-    router.push('/')
   }
 
   const handleStep1Submit = useCallback(async (e: React.FormEvent) => {

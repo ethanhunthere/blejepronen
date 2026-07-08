@@ -9,9 +9,16 @@ create table public.profiles (
   phone text,
   phone_verified boolean default false,
   avatar_url text,
+  verification_code text,
+  verification_code_expires_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Migration for existing profiles tables
+-- ALTER TABLE public.profiles
+--   ADD COLUMN IF NOT EXISTS verification_code text,
+--   ADD COLUMN IF NOT EXISTS verification_code_expires_at timestamp with time zone;
 
 -- Listings table
 create table public.listings (

@@ -12,6 +12,8 @@ export type Database = {
           phone: string | null
           phone_verified: boolean
           avatar_url: string | null
+          verification_code: string | null
+          verification_code_expires_at: string | null
           created_at: string
           updated_at: string
         }
@@ -22,6 +24,8 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean
           avatar_url?: string | null
+          verification_code?: string | null
+          verification_code_expires_at?: string | null
         }
         Update: {
           first_name?: string
@@ -29,6 +33,8 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean
           avatar_url?: string | null
+          verification_code?: string | null
+          verification_code_expires_at?: string | null
         }
       }
       listings: {
@@ -128,7 +134,7 @@ export async function createServerSupabaseClient() {
   const { createServerClient } = await import('@supabase/ssr')
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
-  return createServerClient<Database>(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
