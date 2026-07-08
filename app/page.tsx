@@ -120,7 +120,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1
-                className="inline-block uppercase text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
+                className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
                 style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
               >
                 Gjej banesën e duhur në Kosovë
