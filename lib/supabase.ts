@@ -80,8 +80,16 @@ export type Database = {
   }
 }
 
+// Singleton browser client to prevent multiple Supabase instances from
+// independently refreshing the auth token and hitting 429 rate limits.
+let browserClient: SupabaseClient | null = null
+
 export function createClient(): SupabaseClient {
-  return createBrowserClient(
+  if (typeof window !== 'undefined' && browserClient) {
+    return browserClient
+  }
+
+  const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -93,6 +101,12 @@ export function createClient(): SupabaseClient {
       },
     }
   )
+
+  if (typeof window !== 'undefined') {
+    browserClient = client
+  }
+
+  return client
 }
 
 export async function createServerSupabaseClient() {
