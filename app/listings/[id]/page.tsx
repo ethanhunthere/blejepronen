@@ -76,6 +76,13 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  const conditionLabels: Record<string, string> = {
+    'e-re': 'E re',
+    'e-vjeter': 'E vjetër',
+    'rinovuar': 'E rinovuar',
+    'ka-nevojë-për-rinovim': 'Ka nevojë për rinovim'
+  }
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateListing',
@@ -149,6 +156,13 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
             {/* Title + Info */}
             <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
               <h1 className="text-2xl font-bold text-white mb-3">{listing.title}</h1>
+              {listing.apartment_type && (
+                <div className="mb-3">
+                  <span className="inline-flex items-center bg-white/10 border border-white/15 text-white/80 text-sm px-3 py-1 rounded-lg">
+                    {listing.apartment_type}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center text-gray-400 mb-4 min-w-0">
                 <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
                 <span className="break-words min-w-0">
@@ -158,7 +172,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">
                 <div className="text-center">
                   <BedDouble className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-lg font-semibold">{listing.rooms}</p>
@@ -169,6 +183,13 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                   <p className="text-lg font-semibold">{listing.area_m2} m²</p>
                   <p className="text-sm text-gray-400">Sipërfaqe</p>
                 </div>
+                {listing.floor && (
+                  <div className="text-center">
+                    <p className="text-xs text-[#1B4FFF] font-semibold uppercase tracking-wider mb-1">Kati</p>
+                    <p className="text-lg font-semibold">{listing.floor}</p>
+                    <p className="text-sm text-gray-400">{listing.floor === 'P/D' ? 'Parter / Dysheme' : 'Kati'}</p>
+                  </div>
+                )}
                 <div className="text-center">
                   <Calendar className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
                   <p className="text-sm font-semibold">{formatDate(listing.created_at)}</p>
@@ -176,8 +197,33 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                 </div>
               </div>
 
+              {listing.condition && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400 mb-2">Gjendja</p>
+                  <span className="inline-flex items-center bg-white/10 border border-white/15 text-white/80 text-sm px-3 py-1 rounded-lg">
+                    {conditionLabels[listing.condition] || listing.condition}
+                  </span>
+                </div>
+              )}
+
               <h2 className="font-semibold text-white mb-2">Përshkrimi</h2>
               <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{listing.description}</p>
+
+              {listing.features && listing.features.length > 0 && (
+                <div className="mt-6">
+                  <h2 className="font-semibold text-white mb-3">Karakteristikat</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {listing.features.map(feature => (
+                      <span
+                        key={feature}
+                        className="bg-[#1B4FFF]/15 border border-[#1B4FFF]/30 text-white/80 text-xs px-3 py-1.5 rounded-full"
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
