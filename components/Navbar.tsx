@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus, User, LogOut, Menu, X, AlertTriangle, Settings } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X, AlertTriangle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
@@ -278,16 +278,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <User className="h-4 w-4 mr-3 text-slate-400" />
-                          Banesat e mia
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => { closeDropdown(); router.push('/profili') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
-                        >
-                          <Settings className="h-4 w-4 mr-3 text-slate-400" />
-                          Cilësimet
+                          Profili & Banesat e Mia
                         </button>
 
                         {profileIncomplete && (
@@ -378,14 +369,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <User className="h-4 w-4" />
-                  Banesat e mia
-                </button>
-                <button
-                  onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
-                >
-                  <Settings className="h-4 w-4" />
-                  Cilësimet
+                  Profili & Banesat e Mia
                 </button>
                 <div className="border-t border-white/10 pt-2">
                   <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-4 py-2.5 font-semibold cursor-pointer">
