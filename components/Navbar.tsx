@@ -197,18 +197,18 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 Shiko banesat
               </Link>
               {user === undefined ? (
-                <div className="w-48 h-9" />
+                <div className="w-52 h-10" />
               ) : user === null ? (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 text-sm font-semibold text-white border border-white/70 hover:bg-white/10 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer backdrop-blur-sm"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 text-sm font-semibold bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-colors cursor-pointer shadow-lg shadow-[#1B4FFF]/25"
                   >
                     Regjistrohu
                   </a>
@@ -329,8 +329,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="block w-full rounded-lg border border-white/70 bg-transparent px-5 py-2 text-center text-sm font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer">Hyr</a>
-                <a href="/register" className="block w-full rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer backdrop-blur-sm">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-colors cursor-pointer shadow-lg shadow-[#1B4FFF]/25">Regjistrohu</a>
               </div>
             ) : (
               <>
