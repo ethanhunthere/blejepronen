@@ -290,6 +290,17 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           Cilësimet
                         </button>
 
+                        {profileIncomplete && (
+                          <button
+                            type="button"
+                            onClick={() => { closeDropdown(); router.push('/completo-profilin') }}
+                            className="flex items-center w-full px-4 py-2.5 text-sm text-orange-400 hover:bg-orange-500/10 transition-colors cursor-pointer"
+                          >
+                            <AlertTriangle className="h-4 w-4 mr-3" />
+                            Verifiko profilin
+                          </button>
+                        )}
+
                         <div className="border-t border-white/10 my-1" />
 
                         <button
