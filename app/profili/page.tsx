@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import ListingCard from '@/components/ListingCard'
-import { User, Phone, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { User, Phone, CheckCircle, XCircle, Loader2, Camera } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 
 export default function ProfilePage() {
@@ -20,6 +20,8 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({ first_name: '', last_name: '', phone: '' })
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -30,7 +32,7 @@ export default function ProfilePage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('id,first_name,last_name,phone,phone_verified,created_at,updated_at')
+        .select('id,first_name,last_name,phone,phone_verified,avatar_url,created_at,updated_at')
         .eq('id', user.id)
         .single()
 
@@ -71,6 +73,55 @@ export default function ProfilePage() {
     setSaving(false)
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingAvatar(true)
+    setError('')
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setError('Vetëm foto JPEG, PNG ose WebP lejohen.')
+        setUploadingAvatar(false)
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Fotoja duhet të jetë më e vogël se 5MB.')
+        setUploadingAvatar(false)
+        return
+      }
+
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${user.id}/${Date.now()}-avatar.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { contentType: file.type, upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) throw updateError
+
+      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev)
+    } catch {
+      setError('Ngarkimi i fotos dështoi. Provo përsëri.')
+    } finally {
+      setUploadingAvatar(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const handleDeleteListing = async (id: string) => {
     if (!confirm('A jeni të sigurt që doni ta fshini këtë listim?')) return
     const { data: { user } } = await supabase.auth.getUser()
@@ -95,8 +146,35 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
               <div className="flex flex-col sm:flex-row items-center sm:items-start mb-6">
-                <div className="w-14 h-14 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center mr-0 sm:mr-4 mb-3 sm:mb-0">
-                  <User className="h-7 w-7 text-[#1B4FFF]" />
+                <div className="relative w-20 h-20 mr-0 sm:mr-4 mb-3 sm:mb-0">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt="Avatar"
+                      className="w-20 h-20 rounded-full object-cover border border-white/10"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-white/10">
+                      <span className="text-2xl font-semibold text-[#1B4FFF]">
+                        {profile?.first_name ? profile.first_name[0].toUpperCase() : <User className="h-8 w-8 text-[#1B4FFF]" />}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-[#0A0F2E] hover:bg-[#1640CC] transition-colors cursor-pointer"
+                  >
+                    {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-white">{profile?.first_name} {profile?.last_name}</p>

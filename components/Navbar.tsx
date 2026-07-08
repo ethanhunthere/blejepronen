@@ -42,6 +42,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const [user, setUser] = useState<SupabaseUser | null>(() => getStoredUser())
   const [profileIncomplete, setProfileIncomplete] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -54,7 +55,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     const loadProfile = async (userId: string) => {
       const { data: profile, error: profileErr } = await supabase
         .from('profiles')
-        .select('first_name, phone_verified')
+        .select('first_name, phone_verified, avatar_url')
         .eq('id', userId)
         .single()
 
@@ -64,6 +65,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
       setProfileIncomplete(!profile?.first_name)
       setProfileFirstName(profile?.first_name || '')
+      setProfileAvatarUrl(profile?.avatar_url || '')
     }
 
     const checkSession = async () => {
@@ -91,6 +93,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           setUser(null)
           setProfileIncomplete(false)
           setProfileFirstName('')
+          setProfileAvatarUrl('')
           setDropdownOpen(false)
           setMenuOpen(false)
           router.refresh()
@@ -110,6 +113,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         } else {
           setProfileIncomplete(false)
           setProfileFirstName('')
+          setProfileAvatarUrl('')
         }
       }
     )
@@ -233,7 +237,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
                     >
-                      {(profileFirstName || user?.email || '?')[0].toUpperCase()}
+                      {profileAvatarUrl ? (
+                        <img src={profileAvatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        (profileFirstName || user?.email || '?')[0].toUpperCase()
+                      )}
                     </button>
 
                     {dropdownOpen && (
@@ -335,9 +343,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   </button>
                 )}
                 <div className="flex items-center gap-3 px-1 py-2">
-                  <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
-                    {(profileFirstName || user?.email || '?')[0].toUpperCase()}
-                  </span>
+                  {profileAvatarUrl ? (
+                    <img src={profileAvatarUrl} alt="" className="rounded-full w-9 h-9 object-cover shrink-0" />
+                  ) : (
+                    <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
+                      {(profileFirstName || user?.email || '?')[0].toUpperCase()}
+                    </span>
+                  )}
                   <span className="text-sm font-medium text-white truncate">
                     {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
