@@ -238,7 +238,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       <div className="absolute right-0 top-full mt-2 w-56 bg-[#0A0F2E] rounded-lg shadow-lg border border-white/10 py-1 z-50">
                         {/* User info header */}
                         <div
-                          className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors"
+                          className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors group"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
                         >
                           <div className="flex items-center gap-3">
@@ -250,6 +250,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               )}
                             </div>
                             <div className="min-w-0">
+                              <p className="text-xs text-white/40 group-hover:text-white/60 font-medium mb-1">Profili im →</p>
                               <p className="text-sm font-medium text-white truncate">
                                 {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                               </p>
