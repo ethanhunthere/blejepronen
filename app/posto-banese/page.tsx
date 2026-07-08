@@ -301,50 +301,26 @@ export default function PostoBanesePage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Type & Condition */}
-          <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 space-y-6">
-            <div>
-              <Label className="text-base font-semibold mb-3 block">Lloji i listimit</Label>
-              <div role="radiogroup" aria-label="Lloji i listimit" className="flex gap-3">
-                {(['shitje', 'qira'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    role="radio"
-                    aria-checked={formData.type === t}
-                    onClick={() => setFormData(prev => ({ ...prev, type: t }))}
-                    className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
-                      formData.type === t
-                        ? 'bg-[#1B4FFF] text-white shadow-sm'
-                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                    }`}
-                  >
-                    {t === 'shitje' ? '🏠 Shitje' : '🔑 Me qira'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-base font-semibold mb-3 block">Gjendja e banesës</Label>
-              <div role="radiogroup" aria-label="Gjendja e banesës" className="flex flex-wrap gap-2">
-                {CONDITIONS.map(c => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={formData.condition === c.value}
-                    onClick={() => setFormData(prev => ({ ...prev, condition: c.value }))}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                      formData.condition === c.value
-                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
-                        : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+          {/* Type Toggle */}
+          <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
+            <Label className="text-base font-semibold mb-3 block">Lloji i listimit</Label>
+            <div role="radiogroup" aria-label="Lloji i listimit" className="flex gap-3">
+              {(['shitje', 'qira'] as const).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={formData.type === t}
+                  onClick={() => setFormData(prev => ({ ...prev, type: t }))}
+                  className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
+                    formData.type === t
+                      ? 'bg-[#1B4FFF] text-white shadow-sm'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  {t === 'shitje' ? '🏠 Shitje' : '🔑 Me qira'}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -376,6 +352,28 @@ export default function PostoBanesePage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Gjendja e banesës</Label>
+              <div role="radiogroup" aria-label="Gjendja e banesës" className="flex flex-wrap gap-2">
+                {CONDITIONS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={formData.condition === c.value}
+                    onClick={() => setFormData(prev => ({ ...prev, condition: c.value }))}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                      formData.condition === c.value
+                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
