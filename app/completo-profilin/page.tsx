@@ -273,8 +273,7 @@ export default function CompletoProfilinPage() {
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold text-center">Verifiko email-in</CardTitle>
                 <CardDescription className="text-center">
-                  Kontrollo email-in tuaj! Klikoni linkun që ju dërguam te{' '}
-                  <strong>{userEmail}</strong> për të verifikuar llogarinë tuaj.
+                  Klikoni linkun në email-in tuaj për të verifikuar llogarinë.
                 </CardDescription>
               </CardHeader>
 

@@ -63,7 +63,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
       }
 
-      setProfileIncomplete(!profile?.first_name)
+      setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
       setProfileFirstName(profile?.first_name || '')
       setProfileAvatarUrl(profile?.avatar_url || '')
     }
