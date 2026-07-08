@@ -100,8 +100,8 @@ export default function HomePage() {
               </h1>
 
               <p
-                className="inline-block text-lg md:text-xl 2xl:text-2xl text-white max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.9)' }}
+                className="inline-block text-lg md:text-xl text-white/85 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium"
+                style={{ textShadow: '0 2px 15px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.7)' }}
               >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
               </p>
