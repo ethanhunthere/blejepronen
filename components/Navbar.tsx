@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus, User, LogOut, Menu, X, AlertTriangle } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
@@ -238,14 +238,32 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       <div className="absolute right-0 top-full mt-2 w-56 bg-[#0A0F2E] rounded-lg shadow-lg border border-white/10 py-1 z-50">
                         {/* User info header */}
                         <div
-                          className="px-4 py-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+                          className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
                         >
-                          <p className="text-sm font-medium text-white truncate">
-                            {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
-                          </p>
-                          <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0 overflow-hidden">
+                              {profileAvatarUrl ? (
+                                <img src={profileAvatarUrl} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                (profileFirstName || user?.email || '?')[0].toUpperCase()
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-white truncate">
+                                {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                              {profileIncomplete && (
+                                <span className="inline-flex items-center mt-1 text-xs text-orange-400">
+                                  ⚠️ Verifiko profilin
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
+
+                        <div className="border-t border-white/10 my-1" />
 
                         <button
                           type="button"
@@ -264,17 +282,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           <User className="h-4 w-4 mr-3 text-slate-400" />
                           Banesat e mia
                         </button>
-
-                        {profileIncomplete && (
-                          <button
-                            type="button"
-                            onClick={() => { closeDropdown(); router.push('/completo-profilin') }}
-                            className="flex items-center w-full px-4 py-2.5 text-sm text-orange-400 hover:bg-orange-500/10 transition-colors cursor-pointer"
-                          >
-                            <AlertTriangle className="h-4 w-4 mr-3" />
-                            Verifiko profilin
-                          </button>
-                        )}
 
                         <div className="border-t border-white/10 my-1" />
 
