@@ -244,6 +244,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             {profileFirstName || user?.email?.split('@')[0] || 'Përdorues'}
                           </p>
                           <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                          {profileIncomplete && (
+                            <button
+                              type="button"
+                              onClick={() => { closeDropdown(); router.push('/completo-profilin') }}
+                              className="mt-2 inline-flex items-center text-xs font-medium text-orange-400 border border-orange-400/50 rounded-full px-2 py-0.5 hover:bg-orange-400/10 cursor-pointer transition-colors"
+                            >
+                              Verifiko profilin
+                            </button>
+                          )}
                         </div>
 
                         <button
