@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Public routes that should bypass all auth checks completely. This avoids
+  // unnecessary getUser() calls on login/register pages and prevents 429
+  // rate-limit issues from causing accidental redirects.
+  const publicRoutes = ['/login', '/register']
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -28,15 +38,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const protectedRoutes = ['/posto-banese', '/profili', '/completo-profilin']
-  const authRoutes = ['/login', '/register']
-  const pathname = request.nextUrl.pathname
 
   if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (user && authRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return supabaseResponse

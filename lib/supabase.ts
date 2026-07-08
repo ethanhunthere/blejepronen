@@ -80,16 +80,37 @@ export type Database = {
   }
 }
 
-// Singleton browser client to prevent multiple Supabase instances from
-// independently refreshing the auth token and hitting 429 rate limits.
-let browserClient: SupabaseClient | null = null
+declare global {
+  interface Window {
+    __supabaseClient?: SupabaseClient
+  }
+}
 
+// True singleton browser client stored on window to prevent multiple
+// Supabase instances from independently refreshing the auth token and
+// hitting 429 rate limits, even across hot reloads or lazy chunks.
 export function createClient(): SupabaseClient {
-  if (typeof window !== 'undefined' && browserClient) {
-    return browserClient
+  if (typeof window !== 'undefined') {
+    if (!window.__supabaseClient) {
+      window.__supabaseClient = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: {
+            flowType: 'pkce',
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true,
+          },
+        }
+      )
+    }
+    return window.__supabaseClient
   }
 
-  const client = createBrowserClient(
+  // SSR fallback: always return a fresh instance because there is no
+  // shared window object during server rendering.
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -101,12 +122,6 @@ export function createClient(): SupabaseClient {
       },
     }
   )
-
-  if (typeof window !== 'undefined') {
-    browserClient = client
-  }
-
-  return client
 }
 
 export async function createServerSupabaseClient() {
