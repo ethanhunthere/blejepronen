@@ -98,9 +98,6 @@ export default function HomePage() {
           sizes="100vw"
         />
 
-        {/* Dark blue gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
-
         {/* Top fade from page background to blend navbar seamlessly */}
         <div
           className="pointer-events-none absolute top-0 left-0 right-0 h-64 z-10"
@@ -116,15 +113,24 @@ export default function HomePage() {
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-xl px-4 py-2">
+              <h1
+                className="uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center"
+                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+              >
                 Gjej banesën e duhur në Kosovë
               </h1>
 
-              <p className="inline-block text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-xl px-4 py-2">
+              <p
+                className="text-base md:text-lg text-white/70 max-w-2xl mt-6 leading-relaxed text-center mx-auto"
+                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+              >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Nuk ka komisione dhe nuk ka ndërmjetës të panevojshëm.
               </p>
 
-              <p className="inline-block text-white/40 text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/20 backdrop-blur-none border border-white/5 rounded-lg px-3 py-1">
+              <p
+                className="text-white/60 text-sm text-center mb-3 mt-10"
+                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+              >
                 Kërko sipas qytetit ose lagjes
               </p>
 
@@ -135,10 +141,13 @@ export default function HomePage() {
               />
 
               {/* City links */}
-              <div className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm">
+              <div
+                className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm"
+                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+              >
                 {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city, i, arr) => (
                   <span key={city}>
-                    <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/60 hover:text-white transition-colors">
+                    <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/70 hover:text-white transition-colors">
                       {city}
                     </Link>
                     {i < arr.length - 1 && <span className="ml-2">/</span>}
@@ -150,13 +159,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <Link
                   href="/listings"
-                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-semibold bg-white/15 backdrop-blur-md border border-white/30 text-white hover:bg-white/25 transition-colors"
                 >
                   Shfleto banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-transparent border border-white/25 text-white/80 hover:bg-white/10 hover:border-white/40 transition-colors"
                 >
                   Posto banesën tënde
                 </Link>
