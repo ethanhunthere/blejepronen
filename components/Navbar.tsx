@@ -51,6 +51,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
   useEffect(() => {
     const supabase = supabaseRef.current
+    let currentUserId: string | null = null
 
     const loadProfile = async (userId: string) => {
       const { data: profile, error: profileErr } = await supabase
@@ -74,6 +75,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         const currentUser = session?.user ?? null
         // Show navbar buttons immediately; don't wait for profile
         setUser(currentUser)
+        currentUserId = currentUser?.id ?? null
 
         if (currentUser) {
           loadProfile(currentUser.id)
@@ -82,6 +84,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
         // getSession threw — treat as logged out
         setUser(null)
+        currentUserId = null
       }
     }
 
@@ -91,6 +94,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null)
+          currentUserId = null
           setProfileIncomplete(false)
           setProfileFirstName('')
           setProfileAvatarUrl('')
@@ -103,6 +107,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         const currentUser = session?.user ?? null
         // Update UI immediately; profile loads in the background
         setUser(currentUser)
+        currentUserId = currentUser?.id ?? null
 
         if (event === 'SIGNED_IN') {
           router.refresh()
@@ -118,7 +123,17 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentUserId) {
+        loadProfile(currentUserId)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [router])
 
   // Close dropdown on outside click
