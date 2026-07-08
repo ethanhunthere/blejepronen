@@ -324,7 +324,7 @@ function ListingsContent() {
 
         {/* Results */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-[#111936] rounded-2xl overflow-hidden animate-pulse border border-white/10">
                 <div className="h-52 bg-gray-700" />
@@ -348,7 +348,7 @@ function ListingsContent() {
         ) : (
           <>
             <p aria-live="polite" className="text-sm text-gray-400 mb-4">{listings.length} banesa të gjetura</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
               {listings.map((listing, index) => (
                 <ListingCard key={listing.id} listing={listing} priority={index < 4} />
               ))}

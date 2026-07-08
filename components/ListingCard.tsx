@@ -23,9 +23,9 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="group bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/12 hover:border-white/25 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1">
+      <div className="group h-full flex flex-col bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/12 hover:border-white/25 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1">
         {/* Image */}
-        <div className="relative h-48 sm:h-52 bg-white/5">
+        <div className="relative h-52 bg-white/5 flex-shrink-0">
           {mainImage ? (
             <Image
               src={mainImage}
@@ -58,8 +58,8 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
         </div>
 
         {/* Content */}
-        <div className="bg-gradient-to-b from-white/5 to-transparent p-4">
-          <h3 className="font-semibold text-white text-base leading-tight line-clamp-2 mb-2">
+        <div className="flex-1 min-h-[140px] bg-gradient-to-b from-white/5 to-transparent p-4 flex flex-col">
+          <h3 className="font-semibold text-white text-base leading-tight line-clamp-2 h-12 overflow-hidden mb-2">
             {listing.title}
           </h3>
 
@@ -94,8 +94,8 @@ export default ListingCard
 /** Skeleton loader for ListingCard */
 export function ListingCardSkeleton() {
   return (
-    <div className="bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden">
-      <div className="h-48 sm:h-52 animate-pulse bg-white/5" />
+    <div className="h-full flex flex-col bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden">
+      <div className="h-52 flex-shrink-0 animate-pulse bg-white/5" />
       <div className="p-4 space-y-3">
         <div className="h-5 w-48 animate-pulse rounded bg-white/10" />
         <div className="h-8 w-32 animate-pulse rounded bg-white/10" />

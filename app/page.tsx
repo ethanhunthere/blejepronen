@@ -184,7 +184,7 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
                 <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
@@ -197,7 +197,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : data && data.listings.length > 0 ? (
-          <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {data.listings.map((listing) => (
               <div key={listing.id} className="aos-fade-up">
                 <ListingCard listing={listing} />
