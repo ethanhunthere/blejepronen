@@ -13,10 +13,7 @@ import { Button } from '@/components/ui/button'
 
 
 interface HomeData {
-  featuredListings: Listing[]
-  latestListings: Listing[]
-  totalListings: number
-  totalUsers: number
+  listings: Listing[]
 }
 
 export default function HomePage() {
@@ -30,40 +27,16 @@ export default function HomePage() {
 
     async function fetchHomeData() {
       try {
-        const [
-          { data: featuredListings },
-          { data: latestListings },
-          { count: totalListings },
-          { count: totalUsers },
-        ] = await Promise.all([
-          supabase
-            .from('listings')
-            .select('*')
-            .eq('is_active', true)
-            .eq('is_featured', true)
-            .order('created_at', { ascending: false })
-            .limit(4),
-          supabase
-            .from('listings')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(8),
-          supabase
-            .from('listings')
-            .select('*', { count: 'exact', head: true })
-            .eq('is_active', true),
-          supabase
-            .from('profiles')
-            .select('*', { count: 'exact', head: true }),
-        ])
+        const { data: listings } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(12)
 
         if (!cancelled) {
           setData({
-            featuredListings: (featuredListings || []) as unknown as Listing[],
-            latestListings: (latestListings || []) as unknown as Listing[],
-            totalListings: totalListings ?? 0,
-            totalUsers: totalUsers ?? 0,
+            listings: (listings || []) as unknown as Listing[],
           })
         }
       } catch {
@@ -198,21 +171,21 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Featured Listings — skeleton while loading */}
+      {/* Unified Listings */}
       <section className="bg-[#0A0F2E] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">⭐ Të rekomanduara</h2>
-            <p className="text-slate-400 text-sm mt-1">Listimet e zgjedhura me kujdes</p>
+            <h2 className="text-2xl font-bold text-white">Banesa në Shitje dhe me Qira</h2>
+            <p className="text-white/40 text-sm mt-1">Të gjitha banesat e disponueshme në platformë</p>
           </div>
-          <Link href="/listings">
-            <Button className="h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">Shiko të gjitha →</Button>
+          <Link href="/listings" className="text-sm font-semibold text-white hover:text-white/80 transition-colors">
+            Shiko të gjitha →
           </Link>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
                 <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
                 <div className="p-4 space-y-3">
@@ -223,49 +196,9 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        ) : data && data.featuredListings.length > 0 ? (
+        ) : data && data.listings.length > 0 ? (
           <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {data.featuredListings.map((listing) => (
-              <div key={listing.id} className="aos-fade-up">
-                <ListingCard listing={listing} />
-              </div>
-            ))}
-          </AnimateOnScroll>
-        ) : !loading ? (
-          <div className="text-center py-10 bg-[#111936] rounded-2xl border border-white/10">
-            <p className="text-slate-400">Asnjë listim i rekomanduar për momentin.</p>
-          </div>
-        ) : null}
-      </section>
-
-      {/* Latest Listings — skeleton while loading */}
-      <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-white">🏠 Banesat e Fundit</h2>
-            <p className="text-slate-400 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
-          </div>
-          <Link href="/listings">
-            <Button className="h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">Shiko të gjitha →</Button>
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
-                <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-slate-700 rounded animate-pulse w-1/3" />
-                  <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : data && data.latestListings.length > 0 ? (
-          <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {data.latestListings.map((listing) => (
+            {data.listings.map((listing) => (
               <div key={listing.id} className="aos-fade-up">
                 <ListingCard listing={listing} />
               </div>
