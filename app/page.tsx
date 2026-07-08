@@ -136,13 +136,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <Link
                   href="/listings"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-2.5 font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-[#1B4FFF]/80 backdrop-blur-md border border-[#1B4FFF]/40 text-white hover:bg-[#1B4FFF] transition-all cursor-pointer shadow-lg shadow-[#1B4FFF]/20"
                 >
-                  Shfleto banesat
+                  Shiko banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-2.5 font-semibold border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
