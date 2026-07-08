@@ -32,7 +32,10 @@ export default function SearchBar({
   }
 
   return (
-    <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto border border-white/20 ${className}`}>
+    <div
+      className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto border border-white/20 ${className}`}
+      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+    >
       <div className="flex-1 flex items-center px-3 gap-2">
         <Search className="h-5 w-5 text-white flex-shrink-0" />
         <input

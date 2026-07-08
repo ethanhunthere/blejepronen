@@ -110,26 +110,32 @@ export default function HomePage() {
           style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
         />
 
+        {/* Radial vignette that darkens only the center where text lives */}
+        <div
+          className="pointer-events-none absolute inset-0 z-[5]"
+          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.55) 0%, transparent 100%)' }}
+        />
+
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1
-                className="uppercase text-5xl md:text-6xl font-light text-white leading-tight tracking-tight text-center"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+                className="uppercase text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight text-center"
+                style={{ textShadow: '0 0 40px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6)' }}
               >
                 Gjej banesën e duhur në Kosovë
               </h1>
 
               <p
                 className="text-base md:text-lg text-white/70 max-w-2xl mt-6 leading-relaxed text-center mx-auto"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
               >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Nuk ka komisione dhe nuk ka ndërmjetës të panevojshëm.
               </p>
 
               <p
                 className="text-white/60 text-sm text-center mb-3 mt-10"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
               >
                 Kërko sipas qytetit ose lagjes
               </p>
