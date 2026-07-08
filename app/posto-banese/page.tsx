@@ -106,7 +106,7 @@ export default function PostoBanesePage() {
     // --- Step 0.5: Ensure profile row exists (FK listings.user_id → profiles.id) ---
     const { data: existingProfile, error: profileCheckError } = await supabase
       .from('profiles')
-      .select('id, first_name, phone_verified')
+      .select('id, first_name, email_verified')
       .eq('id', user.id)
       .maybeSingle()
 
@@ -135,7 +135,7 @@ export default function PostoBanesePage() {
       }
     }
 
-    if (!existingProfile?.phone_verified) {
+    if (!existingProfile?.email_verified) {
       setUnverified(true)
       setUploading(false)
       return

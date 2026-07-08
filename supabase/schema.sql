@@ -7,7 +7,7 @@ create table public.profiles (
   first_name text not null,
   last_name text not null,
   phone text,
-  phone_verified boolean default false,
+  email_verified boolean default false,
   avatar_url text,
   verification_code text,
   verification_code_expires_at timestamp with time zone,

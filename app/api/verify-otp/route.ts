@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        phone_verified: true,
+        email_verified: true,
         verification_code: null,
         verification_code_expires_at: null,
       })

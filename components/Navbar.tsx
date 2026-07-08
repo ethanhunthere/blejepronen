@@ -56,7 +56,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     const loadProfile = async (userId: string) => {
       const { data: profile, error: profileErr } = await supabase
         .from('profiles')
-        .select('first_name, phone_verified, avatar_url')
+        .select('first_name, email_verified, avatar_url')
         .eq('id', userId)
         .single()
 
@@ -64,8 +64,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         console.error('Navbar profile fetch error:', JSON.stringify(profileErr))
       }
 
-      setProfileIncomplete(!profile?.first_name || !profile?.phone_verified)
-      setProfileFirstName(profile?.phone_verified ? profile?.first_name || '' : '')
+      setProfileIncomplete(!profile?.first_name || !profile?.email_verified)
+      setProfileFirstName(profile?.email_verified ? profile?.first_name || '' : '')
       setProfileAvatarUrl(profile?.avatar_url || '')
     }
 

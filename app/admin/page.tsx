@@ -122,8 +122,8 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-3 py-3 md:px-6 md:py-4 text-gray-400">{profile.phone || '—'}</td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
-                      <Badge className={profile.phone_verified ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
-                        {profile.phone_verified ? 'Po' : 'Jo'}
+                      <Badge className={profile.email_verified ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
+                        {profile.email_verified ? 'Po' : 'Jo'}
                       </Badge>
                     </td>
                     <td className="px-3 py-3 md:px-6 md:py-4 text-gray-400">

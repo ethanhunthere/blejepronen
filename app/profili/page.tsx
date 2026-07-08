@@ -34,7 +34,7 @@ export default function ProfilePage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('id,first_name,last_name,phone,phone_verified,avatar_url,created_at,updated_at')
+        .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
         .eq('id', user.id)
         .single()
 
@@ -150,7 +150,7 @@ export default function ProfilePage() {
     ? new Date(profile.created_at).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
     : ''
 
-  const isVerified = profile?.phone_verified === true
+  const isVerified = profile?.email_verified === true
   const initials = profile?.first_name ? profile.first_name[0].toUpperCase() : (userEmail ? userEmail[0].toUpperCase() : '?')
 
   return (

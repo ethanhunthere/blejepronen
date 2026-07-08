@@ -10,7 +10,7 @@ export type Database = {
           first_name: string
           last_name: string
           phone: string | null
-          phone_verified: boolean
+          email_verified: boolean
           avatar_url: string | null
           verification_code: string | null
           verification_code_expires_at: string | null
@@ -22,7 +22,7 @@ export type Database = {
           first_name: string
           last_name: string
           phone?: string | null
-          phone_verified?: boolean
+          email_verified?: boolean
           avatar_url?: string | null
           verification_code?: string | null
           verification_code_expires_at?: string | null
@@ -31,7 +31,7 @@ export type Database = {
           first_name?: string
           last_name?: string
           phone?: string | null
-          phone_verified?: boolean
+          email_verified?: boolean
           avatar_url?: string | null
           verification_code?: string | null
           verification_code_expires_at?: string | null

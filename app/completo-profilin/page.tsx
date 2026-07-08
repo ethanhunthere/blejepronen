@@ -71,11 +71,11 @@ export default function CompletoProfilinPage() {
       // Check if profile is already complete — redirect home
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, phone_verified')
+        .select('first_name, email_verified')
         .eq('id', user.id)
         .single()
 
-      if (profile?.first_name && profile?.phone_verified) {
+      if (profile?.first_name && profile?.email_verified) {
         router.push('/')
       }
     }
