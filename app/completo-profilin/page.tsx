@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { User, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
@@ -169,129 +168,117 @@ export default function CompletoProfilinPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[#0A0F2E] flex items-start justify-center pt-24 md:pt-32 p-4">
+      <div className="w-full max-w-lg">
         {/* Step indicators */}
-        <div className="flex items-center justify-center gap-2 mb-8">
+        <div className="flex items-center justify-center gap-3 mb-8">
           {([1, 2] as Step[]).map((s) => (
-            <div key={s} className="flex items-center gap-2">
+            <div key={s} className="flex items-center gap-3">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                   s <= step
-                    ? 'bg-[#1B4FFF] text-white'
-                    : 'bg-[#111936] text-gray-400'
+                    ? 'bg-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/30'
+                    : 'bg-white/5 border border-white/10 text-white/30'
                 }`}
               >
                 {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
               </div>
               {s < 2 && (
-                <div className={`w-8 h-0.5 ${s < step ? 'bg-[#1B4FFF]' : 'bg-white/10'}`} />
+                <div className={`w-12 h-0.5 rounded-full transition-colors duration-300 ${s < step ? 'bg-[#1B4FFF]' : 'bg-white/10'}`} />
               )}
             </div>
           ))}
         </div>
 
-        {/* Step titles */}
-        <div className="text-center mb-6">
-          {step === 1 && (
-            <p className="text-sm text-gray-400">Hapi 1 — Plotëso të dhënat e profilit</p>
-          )}
-          {step === 2 && (
-            <p className="text-sm text-gray-400">Hapi 2 — Verifiko email-in</p>
-          )}
-        </div>
+        {/* Premium card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/40 p-8 md:p-10">
 
-        <Card className="shadow-lg border-0">
           {/* === STEP 1: Profile Form === */}
           {step === 1 && (
             <>
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-center">Kompleto profilin</CardTitle>
-                <CardDescription className="text-center">
-                  Plotëso të dhënat për të vazhduar
-                </CardDescription>
-              </CardHeader>
+              <div className="mb-8 text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">Kompleto profilin</h2>
+                <p className="text-white/50 text-sm">Plotëso të dhënat për të vazhduar</p>
+              </div>
 
-              <CardContent>
-                {submitted && error && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+              {submitted && error && (
+                <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400 rounded-xl">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-                <form onSubmit={handleStep1Submit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Emri</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                      <Input
-                        id="firstName"
-                        placeholder="Emri yt"
-                        className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                    </div>
+              <form onSubmit={handleStep1Submit} className="space-y-5">
+                <div>
+                  <Label htmlFor="firstName" className="text-white/60 text-sm font-medium mb-1.5">Emri</Label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Input
+                      id="firstName"
+                      placeholder="Emri yt"
+                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Mbiemri</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                      <Input
-                        id="lastName"
-                        placeholder="Mbiemri yt"
-                        className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                    </div>
+                <div>
+                  <Label htmlFor="lastName" className="text-white/60 text-sm font-medium mb-1.5">Mbiemri</Label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Input
+                      id="lastName"
+                      placeholder="Mbiemri yt"
+                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
                   </div>
+                </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
-                    disabled={loading}
-                  >
-                    {loading ? 'Duke u përpunuar...' : (
-                      <>
-                        Vazhdo
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] shadow-lg shadow-[#1B4FFF]/25 cursor-pointer"
+                  disabled={loading}
+                >
+                  {loading ? 'Duke u përpunuar...' : (
+                    <>
+                      Vazhdo
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </form>
             </>
           )}
 
           {/* === STEP 2: Magic Link Sent === */}
           {step === 2 && (
             <>
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-center">Verifiko email-in</CardTitle>
-                <CardDescription className="text-center">
+              <div className="mb-8 text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">Verifiko email-in</h2>
+                <p className="text-white/50 text-sm">
                   Klikoni linkun në email-in tuaj për të verifikuar llogarinë.
-                </CardDescription>
-              </CardHeader>
+                </p>
+              </div>
 
-              <CardContent className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex justify-center">
-                  <div className="w-16 h-16 bg-[#1B4FFF]/20 rounded-full flex items-center justify-center">
-                    <Mail className="h-8 w-8 text-[#1B4FFF]" />
+                  <div className="w-20 h-20 bg-[#1B4FFF]/15 rounded-2xl flex items-center justify-center">
+                    <Mail className="h-10 w-10 text-[#1B4FFF]" />
                   </div>
                 </div>
 
-                <p className="text-sm text-center text-gray-400">
+                <p className="text-sm text-center text-white/40">
                   Nëse nuk e shihni email-in, kontrolloni dosjen e spam-it.
                 </p>
 
                 <button
                   type="button"
                   onClick={handleResendMagicLink}
-                  className="w-full rounded-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
+                  className="w-full h-12 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-medium transition-colors cursor-pointer"
                   disabled={resending}
                 >
                   {resending ? 'Duke u ridërguar...' : 'Ridërgo linkun'}
@@ -302,22 +289,22 @@ export default function CompletoProfilinPage() {
                     <div className="w-full border-t border-white/10" />
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-[#0A0F2E] px-2 text-gray-500">ose</span>
+                    <span className="bg-[#0A0F2E] px-3 text-white/30">ose</span>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => { router.push('/'); router.refresh() }}
-                  className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+                  className="w-full h-12 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-medium transition-colors inline-flex items-center justify-center cursor-pointer"
                 >
                   Vazhdo pa verifikim
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </button>
-              </CardContent>
+              </div>
             </>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   )
