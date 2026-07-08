@@ -98,13 +98,16 @@ export default function HomePage() {
           sizes="100vw"
         />
 
-        {/* Dark blue gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(10,20,80,0.7)] to-[rgba(10,20,60,0.4)] z-10" />
+        {/* Soft radial vignette */}
+        <div
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.25) 0%, transparent 100%)' }}
+        />
 
         {/* Top fade from page background to blend navbar seamlessly */}
         <div
-          className="pointer-events-none absolute top-0 left-0 right-0 h-64 z-10"
-          style={{ background: 'linear-gradient(to top, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
+          className="pointer-events-none absolute top-0 left-0 right-0 h-24 z-10"
+          style={{ background: 'linear-gradient(to top, transparent 0%, rgba(10,15,46,0.3) 50%, #0A0F2E 100%)' }}
         />
 
         {/* Bottom fade into page background */}
@@ -117,15 +120,15 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1
-                className="inline-block uppercase text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
-                style={{ textShadow: '0 0 40px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6)' }}
+                className="inline-block uppercase text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
+                style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
               >
                 Gjej banesën e duhur në Kosovë
               </h1>
 
               <p
-                className="inline-block text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
-                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
+                className="inline-block text-lg md:text-xl text-white max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
+                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.9)' }}
               >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
               </p>
