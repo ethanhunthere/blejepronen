@@ -50,24 +50,26 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const currentUser = session?.user ?? null
-        // Show navbar buttons immediately; don't wait for profile
-        setUser(currentUser)
-        currentUserId = currentUser?.id ?? null
+        // getUser() always validates the token with the server and never
+        // returns a cached/stale session, preventing post-logout flashes.
+        const { data: { user: currentUser }, error } = await supabase.auth.getUser()
+        if (error) {
+          console.error('Navbar getUser error:', error.message)
+        }
 
-        if (currentUser) {
-          loadProfile(currentUser.id)
+        const user = currentUser ?? null
+        setUser(user)
+        currentUserId = user?.id ?? null
+
+        if (user) {
+          loadProfile(user.id)
         }
       } catch (err) {
         console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
-        // getSession threw — treat as logged out
         setUser(null)
         currentUserId = null
       }
     }
-
-    checkSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -88,14 +90,19 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           return
         }
 
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          const currentUser = session?.user ?? null
+          setUser(currentUser)
+          currentUserId = currentUser?.id ?? null
+          if (currentUser) {
+            loadProfile(currentUser.id)
+          }
+          return
+        }
+
         const currentUser = session?.user ?? null
-        // Update UI immediately; profile loads in the background
         setUser(currentUser)
         currentUserId = currentUser?.id ?? null
-
-        if (event === 'SIGNED_IN') {
-          router.refresh()
-        }
 
         if (currentUser) {
           loadProfile(currentUser.id)
@@ -106,6 +113,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         }
       }
     )
+
+    checkSession()
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentUserId) {
@@ -160,17 +169,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       }
     })
 
-    // 4. Mark that we just logged out so getStoredUser doesn't flash the old user
-    sessionStorage.setItem('__logout', Date.now().toString())
-
-    // 5. Call server-side logout to clear cookies with correct domain
+    // 4. Call server-side logout to clear cookies with correct domain
     try {
       await fetch('/api/logout', { method: 'POST' })
     } catch (err) {
       console.error('Server logout API call failed:', err)
     }
 
-    // 6. Hard redirect to home so middleware runs with fully cleared state
+    // 5. Hard redirect to home so middleware runs with fully cleared state
     window.location.replace('/')
   }, [])
 
