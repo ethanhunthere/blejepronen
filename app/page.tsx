@@ -116,15 +116,24 @@ export default function HomePage() {
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight tracking-tight text-center bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-4 py-2">
+              <h1
+                className="inline-block uppercase text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
+                style={{ textShadow: '0 0 40px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8), 0 0 80px rgba(0,0,0,0.6)' }}
+              >
                 Gjej banesën e duhur në Kosovë
               </h1>
 
-              <p className="inline-block text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-xl px-3 sm:px-4 py-2">
+              <p
+                className="inline-block text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2"
+                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
+              >
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
               </p>
 
-              <p className="inline-block text-white/40 text-xs sm:text-sm text-center mb-3 mt-10 bg-[#0A0F2E]/50 backdrop-blur-md border border-white/10 rounded-lg px-3 py-1">
+              <p
+                className="inline-block text-white/40 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
+                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
+              >
                 Kërko sipas qytetit ose lagjes
               </p>
 
