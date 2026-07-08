@@ -48,6 +48,7 @@ export type Database = {
           description: string
           price: number
           city: string
+          neighborhood: string | null
           address: string
           rooms: number
           area_m2: number
@@ -69,6 +70,7 @@ export type Database = {
           description: string
           price: number
           city: string
+          neighborhood?: string | null
           address: string
           rooms: number
           area_m2: number
@@ -84,6 +86,7 @@ export type Database = {
           description?: string
           price?: number
           city?: string
+          neighborhood?: string | null
           address?: string
           rooms?: number
           area_m2?: number

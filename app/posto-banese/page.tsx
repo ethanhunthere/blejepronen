@@ -10,7 +10,163 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Building2, Upload, X, Loader2 } from 'lucide-react'
 
-const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
+const KOSOVO_CITIES_NEIGHBORHOODS: Record<string, string[]> = {
+  'Prishtinë': [
+    'Qendër', 'Dardania', 'Ulpiana', 'Arbëria', 'Bregu i Diellit',
+    'Lakërishta', 'Kodra e Trimave', 'Tophane', 'Aktashi', 'Pejton',
+    'Mati 1', 'Mati 2', 'Emshiri', 'Kalabria', 'Taslixhe', 'Velania',
+    'Sofali', 'Kolovica', 'Dodona', 'Lagjja e Muhaxherëve', 'Vreshtat',
+    'Veternik', 'Hajvali', 'Besia', 'Graçanica', 'Fushë Kosovë',
+    'Prishtina e Re', 'Ramiz Sadiku', 'Çagllavicë', 'Mramuri',
+    'Bërnica', 'Barileva', 'Gërmia', 'Zllatari', 'Taukbahçe',
+    'Zona Industriale', 'Lagjja e Spitalit', 'Lagjja e Re'
+  ],
+  'Prizren': [
+    'Qendër', 'Ortakoll', 'Varosh', 'Çarshia e Vjetër', 'Uka',
+    'Lugja e Bajrakut', 'Jeta e Re', 'Shkoza', 'Mali i Gjerë',
+    'Mushnikova', 'Arbëria', 'Remzi Ademi', 'Lagja e Re',
+    'Vranishtë', 'Rahovecit', 'Blloku i Ri', 'Xhemajl Berisha',
+    'Lagja Spitali', 'Hoça e Qytetit', 'Piranë'
+  ],
+  'Pejë': [
+    'Qendër', 'Çarshia e Vjetër', 'Kapeshnica', 'Kroni i Bardhë',
+    'Blloku i Ri', 'Lagjja e Re', 'Arbëria', 'Ramiz Sadiku',
+    'Lagja e Muhaxherëve', 'Kodra e Trimave', 'Bredhëza',
+    'Terzialiu', 'Rugova', 'Lagja Spitali', 'Zona Industriale',
+    'Ura e Tabakëve', 'Kosove', 'Shtupel', 'Llapushnik'
+  ],
+  'Gjakovë': [
+    'Qendër', 'Çarshia e Madhe', 'Varosh', 'Lagja e Re',
+    'Çabrati', 'Arbëria', 'Rexhep Mala', 'Kodra e Trimave',
+    'Lagjja e Muhaxherëve', 'Blloku i Ri', 'Rr. UÇK-së',
+    'Lagja e Spitalit', 'Zona Industriale', 'Cermjan',
+    'Dobrosin', 'Orize', 'Bec', 'Lubeniq'
+  ],
+  'Gjilan': [
+    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
+    'Lagjja e Muhaxherëve', 'Dardania', 'Liria', 'Partizani',
+    'Lagja e Spitalit', 'Kodra e Trimave', 'Zona Industriale',
+    'Zhegër', 'Llashticë', 'Miradi e Epërme', 'Miradi e Poshtme',
+    'Bresalci', 'Shashkar'
+  ],
+  'Mitrovicë': [
+    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
+    'Suhodoll', 'Lagjja e Boshnjakëve', 'Kodra e Trimave',
+    'Lagja e Spitalit', 'Zona Industriale', 'Trepça',
+    'Dardania', 'Sipolje', 'Mikronaselje', 'Draga',
+    'Uglare', 'Bairami', 'Lagja Muharremaj'
+  ],
+  'Ferizaj': [
+    'Qendër', 'Blloku i Ri', 'Lagja e Re', 'Arbëria',
+    'Dardania', 'Liria', 'Lagja e Spitalit', 'Zona Industriale',
+    'Kodra e Trimave', 'Lagjja e Muhaxherëve', 'Sojeva',
+    'Babush i Poshtëm', 'Babush i Epërm', 'Varosh',
+    'Kotlina', 'Softë', 'Glloboçicë'
+  ],
+  'Vushtrri': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Dardania', 'Zona Industriale',
+    'Sfaraçak i Epërm', 'Sfaraçak i Poshtëm', 'Dobratin'
+  ],
+  'Podujevë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Dardania', 'Lluzhan', 'Orllan',
+    'Bajçina', 'Dobratin', 'Obranë'
+  ],
+  'Lipjan': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Dardania', 'Gadime', 'Sllatinë',
+    'Rufc', 'Magure'
+  ],
+  'Fushë Kosovë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Dardania', 'Zona Industriale',
+    'Matiqan', 'Dobërçan'
+  ],
+  'Drenas': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Kijeva', 'Komorane', 'Opterusha'
+  ],
+  'Skënderaj': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Turiqevc', 'Llaushë', 'Izbicë'
+  ],
+  'Malishevë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Banja', 'Panorc', 'Dragobilje'
+  ],
+  'Rahovec': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Cërgë', 'Xerxë', 'Krushedol'
+  ],
+  'Suharekë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Burim', 'Sopi', 'Samadrexhë'
+  ],
+  'Shtimë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Krajkova', 'Slivovë'
+  ],
+  'Kaçanik': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Kotlina', 'Stagova', 'Ivaja'
+  ],
+  'Hani i Elezit': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Elez Han'
+  ],
+  'Deçan': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Gllogjan', 'Irzniq', 'Prapaqan'
+  ],
+  'Istog': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Cerrcë', 'Budisalc', 'Lubovë'
+  ],
+  'Klinë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Pavljan', 'Dollc', 'Loxhë'
+  ],
+  'Junik': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+  ],
+  'Dragash': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Krushevë', 'Restelicë', 'Brod'
+  ],
+  'Prizren (Mamushë)': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+  ],
+  'Obiliq': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Mirash', 'Shkabaj', 'Kosovo Polje'
+  ],
+  'Graçanicë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria'
+  ],
+  'Novobërdë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri'
+  ],
+  'Kamenicë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Cernicë', 'Reshtan'
+  ],
+  'Vitia': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Arbëria',
+    'Lagja e Spitalit', 'Verboc', 'Pozheran', 'Letnicë'
+  ],
+  'Shtërpcë': [
+    'Qendër', 'Lagja e Re', 'Blloku i Ri', 'Sebce'
+  ],
+  'Ranillug': [
+    'Qendër', 'Lagja e Re'
+  ],
+  'Partesh': [
+    'Qendër', 'Lagja e Re'
+  ],
+  'Kllokot': [
+    'Qendër', 'Lagja e Re'
+  ]
+}
 
 const CONDITIONS = [
   { value: 'e-re', label: 'E re' },
@@ -53,6 +209,7 @@ interface FormData {
   description: string
   price: string
   city: string
+  neighborhood: string
   address: string
   rooms: string
   area_m2: string
@@ -69,6 +226,7 @@ export default function PostoBanesePage() {
     description: '',
     price: '',
     city: 'Prishtinë',
+    neighborhood: '',
     address: '',
     rooms: '',
     area_m2: '',
@@ -87,7 +245,12 @@ export default function PostoBanesePage() {
   const supabase = createClient()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+      ...(name === 'city' ? { neighborhood: '' } : {})
+    }))
   }
 
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,6 +393,7 @@ export default function PostoBanesePage() {
         description: formData.description.trim(),
         price: priceNum,
         city: formData.city,
+        neighborhood: formData.neighborhood || null,
         address: formData.address.trim(),
         rooms: Number(formData.rooms),
         area_m2: Number(formData.area_m2),
@@ -425,22 +589,6 @@ export default function PostoBanesePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="rooms">Numri i dhomave *</Label>
-                <select
-                  id="rooms"
-                  name="rooms"
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
-                  value={formData.rooms}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Zgjedh</option>
-                  {[1,2,3,4,5,6].map(r => (
-                    <option key={r} value={r}>{r} dhoma</option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <Label htmlFor="city">Qyteti *</Label>
                 <select
                   id="city"
@@ -450,11 +598,48 @@ export default function PostoBanesePage() {
                   onChange={handleChange}
                   required
                 >
-                  {CITIES.map(city => (
+                  <option value="">Zgjedh qytetin</option>
+                  {Object.keys(KOSOVO_CITIES_NEIGHBORHOODS).map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
                 </select>
               </div>
+              <div>
+                <Label htmlFor="neighborhood">Lagjja *</Label>
+                <select
+                  id="neighborhood"
+                  name="neighborhood"
+                  className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF] disabled:opacity-50 disabled:cursor-not-allowed"
+                  value={formData.neighborhood}
+                  onChange={handleChange}
+                  required
+                  disabled={!formData.city}
+                >
+                  <option value="">
+                    {formData.city ? 'Zgjedh lagjen' : 'Zgjidh qytetin së pari'}
+                  </option>
+                  {(KOSOVO_CITIES_NEIGHBORHOODS[formData.city] || []).map(neighborhood => (
+                    <option key={neighborhood} value={neighborhood}>{neighborhood}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="rooms">Numri i dhomave *</Label>
+              <select
+                id="rooms"
+                name="rooms"
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                value={formData.rooms}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Zgjedh</option>
+                {[1,2,3,4,5,6].map(r => (
+                  <option key={r} value={r}>{r} dhoma</option>
+                ))}
+              </select>
             </div>
 
             <div>

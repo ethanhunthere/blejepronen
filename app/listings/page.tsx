@@ -28,7 +28,8 @@ function ListingsContent() {
     maxPrice: searchParams.get('maxPrice') || '',
     rooms: searchParams.get('rooms') || '',
     search: searchParams.get('search') || '',
-    agentId: searchParams.get('agentId') || ''
+    agentId: searchParams.get('agentId') || '',
+    neighborhood: searchParams.get('neighborhood') || ''
   })
   const [showFilters, setShowFilters] = useState(false)
   const [searchInput, setSearchInput] = useState(filters.search)
@@ -44,6 +45,7 @@ function ListingsContent() {
     if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice))
     if (filters.rooms) query = query.eq('rooms', Number(filters.rooms))
     if (filters.agentId) query = query.eq('user_id', filters.agentId)
+    if (filters.neighborhood) query = query.ilike('neighborhood', `%${filters.neighborhood}%`)
     return query
   }
 
@@ -128,7 +130,7 @@ function ListingsContent() {
 
   const clearFilters = () => {
     setSearchInput('')
-    setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '' })
+    setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
     setSelectedAgent(null)
   }
 
@@ -194,13 +196,26 @@ function ListingsContent() {
                 id="filter-city"
                 className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={filters.city}
-                onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
+                onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, neighborhood: '' }))}
               >
                 <option value="">Të gjitha</option>
                 {CITIES.map(city => (
                   <option key={city} value={city}>{city}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Neighborhood */}
+            <div>
+              <label htmlFor="filter-neighborhood" className="text-sm font-medium text-gray-400 mb-2 block">Lagjja</label>
+              <Input
+                id="filter-neighborhood"
+                type="text"
+                placeholder="p.sh. Dardania"
+                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                value={filters.neighborhood}
+                onChange={(e) => setFilters(prev => ({ ...prev, neighborhood: e.target.value }))}
+              />
             </div>
 
             {/* Type */}

@@ -26,7 +26,8 @@ create table public.profiles (
 --   ADD COLUMN IF NOT EXISTS condition text,
 --   ADD COLUMN IF NOT EXISTS floor text,
 --   ADD COLUMN IF NOT EXISTS apartment_type text,
---   ADD COLUMN IF NOT EXISTS features text[] DEFAULT '{}';
+--   ADD COLUMN IF NOT EXISTS features text[] DEFAULT '{}',
+--   ADD COLUMN IF NOT EXISTS neighborhood text;
 
 -- Listings table
 create table public.listings (
@@ -35,7 +36,8 @@ create table public.listings (
   title text not null,
   description text not null,
   price numeric not null,
-  city text not null check (city in ('Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj')),
+  city text not null,
+  neighborhood text,
   address text not null,
   rooms integer not null,
   area_m2 numeric not null,
