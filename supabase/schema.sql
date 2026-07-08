@@ -6,6 +6,7 @@ create table public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   first_name text not null,
   last_name text not null,
+  email text,
   phone text,
   email_verified boolean default false,
   avatar_url text,
@@ -44,11 +45,12 @@ create table public.listings (
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, first_name, last_name, phone)
+  insert into public.profiles (id, first_name, last_name, email, phone)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'first_name', ''),
     coalesce(new.raw_user_meta_data->>'last_name', ''),
+    coalesce(new.email, ''),
     coalesce(new.raw_user_meta_data->>'phone', '')
   );
   return new;

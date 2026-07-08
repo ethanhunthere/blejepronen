@@ -9,6 +9,7 @@ export type Database = {
           id: string
           first_name: string
           last_name: string
+          email: string | null
           phone: string | null
           email_verified: boolean
           avatar_url: string | null
@@ -21,6 +22,7 @@ export type Database = {
           id: string
           first_name: string
           last_name: string
+          email?: string | null
           phone?: string | null
           email_verified?: boolean
           avatar_url?: string | null
@@ -30,6 +32,7 @@ export type Database = {
         Update: {
           first_name?: string
           last_name?: string
+          email?: string | null
           phone?: string | null
           email_verified?: boolean
           avatar_url?: string | null
