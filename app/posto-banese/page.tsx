@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,7 @@ export default function PostoBanesePage() {
   const [previews, setPreviews] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [unverified, setUnverified] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -99,10 +101,12 @@ export default function PostoBanesePage() {
       return
     }
 
+    setUnverified(false)
+
     // --- Step 0.5: Ensure profile row exists (FK listings.user_id → profiles.id) ---
     const { data: existingProfile, error: profileCheckError } = await supabase
       .from('profiles')
-      .select('id, first_name')
+      .select('id, first_name, phone_verified')
       .eq('id', user.id)
       .maybeSingle()
 
@@ -129,6 +133,12 @@ export default function PostoBanesePage() {
         setUploading(false)
         return
       }
+    }
+
+    if (!existingProfile?.phone_verified) {
+      setUnverified(true)
+      setUploading(false)
+      return
     }
 
     // --- Step 1: Validate price ---
@@ -227,6 +237,21 @@ export default function PostoBanesePage() {
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {unverified && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              Duhet të verifikoni profilin tuaj para se të postoni banesë. Shkoni te profili juaj dhe klikoni 'Verifiko profilin'.
+            </AlertDescription>
+            <div className="mt-3">
+              <Link
+                href="/completo-profilin"
+                className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors"
+              >
+                Verifiko profilin
+              </Link>
+            </div>
           </Alert>
         )}
 

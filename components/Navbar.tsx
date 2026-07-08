@@ -217,16 +217,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Plus className="h-4 w-4" />
                     Posto banesë
                   </button>
-                  {profileIncomplete && (
-                    <button
-                      type="button"
-                      onClick={() => router.push('/completo-profilin')}
-                      className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-colors cursor-pointer"
-                    >
-                      <AlertTriangle className="h-4 w-4" />
-                      Verifiko profilin
-                    </button>
-                  )}
                   {/* Custom dropdown — no Base UI, no layout shifts */}
                   <div className="relative flex-shrink-0" ref={dropdownRef}>
                     <button
@@ -334,16 +324,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               </div>
             ) : (
               <>
-                {profileIncomplete && (
-                  <button
-                    type="button"
-                    onClick={() => { router.push('/completo-profilin'); setMenuOpen(false) }}
-                    className="inline-flex items-center justify-center w-full rounded-lg border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Verifiko profilin
-                  </button>
-                )}
                 <div className="flex items-center gap-3 px-1 py-2">
                   {profileAvatarUrl ? (
                     <img src={profileAvatarUrl} alt="" className="rounded-full w-9 h-9 object-cover shrink-0" />
