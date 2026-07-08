@@ -1,15 +1,15 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import ListingCard from '@/components/ListingCard'
-import { User, Phone, CheckCircle, XCircle, Loader2, Camera } from 'lucide-react'
+import { Camera, CheckCircle2, Mail, Phone, Calendar, User, Loader2, AlertTriangle } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 
 export default function ProfilePage() {
@@ -19,7 +19,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [deleteMessage, setDeleteMessage] = useState('')
   const [formData, setFormData] = useState({ first_name: '', last_name: '', phone: '' })
+  const [userEmail, setUserEmail] = useState('')
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -40,6 +42,7 @@ export default function ProfilePage() {
         setProfile(prof as Profile)
         setFormData({ first_name: prof.first_name, last_name: prof.last_name, phone: prof.phone || '' })
       }
+      setUserEmail(user?.email || '')
 
       const { data: myListings } = await supabase
         .from('listings')
@@ -130,106 +133,178 @@ export default function ProfilePage() {
     setListings(prev => prev.filter(l => l.id !== id))
   }
 
+  const handleDeleteAccount = async () => {
+    if (!confirm('A jeni të sigurt që doni ta fshini llogarinë? Kjo veprim nuk mund të kthehet.')) return
+    await supabase.auth.signOut()
+    setDeleteMessage('Kontaktoni support-in për të fshirë llogarinë. Ju keni dalë nga llogaria.')
+    setTimeout(() => router.push('/'), 3000)
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
     </div>
   )
 
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+
+  const isVerified = profile?.phone_verified === true
+  const initials = profile?.first_name ? profile.first_name[0].toUpperCase() : (userEmail ? userEmail[0].toUpperCase() : '?')
+
   return (
-    <div className="min-h-screen bg-[#0A0F2E]">
-      <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 py-10">
+    <div className="min-h-screen bg-[#0A0F2E] py-10">
+      <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6">
         <h1 className="text-2xl font-bold text-white mb-8">Profili im</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Profile Form */}
-          <div className="lg:col-span-1">
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start mb-6">
-                <div className="relative w-20 h-20 mr-0 sm:mr-4 mb-3 sm:mb-0">
-                  {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt="Avatar"
-                      className="w-20 h-20 rounded-full object-cover border border-white/10"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-white/10">
-                      <span className="text-2xl font-semibold text-[#1B4FFF]">
-                        {profile?.first_name ? profile.first_name[0].toUpperCase() : <User className="h-8 w-8 text-[#1B4FFF]" />}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-[#0A0F2E] hover:bg-[#1640CC] transition-colors cursor-pointer"
-                  >
-                    {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
+        {success && (
+          <Alert className="mb-6 bg-green-900/20 border-green-800">
+            <AlertDescription className="text-green-300">Profili u ruajt!</AlertDescription>
+          </Alert>
+        )}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {deleteMessage && (
+          <Alert className="mb-6 bg-blue-900/20 border-blue-800">
+            <AlertDescription className="text-blue-300">{deleteMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Profile Card */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {/* Avatar */}
+            <div className="relative w-24 h-24 flex-shrink-0">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar"
+                  className="w-24 h-24 rounded-full object-cover border border-white/10"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-white/10">
+                  <span className="text-4xl font-semibold text-[#1B4FFF]">{initials}</span>
                 </div>
-                <div>
-                  <p className="font-semibold text-white">{profile?.first_name} {profile?.last_name}</p>
-                  <div className="flex items-center mt-1">
-                    {profile?.phone_verified ? (
-                      <Badge className="bg-green-500/20 text-green-400 text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Verifikuar
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">
-                        <XCircle className="h-3 w-3 mr-1" /> Pa verifikim
-                      </Badge>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-[#0A0F2E] hover:bg-[#1640CC] transition-colors cursor-pointer"
+              >
+                {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left">
+              {isVerified ? (
+                <>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                    <h2 className="text-xl font-semibold text-white">
+                      {profile?.first_name} {profile?.last_name}
+                    </h2>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                      <CheckCircle2 className="h-3 w-3" /> E verifikuar
+                    </span>
+                  </div>
+                  <div className="space-y-2 mt-3">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                      <Mail className="h-4 w-4" />
+                      <span className="text-white font-medium">{userEmail}</span>
+                    </div>
+                    {profile?.phone && (
+                      <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                        <Phone className="h-4 w-4" />
+                        <span className="text-white font-medium">{profile.phone}</span>
+                      </div>
                     )}
+                    <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-white/40 text-xs uppercase tracking-wider mr-1">Anëtar që nga</span>
+                      <span className="text-white font-medium">{memberSince}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm mb-1">
+                    <Mail className="h-4 w-4" />
+                    <span className="text-white font-medium">{userEmail}</span>
+                  </div>
+                  <p className="text-sm text-white/50 mt-1">Llogaria juaj nuk është e verifikuar</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {!isVerified && (
+            <div className="mt-6 bg-[#1B4FFF]/10 border border-[#1B4FFF]/30 rounded-2xl p-5">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-[#1B4FFF]/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-[#1B4FFF]" />
+                  </div>
+                  <p className="text-white/80 text-sm">
+                    Verifikoni llogarinë tuaj për të pasur qasje të plotë në platformë
+                  </p>
+                </div>
+                <Link
+                  href="/completo-profilin"
+                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors whitespace-nowrap"
+                >
+                  Verifiko tani →
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Edit Form - verified only */}
+        {isVerified && (
+          <>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
+              <h3 className="text-white font-semibold text-lg mb-5">Të dhënat e profilit</h3>
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="first_name" className="text-white/40 text-xs uppercase tracking-wider">Emri</Label>
+                    <Input
+                      id="first_name"
+                      className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                      value={formData.first_name}
+                      onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="last_name" className="text-white/40 text-xs uppercase tracking-wider">Mbiemri</Label>
+                    <Input
+                      id="last_name"
+                      className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                      value={formData.last_name}
+                      onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
+                    />
                   </div>
                 </div>
-              </div>
-
-              {success && (
-                <Alert className="mb-4 bg-green-900/20 border-green-800">
-                  <AlertDescription className="text-green-300">Profili u ruajt!</AlertDescription>
-                </Alert>
-              )}
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <form onSubmit={handleSave} className="space-y-4">
                 <div>
-                  <Label htmlFor="first_name">Emri</Label>
-                  <Input
-                    id="first_name"
-                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.first_name}
-                    onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="last_name">Mbiemri</Label>
-                  <Input
-                    id="last_name"
-                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.last_name}
-                    onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">
+                  <Label htmlFor="phone" className="text-white/40 text-xs uppercase tracking-wider">
                     <Phone className="h-3 w-3 inline mr-1" />
                     Numri i telefonit
                   </Label>
                   <Input
                     id="phone"
-                    className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
                     placeholder="+383 44 123 456"
                     value={formData.phone}
                     onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
@@ -244,39 +319,52 @@ export default function ProfilePage() {
                 </Button>
               </form>
             </div>
-          </div>
 
-          {/* Right: My Listings */}
-          <div className="lg:col-span-2">
-            <h2 className="font-semibold text-white mb-4">
-              Listimet e mia ({listings.length})
-            </h2>
-            {listings.length === 0 ? (
-              <div className="bg-[#111936] rounded-2xl p-10 text-center border border-white/10">
-                <p className="text-gray-500 mb-4">Nuk keni listuar asnjë banesë ende.</p>
-                <Button
-                  onClick={() => router.push('/posto-banese')}
-                  className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
-                >
-                  Posto banesën tënde
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {listings.map(listing => (
-                  <div key={listing.id} className="relative">
-                    <ListingCard listing={listing} />
-                    <button
-                      onClick={() => handleDeleteListing(listing.id)}
-                      className="absolute top-3 right-3 h-11 px-3 bg-red-500/20 text-red-400 text-sm border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors z-10 inline-flex items-center justify-center cursor-pointer font-semibold"
-                    >
-                      Fshi
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Danger Zone */}
+            <div className="border border-red-500/20 bg-red-500/5 rounded-2xl p-5 mb-6">
+              <h3 className="text-white font-semibold text-lg mb-2">Zona e rrezikut</h3>
+              <p className="text-white/50 text-sm mb-4">
+                Pasi të fshini llogarinë, të gjitha të dhënat tuaja do të humbasin. Ky veprim nuk mund të kthehet.
+              </p>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              >
+                Fshij llogarinë
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* My Listings */}
+        <div className="mb-8">
+          <h2 className="text-white font-semibold text-lg mb-4">Listimet e mia ({listings.length})</h2>
+          {listings.length === 0 ? (
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-10 text-center">
+              <p className="text-white/50 mb-4">Nuk keni listuar asnjë banesë ende.</p>
+              <Button
+                onClick={() => router.push('/posto-banese')}
+                className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
+              >
+                Posto banesën tënde
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {listings.map(listing => (
+                <div key={listing.id} className="relative">
+                  <ListingCard listing={listing} />
+                  <button
+                    onClick={() => handleDeleteListing(listing.id)}
+                    className="absolute top-3 right-3 h-11 px-3 bg-red-500/20 text-red-400 text-sm border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors z-10 inline-flex items-center justify-center cursor-pointer font-semibold"
+                  >
+                    Fshi
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
