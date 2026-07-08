@@ -71,60 +71,68 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       }
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          currentUserId = null
-          setProfileIncomplete(false)
-          setProfileFirstName('')
-          setProfileAvatarUrl('')
-          setDropdownOpen(false)
-          setMenuOpen(false)
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('sb-')) {
-              localStorage.removeItem(key)
-            }
-          })
-          router.refresh()
-          return
-        }
-
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const currentUser = session?.user ?? null
-          setUser(currentUser)
-          currentUserId = currentUser?.id ?? null
-          if (currentUser) {
-            loadProfile(currentUser.id)
-          }
-          return
-        }
-
-        const currentUser = session?.user ?? null
-        setUser(currentUser)
-        currentUserId = currentUser?.id ?? null
-
-        if (currentUser) {
-          loadProfile(currentUser.id)
-        } else {
-          setProfileIncomplete(false)
-          setProfileFirstName('')
-          setProfileAvatarUrl('')
-        }
-      }
-    )
-
-    checkSession()
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentUserId) {
         loadProfile(currentUserId)
       }
     }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    let subscription: { unsubscribe: () => void } | null = null
+
+    // 1. First validate the session server-side, then set up the listener.
+    // This prevents onAuthStateChange from firing with stale cached data
+    // before getUser() has had a chance to correct the initial state.
+    checkSession().then(() => {
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            currentUserId = null
+            setProfileIncomplete(false)
+            setProfileFirstName('')
+            setProfileAvatarUrl('')
+            setDropdownOpen(false)
+            setMenuOpen(false)
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-')) {
+                localStorage.removeItem(key)
+              }
+            })
+            router.refresh()
+            return
+          }
+
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            const currentUser = session?.user ?? null
+            setUser(currentUser)
+            currentUserId = currentUser?.id ?? null
+            if (currentUser) {
+              loadProfile(currentUser.id)
+            }
+            return
+          }
+
+          const currentUser = session?.user ?? null
+          setUser(currentUser)
+          currentUserId = currentUser?.id ?? null
+
+          if (currentUser) {
+            loadProfile(currentUser.id)
+          } else {
+            setProfileIncomplete(false)
+            setProfileFirstName('')
+            setProfileAvatarUrl('')
+          }
+        }
+      )
+
+      subscription = sub
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    })
 
     return () => {
-      subscription.unsubscribe()
+      subscription?.unsubscribe()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [router])

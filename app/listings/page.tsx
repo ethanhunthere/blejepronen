@@ -85,6 +85,8 @@ function ListingsContent() {
     const listingResults = (listingData || []) as unknown as Listing[]
     const agentResultsData = (profileData || []) as unknown as AgentResult[]
 
+    console.log('Agent search results:', profileData, 'Search term:', searchTerm)
+
     if (pageNum === 0) {
       setListings(listingResults)
       setAgentResults(agentResultsData)
