@@ -117,7 +117,7 @@ export default function HomePage() {
         />
 
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-18 w-full -mt-16 md:-mt-24">
             <div className="text-center max-w-3xl mx-auto">
               <h1
                 className="uppercase text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight text-center"
