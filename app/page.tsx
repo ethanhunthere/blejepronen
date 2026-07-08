@@ -146,21 +146,6 @@ export default function HomePage() {
                 buttonText="Kërko Banesë"
               />
 
-              {/* City links */}
-              <div
-                className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
-              >
-                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city, i, arr) => (
-                  <span key={city}>
-                    <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/70 hover:text-white transition-colors">
-                      {city}
-                    </Link>
-                    {i < arr.length - 1 && <span className="ml-2">/</span>}
-                  </span>
-                ))}
-              </div>
-
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <Link
