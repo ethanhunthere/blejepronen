@@ -91,7 +91,7 @@ export default function RegisterPage() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+              className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-white bg-transparent px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
+              className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -226,7 +226,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white mt-2 rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white mt-2 rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Krijo llogari falas'}

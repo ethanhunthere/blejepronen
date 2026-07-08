@@ -74,7 +74,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center"
+              className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -125,7 +125,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke hyrë...' : 'Hyr'}

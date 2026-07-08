@@ -8,13 +8,13 @@ interface LogoProps {
 export function Logo({ variant = 'navbar', className }: LogoProps) {
   if (variant === 'navbar') {
     return (
-      <div className={`h-10 ${className || ''}`}>
+      <div className={`h-8 ${className || ''}`}>
         <Image
           src="/logo.png"
           alt="Bleje Banesën"
           width={253}
           height={251}
-          className="h-10 w-auto object-contain object-left"
+          className="h-8 w-auto object-contain object-left"
           priority
         />
       </div>
@@ -22,7 +22,7 @@ export function Logo({ variant = 'navbar', className }: LogoProps) {
   }
 
   return (
-    <div className={`relative h-16 max-w-[280px] w-full ${className || ''}`}>
+    <div className={`relative h-14 max-w-[240px] w-full ${className || ''}`}>
       <Image
         src="/logo.png"
         alt="Bleje Banesën"

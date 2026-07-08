@@ -242,7 +242,7 @@ export default function PostoBanesePage() {
                   role="radio"
                   aria-checked={formData.type === t}
                   onClick={() => setFormData(prev => ({ ...prev, type: t }))}
-                  className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm ${
+                  className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
                     formData.type === t
                       ? 'bg-[#1B4FFF] text-white shadow-sm'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
@@ -397,7 +397,7 @@ export default function PostoBanesePage() {
                       type="button"
                       onClick={() => removeImage(i)}
                       aria-label={`Hiq foton ${i + 1}`}
-                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500 text-white rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500/20 text-red-400 border border-red-500/30 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-500/30"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -411,7 +411,7 @@ export default function PostoBanesePage() {
           <Button
             type="submit"
             disabled={uploading}
-            className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base font-semibold py-4"
+            className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base font-semibold py-4 rounded-xl cursor-pointer"
           >
             {uploading ? (
               <>

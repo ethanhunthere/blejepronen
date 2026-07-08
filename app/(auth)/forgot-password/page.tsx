@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-medium transition-colors inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke dërguar...' : 'Dërgo linkun'}
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
           </CardContent>
 
           <CardFooter>
-            <Link href="/login" className="w-full inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+            <Link href="/login" className="w-full inline-flex items-center justify-center rounded-xl border-2 border-white px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te hyrja
             </Link>

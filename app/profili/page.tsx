@@ -160,7 +160,7 @@ export default function ProfilePage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                 </Button>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                 <p className="text-gray-500 mb-4">Nuk keni listuar asnjë banesë ende.</p>
                 <Button
                   onClick={() => router.push('/posto-banese')}
-                  className="h-11 w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white"
+                  className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
                 >
                   Posto banesën tënde
                 </Button>
@@ -190,7 +190,7 @@ export default function ProfilePage() {
                     <ListingCard listing={listing} />
                     <button
                       onClick={() => handleDeleteListing(listing.id)}
-                      className="absolute top-3 right-3 h-11 px-3 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors z-10 inline-flex items-center justify-center"
+                      className="absolute top-3 right-3 h-11 px-3 bg-red-500/20 text-red-400 text-sm border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors z-10 inline-flex items-center justify-center cursor-pointer font-semibold"
                     >
                       Fshi
                     </button>

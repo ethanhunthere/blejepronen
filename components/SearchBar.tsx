@@ -51,7 +51,7 @@ export default function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className="w-full sm:w-auto bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 h-11 rounded-xl font-medium border border-white/30 transition-colors"
+        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-6 py-2.5 rounded-xl font-semibold transition-colors cursor-pointer"
       >
         {buttonText}
       </button>

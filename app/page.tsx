@@ -162,13 +162,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <Link
                   href="/listings"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-2.5 font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors cursor-pointer"
                 >
                   Shfleto banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl h-12 px-6 font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-2.5 font-semibold border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
@@ -184,8 +184,7 @@ export default function HomePage() {
           <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 text-center">
             <p className="text-red-300 mb-3">{error}</p>
             <Button
-              variant="outline"
-              className="h-11 w-full sm:w-auto border-white/20 text-white hover:bg-white/10"
+              className="w-full sm:w-auto h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold"
               onClick={() => {
                 setError(null)
                 setLoading(true)
@@ -206,7 +205,7 @@ export default function HomePage() {
             <p className="text-slate-400 text-sm mt-1">Listimet e zgjedhura me kujdes</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="h-11 border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
+            <Button className="h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">Shiko të gjitha →</Button>
           </Link>
         </div>
 
@@ -246,7 +245,7 @@ export default function HomePage() {
             <p className="text-slate-400 text-sm mt-1">Të shtuara në 24 orët e fundit</p>
           </div>
           <Link href="/listings">
-            <Button variant="outline" className="h-11 border-white/20 text-white hover:bg-white/10">Shiko të gjitha →</Button>
+            <Button className="h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">Shiko të gjitha →</Button>
           </Link>
         </div>
 
@@ -277,7 +276,7 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold text-white mb-2">Ende nuk ka listime</h3>
             <p className="text-slate-400 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
-              <Button className="h-11 w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
+              <Button className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">
                 Posto banesën tënde falas
               </Button>
             </Link>

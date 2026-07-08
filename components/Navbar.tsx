@@ -192,13 +192,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center space-x-3">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-lg h-10 px-2.5 text-sm font-medium text-white border border-white/50 hover:bg-white/10 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 text-sm font-semibold text-white border border-white/70 hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-lg h-10 px-2.5 text-sm font-medium bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 text-sm font-semibold bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -208,7 +208,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg h-10 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -217,7 +217,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => router.push('/completo-profilin')}
-                      className="inline-flex items-center justify-center rounded-lg h-10 gap-1.5 px-2.5 text-sm font-medium whitespace-nowrap border border-orange-300 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200 animate-pulse"
+                      className="inline-flex items-center justify-center rounded-lg px-5 py-2 gap-1.5 text-sm font-semibold whitespace-nowrap border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-colors cursor-pointer"
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Verifiko profilin
@@ -249,7 +249,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/posto-banese') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <Plus className="h-4 w-4 mr-3 text-slate-400" />
                           Posto banesë
@@ -258,7 +258,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <User className="h-4 w-4 mr-3 text-slate-400" />
                           Banesat e mia
@@ -267,7 +267,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
                         >
                           <Settings className="h-4 w-4 mr-3 text-slate-400" />
                           Cilësimet
@@ -278,7 +278,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
                         >
                           <LogOut className="h-4 w-4 mr-3" />
                           Dil
@@ -292,7 +292,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button */}
             <button
-              className="lg:hidden p-2 rounded-md min-h-11 min-w-11 flex items-center justify-center text-white transition-colors"
+              className="lg:hidden p-2 rounded-lg min-h-11 min-w-11 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
@@ -310,8 +310,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             </Link>
             {!user ? (
               <div className="space-y-2">
-                <a href="/login" className="block w-full min-h-11 rounded-lg border border-white/20 bg-transparent text-center leading-[2.75rem] text-sm font-medium text-white hover:bg-white/10 transition-colors">Hyr</a>
-                <a href="/register" className="block w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center leading-[2.75rem] text-sm font-medium text-white transition-colors">Regjistrohu</a>
+                <a href="/login" className="block w-full rounded-lg border border-white/70 bg-transparent px-5 py-2 text-center text-sm font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer">Hyr</a>
+                <a href="/register" className="block w-full rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-center px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer">Regjistrohu</a>
               </div>
             ) : (
               <>
@@ -319,7 +319,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => { router.push('/completo-profilin'); setMenuOpen(false) }}
-                    className="inline-flex items-center justify-center w-full min-h-11 rounded-lg border border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-sm font-medium"
+                    className="inline-flex items-center justify-center w-full rounded-lg border-2 border-orange-400 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
                   >
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Verifiko profilin
@@ -336,27 +336,27 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="inline-flex items-center justify-center w-full min-h-11 rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-sm font-medium"
+                  className="inline-flex items-center justify-center w-full rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Posto banesë
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white py-3"
+                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <User className="h-4 w-4" />
                   Banesat e mia
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white py-3"
+                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <Settings className="h-4 w-4" />
                   Cilësimet
                 </button>
                 <div className="border-t border-white/10 pt-2">
-                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:text-red-300 py-3 font-medium">
+                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-4 py-2.5 font-semibold cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     Dil
                   </button>

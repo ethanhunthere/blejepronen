@@ -200,7 +200,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               {listing.profiles?.phone && (
                 <>
                   <a href={`tel:${listing.profiles.phone}`}>
-                    <Button className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base">
+                    <Button className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base font-semibold rounded-xl cursor-pointer">
                       <Phone className="h-4 w-4 mr-2" />
                       {listing.profiles.phone}
                     </Button>
@@ -211,7 +211,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                     rel="noopener noreferrer"
                     className="block mt-3"
                   >
-                    <button type="button" className="w-full h-11 border border-white/20 bg-transparent text-white hover:bg-white/10 rounded-xl font-medium transition-colors inline-flex items-center justify-center whitespace-nowrap">
+                    <button type="button" className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center whitespace-nowrap cursor-pointer">
                       Kontakto me WhatsApp
                     </button>
                   </a>
