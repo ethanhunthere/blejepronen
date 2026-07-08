@@ -11,6 +11,7 @@ import { User, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 // NOTE: 6-digit OTP email verification is used for profile verification.
+// Supabase sends a 6-digit code when emailRedirectTo is undefined.
 // Supabase Dashboard → Authentication → Email Templates → "Magic Link"
 // is used to send the OTP code when signInWithOtp is called.
 
@@ -117,6 +118,7 @@ export default function CompletoProfilinPage() {
       email: userEmail,
       options: {
         shouldCreateUser: false,
+        emailRedirectTo: undefined,
       },
     })
 
