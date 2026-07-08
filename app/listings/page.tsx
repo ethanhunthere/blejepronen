@@ -12,7 +12,7 @@ import type { Listing, Profile } from '@/lib/supabase'
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
 const PAGE_SIZE = 12
 
-type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'email' | 'avatar_url' | 'email_verified'>
+type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'email' | 'avatar_url' | 'email_verified' | 'created_at'>
 
 function ListingsContent() {
   const searchParams = useSearchParams()
@@ -63,7 +63,7 @@ function ListingsContent() {
 
     if (searchTerm) {
       listingQuery = listingQuery.or(
-        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,neighborhood.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
       )
     }
 
@@ -76,7 +76,7 @@ function ListingsContent() {
       searchTerm && pageNum === 0 && !filters.agentId
         ? supabase
             .from('profiles')
-            .select('id,first_name,last_name,email,avatar_url,email_verified')
+            .select('id,first_name,last_name,email,avatar_url,email_verified,created_at')
             .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
             .limit(20)
         : Promise.resolve({ data: [] })
@@ -280,28 +280,23 @@ function ListingsContent() {
         {/* Agent Results */}
         {!loading && agentResults.length > 0 && !filters.agentId && (
           <div className="mb-8">
-            <h2 className="text-white/60 text-sm font-medium mb-3">Agjentët & Shitësit</h2>
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <h2 className="text-white/60 text-sm font-medium mb-3">Agjentë & Shitës</h2>
+            <div className="space-y-3">
               {agentResults.map(agent => {
-                const initials = (agent.first_name?.[0] || agent.email?.[0] || '?').toUpperCase()
+                const initials = (agent.first_name?.[0] || '?').toUpperCase()
                 return (
-                  <button
+                  <div
                     key={agent.id}
-                    type="button"
-                    onClick={() => {
-                      router.push(`/listings?agentId=${agent.id}`, { scroll: false })
-                      setFilters(prev => ({ ...prev, agentId: agent.id }))
-                    }}
-                    className="min-w-[280px] bg-white/8 border border-white/10 rounded-2xl p-4 flex items-center gap-3 text-left hover:bg-white/12 hover:border-white/20 transition-colors cursor-pointer"
+                    className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4"
                   >
                     {agent.avatar_url ? (
                       <img
                         src={agent.avatar_url}
                         alt=""
-                        className="w-12 h-12 rounded-full object-cover border border-white/10"
+                        className="w-14 h-14 rounded-full object-cover border border-white/10"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white font-bold">
+                      <div className="w-14 h-14 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white font-bold">
                         {initials}
                       </div>
                     )}
@@ -309,17 +304,27 @@ function ListingsContent() {
                       <p className="text-white font-semibold truncate">
                         {agent.first_name} {agent.last_name}
                       </p>
-                      <p className="text-white/40 text-xs truncate">{agent.email}</p>
                       {agent.email_verified && (
                         <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-0.5">
-                          <CheckCircle2 className="h-3 w-3" /> E verifikuar
+                          ✓ E verifikuar
                         </span>
                       )}
+                      <p className="text-white/40 text-xs mt-0.5">
+                        Anëtar që {new Date(agent.created_at).toLocaleDateString('sq-AL', { month: 'long', year: 'numeric' })}
+                      </p>
                     </div>
-                    <span className="text-xs font-medium text-[#1B4FFF] whitespace-nowrap">
-                      Shiko banesat
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchInput('')
+                        router.push(`/listings?agentId=${agent.id}`, { scroll: false })
+                        setFilters(prev => ({ ...prev, search: '', agentId: agent.id }))
+                      }}
+                      className="text-sm font-medium text-[#1B4FFF] hover:text-[#1640CC] whitespace-nowrap cursor-pointer"
+                    >
+                      Shiko banesat →
+                    </button>
+                  </div>
                 )
               })}
             </div>
