@@ -384,6 +384,7 @@ export default function PostoBanesePage() {
                   id="price"
                   name="price"
                   type="number"
+                  step="100"
                   placeholder={formData.type === 'shitje' ? '85000' : '400'}
                   className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                   value={formData.price}
