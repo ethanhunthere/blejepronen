@@ -8,47 +8,31 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Lock, User, Phone, Globe } from 'lucide-react'
+import { Mail, Lock, Globe } from 'lucide-react'
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    phone: ''
-  })
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError('Fjalëkalimi duhet të ketë të paktën 6 karaktere.')
       setLoading(false)
       return
     }
 
     const { error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phone
-        }
-      }
+      email,
+      password,
     })
 
     if (error) {
@@ -85,7 +69,7 @@ export default function RegisterPage() {
             </div>
             <h2 className="text-2xl font-bold text-white">Kontrollo email-in!</h2>
             <p className="text-gray-400">
-              Dërguam një link konfirmimi te <strong>{formData.email}</strong>.
+              Dërguam një link konfirmimi te <strong>{email}</strong>.
               Kliko linkun për të aktivizuar llogarinë tënde.
             </p>
             <button
@@ -137,66 +121,18 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <form onSubmit={handleRegister} className="space-y-3">
-              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Emri</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      placeholder="Arben"
-                      className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Mbiemri</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    placeholder="Krasniqi"
-                    className="h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Numri i telefonit</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="+383 44 123 456"
-                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
+            <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
-                    name="email"
                     type="email"
                     placeholder="emri@email.com"
                     className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.email}
-                    onChange={handleChange}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -208,12 +144,11 @@ export default function RegisterPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password"
-                    name="password"
                     type="password"
                     placeholder="Minimum 6 karaktere"
                     className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
-                    value={formData.password}
-                    onChange={handleChange}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
@@ -221,10 +156,10 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white mt-2 rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
-                {loading ? 'Duke u regjistruar...' : 'Krijo llogari falas'}
+                {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}
               </button>
             </form>
           </CardContent>
