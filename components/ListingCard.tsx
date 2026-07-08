@@ -23,7 +23,11 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="group h-full flex flex-col bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/12 hover:border-white/25 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1">
+      <div className={`group h-full flex flex-col backdrop-blur-md rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/15 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 ${
+        listing.type === 'shitje'
+          ? 'bg-white/10 border border-white/20'
+          : 'bg-[#0D1F3C] border border-blue-500/20'
+      }`}>
         {/* Image */}
         <div className="relative h-52 bg-white/5 flex-shrink-0">
           {mainImage ? (
