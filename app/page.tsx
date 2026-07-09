@@ -94,62 +94,64 @@ export default function HomePage() {
             <div className="relative text-center max-w-3xl mx-auto">
               <div
                 className="absolute inset-0 pointer-events-none z-[5]"
-                style={{ background: 'radial-gradient(ellipse 65% 90% at 50% 40%, rgba(5,10,40,0.55) 0%, rgba(5,10,40,0.25) 50%, transparent 80%)' }}
+                style={{ background: 'radial-gradient(ellipse 65% 90% at 50% 40%, rgba(5,10,40,0.85) 0%, rgba(5,10,40,0.45) 50%, transparent 80%)' }}
               />
-              <h1
-                className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
-                style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
-              >
-                Gjej banesën e duhur në Kosovë
-              </h1>
-
-              <p
-                className="inline-block text-lg md:text-xl text-white/85 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium"
-                style={{ textShadow: '0 2px 15px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.7)' }}
-              >
-                Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
-              </p>
-
-              <p
-                className="inline-block text-white/60 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
-                style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
-              >
-                Kërko sipas qytetit ose lagjes
-              </p>
-
-              {/* Search Bar */}
-              <SearchBar
-                placeholder="Kërko banesë, agjent, kompani, adresë..."
-                buttonText="Kërko Banesë"
-                className="2xl:max-w-4xl 2xl:h-16"
-              />
-
-              {/* City links */}
-              <div className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm">
-                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city, i, arr) => (
-                  <span key={city}>
-                    <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/60 hover:text-white transition-colors">
-                      {city}
-                    </Link>
-                    {i < arr.length - 1 && <span className="ml-2">/</span>}
-                  </span>
-                ))}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <Link
-                  href="/listings"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-[#1B4FFF]/80 backdrop-blur-md border border-[#1B4FFF]/40 text-white hover:bg-[#1B4FFF] transition-all cursor-pointer shadow-lg shadow-[#1B4FFF]/20"
+              <div className="relative z-10">
+                <h1
+                  className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
+                  style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
                 >
-                  Shiko banesat
-                </Link>
-                <Link
-                  href="/posto-banese"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
+                  Gjej banesën e duhur në Kosovë
+                </h1>
+
+                <p
+                  className="inline-block text-lg md:text-xl text-white max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium"
+                  style={{ textShadow: '0 2px 15px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.7)' }}
                 >
-                  Posto banesën tënde
-                </Link>
+                  Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
+                </p>
+
+                <p
+                  className="inline-block text-white text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
+                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
+                >
+                  Kërko sipas qytetit ose lagjes
+                </p>
+
+                {/* Search Bar */}
+                <SearchBar
+                  placeholder="Kërko banesë, agjent, kompani, adresë..."
+                  buttonText="Kërko Banesë"
+                  className="2xl:max-w-4xl 2xl:h-16"
+                />
+
+                {/* City links */}
+                <div className="flex items-center justify-center flex-wrap gap-x-2 gap-y-1 mt-6 text-white/40 text-sm">
+                  {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city, i, arr) => (
+                    <span key={city}>
+                      <Link href={`/listings?city=${encodeURIComponent(city)}`} className="text-white/60 hover:text-white transition-colors">
+                        {city}
+                      </Link>
+                      {i < arr.length - 1 && <span className="ml-2">/</span>}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                  <Link
+                    href="/listings"
+                    className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-[#1B4FFF]/80 backdrop-blur-md border border-[#1B4FFF]/40 text-white hover:bg-[#1B4FFF] transition-all cursor-pointer shadow-lg shadow-[#1B4FFF]/20"
+                  >
+                    Shiko banesat
+                  </Link>
+                  <Link
+                    href="/posto-banese"
+                    className="w-full sm:w-auto inline-flex items-center justify-center rounded-full px-7 py-3 font-semibold bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/15 hover:border-white/30 transition-all cursor-pointer"
+                  >
+                    Posto banesën tënde
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
