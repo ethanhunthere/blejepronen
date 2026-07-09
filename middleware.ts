@@ -27,11 +27,16 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use getSession() instead of getUser() here. getSession() reads the
+  // session cookie without making a network request, so it won't race with
+  // the browser client's token refresh and accidentally invalidate the session.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   const protectedRoutes = ['/posto-banese', '/profili', '/completo-profilin', '/postimet-e-mia']
 
-  if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
+  if (!session?.user && protectedRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

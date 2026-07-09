@@ -2,6 +2,24 @@ import { createBrowserClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+export function getCookieDomain(hostname: string): string | undefined {
+  if (!hostname || hostname === 'localhost') return undefined
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (siteUrl) {
+    try {
+      const configuredHostname = new URL(siteUrl).hostname
+      if (configuredHostname && hostname.endsWith(configuredHostname)) {
+        return configuredHostname.startsWith('www.')
+          ? configuredHostname.slice(3)
+          : `.${configuredHostname}`
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return undefined
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -117,6 +135,7 @@ declare global {
 export function createClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
     if (!window.__supabaseClient) {
+      const isHttps = window.location.protocol === 'https:'
       window.__supabaseClient = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -124,8 +143,16 @@ export function createClient(): SupabaseClient {
           auth: {
             flowType: 'pkce',
             autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true,
+            // Cookies are the source of truth; localStorage fallback can
+            // cause stale-session flashes and conflicts with SSR.
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+          cookieOptions: {
+            path: '/',
+            sameSite: 'lax',
+            secure: isHttps,
+            domain: getCookieDomain(window.location.hostname),
           },
         }
       )
@@ -142,8 +169,8 @@ export function createClient(): SupabaseClient {
       auth: {
         flowType: 'pkce',
         autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
+        persistSession: false,
+        detectSessionInUrl: false,
       },
     }
   )

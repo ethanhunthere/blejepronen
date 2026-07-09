@@ -1,25 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-
-function getCookieDomain(): string | undefined {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (!siteUrl) return undefined
-
-  try {
-    const hostname = new URL(siteUrl).hostname
-    if (!hostname || hostname === 'localhost') return undefined
-    return hostname.startsWith('www.') ? hostname.slice(3) : `.${hostname}`
-  } catch {
-    return undefined
-  }
-}
+import { getCookieDomain } from '@/lib/supabase'
 
 export async function POST() {
   const cookieStore = await cookies()
   const allCookies = cookieStore.getAll()
 
-  const cookieDomain = getCookieDomain()
+  const siteHostname = process.env.NEXT_PUBLIC_SITE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SITE_URL).hostname
+    : ''
+  const cookieDomain = getCookieDomain(siteHostname)
 
   const response = NextResponse.json({ success: true })
 
@@ -33,8 +24,17 @@ export async function POST() {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, { ...options, domain: cookieDomain })
-            response.cookies.set(name, value, { ...options, domain: cookieDomain })
+            // Clear the domain-level cookie (covers www / root).
+            const domainOpts = { ...options, domain: cookieDomain }
+            cookieStore.set(name, value, domainOpts)
+            response.cookies.set(name, value, domainOpts)
+
+            // Also clear any host-only cookie that may exist from older sessions.
+            if (cookieDomain) {
+              const hostOnlyOpts = { ...options, domain: undefined }
+              cookieStore.set(name, value, hostOnlyOpts)
+              response.cookies.set(name, value, hostOnlyOpts)
+            }
           })
         },
       },
