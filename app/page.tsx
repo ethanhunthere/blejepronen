@@ -94,7 +94,7 @@ export default function HomePage() {
             <div className="relative text-center max-w-3xl mx-auto">
               <div
                 className="absolute inset-0 pointer-events-none z-[5]"
-                style={{ background: 'radial-gradient(ellipse 65% 90% at 50% 40%, rgba(5,10,40,0.85) 0%, rgba(5,10,40,0.45) 50%, transparent 80%)' }}
+                style={{ background: 'radial-gradient(ellipse 85% 90% at 50% 40%, rgba(5,10,40,0.85) 0%, rgba(5,10,40,0.45) 50%, transparent 80%)' }}
               />
               <div className="relative z-10">
                 <h1
