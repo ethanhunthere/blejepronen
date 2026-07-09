@@ -200,6 +200,22 @@ export async function createServerSupabaseClient() {
   )
 }
 
+// Cookie-less public client for fully static server components (e.g. homepage,
+// sitemap). Uses the anon key and only reads public/unprotected data so the
+// page can be statically generated and cached with ISR.
+export function createPublicSupabaseClient(): SupabaseClient {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+}
+
 // Service-role client for admin-only server operations. Falls back to the
 // cookie-based server client when the service role key is not configured so
 // local development without it does not crash.

@@ -1,69 +1,48 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase'
-import type { Listing } from '@/lib/supabase'
 import Image from 'next/image'
+import { createPublicSupabaseClient } from '@/lib/supabase'
+import type { Listing } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import ScrollToTop from '@/components/ScrollToTop'
 import { Button } from '@/components/ui/button'
 
+export const revalidate = 300
 
-interface HomeData {
-  listings: Listing[]
-}
+export default async function HomePage() {
+  let listings: Listing[] = []
+  let error = false
 
-export default function HomePage() {
-  const [data, setData] = useState<HomeData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  try {
+    const supabase = createPublicSupabaseClient()
+    const { data, error: fetchError } = await supabase
+      .from('listings')
+      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features,free_trial_until,updated_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(12)
 
-  useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
-
-    async function fetchHomeData() {
-      try {
-        const { data: listings } = await supabase
-          .from('listings')
-          .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(12)
-
-        if (!cancelled) {
-          setData({
-            listings: (listings || []) as unknown as Listing[],
-          })
-        }
-      } catch {
-        if (!cancelled) {
-          setError('Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.')
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
+    if (fetchError) {
+      console.error('Homepage listings fetch error:', fetchError)
+      error = true
+    } else {
+      listings = (data || []) as unknown as Listing[]
     }
-
-    fetchHomeData()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  } catch (err) {
+    console.error('Homepage listings fetch exception:', err)
+    error = true
+  }
 
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
+      <link rel="preload" as="image" href="/pristinalandscape.webp" type="image/webp" />
+
       {/* Hero — photorealistic Pristina background */}
       <section aria-label="Hero section" className="relative overflow-hidden min-h-screen flex flex-col">
         {/* Background photo with Ken Burns zoom */}
         <Image
-          src="/pristinalandscape.jpg"
+          src="/pristinalandscape.webp"
           alt="Prishtina"
           fill
           priority
@@ -162,17 +141,13 @@ export default function HomePage() {
       {error && (
         <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8">
           <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 text-center">
-            <p className="text-red-300 mb-3">{error}</p>
-            <Button
-              className="w-full sm:w-auto h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold"
-              onClick={() => {
-                setError(null)
-                setLoading(true)
-                window.location.reload()
-              }}
+            <p className="text-red-300 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center w-full sm:w-auto h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors"
             >
               Provo përsëri
-            </Button>
+            </Link>
           </div>
         </section>
       )}
@@ -189,28 +164,15 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="bg-[#111936] rounded-2xl border border-white/10 overflow-hidden">
-                <div className="aspect-[4/3] bg-slate-700 animate-pulse" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-slate-700 rounded animate-pulse w-1/3" />
-                  <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : data && data.listings.length > 0 ? (
+        {listings.length > 0 ? (
           <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-            {data.listings.map((listing) => (
+            {listings.map((listing) => (
               <div key={listing.id} className="aos-fade-up">
                 <ListingCard listing={listing} />
               </div>
             ))}
           </AnimateOnScroll>
-        ) : !loading ? (
+        ) : (
           <div className="text-center py-16 bg-[#111936] rounded-2xl border border-white/10">
             <div className="text-5xl mb-4">🏠</div>
             <h3 className="text-lg font-semibold text-white mb-2">Ende nuk ka listime</h3>
@@ -221,7 +183,7 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        ) : null}
+        )}
       </section>
 
       <ScrollToTop />

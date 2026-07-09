@@ -158,7 +158,7 @@ export default function ProfilePage() {
         )}
 
         {/* Profile Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar */}
             <div className="relative w-24 h-24 flex-shrink-0">
@@ -258,7 +258,7 @@ export default function ProfilePage() {
         {/* Edit Form - verified only */}
         {isVerified && (
           <>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
               {!editMode ? (
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-semibold text-lg">Të dhënat e profilit</h3>

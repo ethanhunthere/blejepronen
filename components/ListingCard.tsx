@@ -22,7 +22,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className={`group h-full flex flex-col backdrop-blur-md rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/15 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 ${
+      <div className={`group h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/15 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 ${
         listing.type === 'shitje'
           ? 'bg-white/10 border border-white/20'
           : 'bg-[#0D1F3C] border border-blue-500/20'
@@ -43,8 +43,8 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
             <Badge
               className={
                 listing.type === 'shitje'
-                  ? 'bg-[#1B4FFF]/80 backdrop-blur-sm text-white border border-[#1B4FFF]/30'
-                  : 'bg-emerald-500/70 backdrop-blur-sm text-white border border-emerald-400/30'
+                  ? 'bg-[#1B4FFF]/80 text-white border border-[#1B4FFF]/30'
+                  : 'bg-emerald-500/70 text-white border border-emerald-400/30'
               }
             >
               {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
@@ -52,7 +52,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
           </div>
           {listing.is_featured && (
             <div className="absolute top-3 right-3">
-              <Badge className="bg-amber-500/70 backdrop-blur-sm text-white border border-amber-400/30">
+              <Badge className="bg-amber-500/70 text-white border border-amber-400/30">
                 <Tag className="h-3 w-3 mr-1" />
                 Featured
               </Badge>
@@ -97,7 +97,7 @@ export default ListingCard
 /** Skeleton loader for ListingCard */
 export function ListingCardSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-white/8 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden">
+    <div className="h-full flex flex-col bg-white/8 border border-white/15 rounded-2xl overflow-hidden">
       <div className="h-52 flex-shrink-0 animate-pulse bg-white/5" />
       <div className="p-4 space-y-3">
         <div className="h-5 w-48 animate-pulse rounded bg-white/10" />

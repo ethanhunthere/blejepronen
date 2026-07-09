@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
@@ -32,15 +31,11 @@ const organizationJsonLd = {
   areaServed: ["XK", "AL", "MK"],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const consentCookie = cookieStore.get("cookie-consent")?.value;
-  const analyticsAllowed = consentCookie === "accepted";
-
   return (
     <html
       lang="sq"
@@ -90,7 +85,7 @@ export default async function RootLayout({
           </div>
         </footer>
         <CookieBanner />
-        <AnalyticsWrapper initialConsent={analyticsAllowed} />
+        <AnalyticsWrapper />
       </body>
     </html>
   );

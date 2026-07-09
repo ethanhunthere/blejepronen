@@ -174,7 +174,6 @@ html {
   transition-property: transform, opacity;
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
 }
 
 .aos-fade-up {

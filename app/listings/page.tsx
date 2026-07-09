@@ -12,7 +12,7 @@ import type { Listing, Profile } from '@/lib/supabase'
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
 const PAGE_SIZE = 12
 
-type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'email' | 'avatar_url' | 'email_verified' | 'created_at'>
+type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'>
 
 function ListingsContent() {
   const searchParams = useSearchParams()
@@ -84,8 +84,8 @@ function ListingsContent() {
       listingQuery,
       searchTerm && pageNum === 0 && !filters.agentId
         ? supabase
-            .from('profiles')
-            .select('id,first_name,last_name,email,avatar_url,email_verified,created_at')
+            .from('profiles_public')
+            .select('id,first_name,last_name,avatar_url,email_verified,created_at')
             .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
             .limit(20)
         : Promise.resolve({ data: [] })
@@ -127,8 +127,8 @@ function ListingsContent() {
     }
 
     supabase
-      .from('profiles')
-      .select('id,first_name,last_name,email,avatar_url,email_verified')
+      .from('profiles_public')
+      .select('id,first_name,last_name,avatar_url,email_verified')
       .eq('id', filters.agentId)
       .single()
       .then(({ data }) => {
@@ -352,14 +352,13 @@ function ListingsContent() {
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white text-xl font-bold">
-                    {(selectedAgent.first_name?.[0] || selectedAgent.email?.[0] || '?').toUpperCase()}
+                    {(selectedAgent.first_name?.[0] || '?').toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
                   <h2 className="text-white font-semibold text-lg truncate">
                     {selectedAgent.first_name} {selectedAgent.last_name}
                   </h2>
-                  <p className="text-white/50 text-sm truncate">{selectedAgent.email}</p>
                   {selectedAgent.email_verified && (
                     <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-1">
                       <CheckCircle2 className="h-3 w-3" /> E verifikuar

@@ -96,14 +96,27 @@ alter table public.profiles enable row level security;
 alter table public.listings enable row level security;
 
 -- Profiles policies
-create policy "Public profiles are viewable by everyone"
-  on public.profiles for select using (true);
+-- Drop the old overly permissive public policy if re-running this migration.
+drop policy if exists "Public profiles are viewable by everyone" on public.profiles;
+drop policy if exists "Profiles are viewable by everyone" on public.profiles;
+
+-- Public reads should go through the profiles_public view below, which exposes
+-- only non-sensitive columns. Direct table access is limited to the owner.
+create policy "Users can view own profile"
+  on public.profiles for select using (auth.uid() = id);
 
 create policy "Users can insert their own profile"
   on public.profiles for insert with check (auth.uid() = id);
 
 create policy "Users can update their own profile"
   on public.profiles for update using (auth.uid() = id);
+
+-- Public view that excludes sensitive columns (verification_code, phone, email, etc.)
+create or replace view public.profiles_public as
+  select id, first_name, last_name, avatar_url, email_verified, created_at
+  from public.profiles;
+
+grant select on public.profiles_public to anon, authenticated;
 
 -- Listings policies
 create policy "Active listings are viewable by everyone"
@@ -154,3 +167,10 @@ create policy "Users can update their own avatar"
   on storage.objects for update using (
     bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]
   );
+
+-- Performance indexes for search and common queries
+CREATE INDEX IF NOT EXISTS idx_listings_title_gin ON public.listings USING gin(to_tsvector('simple', title));
+CREATE INDEX IF NOT EXISTS idx_listings_description_gin ON public.listings USING gin(to_tsvector('simple', description));
+CREATE INDEX IF NOT EXISTS idx_listings_address_gin ON public.listings USING gin(to_tsvector('simple', coalesce(address, '')));
+CREATE INDEX IF NOT EXISTS idx_profiles_name_gin ON public.profiles USING gin(to_tsvector('simple', coalesce(first_name, '') || ' ' || coalesce(last_name, '')));
+CREATE INDEX IF NOT EXISTS idx_listings_active_city_type ON public.listings(is_active, city, type) WHERE is_active = true;

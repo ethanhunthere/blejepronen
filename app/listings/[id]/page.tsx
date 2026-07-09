@@ -1,12 +1,12 @@
+import { cache } from 'react'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, BedDouble, Maximize2, Phone, ArrowLeft, Calendar } from 'lucide-react'
+import { MapPin, BedDouble, Maximize2, ArrowLeft, Calendar } from 'lucide-react'
 
 export const revalidate = 3600
 
@@ -23,7 +23,7 @@ interface ListingDetailPageProps {
 }
 
 interface ListingWithProfile extends Listing {
-  profiles: { first_name: string; last_name: string; phone: string } | null
+  profiles: { first_name: string; last_name: string } | null
 }
 
 interface ListingMetadata {
@@ -34,20 +34,27 @@ interface ListingMetadata {
   images: string[] | null
 }
 
+const getListing = cache(async (id: string) => {
+  const supabase = await createServerSupabaseClient()
+  return supabase
+    .from('listings')
+    .select(
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles_public(first_name,last_name)'
+    )
+    .eq('id', id)
+    .eq('is_active', true)
+    .single()
+})
+
 export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
   const { id } = await params
-  const supabase = await createServerSupabaseClient()
-  const { data } = await supabase
-    .from('listings')
-    .select('title,description,price,city,images')
-    .eq('id', id)
-    .single()
+  const { data, error } = await getListing(id)
 
-  if (!data) {
+  if (error || !data) {
     return { title: 'Listim | Bleje Banesën' }
   }
 
-  const listing = data as ListingMetadata
+  const listing = data as unknown as ListingMetadata
 
   return {
     title: `${listing.title} – ${listing.city} | Bleje Banesën`,
@@ -62,14 +69,7 @@ export async function generateMetadata({ params }: ListingDetailPageProps): Prom
 
 export default async function ListingDetailPage({ params }: ListingDetailPageProps) {
   const { id } = await params
-  const supabase = await createServerSupabaseClient()
-
-  const { data, error } = await supabase
-    .from('listings')
-    .select('id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,profiles(first_name,last_name,phone)')
-    .eq('id', id)
-    .eq('is_active', true)
-    .single()
+  const { data, error } = await getListing(id)
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -124,119 +124,115 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Images + Details */}
+          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Main Image */}
-            <div className="relative h-64 sm:h-80 md:h-96 rounded-2xl overflow-hidden bg-gray-800">
-              {listing.images?.[0] ? (
-                <Image
-                  src={listing.images[0]}
-                  alt={listing.title}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 66vw"
-                  className="object-cover"
-                />
+            {/* Image gallery */}
+            <div className="space-y-4">
+              {listing.images && listing.images.length > 0 ? (
+                <>
+                  <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
+                    <Image
+                      src={listing.images[0]}
+                      alt={listing.title}
+                      fill
+                      priority
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                    />
+                  </div>
+                  {listing.images.length > 1 && (
+                    <div className="grid grid-cols-4 gap-3">
+                      {listing.images.slice(1, 5).map((image, i) => (
+                        <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#111936]">
+                          <Image
+                            src={image}
+                            alt={`${listing.title} – foto ${i + 2}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 1024px) 25vw, 16vw"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-500 text-lg">
+                <div className="aspect-[16/10] rounded-2xl bg-[#111936] flex items-center justify-center text-gray-500">
                   Pa foto
                 </div>
               )}
-              <div className="absolute top-4 left-4">
-                <Badge className={listing.type === 'shitje' ? 'bg-[#1B4FFF] text-white' : 'bg-emerald-500 text-white'}>
+            </div>
+
+            {/* Title & meta */}
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-white">{listing.title}</h1>
+                <Badge className={listing.type === 'shitje' ? 'bg-[#1B4FFF]/20 text-[#4d7cff]' : 'bg-emerald-500/20 text-emerald-400'}>
                   {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
                 </Badge>
               </div>
-            </div>
 
-            {/* Image Gallery */}
-            {listing.images && listing.images.length > 1 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {listing.images.slice(1).map((img: string, i: number) => (
-                  <div key={i} className="relative h-24 rounded-xl overflow-hidden bg-gray-800">
-                    <Image src={img} alt={`Foto ${i + 2} e ${listing.title}`} fill sizes="25vw" className="object-cover" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Title + Info */}
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
-              <h1 className="text-2xl font-bold text-white mb-3">{listing.title}</h1>
-              {listing.apartment_type && (
-                <div className="mb-3">
-                  <span className="inline-flex items-center bg-white/10 border border-white/15 text-white/80 text-sm px-3 py-1 rounded-lg">
-                    {listing.apartment_type}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center text-gray-400 mb-4 min-w-0">
-                <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="break-words min-w-0">
-                  {listing.city}
-                  {listing.neighborhood && ` · ${listing.neighborhood}`}
-                  {' · '}{listing.address}
+              <div className="flex flex-wrap items-center gap-4 text-gray-400 text-sm mb-4">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {listing.address}, {listing.city}
+                  {listing.neighborhood && ` – ${listing.neighborhood}`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {formatDate(listing.created_at)}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 py-4 border-y border-white/10 mb-4">
-                <div className="text-center">
-                  <BedDouble className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
-                  <p className="text-lg font-semibold">{listing.rooms}</p>
-                  <p className="text-sm text-gray-400">Dhoma</p>
+              {listing.description && (
+                <p className="text-gray-300 leading-relaxed whitespace-pre-line">{listing.description}</p>
+              )}
+            </div>
+
+            {/* Features */}
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
+              <h2 className="text-lg font-semibold text-white mb-4">Karakteristikat</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2 text-gray-300">
+                  <BedDouble className="h-5 w-5 text-[#4d7cff]" />
+                  <span>{listing.rooms} dhoma</span>
                 </div>
-                <div className="text-center">
-                  <Maximize2 className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
-                  <p className="text-lg font-semibold">{listing.area_m2} m²</p>
-                  <p className="text-sm text-gray-400">Sipërfaqe</p>
+                <div className="flex items-center gap-2 text-gray-300">
+                  <Maximize2 className="h-5 w-5 text-[#4d7cff]" />
+                  <span>{listing.area_m2} m²</span>
                 </div>
-                {listing.floor && (
-                  <div className="text-center">
-                    <p className="text-xs text-[#1B4FFF] font-semibold uppercase tracking-wider mb-1">Kati</p>
-                    <p className="text-lg font-semibold">{listing.floor}</p>
-                    <p className="text-sm text-gray-400">{listing.floor === 'P/D' ? 'Parter / Dysheme' : 'Kati'}</p>
+                {listing.condition && (
+                  <div className="text-gray-300">
+                    Gjendja: <span className="text-white">{conditionLabels[listing.condition] || listing.condition}</span>
                   </div>
                 )}
-                <div className="text-center">
-                  <Calendar className="h-5 w-5 text-[#1B4FFF] mx-auto mb-1" />
-                  <p className="text-sm font-semibold">{formatDate(listing.created_at)}</p>
-                  <p className="text-sm text-gray-400">Postuar</p>
-                </div>
+                {listing.floor && (
+                  <div className="text-gray-300">
+                    Kati: <span className="text-white">{listing.floor}</span>
+                  </div>
+                )}
+                {listing.apartment_type && (
+                  <div className="text-gray-300">
+                    Tipologjia: <span className="text-white">{listing.apartment_type}</span>
+                  </div>
+                )}
               </div>
 
-              {listing.condition && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-400 mb-2">Gjendja</p>
-                  <span className="inline-flex items-center bg-white/10 border border-white/15 text-white/80 text-sm px-3 py-1 rounded-lg">
-                    {conditionLabels[listing.condition] || listing.condition}
-                  </span>
-                </div>
-              )}
-
-              <h2 className="font-semibold text-white mb-2">Përshkrimi</h2>
-              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{listing.description}</p>
-
               {listing.features && listing.features.length > 0 && (
-                <div className="mt-6">
-                  <h2 className="font-semibold text-white mb-3">Karakteristikat</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {listing.features.map(feature => (
-                      <span
-                        key={feature}
-                        className="bg-[#1B4FFF]/15 border border-[#1B4FFF]/30 text-white/80 text-xs px-3 py-1.5 rounded-full"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {listing.features.map(feature => (
+                    <span key={feature} className="px-3 py-1 rounded-full bg-white/5 text-gray-300 text-sm border border-white/10">
+                      {feature}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right: Price + Contact */}
-          <div className="space-y-4">
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 lg:sticky lg:top-24">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 sticky top-24">
               <p className="text-3xl font-bold text-[#1B4FFF] mb-1">
                 {formatPrice(listing.price)}
                 {listing.type === 'qira' && <span className="text-base font-normal text-gray-400">/muaj</span>}
@@ -254,26 +250,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
                 </p>
               </div>
 
-              {listing.profiles?.phone && (
-                <>
-                  <a href={`tel:${listing.profiles.phone}`}>
-                    <Button className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base font-semibold rounded-xl cursor-pointer">
-                      <Phone className="h-4 w-4 mr-2" />
-                      {listing.profiles.phone}
-                    </Button>
-                  </a>
-                  <a
-                    href={`https://wa.me/${listing.profiles.phone.replace(/\s/g, '').replace('+', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block mt-3"
-                  >
-                    <button type="button" className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center whitespace-nowrap cursor-pointer">
-                      Kontakto me WhatsApp
-                    </button>
-                  </a>
-                </>
-              )}
+              <p className="text-sm text-gray-500">
+                Për të kontaktuar shitësin, kyçuni në platformë ose shkoni te profili i tij.
+              </p>
             </div>
           </div>
         </div>

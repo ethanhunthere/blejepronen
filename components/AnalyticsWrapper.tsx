@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/next'
 
-export default function AnalyticsWrapper({ initialConsent }: { initialConsent: boolean }) {
-  const [allowed, setAllowed] = useState(initialConsent)
+export default function AnalyticsWrapper() {
+  const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
     const readConsent = () => localStorage.getItem('cookie-consent') === 'accepted'

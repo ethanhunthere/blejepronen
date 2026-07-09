@@ -210,7 +210,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer backdrop-blur-sm"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer"
                   >
                     Hyr
                   </a>
@@ -331,13 +331,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-white/10 bg-[#0A0F2E]/95 backdrop-blur-md py-4 space-y-3">
+          <div id="mobile-menu" className="lg:hidden border-t border-white/10 bg-[#0A0F2E] py-4 space-y-3">
             <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer backdrop-blur-sm">Hyr</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer">Hyr</a>
                 <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-colors cursor-pointer shadow-lg shadow-[#1B4FFF]/25">Regjistrohu</a>
               </div>
             ) : (
