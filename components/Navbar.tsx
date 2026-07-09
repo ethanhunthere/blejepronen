@@ -100,24 +100,24 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             return
           }
 
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // SIGNED_IN, TOKEN_REFRESHED, and USER_UPDATED all carry a valid
+          // session whose user we can trust.  Everything else (especially
+          // INITIAL_SESSION) is intentionally ignored here because
+          // checkSession() has already set the correct initial state via a
+          // server-side getUser() call.  Letting INITIAL_SESSION through
+          // would risk overriding that result with a stale in-memory null
+          // and causing the infamous auth flash.
+          if (
+            event === 'SIGNED_IN' ||
+            event === 'TOKEN_REFRESHED' ||
+            event === 'USER_UPDATED'
+          ) {
             const currentUser = session?.user ?? null
             setUser(currentUser)
             currentUserId = currentUser?.id ?? null
             if (currentUser) {
               loadProfile(currentUser.id)
             }
-            return
-          }
-
-          const currentUser = session?.user ?? null
-          setUser(currentUser)
-          currentUserId = currentUser?.id ?? null
-
-          if (currentUser) {
-            loadProfile(currentUser.id)
-          } else {
-            setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
           }
         }
       )
