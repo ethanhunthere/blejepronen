@@ -1,5 +1,22 @@
 'use client'
+
 import React, { useState, useEffect } from 'react'
+
+const CONSENT_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+
+function setConsentCookie(value: string) {
+  try {
+    document.cookie = `cookie-consent=${value}; path=/; max-age=${CONSENT_MAX_AGE}; SameSite=Lax`
+  } catch {
+    // ignore environments without document
+  }
+}
+
+function notifyConsentChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('cookie-consent-changed'))
+  }
+}
 
 function CookieBanner() {
   const [show, setShow] = useState(false)
@@ -11,6 +28,15 @@ function CookieBanner() {
 
   const accept = () => {
     localStorage.setItem('cookie-consent', 'accepted')
+    setConsentCookie('accepted')
+    notifyConsentChanged()
+    setShow(false)
+  }
+
+  const reject = () => {
+    localStorage.setItem('cookie-consent', 'rejected')
+    setConsentCookie('rejected')
+    notifyConsentChanged()
     setShow(false)
   }
 
@@ -26,7 +52,7 @@ function CookieBanner() {
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => setShow(false)}
+            onClick={reject}
             className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md border border-white/20 bg-transparent px-4 text-sm font-medium text-white hover:bg-white/10 transition-colors"
           >
             Refuzo

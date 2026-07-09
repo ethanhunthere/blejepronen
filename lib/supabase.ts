@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type Database = {
@@ -167,6 +168,26 @@ export async function createServerSupabaseClient() {
             )
           } catch {}
         },
+      },
+    }
+  )
+}
+
+// Service-role client for admin-only server operations. Falls back to the
+// cookie-based server client when the service role key is not configured so
+// local development without it does not crash.
+export async function createAdminSupabaseClient(): Promise<SupabaseClient> {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    return createServerSupabaseClient()
+  }
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   )

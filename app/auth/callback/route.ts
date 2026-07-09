@@ -3,17 +3,32 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function getCookieDomain(hostname: string): string | undefined {
+  if (!hostname || hostname === 'localhost') return undefined
+  // Allow production domain and any configured public site hostname.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (siteUrl) {
+    try {
+      const configuredHostname = new URL(siteUrl).hostname
+      if (configuredHostname && hostname.endsWith(configuredHostname)) {
+        return configuredHostname.startsWith('www.')
+          ? configuredHostname.slice(3)
+          : `.${configuredHostname}`
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return undefined
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') ?? '/'
   const origin = requestUrl.origin
-
-  // Set cookie domain to .blejebanesen.com in production so cookies work
-  // across both www.blejebanesen.com and blejebanesen.com.
-  // On localhost, omit domain so cookies bind to localhost:3000.
   const hostname = requestUrl.hostname
-  const cookieDomain = hostname.includes('blejebanesen.com') ? '.blejebanesen.com' : undefined
+  const cookieDomain = getCookieDomain(hostname)
 
   const cookieStore = await cookies()
   const supabase = createServerClient(

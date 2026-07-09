@@ -2,18 +2,25 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+function getCookieDomain(): string | undefined {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (!siteUrl) return undefined
+
+  try {
+    const hostname = new URL(siteUrl).hostname
+    if (!hostname || hostname === 'localhost') return undefined
+    return hostname.startsWith('www.') ? hostname.slice(3) : `.${hostname}`
+  } catch {
+    return undefined
+  }
+}
+
 export async function POST() {
   const cookieStore = await cookies()
   const allCookies = cookieStore.getAll()
 
-  // Determine cookie domain for production
-  // We infer it from existing cookies since we don't have the request URL in a POST
-  const cookieDomain = allCookies.some(c => c.name.includes('tjpxxtkebindirhpthhg'))
-    ? '.blejebanesen.com'
-    : undefined
+  const cookieDomain = getCookieDomain()
 
-  // Build the response — cookies set via setAll during signOut
-  // must be attached to the response object
   const response = NextResponse.json({ success: true })
 
   const supabase = createServerClient(
@@ -25,8 +32,6 @@ export async function POST() {
           return allCookies
         },
         setAll(cookiesToSet) {
-          // signOut will call setAll with expired cookies.
-          // Apply them to the response with the correct domain.
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, { ...options, domain: cookieDomain })
             response.cookies.set(name, value, { ...options, domain: cookieDomain })

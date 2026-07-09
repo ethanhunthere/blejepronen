@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, BedDouble, Maximize2, Phone, ArrowLeft, Calendar } from 'lucide-react'
 
+export const revalidate = 3600
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
 
@@ -68,6 +72,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     .single()
 
   if (error) {
+    if (error.code === 'PGRST116') {
+      notFound()
+    }
     console.error('Supabase query error:', error.code, error.message)
     throw new Error(`Failed to load listing: ${error.message}`)
   }
@@ -88,7 +95,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     '@type': 'RealEstateListing',
     name: listing.title,
     description: listing.description,
-    url: `https://blejebanesen.com/listings/${listing.id}`,
+    url: `${siteUrl}/listings/${listing.id}`,
     price: listing.price,
     priceCurrency: 'EUR',
     image: listing.images?.[0] || '',

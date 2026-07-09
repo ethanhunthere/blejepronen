@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
+import AnalyticsWrapper from "@/components/AnalyticsWrapper";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -11,31 +13,39 @@ const albertSans = Albert_Sans({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Bleje Banesën – Banesa në Kosovë",
   description:
     "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
 };
 
 const organizationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Bleje Banesën',
-  url: 'https://blejebanesen.com',
-  description: 'Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.',
-  areaServed: ['XK', 'AL', 'MK'],
-}
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Bleje Banesën",
+  url: siteUrl,
+  description: "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.",
+  areaServed: ["XK", "AL", "MK"],
+};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const consentCookie = cookieStore.get("cookie-consent")?.value;
+  const analyticsAllowed = consentCookie === "accepted";
+
   return (
     <html
       lang="sq"
       className={`${albertSans.variable} h-full antialiased`}
-      style={{ backgroundColor: '#0A0F2E' }}
+      style={{ backgroundColor: "#0A0F2E" }}
     >
       <head>
         <script
@@ -44,11 +54,15 @@ export default function RootLayout({
           }}
         />
         <meta name="theme-color" content="#0A0F2E" />
-        <link rel="preconnect" href="https://tjpxxtkebindirhpthhg.supabase.co" />
-        <link rel="dns-prefetch" href="https://tjpxxtkebindirhpthhg.supabase.co" />
+        {supabaseUrl && (
+          <>
+            <link rel="preconnect" href={supabaseUrl} />
+            <link rel="dns-prefetch" href={supabaseUrl} />
+          </>
+        )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden" style={{ backgroundColor: '#0A0F2E' }}>
+      <body className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden" style={{ backgroundColor: "#0A0F2E" }}>
         <header>
           <Navbar variant="static" />
         </header>
@@ -76,6 +90,7 @@ export default function RootLayout({
           </div>
         </footer>
         <CookieBanner />
+        <AnalyticsWrapper initialConsent={analyticsAllowed} />
       </body>
     </html>
   );

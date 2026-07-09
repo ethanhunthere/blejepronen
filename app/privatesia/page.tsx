@@ -16,7 +16,7 @@ export default function PrivacyPage() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Të dhënat që mbledhim</h2>
             <p className="text-gray-600 leading-relaxed">
-              Kur krijoni një llogari, mbledhim email-in dhe numrin e telefonit. Kur postoni një banesë, ruajmë informacionin e listimit dhe fotot e ngarkuara.
+              Kur krijoni një llogari, mbledhim emrin, email-in dhe numrin e telefonit. Kur postoni një banesë, ruajmë informacionin e listimit dhe fotot e ngarkuara.
             </p>
           </section>
 
@@ -30,29 +30,36 @@ export default function PrivacyPage() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-3">3. Cookies</h2>
             <p className="text-gray-600 leading-relaxed">
-              Përdorim cookies thelbësore për funksionimin e platformës (autentikim, preferenca) dhe cookies analitike për të përmirësuar shërbimin. Mund të refuzoni cookies jo-thelbësore në çdo kohë.
+              Përdorim cookies thelbësore për funksionimin e platformës (autentikim, preferenca) dhe cookies analitike për të përmirësuar shërbimin. Mund të refuzoni cookies jo-thelbësore në çdo kohë përmes banner-it të cookies.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Ruajtja e të dhënave</h2>
             <p className="text-gray-600 leading-relaxed">
-              Të dhënat ruhen për aq kohë sa llogaria juaj është aktive. Mund të kërkoni fshirjen e të dhënave tuaja në çdo kohë duke na kontaktuar.
+              Të dhënat ruhen për aq kohë sa llogaria juaj është aktive ose sa është e nevojshme për qëllime ligjore. Mund të kërkoni fshirjen e të dhënave tuaja në çdo kohë duke na kontaktuar.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Siguria</h2>
             <p className="text-gray-600 leading-relaxed">
-              Përdorim masa sigurie të arsyeshme për të mbrojtur të dhënat tuaja, përfshirë enkriptimin dhe aksesin e kufizuar.
+              Përdorim masa sigurie të arsyeshme për të mbrojtur të dhënat tuaja, përfshirë enkriptimin e komunikimit me HTTPS, autentikimin e sigurt dhe kontrollin e aksesit në bazën e të dhënave.
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Kontakti</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Të drejtat tuaja</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Keni të drejtë të aksesoni, korrigjoni ose fshini të dhënat tuaja personale. Për çdo kërkesë, na kontaktoni në email-in më poshtë.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Kontakti</h2>
             <p className="text-gray-600 leading-relaxed">
               Për pyetje rreth privatësisë, na kontaktoni në:{' '}
-              <a href="mailto:privatësia@blejebanesen.com" className="text-[#1B4FFF] hover:underline">privatësia@blejebanesen.com</a>
+              <a href="mailto:blejebanesen@gmail.com" className="text-[#1B4FFF] hover:underline">blejebanesen@gmail.com</a>
             </p>
           </section>
 

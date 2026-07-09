@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Mail, MessageCircle } from 'lucide-react'
+import { Mail, MessageCircle, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Kontakti | Bleje Banesën',
@@ -34,10 +34,26 @@ export default function ContactPage() {
                 <p className="text-gray-900 font-medium">Brenda 24 orëve gjatë ditëve të punës</p>
               </div>
             </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+              <MapPin className="h-5 w-5 text-[#1B4FFF]" />
+              <div>
+                <p className="text-sm text-gray-500">Zona e shërbimit</p>
+                <p className="text-gray-900 font-medium">Kosovë, Shqipëri dhe Maqedoni e Veriut</p>
+              </div>
+            </div>
           </div>
 
-          <div className="border-t border-gray-100 pt-6 text-center">
-            <Link href="/" className="text-[#1B4FFF] hover:underline">← Kthehu në faqen kryesore</Link>
+          <div className="border-t border-gray-100 pt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Çfarë mund të raportoni?</h2>
+            <ul className="list-disc list-inside text-gray-600 space-y-1 mb-6">
+              <li>Listime të dyshimta ose mashtruese</li>
+              <li>Probleme teknike me platformën</li>
+              <li>Kërkesa për fshirjen e të dhënave personale</li>
+              <li>Sugjerime për përmirësimin e shërbimit</li>
+            </ul>
+            <div className="text-center">
+              <Link href="/" className="text-[#1B4FFF] hover:underline">← Kthehu në faqen kryesore</Link>
+            </div>
           </div>
         </div>
       </div>

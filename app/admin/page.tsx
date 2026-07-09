@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -16,13 +16,17 @@ export default async function AdminPage() {
 
   if (!user || !ADMIN_EMAIL || user.email !== ADMIN_EMAIL) redirect('/')
 
+  // Use service-role client so the admin dashboard can read all rows regardless
+  // of RLS policies. Falls back to the normal server client if not configured.
+  const adminSupabase = await createAdminSupabaseClient()
+
   const [{ data: listings }, { data: profiles }] = await Promise.all([
-    supabase
+    adminSupabase
       .from('listings')
       .select('id,title,price,city,type,is_active,created_at,user_id,profiles(first_name,last_name)')
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
+    adminSupabase
       .from('profiles')
       .select('id,first_name,last_name,phone,email_verified,created_at')
       .order('created_at', { ascending: false })

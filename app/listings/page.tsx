@@ -35,7 +35,22 @@ function ListingsContent() {
   const [selectedAgent, setSelectedAgent] = useState<AgentResult | null>(null)
   const router = useRouter()
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const isInitialSync = useRef(true)
   const supabase = createClient()
+
+  // Sync filter state to the URL so searches and filters are shareable.
+  useEffect(() => {
+    if (isInitialSync.current) {
+      isInitialSync.current = false
+      return
+    }
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value)
+    })
+    const query = params.toString()
+    router.replace(query ? `/listings?${query}` : '/listings', { scroll: false })
+  }, [filters, router])
 
   const fetchListings = useCallback(async (pageNum = 0) => {
     setFetchState(prev => ({ ...prev, loading: true }))

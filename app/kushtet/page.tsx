@@ -42,14 +42,35 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Kufizimi i Përgjegjësisë</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Provë falas dhe skadimi</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Çdo listim fillon me një periudhë provë 30-ditore falas. Pas skadimit, listimi mund të çaktivizohet automatikisht derisa të rinovohet. Ne nuk ruajmë të dhëna pagese; rinovimet menaxhohen përmes kontaktit me mbështetjen.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Përmbajtja e ndaluar</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Ndalohet publikimi i fotove, përshkrimeve ose çdo përmbajtjeje që përmban diskriminim, dhunë, përmbajtje seksuale, mashtrim, shpifje apo shkelje të të drejtave të autorit.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Përfundimi i llogarisë</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Bleje Banesën rezervon të drejtën të pezullojë ose fshijë çdo llogari që shkel rregullat e platformës. Përdoruesit mund të kërkojnë fshirjen e llogarisë duke na kontaktuar.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">8. Kufizimi i Përgjegjësisë</h2>
             <p className="text-gray-600 leading-relaxed">
               Bleje Banesën nuk mban përgjegjësi për dëmet që mund të vijnë nga përdorimi i platformës, përfshirë por pa u kufizuar në humbje financiare, dëmtime të të dhënave, apo probleme teknike.
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Ndryshimet</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">9. Ndryshimet</h2>
             <p className="text-gray-600 leading-relaxed">
               Ne rezervojmë të drejtën të ndryshojmë këto kushte në çdo kohë. Ndryshimet hyjnë në fuqi menjëherë pas publikimit në këtë faqe.
             </p>

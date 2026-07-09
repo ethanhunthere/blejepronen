@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Building2, Upload, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Prishtinë': [
@@ -264,6 +265,63 @@ const AREA_PRESETS = [
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PRICE = 10_000_000
+const COMPRESSION_MAX_WIDTH = 1920
+const COMPRESSION_MAX_HEIGHT = 1920
+const COMPRESSION_QUALITY = 0.85
+
+function compressImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    // Skip compression for GIFs to preserve animation.
+    if (file.type === 'image/gif') {
+      return resolve(file)
+    }
+
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      let { width, height } = img
+      if (width > COMPRESSION_MAX_WIDTH || height > COMPRESSION_MAX_HEIGHT) {
+        const ratio = Math.min(COMPRESSION_MAX_WIDTH / width, COMPRESSION_MAX_HEIGHT / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        return reject(new Error('Shfletuesi nuk mbështet kompresimin e fotove.'))
+      }
+      ctx.drawImage(img, 0, 0, width, height)
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            return reject(new Error('Kompresimi i fotove dështoi.'))
+          }
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg') || 'image.jpg', {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          })
+          resolve(compressed)
+        },
+        'image/jpeg',
+        COMPRESSION_QUALITY
+      )
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Nuk u ngarkua foto për kompresim.'))
+    }
+
+    img.src = objectUrl
+  })
+}
 
 interface FormData {
   title: string
@@ -300,6 +358,7 @@ export default function PostoBanesePage() {
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
   const [unverified, setUnverified] = useState(false)
   const router = useRouter()
@@ -347,6 +406,7 @@ export default function PostoBanesePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setUploading(true)
+    setUploadProgress(0)
     setError('')
 
     // --- Step 0: Validate authentication ---
@@ -413,13 +473,31 @@ export default function PostoBanesePage() {
       return
     }
 
-    // --- Step 2: Upload images ---
+    // --- Step 2: Compress images ---
+    let compressedImages: File[] = []
+    try {
+      for (let i = 0; i < images.length; i++) {
+        const compressed = await compressImage(images[i])
+        compressedImages.push(compressed)
+        setUploadProgress(Math.round(((i + 1) / (images.length * 2)) * 100))
+      }
+    } catch (compressErr) {
+      const message = compressErr instanceof Error ? compressErr.message : 'Gabim i panjohur'
+      console.error('Image compression failed:', message)
+      setError(`Kompresimi i fotove dështoi: ${message}`)
+      setUploading(false)
+      setUploadProgress(0)
+      return
+    }
+
+    // --- Step 3: Upload images ---
     let imageUrls: string[] = []
 
     try {
-      const uploadPromises = images.map(async (image, idx) => {
+      for (let i = 0; i < compressedImages.length; i++) {
+        const image = compressedImages[i]
         const ext = image.name.split('.').pop() || 'jpg'
-        const path = `${user.id}/${Date.now()}-${idx}-${Math.random().toString(36).slice(2)}.${ext}`
+        const path = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(path, image, { contentType: image.type })
@@ -433,19 +511,19 @@ export default function PostoBanesePage() {
           .from('listings')
           .getPublicUrl(path)
 
-        return publicUrl
-      })
-
-      imageUrls = await Promise.all(uploadPromises)
+        imageUrls.push(publicUrl)
+        setUploadProgress(Math.round(((images.length + i + 1) / (images.length * 2)) * 100))
+      }
     } catch (uploadErr) {
       const message = uploadErr instanceof Error ? uploadErr.message : 'Gabim i panjohur'
       console.error('Image upload batch failed:', message)
       setError(`Ngarkimi i fotove dështoi: ${message}. Sigurohu që "listings" bucket ekziston në Supabase Storage.`)
       setUploading(false)
+      setUploadProgress(0)
       return
     }
 
-    // --- Step 3: Insert listing ---
+    // --- Step 4: Insert listing ---
     const { data: listing, error: insertError } = await supabase
       .from('listings')
       .insert({
@@ -485,10 +563,12 @@ export default function PostoBanesePage() {
         setError(`Gabim gjatë ruajtjes së listimit (${insertError.code || 'e panjohur'}). Provo përsëri.`)
       }
       setUploading(false)
+      setUploadProgress(0)
       return
     }
 
     // --- Success ---
+    toast.success('Banesa u postua me sukses!')
     router.push(`/listings/${listing.id}`)
   }
 
@@ -499,6 +579,23 @@ export default function PostoBanesePage() {
           <h1 className="text-2xl font-bold text-white">Posto banesën tënde</h1>
           <p className="text-gray-400 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>
         </div>
+
+        {uploading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0F2E]/80 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md rounded-2xl bg-[#111936] border border-white/10 p-8 text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-[#1B4FFF] mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-white mb-2">Duke postuar banesën...</h2>
+              <p className="text-sm text-gray-400 mb-4">Ju lutemi mos e mbyllni faqen.</p>
+              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#1B4FFF] transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">{uploadProgress}%</p>
+            </div>
+          </div>
+        )}
 
         {error && (
           <Alert variant="destructive" className="mb-6">

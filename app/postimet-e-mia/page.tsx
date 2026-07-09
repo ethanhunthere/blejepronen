@@ -35,7 +35,7 @@ export default function PostimetEMiaPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('listings')
-      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
+      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
       .eq('user_id', uid)
       .order('created_at', { ascending: false })
       .limit(500)
@@ -51,6 +51,10 @@ export default function PostimetEMiaPage() {
 
   const toggleActive = async (listing: Listing) => {
     const newStatus = !listing.is_active
+    if (newStatus && listing.free_trial_until && new Date(listing.free_trial_until) < new Date()) {
+      toast.error('Provë falas ka skaduar. Rinovo listimin për ta aktivizuar përsëri.')
+      return
+    }
     const { error } = await supabase
       .from('listings')
       .update({ is_active: newStatus })
@@ -89,6 +93,20 @@ export default function PostimetEMiaPage() {
   const total = listings.length
   const activeCount = listings.filter(l => l.is_active).length
   const inactiveCount = listings.filter(l => !l.is_active).length
+
+  const getTrialStatus = (listing: Listing) => {
+    if (!listing.free_trial_until) return null
+    const daysLeft = Math.ceil(
+      (new Date(listing.free_trial_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    )
+    if (daysLeft < 0) {
+      return { label: 'Provë skaduar', className: 'bg-red-500/10 text-red-300 border-red-500/20' }
+    }
+    if (daysLeft <= 3) {
+      return { label: `Skadon për ${daysLeft} ditë`, className: 'bg-amber-500/10 text-amber-300 border-amber-500/20' }
+    }
+    return { label: `Skadon për ${daysLeft} ditë`, className: 'bg-blue-500/10 text-blue-300 border-blue-500/20' }
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0F2E]">
@@ -144,7 +162,7 @@ export default function PostimetEMiaPage() {
                 <div key={listing.id} className="flex flex-col gap-3">
                   <div className="relative">
                     <ListingCard listing={listing} />
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                           listing.is_active
@@ -154,6 +172,17 @@ export default function PostimetEMiaPage() {
                       >
                         {listing.is_active ? 'Aktiv' : 'Joaktiv'}
                       </span>
+                      {(() => {
+                        const trial = getTrialStatus(listing)
+                        if (!trial) return null
+                        return (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${trial.className}`}
+                          >
+                            {trial.label}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
 

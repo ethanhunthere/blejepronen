@@ -109,6 +109,9 @@ create policy "Users can update their own profile"
 create policy "Active listings are viewable by everyone"
   on public.listings for select using (is_active = true);
 
+create policy "Users can view their own listings"
+  on public.listings for select using (auth.uid() = user_id);
+
 create policy "Users can insert their own listings"
   on public.listings for insert with check (auth.uid() = user_id);
 
@@ -126,7 +129,9 @@ create policy "Anyone can view listing images"
 
 create policy "Authenticated users can upload listing images"
   on storage.objects for insert with check (
-    bucket_id = 'listings' and auth.role() = 'authenticated'
+    bucket_id = 'listings'
+    and auth.role() = 'authenticated'
+    and auth.uid()::text = (storage.foldername(name))[1]
   );
 
 create policy "Users can delete their own listing images"

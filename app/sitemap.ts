@@ -1,6 +1,8 @@
 import { createServerSupabaseClient } from '@/lib/supabase'
 import type { MetadataRoute } from 'next'
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createServerSupabaseClient()
   const { data: listings } = await supabase
@@ -12,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const listingUrls = (listings || []).map(l => {
     const listing = l as { id: string; updated_at: string }
     return {
-      url: `https://blejebanesen.com/listings/${listing.id}`,
+      url: `${siteUrl}/listings/${listing.id}`,
       lastModified: new Date(listing.updated_at),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
@@ -20,8 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   })
 
   return [
-    { url: 'https://blejebanesen.com', lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    { url: 'https://blejebanesen.com/listings', lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+    { url: siteUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    { url: `${siteUrl}/listings`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     ...listingUrls,
   ]
 }
