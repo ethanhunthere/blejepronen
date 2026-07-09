@@ -4,14 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Public routes that should bypass all auth checks completely. This avoids
-  // unnecessary getUser() calls on login/register pages and prevents 429
-  // rate-limit issues from causing accidental redirects.
-  const publicRoutes = ['/login', '/register']
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next()
-  }
-
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -37,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedRoutes = ['/posto-banese', '/profili', '/completo-profilin']
+  const protectedRoutes = ['/posto-banese', '/profili', '/completo-profilin', '/postimet-e-mia']
 
   if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -47,5 +39,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/posto-banese/:path*',
+    '/profili/:path*',
+    '/completo-profilin/:path*',
+    '/postimet-e-mia/:path*',
+    '/admin/:path*',
+  ],
 }

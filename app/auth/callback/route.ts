@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
   const hostname = requestUrl.hostname
   const cookieDomain = getCookieDomain(hostname)
 
+  // Prepare the redirect response up front so we can attach cookies directly.
+  const response = NextResponse.redirect(`${origin}${next}`)
+
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +44,14 @@ export async function GET(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, { ...options, domain: cookieDomain })
+            const opts = { ...options, domain: cookieDomain }
+            try {
+              cookieStore.set(name, value, opts)
+            } catch {
+              // cookieStore.set can throw in some edge cases; the response
+              // cookie below is the authoritative one for the browser.
+            }
+            response.cookies.set(name, value, opts)
           })
         },
       },
@@ -65,7 +75,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
     }
 
-    return NextResponse.redirect(`${origin}${next}`)
+    return response
   }
 
   return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
