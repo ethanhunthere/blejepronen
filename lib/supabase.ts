@@ -143,9 +143,9 @@ export function createClient(): SupabaseClient {
           auth: {
             flowType: 'pkce',
             autoRefreshToken: true,
-            // Cookies are the source of truth; localStorage fallback can
-            // cause stale-session flashes and conflicts with SSR.
-            persistSession: false,
+            persistSession: true,
+            // The OAuth code is exchanged server-side in /auth/callback; do not
+            // let the browser client try to parse tokens from the URL.
             detectSessionInUrl: false,
           },
           cookieOptions: {
@@ -169,7 +169,7 @@ export function createClient(): SupabaseClient {
       auth: {
         flowType: 'pkce',
         autoRefreshToken: true,
-        persistSession: false,
+        persistSession: true,
         detectSessionInUrl: false,
       },
     }
