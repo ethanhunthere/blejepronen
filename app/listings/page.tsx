@@ -37,28 +37,23 @@ function ListingsContent() {
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
 
-  const applyCommonFilters = (query: any) => {
-    if (filters.city) query = query.eq('city', filters.city)
-    if (filters.type) query = query.eq('type', filters.type)
-    if (filters.minPrice) query = query.gte('price', Number(filters.minPrice))
-    if (filters.maxPrice) query = query.lte('price', Number(filters.maxPrice))
-    if (filters.rooms) query = query.eq('rooms', Number(filters.rooms))
-    if (filters.agentId) query = query.eq('user_id', filters.agentId)
-    if (filters.neighborhood) query = query.ilike('neighborhood', `%${filters.neighborhood}%`)
-    return query
-  }
-
   const fetchListings = useCallback(async (pageNum = 0) => {
     setFetchState(prev => ({ ...prev, loading: true }))
 
     const searchTerm = filters.search.trim()
 
-    let listingQuery = applyCommonFilters(
-      supabase
-        .from('listings')
-        .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
-        .eq('is_active', true)
-    )
+    let listingQuery = supabase
+      .from('listings')
+      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
+      .eq('is_active', true)
+
+    if (filters.city) listingQuery = listingQuery.eq('city', filters.city)
+    if (filters.type) listingQuery = listingQuery.eq('type', filters.type)
+    if (filters.minPrice) listingQuery = listingQuery.gte('price', Number(filters.minPrice))
+    if (filters.maxPrice) listingQuery = listingQuery.lte('price', Number(filters.maxPrice))
+    if (filters.rooms) listingQuery = listingQuery.eq('rooms', Number(filters.rooms))
+    if (filters.agentId) listingQuery = listingQuery.eq('user_id', filters.agentId)
+    if (filters.neighborhood) listingQuery = listingQuery.ilike('neighborhood', `%${filters.neighborhood}%`)
 
     if (searchTerm) {
       listingQuery = listingQuery.or(

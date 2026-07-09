@@ -175,6 +175,7 @@ export default function ProfilePage() {
               )}
               <button
                 type="button"
+                aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
                 className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-[#0A0F2E] hover:bg-[#1640CC] transition-colors cursor-pointer"

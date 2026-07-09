@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
+const MAX_ATTEMPTS = 5
+const LOCKOUT_MS = 15 * 60 * 1000
+const attempts = new Map<string, { count: number; lockedUntil?: number }>()
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -17,6 +21,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check lockout from previous failed attempts
+    const attempt = attempts.get(user.id)
+    if (attempt?.lockedUntil && Date.now() < attempt.lockedUntil) {
+      return NextResponse.json({ error: 'Shumë përpjekje të pasuksesshme. Provoni përsëri pas 15 minutash.' }, { status: 429 })
+    }
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('verification_code, verification_code_expires_at')
@@ -28,13 +38,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 500 })
     }
 
-    if (profile.verification_code !== code) {
-      return NextResponse.json({ error: 'Invalid code' }, { status: 400 })
+    if (!profile.verification_code_expires_at || new Date(profile.verification_code_expires_at) < new Date()) {
+      attempts.delete(user.id)
+      return NextResponse.json({ error: 'Kodi i verifikimit ka skaduar. Kërkoni një kod të ri.' }, { status: 400 })
     }
 
-    if (!profile.verification_code_expires_at || new Date(profile.verification_code_expires_at) < new Date()) {
-      return NextResponse.json({ error: 'Code expired' }, { status: 400 })
+    if (profile.verification_code !== code) {
+      const nextAttempt: { count: number; lockedUntil?: number } = attempt ? { count: attempt.count + 1 } : { count: 1 }
+      if (nextAttempt.count >= MAX_ATTEMPTS) {
+        nextAttempt.lockedUntil = Date.now() + LOCKOUT_MS
+      }
+      attempts.set(user.id, nextAttempt)
+      return NextResponse.json({ error: 'Kodi i verifikimit është i pasaktë.' }, { status: 400 })
     }
+
+    attempts.delete(user.id)
 
     const { error: updateError } = await supabase
       .from('profiles')

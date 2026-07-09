@@ -275,3 +275,18 @@ html {
   }
 
 }
+
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid #1B4FFF;
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1B4FFF;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

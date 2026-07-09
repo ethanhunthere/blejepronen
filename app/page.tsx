@@ -60,7 +60,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
       {/* Hero — photorealistic Pristina background */}
-      <section className="relative overflow-hidden min-h-screen flex flex-col">
+      <section aria-label="Hero section" className="relative overflow-hidden min-h-screen flex flex-col">
         {/* Background photo with Ken Burns zoom */}
         <Image
           src="/pristinalandscape.jpg"
@@ -172,7 +172,7 @@ export default function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section className="bg-[#0A0F2E] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-[#0A0F2E] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">Banesa në Shitje dhe me Qira</h2>

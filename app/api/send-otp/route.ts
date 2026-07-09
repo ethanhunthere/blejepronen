@@ -10,6 +10,23 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Rate limit: allow one OTP request per 60 seconds per user
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('verification_code_expires_at')
+      .eq('id', user.id)
+      .single()
+
+    const COOLDOWN_SECONDS = 60
+    const CODE_TTL_SECONDS = 600
+    if (profile?.verification_code_expires_at) {
+      const expiresAt = new Date(profile.verification_code_expires_at).getTime()
+      const sentAt = expiresAt - CODE_TTL_SECONDS * 1000
+      if (Date.now() - sentAt < COOLDOWN_SECONDS * 1000) {
+        return NextResponse.json({ error: 'Prisni 60 sekonda para se të ridërgoni kodin' }, { status: 429 })
+      }
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: '*', allow: '/', disallow: ['/admin', '/profili', '/posto-banese'] }],
+    rules: [{ userAgent: '*', allow: '/', disallow: ['/admin', '/profili', '/posto-banese', '/postimet-e-mia', '/completo-profilin'] }],
     sitemap: 'https://blejebanesen.com/sitemap.xml',
   }
 }
