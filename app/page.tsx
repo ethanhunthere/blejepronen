@@ -91,7 +91,11 @@ export default function HomePage() {
 
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 md:py-18 2xl:py-24 w-full">
-            <div className="text-center max-w-3xl mx-auto">
+            <div className="relative text-center max-w-3xl mx-auto">
+              <div
+                className="absolute inset-0 pointer-events-none z-[5]"
+                style={{ background: 'radial-gradient(ellipse 65% 90% at 50% 40%, rgba(5,10,40,0.55) 0%, rgba(5,10,40,0.25) 50%, transparent 80%)' }}
+              />
               <h1
                 className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2"
                 style={{ textShadow: '0 0 60px rgba(0,0,0,1), 0 4px 12px rgba(0,0,0,1), 2px 2px 0px rgba(0,0,0,0.8)' }}
