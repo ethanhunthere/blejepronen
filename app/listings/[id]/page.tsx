@@ -2,10 +2,10 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, BedDouble, Maximize2, ArrowLeft, Calendar } from 'lucide-react'
+import ListingImageGallery from '@/components/ListingImageGallery'
 
 export const revalidate = 3600
 
@@ -126,41 +126,13 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image gallery */}
-            <div className="space-y-4">
-              {listing.images && listing.images.length > 0 ? (
-                <>
-                  <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
-                    <Image
-                      src={listing.images[0]}
-                      alt={listing.title}
-                      fill
-                      priority
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 66vw"
-                    />
-                  </div>
-                  {listing.images.length > 1 && (
-                    <div className="grid grid-cols-4 gap-3">
-                      {listing.images.slice(1, 5).map((image, i) => (
-                        <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#111936]">
-                          <Image
-                            src={image}
-                            alt={`${listing.title} – foto ${i + 2}`}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 1024px) 25vw, 16vw"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="aspect-[16/10] rounded-2xl bg-[#111936] flex items-center justify-center text-gray-500">
-                  Pa foto
-                </div>
-              )}
-            </div>
+            {listing.images && listing.images.length > 0 ? (
+              <ListingImageGallery images={listing.images} title={listing.title} />
+            ) : (
+              <div className="aspect-[16/10] rounded-2xl bg-[#111936] flex items-center justify-center text-gray-500">
+                Pa foto
+              </div>
+            )}
 
             {/* Title & meta */}
             <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
