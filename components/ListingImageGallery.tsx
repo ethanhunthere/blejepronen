@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -11,6 +11,7 @@ interface ListingImageGalleryProps {
 
 export default function ListingImageGallery({ images, title }: ListingImageGalleryProps) {
   const [currentImage, setCurrentImage] = useState(0)
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   if (!images || images.length === 0) {
     return (
@@ -22,6 +23,7 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
 
   const showArrows = images.length > 1
   const showDots = images.length > 1 && images.length <= 10
+  const showThumbnails = images.length > 1
 
   const goPrev = () =>
     setCurrentImage(prev => (prev === 0 ? images.length - 1 : prev - 1))
@@ -29,61 +31,102 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
   const goNext = () =>
     setCurrentImage(prev => (prev === images.length - 1 ? 0 : prev + 1))
 
-  return (
-    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
-      <Image
-        src={images[currentImage]}
-        alt={`${title} – foto ${currentImage + 1}`}
-        fill
-        priority={currentImage === 0}
-        className="object-cover"
-        sizes="(max-width: 1024px) 100vw, 66vw"
-      />
+  // Keep the active thumbnail visible / centered when navigating with arrows.
+  useEffect(() => {
+    thumbRefs.current[currentImage]?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    })
+  }, [currentImage])
 
-      {/* Image counter */}
-      <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-medium backdrop-blur-sm">
-        {currentImage + 1} / {images.length}
+  return (
+    <div className="space-y-4">
+      <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
+        <Image
+          src={images[currentImage]}
+          alt={`${title} – foto ${currentImage + 1}`}
+          fill
+          priority={currentImage === 0}
+          className="object-cover"
+          sizes="(max-width: 1024px) 100vw, 66vw"
+        />
+
+        {/* Image counter */}
+        <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-medium backdrop-blur-sm">
+          {currentImage + 1} / {images.length}
+        </div>
+
+        {/* Previous arrow */}
+        {showArrows && (
+          <button
+            type="button"
+            onClick={goPrev}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
+            aria-label="Fotoja e mëparshme"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Next arrow */}
+        {showArrows && (
+          <button
+            type="button"
+            onClick={goNext}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
+            aria-label="Fotoja tjetër"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Dot indicators */}
+        {showDots && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setCurrentImage(index)}
+                className={`h-2 rounded-full transition-all duration-200 ${
+                  index === currentImage
+                    ? 'bg-white w-4'
+                    : 'bg-white/50 hover:bg-white/75 w-2'
+                }`}
+                aria-label={`Shiko foto ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Previous arrow */}
-      {showArrows && (
-        <button
-          type="button"
-          onClick={goPrev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
-          aria-label="Fotoja e mëparshme"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-      )}
-
-      {/* Next arrow */}
-      {showArrows && (
-        <button
-          type="button"
-          onClick={goNext}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
-          aria-label="Fotoja tjetër"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      )}
-
-      {/* Dot indicators */}
-      {showDots && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-          {images.map((_, index) => (
+      {/* Thumbnail strip */}
+      {showThumbnails && (
+        <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
+          {images.map((image, index) => (
             <button
               key={index}
               type="button"
+              ref={el => {
+                thumbRefs.current[index] = el
+              }}
               onClick={() => setCurrentImage(index)}
-              className={`h-2 rounded-full transition-all duration-200 ${
+              className={`relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer transition-opacity ${
                 index === currentImage
-                  ? 'bg-white w-4'
-                  : 'bg-white/50 hover:bg-white/75 w-2'
+                  ? 'ring-2 ring-[#1B4FFF] ring-offset-2 ring-offset-black opacity-100'
+                  : 'opacity-50 hover:opacity-80'
               }`}
               aria-label={`Shiko foto ${index + 1}`}
-            />
+            >
+              <Image
+                src={image}
+                alt={`${title} – foto ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="80px"
+              />
+            </button>
           ))}
         </div>
       )}

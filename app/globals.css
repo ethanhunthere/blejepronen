@@ -289,3 +289,12 @@ textarea:focus-visible {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Hide scrollbar utility for horizontal thumbnail strips */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
