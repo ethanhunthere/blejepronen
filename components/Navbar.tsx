@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Plus, User, LogOut, Menu, X } from 'lucide-react'
@@ -211,7 +212,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       aria-haspopup="true"
                     >
                       {profile.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                        <Image src={profile.avatarUrl} alt="Foto profili" width={40} height={40} className="rounded-full object-cover" />
                       ) : (
                         (profile.firstName || user?.email || '?')[0].toUpperCase()
                       )}
@@ -227,7 +228,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0 overflow-hidden">
                               {profile.avatarUrl ? (
-                                <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="object-cover" />
                               ) : (
                                 (profile.firstName || user?.email || '?')[0].toUpperCase()
                               )}
@@ -313,7 +314,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <>
                 <div className="flex items-center gap-3 px-1 py-2">
                   {profile.avatarUrl ? (
-                    <img src={profile.avatarUrl} alt="" className="rounded-full w-9 h-9 object-cover shrink-0" />
+                    <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="rounded-full object-cover shrink-0" />
                   ) : (
                     <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
                       {(profile.firstName || user?.email || '?')[0].toUpperCase()}

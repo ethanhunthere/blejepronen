@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -21,8 +21,11 @@ interface ListingDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-interface ListingWithProfile extends Listing {
-  profiles: { first_name: string; last_name: string; phone: string | null; avatar_url: string | null } | null
+interface PublicProfile {
+  first_name: string
+  last_name: string
+  phone: string | null
+  avatar_url: string | null
 }
 
 interface ListingMetadata {
@@ -38,11 +41,26 @@ async function getListing(id: string) {
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until'
     )
     .eq('id', id)
     .eq('is_active', true)
     .single()
+}
+
+async function getPublicProfile(userId: string): Promise<PublicProfile | null> {
+  try {
+    const supabase = await createAdminSupabaseClient()
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name,last_name,phone,avatar_url')
+      .eq('id', userId)
+      .single()
+    if (error || !data) return null
+    return data
+  } catch {
+    return null
+  }
 }
 
 export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
@@ -78,9 +96,11 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     throw new Error(`Failed to load listing: ${error.message}`)
   }
 
-  const listing = (data as unknown as ListingWithProfile | null) ?? null
+  const listing = (data as unknown as Listing | null) ?? null
 
   if (!listing) notFound()
+
+  const seller = await getPublicProfile(listing.user_id)
 
   const conditionLabels: Record<string, string> = {
     'e-re': 'E re',
@@ -211,7 +231,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               <div className="border-t border-white/10 pt-4 mb-4">
                 <p className="text-sm text-gray-400 mb-1">Shitësi</p>
                 <p className="font-semibold text-white">
-                  {listing.profiles?.first_name} {listing.profiles?.last_name}
+                  {seller?.first_name} {seller?.last_name}
                 </p>
               </div>
 

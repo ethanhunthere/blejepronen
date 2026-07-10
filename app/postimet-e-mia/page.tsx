@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
@@ -15,23 +15,11 @@ export default function PostimetEMiaPage() {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
+  const [now] = useState(() => Date.now())
 
   const supabase = createClient()
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      await fetchListings(user.id)
-    }
-
-    init()
-  }, [router, supabase])
-
-  const fetchListings = async (uid: string) => {
+  const fetchListings = useCallback(async (uid: string) => {
     setLoading(true)
     const { data, error } = await supabase
       .from('listings')
@@ -47,7 +35,20 @@ export default function PostimetEMiaPage() {
       setListings((data || []) as unknown as Listing[])
     }
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      await fetchListings(user.id)
+    }
+
+    init()
+  }, [router, supabase, fetchListings])
 
   const toggleActive = async (listing: Listing) => {
     const newStatus = !listing.is_active
@@ -97,7 +98,7 @@ export default function PostimetEMiaPage() {
   const getTrialStatus = (listing: Listing) => {
     if (!listing.free_trial_until) return null
     const daysLeft = Math.ceil(
-      (new Date(listing.free_trial_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      (new Date(listing.free_trial_until).getTime() - now) / (1000 * 60 * 60 * 24)
     )
     if (daysLeft < 0) {
       return { label: 'Provë skaduar', className: 'bg-red-500/10 text-red-300 border-red-500/20' }

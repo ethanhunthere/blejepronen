@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Building2, Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const CONDITIONS = [
@@ -422,7 +422,7 @@ export default function PostoBanesePage() {
         {unverified && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>
-              Duhet të verifikoni profilin tuaj para se të postoni banesë. Shkoni te profili juaj dhe klikoni 'Verifiko profilin'.
+              Duhet të verifikoni profilin tuaj para se të postoni banesë. Shkoni te profili juaj dhe klikoni &apos;Verifiko profilin&apos;.
             </AlertDescription>
             <div className="mt-3">
               <Link

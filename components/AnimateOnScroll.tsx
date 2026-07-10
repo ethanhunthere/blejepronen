@@ -18,18 +18,14 @@ function AnimateOnScroll({
   once = true,
 }: AnimateOnScrollProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  })
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
-
-    // Respect reduced motion by showing immediately
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-    if (media.matches) {
-      setVisible(true)
-      return
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {

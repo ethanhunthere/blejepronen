@@ -33,8 +33,8 @@ export default function CompletoProfilinPage() {
 
   // Step 2 fields
   const [otp, setOtp] = useState('')
-  const [countdown, setCountdown] = useState(60)
-  const [canResend, setCanResend] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [canResend, setCanResend] = useState(true)
 
   useEffect(() => {
     const init = async () => {
@@ -89,9 +89,7 @@ export default function CompletoProfilinPage() {
 
   // Countdown timer for OTP resend
   useEffect(() => {
-    if (step !== 2) return
-    setCountdown(60)
-    setCanResend(false)
+    if (step !== 2 || countdown <= 0 || canResend) return
 
     const interval = setInterval(() => {
       setCountdown(prev => {
@@ -105,36 +103,9 @@ export default function CompletoProfilinPage() {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [step])
+  }, [step, countdown, canResend])
 
-  // Auto-submit when 6 digits are entered
-  useEffect(() => {
-    if (otp.length === 6) {
-      handleVerifyOtp(otp)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otp])
-
-  const sendOtp = async () => {
-    try {
-      const res = await fetch('/api/send-otp', { method: 'POST' })
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        console.error('Send OTP API error:', data.error)
-        setError(data.error || 'Gabim gjatë dërgimit të kodit. Provo përsëri.')
-        return false
-      }
-
-      return true
-    } catch (err) {
-      console.error('Send OTP fetch error:', err)
-      setError('Gabim gjatë dërgimit të kodit. Provo përsëri.')
-      return false
-    }
-  }
-
-  const handleVerifyOtp = async (code: string) => {
+  const verifyOtp = useCallback(async (code: string) => {
     setLoading(true)
     setError('')
 
@@ -167,6 +138,25 @@ export default function CompletoProfilinPage() {
       console.error('Verify OTP fetch error:', err)
       setError('Gabim gjatë verifikimit. Provo përsëri.')
       setLoading(false)
+    }
+  }, [router])
+
+  const sendOtp = async () => {
+    try {
+      const res = await fetch('/api/send-otp', { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        console.error('Send OTP API error:', data.error)
+        setError(data.error || 'Gabim gjatë dërgimit të kodit. Provo përsëri.')
+        return false
+      }
+
+      return true
+    } catch (err) {
+      console.error('Send OTP fetch error:', err)
+      setError('Gabim gjatë dërgimit të kodit. Provo përsëri.')
+      return false
     }
   }
 
@@ -223,6 +213,8 @@ export default function CompletoProfilinPage() {
     toast.success('Kodi i verifikimit u dërgua me email!')
     setOtp('')
     setStep(2)
+    setCountdown(60)
+    setCanResend(false)
     setLoading(false)
   }, [firstName, lastName, phone, userEmail])
 
@@ -384,6 +376,7 @@ export default function CompletoProfilinPage() {
                       const value = e.target.value.replace(/\D/g, '').slice(0, 6)
                       setOtp(value)
                       if (error) setError('')
+                      if (value.length === 6) verifyOtp(value)
                     }}
                     className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white/8 border border-white/15 rounded-xl text-white placeholder:text-white/20 focus:border-[#1B4FFF]/60 focus:bg-white/12"
                   />

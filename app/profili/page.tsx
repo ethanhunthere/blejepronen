@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,7 @@ export default function ProfilePage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [router, supabase])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -163,10 +164,12 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative w-24 h-24 flex-shrink-0">
               {profile?.avatar_url ? (
-                <img
+                <Image
                   src={profile.avatar_url}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full object-cover border border-white/10"
+                  width={96}
+                  height={96}
+                  className="rounded-full object-cover border border-white/10"
                 />
               ) : (
                 <div className="w-24 h-24 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-white/10">

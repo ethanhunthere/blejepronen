@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
 
+import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
@@ -33,7 +34,8 @@ function ListingsContent() {
   })
   const [showFilters, setShowFilters] = useState(false)
   const [searchInput, setSearchInput] = useState(filters.search)
-  const [selectedAgent, setSelectedAgent] = useState<AgentResult | null>(null)
+  const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
+  const selectedAgent = useMemo(() => (filters.agentId ? agentMap[filters.agentId] ?? null : null), [agentMap, filters.agentId])
   const router = useRouter()
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const isInitialSync = useRef(true)
@@ -54,7 +56,8 @@ function ListingsContent() {
   }, [filters, router])
 
   const fetchListings = useCallback(async (pageNum = 0) => {
-    setFetchState(prev => ({ ...prev, loading: true }))
+    if (pageNum === 0) setPage(0)
+    setFetchState(prev => ({ ...prev, loading: true, hasMore: pageNum === 0 ? true : prev.hasMore }))
     setLoadError(false)
 
     const searchTerm = filters.search.trim()
@@ -68,7 +71,7 @@ function ListingsContent() {
     if (filters.type) listingQuery = listingQuery.eq('type', filters.type)
     if (filters.minPrice) listingQuery = listingQuery.gte('price', Number(filters.minPrice))
     if (filters.maxPrice) listingQuery = listingQuery.lte('price', Number(filters.maxPrice))
-    if (filters.rooms) listingQuery = listingQuery.eq('rooms', Number(filters.rooms))
+    if (filters.rooms) listingQuery = listingQuery.gte('rooms', Number(filters.rooms))
     if (filters.agentId) listingQuery = listingQuery.eq('user_id', filters.agentId)
     if (filters.neighborhood) listingQuery = listingQuery.ilike('neighborhood', `%${filters.neighborhood}%`)
 
@@ -102,6 +105,13 @@ function ListingsContent() {
       if (pageNum === 0) {
         setListings(listingResults)
         setAgentResults(agentResultsData)
+        if (agentResultsData.length > 0) {
+          setAgentMap(prev => {
+            const next = { ...prev }
+            agentResultsData.forEach(agent => { next[agent.id] = agent })
+            return next
+          })
+        }
       } else {
         setListings(prev => {
           const seen = new Set(prev.map(l => l.id))
@@ -119,8 +129,6 @@ function ListingsContent() {
   }, [filters, supabase])
 
   useEffect(() => {
-    setPage(0)
-    setFetchState(prev => ({ ...prev, hasMore: true }))
     fetchListings(0)
   }, [fetchListings])
 
@@ -131,10 +139,7 @@ function ListingsContent() {
   }, [])
 
   useEffect(() => {
-    if (!filters.agentId) {
-      setSelectedAgent(null)
-      return
-    }
+    if (!filters.agentId || agentMap[filters.agentId]) return
 
     supabase
       .from('profiles_public')
@@ -142,14 +147,14 @@ function ListingsContent() {
       .eq('id', filters.agentId)
       .single()
       .then(({ data }) => {
-        setSelectedAgent((data || null) as unknown as AgentResult | null)
+        if (!data) return
+        setAgentMap(prev => ({ ...prev, [data.id]: data as unknown as AgentResult }))
       })
-  }, [filters.agentId, supabase])
+  }, [filters.agentId, supabase, agentMap])
 
   const clearFilters = () => {
     setSearchInput('')
     setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
-    setSelectedAgent(null)
   }
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
@@ -308,10 +313,12 @@ function ListingsContent() {
                     className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4"
                   >
                     {agent.avatar_url ? (
-                      <img
+                      <Image
                         src={agent.avatar_url}
-                        alt=""
-                        className="w-14 h-14 rounded-full object-cover border border-white/10"
+                        alt={`Foto e ${agent.first_name || 'agjentit'}`}
+                        width={56}
+                        height={56}
+                        className="rounded-full object-cover border border-white/10"
                       />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white font-bold">
@@ -355,10 +362,12 @@ function ListingsContent() {
             <div className="bg-white/8 border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 {selectedAgent.avatar_url ? (
-                  <img
+                  <Image
                     src={selectedAgent.avatar_url}
-                    alt=""
-                    className="w-16 h-16 rounded-full object-cover border border-white/10"
+                    alt={`Foto e ${selectedAgent.first_name || 'agjentit'}`}
+                    width={64}
+                    height={64}
+                    className="rounded-full object-cover border border-white/10"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white text-xl font-bold">
@@ -380,7 +389,6 @@ function ListingsContent() {
                 type="button"
                 onClick={() => {
                   setFilters(prev => ({ ...prev, agentId: '' }))
-                  setSelectedAgent(null)
                   router.push('/listings', { scroll: false })
                 }}
                 className="h-10 px-4 border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"

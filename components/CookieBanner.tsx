@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 
 const CONSENT_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
@@ -19,12 +19,10 @@ function notifyConsentChanged() {
 }
 
 function CookieBanner() {
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    const accepted = localStorage.getItem('cookie-consent')
-    if (!accepted) setShow(true)
-  }, [])
+  const [show, setShow] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !window.localStorage.getItem('cookie-consent')
+  })
 
   const accept = () => {
     localStorage.setItem('cookie-consent', 'accepted')
