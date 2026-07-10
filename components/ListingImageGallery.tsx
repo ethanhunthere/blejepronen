@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ListingImageGalleryProps {
   images: string[]
@@ -12,18 +12,7 @@ interface ListingImageGalleryProps {
 export default function ListingImageGallery({ images, title }: ListingImageGalleryProps) {
   const [currentImage, setCurrentImage] = useState(0)
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([])
-
-  if (!images || images.length === 0) {
-    return (
-      <div className="aspect-[16/10] rounded-2xl bg-[#111936] flex items-center justify-center text-gray-500">
-        Pa foto
-      </div>
-    )
-  }
-
-  const showArrows = images.length > 1
-  const showDots = images.length > 1 && images.length <= 10
-  const showThumbnails = images.length > 1
+  const hasImages = !!images && images.length > 0
 
   const goPrev = () =>
     setCurrentImage(prev => (prev === 0 ? images.length - 1 : prev - 1))
@@ -39,6 +28,35 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
       block: 'nearest',
     })
   }, [currentImage])
+
+  // Keyboard navigation: ArrowLeft / ArrowRight cycle through images.
+  useEffect(() => {
+    if (!hasImages || images.length < 2) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setCurrentImage(prev => (prev === 0 ? images.length - 1 : prev - 1))
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImage(prev => (prev === images.length - 1 ? 0 : prev + 1))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [hasImages, images.length])
+
+  if (!hasImages) {
+    return (
+      <div className="bg-white/5 flex flex-col items-center justify-center h-80 rounded-2xl border border-white/10 text-gray-500">
+        <Building2 className="h-12 w-12 mb-3" />
+        <p className="text-lg">Nuk ka foto</p>
+      </div>
+    )
+  }
+
+  const showArrows = images.length > 1
+  const showDots = images.length > 1 && images.length <= 10
+  const showThumbnails = images.length > 1
 
   return (
     <div className="space-y-4">

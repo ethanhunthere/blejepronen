@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     // Check lockout from previous failed attempts
     const attempt = attempts.get(user.id)
     if (attempt?.lockedUntil && Date.now() < attempt.lockedUntil) {
-      return NextResponse.json({ error: 'Shumë përpjekje të pasuksesshme. Provoni përsëri pas 15 minutash.' }, { status: 429 })
+      return NextResponse.json({ error: 'too_many_attempts', message: 'Shumë përpjekje. Prisni pak.' }, { status: 429 })
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     if (!profile.verification_code_expires_at || new Date(profile.verification_code_expires_at) < new Date()) {
       attempts.delete(user.id)
-      return NextResponse.json({ error: 'Kodi i verifikimit ka skaduar. Kërkoni një kod të ri.' }, { status: 400 })
+      return NextResponse.json({ error: 'expired', message: 'Kodi ka skaduar. Kërkoni një kod të ri.' }, { status: 400 })
     }
 
     if (profile.verification_code !== code) {
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         nextAttempt.lockedUntil = Date.now() + LOCKOUT_MS
       }
       attempts.set(user.id, nextAttempt)
-      return NextResponse.json({ error: 'Kodi i verifikimit është i pasaktë.' }, { status: 400 })
+      return NextResponse.json({ error: 'invalid', message: 'Kodi është i gabuar.' }, { status: 400 })
     }
 
     attempts.delete(user.id)

@@ -126,13 +126,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image gallery */}
-            {listing.images && listing.images.length > 0 ? (
-              <ListingImageGallery images={listing.images} title={listing.title} />
-            ) : (
-              <div className="aspect-[16/10] rounded-2xl bg-[#111936] flex items-center justify-center text-gray-500">
-                Pa foto
-              </div>
-            )}
+            <ListingImageGallery images={listing.images || []} title={listing.title} />
 
             {/* Title & meta */}
             <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">

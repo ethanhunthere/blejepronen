@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react'
+import { User, Phone, Mail, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 // NOTE: Custom 6-digit OTP email verification is handled via Resend API.
@@ -18,6 +18,7 @@ type Step = 1 | 2
 
 export default function CompletoProfilinPage() {
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -77,7 +78,10 @@ export default function CompletoProfilinPage() {
 
       if (profile?.first_name && profile?.email_verified) {
         router.push('/')
+        return
       }
+
+      setChecking(false)
     }
 
     init()
@@ -144,7 +148,15 @@ export default function CompletoProfilinPage() {
 
       if (!res.ok || !data.success) {
         console.error('Verify OTP API error:', data.error)
-        setError(data.error || 'Kodi i verifikimit është i pasaktë ose ka skaduar.')
+        if (data.error === 'expired') {
+          setError("Kodi ka skaduar. Klikoni 'Ridërgo kodin' për të marrë një kod të ri.")
+        } else if (data.error === 'invalid') {
+          setError('Kodi është i gabuar.')
+        } else if (data.error === 'too_many_attempts') {
+          setError('Shumë përpjekje. Prisni pak.')
+        } else {
+          setError(data.message || 'Kodi i verifikimit është i pasaktë ose ka skaduar.')
+        }
         setLoading(false)
         return
       }
@@ -225,6 +237,14 @@ export default function CompletoProfilinPage() {
       setCanResend(false)
     }
     setResending(false)
+  }
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
+      </div>
+    )
   }
 
   return (

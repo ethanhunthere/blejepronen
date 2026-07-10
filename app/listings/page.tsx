@@ -20,6 +20,7 @@ function ListingsContent() {
   const [agentResults, setAgentResults] = useState<AgentResult[]>([])
   const [page, setPage] = useState(0)
   const [fetchState, setFetchState] = useState({ loading: true, hasMore: true })
+  const [loadError, setLoadError] = useState(false)
   const [filters, setFilters] = useState({
     city: searchParams.get('city') || '',
     type: searchParams.get('type') || '',
@@ -54,6 +55,7 @@ function ListingsContent() {
 
   const fetchListings = useCallback(async (pageNum = 0) => {
     setFetchState(prev => ({ ...prev, loading: true }))
+    setLoadError(false)
 
     const searchTerm = filters.search.trim()
 
@@ -80,32 +82,40 @@ function ListingsContent() {
       .order('created_at', { ascending: false })
       .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
 
-    const [{ data: listingData }, { data: profileData }] = await Promise.all([
-      listingQuery,
-      searchTerm && pageNum === 0 && !filters.agentId
-        ? supabase
-            .from('profiles_public')
-            .select('id,first_name,last_name,avatar_url,email_verified,created_at')
-            .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
-            .limit(20)
-        : Promise.resolve({ data: [] })
-    ])
+    try {
+      const [{ data: listingData, error: listingError }, { data: profileData }] = await Promise.all([
+        listingQuery,
+        searchTerm && pageNum === 0 && !filters.agentId
+          ? supabase
+              .from('profiles_public')
+              .select('id,first_name,last_name,avatar_url,email_verified,created_at')
+              .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+              .limit(20)
+          : Promise.resolve({ data: [] })
+      ])
 
-    const listingResults = (listingData || []) as unknown as Listing[]
-    const agentResultsData = (profileData || []) as unknown as AgentResult[]
+      if (listingError) throw listingError
 
-    if (pageNum === 0) {
-      setListings(listingResults)
-      setAgentResults(agentResultsData)
-    } else {
-      setListings(prev => {
-        const seen = new Set(prev.map(l => l.id))
-        const newListings = listingResults.filter(l => !seen.has(l.id))
-        return [...prev, ...newListings]
-      })
+      const listingResults = (listingData || []) as unknown as Listing[]
+      const agentResultsData = (profileData || []) as unknown as AgentResult[]
+
+      if (pageNum === 0) {
+        setListings(listingResults)
+        setAgentResults(agentResultsData)
+      } else {
+        setListings(prev => {
+          const seen = new Set(prev.map(l => l.id))
+          const newListings = listingResults.filter(l => !seen.has(l.id))
+          return [...prev, ...newListings]
+        })
+      }
+
+      setFetchState({ loading: false, hasMore: listingResults.length === PAGE_SIZE })
+    } catch (err) {
+      console.error('Fetch listings error:', err)
+      setLoadError(true)
+      setFetchState({ loading: false, hasMore: false })
     }
-
-    setFetchState({ loading: false, hasMore: listingResults.length === PAGE_SIZE })
   }, [filters, supabase])
 
   useEffect(() => {
@@ -395,6 +405,13 @@ function ListingsContent() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl font-semibold text-gray-200 mb-2">Diçka shkoi keq</h3>
+            <p className="text-gray-400 mb-6">Shërbimi është përkohësisht i padisponueshëm. Ju lutemi provoni përsëri.</p>
+            <button type="button" onClick={() => fetchListings(0)} className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-xl border-2 border-white bg-transparent px-5 font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer">Provo përsëri</button>
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">

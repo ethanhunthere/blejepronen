@@ -117,7 +117,7 @@ export default function ProfilePage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('A jeni të sigurt që doni ta fshini llogarinë? Kjo veprim nuk mund të kthehet.')) return
+    if (!confirm('Të gjitha banesat tuaja do të fshihen gjithashtu. A jeni të sigurt që doni ta fshini llogarinë? Kjo veprim nuk mund të kthehet.')) return
     await supabase.auth.signOut()
     setDeleteMessage('Kontaktoni support-in për të fshirë llogarinë. Ju keni dalë nga llogaria.')
     setTimeout(() => router.push('/'), 3000)

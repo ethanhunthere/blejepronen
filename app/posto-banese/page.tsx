@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -46,7 +46,9 @@ const AREA_PRESETS = [
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const MAX_PRICE = 10_000_000
+const MAX_PRICE = 50_000_000
+const MAX_TITLE_LENGTH = 100
+const MAX_DESCRIPTION_LENGTH = 2000
 const COMPRESSION_MAX_WIDTH = 1920
 const COMPRESSION_MAX_HEIGHT = 1920
 const COMPRESSION_QUALITY = 0.85
@@ -145,6 +147,7 @@ export default function PostoBanesePage() {
   const [unverified, setUnverified] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const isSubmittingRef = useRef(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -187,6 +190,10 @@ export default function PostoBanesePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+
     setUploading(true)
     setUploadProgress(0)
     setError('')
@@ -198,11 +205,13 @@ export default function PostoBanesePage() {
       console.error('Auth error during posto-banese submit:', JSON.stringify(authError))
       setError('Sesioni ka skaduar. Ju lutemi ri-regjistrohuni.')
       setUploading(false)
+      isSubmittingRef.current = false
       return
     }
 
     if (!user) {
       console.error('No user session found during posto-banese submit')
+      isSubmittingRef.current = false
       router.push('/login')
       return
     }
@@ -220,6 +229,7 @@ export default function PostoBanesePage() {
       console.error('Profile check error:', JSON.stringify(profileCheckError))
       setError('Gabim gjatë verifikimit të profilit. Provo përsëri.')
       setUploading(false)
+      isSubmittingRef.current = false
       return
     }
 
@@ -237,6 +247,7 @@ export default function PostoBanesePage() {
         console.error('Failed to create missing profile row:', JSON.stringify(createProfileErr))
         setError('Nuk mund të krijohet profili. Ju lutemi plotësoni profilin së pari.')
         setUploading(false)
+        isSubmittingRef.current = false
         return
       }
     }
@@ -244,19 +255,27 @@ export default function PostoBanesePage() {
     if (!existingProfile?.email_verified) {
       setUnverified(true)
       setUploading(false)
+      isSubmittingRef.current = false
       return
     }
 
     // --- Step 1: Validate price ---
     const priceNum = Number(formData.price)
-    if (isNaN(priceNum) || priceNum <= 0 || priceNum > MAX_PRICE) {
-      setError(`Çmimi duhet të jetë mes 1 dhe ${MAX_PRICE.toLocaleString()}€.`)
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setError('Çmimi duhet të jetë më i madh se 0')
       setUploading(false)
+      isSubmittingRef.current = false
+      return
+    }
+    if (priceNum > MAX_PRICE) {
+      setError('Çmimi duhet të jetë nën 50,000,000 €')
+      setUploading(false)
+      isSubmittingRef.current = false
       return
     }
 
     // --- Step 2: Compress images ---
-    let compressedImages: File[] = []
+    const compressedImages: File[] = []
     try {
       for (let i = 0; i < images.length; i++) {
         const compressed = await compressImage(images[i])
@@ -269,11 +288,21 @@ export default function PostoBanesePage() {
       setError(`Kompresimi i fotove dështoi: ${message}`)
       setUploading(false)
       setUploadProgress(0)
+      isSubmittingRef.current = false
       return
     }
 
-    // --- Step 3: Upload images ---
-    let imageUrls: string[] = []
+    // --- Step 3: Upload images (tracking paths so we can roll back on failure) ---
+    const imageUrls: string[] = []
+    const uploadedPaths: string[] = []
+
+    const rollbackUploads = async () => {
+      if (uploadedPaths.length === 0) return
+      const { error: removeError } = await supabase.storage.from('listings').remove(uploadedPaths)
+      if (removeError) {
+        console.error('Failed to roll back uploaded images:', JSON.stringify(removeError))
+      }
+    }
 
     try {
       for (let i = 0; i < compressedImages.length; i++) {
@@ -289,6 +318,8 @@ export default function PostoBanesePage() {
           throw new Error(uploadError.message || 'Upload failed')
         }
 
+        uploadedPaths.push(path)
+
         const { data: { publicUrl } } = supabase.storage
           .from('listings')
           .getPublicUrl(path)
@@ -299,9 +330,11 @@ export default function PostoBanesePage() {
     } catch (uploadErr) {
       const message = uploadErr instanceof Error ? uploadErr.message : 'Gabim i panjohur'
       console.error('Image upload batch failed:', message)
+      await rollbackUploads()
       setError(`Ngarkimi i fotove dështoi: ${message}. Sigurohu që "listings" bucket ekziston në Supabase Storage.`)
       setUploading(false)
       setUploadProgress(0)
+      isSubmittingRef.current = false
       return
     }
 
@@ -330,6 +363,7 @@ export default function PostoBanesePage() {
 
     if (insertError) {
       console.error('Listing insert error:', JSON.stringify(insertError))
+      await rollbackUploads()
       // Map common Supabase errors to Albanian messages
       if (insertError.code === '42501') {
         setError('Nuk keni leje për të postuar. Kontaktoni mbështetjen.')
@@ -346,6 +380,7 @@ export default function PostoBanesePage() {
       }
       setUploading(false)
       setUploadProgress(0)
+      isSubmittingRef.current = false
       return
     }
 
@@ -437,8 +472,10 @@ export default function PostoBanesePage() {
                 className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                 value={formData.title}
                 onChange={handleChange}
+                maxLength={MAX_TITLE_LENGTH}
                 required
               />
+              <p className="text-xs text-white/40 mt-1">{formData.title.length}/{MAX_TITLE_LENGTH} karaktere</p>
             </div>
 
             <div>
@@ -450,8 +487,10 @@ export default function PostoBanesePage() {
                 className="mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border border-white/10 text-sm bg-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1B4FFF] resize-none"
                 value={formData.description}
                 onChange={handleChange}
+                maxLength={MAX_DESCRIPTION_LENGTH}
                 required
               />
+              <p className="text-xs text-white/40 mt-1">{formData.description.length}/{MAX_DESCRIPTION_LENGTH} karaktere</p>
             </div>
 
             <div>
@@ -499,6 +538,7 @@ export default function PostoBanesePage() {
                   id="area_m2"
                   name="area_m2"
                   type="number"
+                  min="1"
                   placeholder="75"
                   className="mt-1 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
                   value={formData.area_m2}
