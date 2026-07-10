@@ -1,4 +1,3 @@
-import { cache } from 'react'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
@@ -23,7 +22,7 @@ interface ListingDetailPageProps {
 }
 
 interface ListingWithProfile extends Listing {
-  profiles: { first_name: string; last_name: string } | null
+  profiles: { first_name: string; last_name: string; phone: string | null; avatar_url: string | null } | null
 }
 
 interface ListingMetadata {
@@ -34,17 +33,17 @@ interface ListingMetadata {
   images: string[] | null
 }
 
-const getListing = cache(async (id: string) => {
+async function getListing(id: string) {
   const supabase = await createServerSupabaseClient()
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles_public(first_name,last_name)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url)'
     )
     .eq('id', id)
     .eq('is_active', true)
     .single()
-})
+}
 
 export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
   const { id } = await params
