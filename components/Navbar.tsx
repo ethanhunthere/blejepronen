@@ -48,26 +48,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       })
     }
 
-    const checkSession = async () => {
-      try {
-        // getUser() always validates the token with the server and never
-        // returns a cached/stale session, preventing post-logout flashes.
-        const { data: { user: currentUser }, error } = await supabase.auth.getUser()
-        if (error) {
-          console.error('Navbar getUser error:', error.message)
-        }
-
-        const user = currentUser ?? null
-        setUser(user)
-        currentUserId = user?.id ?? null
-
-        if (user) {
-          loadProfile(user.id)
-        }
-      } catch (err) {
-        console.error('Navbar session check failed:', err instanceof Error ? err.message : err)
-        setUser(null)
-        currentUserId = null
+    const setCurrentUser = (user: SupabaseUser | null) => {
+      setUser(user)
+      currentUserId = user?.id ?? null
+      if (user) {
+        loadProfile(user.id)
       }
     }
 
@@ -77,58 +62,42 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       }
     }
 
-    let subscription: { unsubscribe: () => void } | null = null
-
-    // 1. First validate the session server-side, then set up the listener.
-    // This prevents onAuthStateChange from firing with stale cached data
-    // before getUser() has had a chance to correct the initial state.
-    checkSession().then(() => {
-      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (event === 'SIGNED_OUT') {
-            setUser(null)
-            currentUserId = null
-            setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
-            setDropdownOpen(false)
-            setMenuOpen(false)
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('sb-')) {
-                localStorage.removeItem(key)
-              }
-            })
-            router.refresh()
-            return
-          }
-
-          // SIGNED_IN, TOKEN_REFRESHED, and USER_UPDATED all carry a valid
-          // session whose user we can trust.  Everything else (especially
-          // INITIAL_SESSION) is intentionally ignored here because
-          // checkSession() has already set the correct initial state via a
-          // server-side getUser() call.  Letting INITIAL_SESSION through
-          // would risk overriding that result with a stale in-memory null
-          // and causing the infamous auth flash.
-          if (
-            event === 'SIGNED_IN' ||
-            event === 'TOKEN_REFRESHED' ||
-            event === 'USER_UPDATED'
-          ) {
-            const currentUser = session?.user ?? null
-            setUser(currentUser)
-            currentUserId = currentUser?.id ?? null
-            if (currentUser) {
-              loadProfile(currentUser.id)
+    // Set up the auth listener first. Supabase fires INITIAL_SESSION
+    // immediately on subscription with the current session (or null),
+    // giving us the correct initial state without a separate getUser()
+    // network round-trip that causes the auth flash.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          currentUserId = null
+          setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
+          setDropdownOpen(false)
+          setMenuOpen(false)
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sb-')) {
+              localStorage.removeItem(key)
             }
-          }
+          })
+          router.refresh()
+          return
         }
-      )
 
-      subscription = sub
+        if (
+          event === 'INITIAL_SESSION' ||
+          event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'USER_UPDATED'
+        ) {
+          setCurrentUser(session?.user ?? null)
+        }
+      }
+    )
 
-      document.addEventListener('visibilitychange', handleVisibilityChange)
-    })
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      subscription?.unsubscribe()
+      subscription.unsubscribe()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [router])

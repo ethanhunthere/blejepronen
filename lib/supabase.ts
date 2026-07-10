@@ -9,9 +9,10 @@ export function getCookieDomain(hostname: string): string | undefined {
     try {
       const configuredHostname = new URL(siteUrl).hostname
       if (configuredHostname && hostname.endsWith(configuredHostname)) {
-        return configuredHostname.startsWith('www.')
-          ? configuredHostname.slice(3)
-          : `.${configuredHostname}`
+        // Strip a leading www. and always prefix with a dot so the cookie
+        // is valid for both the apex domain and any subdomains.
+        const rootDomain = configuredHostname.replace(/^www\./, '')
+        return `.${rootDomain}`
       }
     } catch {
       // fall through
@@ -123,20 +124,16 @@ export type Database = {
   }
 }
 
-declare global {
-  interface Window {
-    __supabaseClient?: SupabaseClient
-  }
-}
+// Module-level singleton for the browser client so the same Supabase
+// instance is reused across the app, preventing duplicate token refresh
+// requests and auth state mismatches.
+let _browserClient: SupabaseClient | null = null
 
-// True singleton browser client stored on window to prevent multiple
-// Supabase instances from independently refreshing the auth token and
-// hitting 429 rate limits, even across hot reloads or lazy chunks.
 export function createClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
-    if (!window.__supabaseClient) {
+    if (!_browserClient) {
       const isHttps = window.location.protocol === 'https:'
-      window.__supabaseClient = createBrowserClient(
+      _browserClient = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
@@ -157,11 +154,11 @@ export function createClient(): SupabaseClient {
         }
       )
     }
-    return window.__supabaseClient
+    return _browserClient
   }
 
   // SSR fallback: always return a fresh instance because there is no
-  // shared window object during server rendering.
+  // shared module state during server rendering.
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

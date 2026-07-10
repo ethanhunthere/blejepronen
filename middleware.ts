@@ -45,10 +45,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/posto-banese/:path*',
-    '/profili/:path*',
-    '/completo-profilin/:path*',
-    '/postimet-e-mia/:path*',
-    '/admin/:path*',
+    // Run on all routes except API routes, Next.js internals, the OAuth
+    // callback, favicon, and any static files (anything with a file extension).
+    '/((?!api|_next/static|_next/image|auth/callback|favicon.ico|.*\\..*).*)',
   ],
 }

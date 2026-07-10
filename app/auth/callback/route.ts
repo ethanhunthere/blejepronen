@@ -11,6 +11,20 @@ export async function GET(request: NextRequest) {
   const origin = requestUrl.origin
   const hostname = requestUrl.hostname
   const cookieDomain = getCookieDomain(hostname)
+  const oauthError = requestUrl.searchParams.get('error')
+  const oauthErrorDescription = requestUrl.searchParams.get('error_description')
+
+  // Handle OAuth provider errors (e.g. user denied consent) before anything else.
+  if (oauthError) {
+    console.error('OAuth provider returned an error:', {
+      error: oauthError,
+      description: oauthErrorDescription,
+      origin,
+      hostname,
+      cookieDomain,
+    })
+    return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
+  }
 
   // Prepare the redirect response up front so we can attach cookies directly.
   const response = NextResponse.redirect(`${origin}${next}`)
