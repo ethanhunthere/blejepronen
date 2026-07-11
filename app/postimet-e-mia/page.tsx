@@ -8,7 +8,7 @@ import type { Listing } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { ListingCardSkeleton } from '@/components/ListingCard'
 import { Button } from '@/components/ui/button'
-import { Building2, Power, Trash2 } from 'lucide-react'
+import { Building2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function PostimetEMiaPage() {
@@ -51,29 +51,6 @@ export default function PostimetEMiaPage() {
 
     init()
   }, [router, supabase, fetchListings])
-
-  const toggleActive = async (listing: Listing) => {
-    const newStatus = !listing.is_active
-    if (newStatus && listing.free_trial_until && new Date(listing.free_trial_until) < new Date()) {
-      toast.error('Provë falas ka skaduar. Rinovo listimin për ta aktivizuar përsëri.')
-      return
-    }
-    const { error } = await supabase
-      .from('listings')
-      .update({ is_active: newStatus })
-      .eq('id', listing.id)
-
-    if (error) {
-      console.error('Toggle active error:', error)
-      toast.error('Gabim gjatë ndryshimit të statusit.')
-      return
-    }
-
-    setListings(prev =>
-      prev.map(item => (item.id === listing.id ? { ...item, is_active: newStatus } : item))
-    )
-    toast.success(newStatus ? 'Listimi u aktivizua.' : 'Listimi u çaktivizua.')
-  }
 
   const deleteListing = async (listing: Listing) => {
     if (!userId) return
@@ -191,24 +168,14 @@ export default function PostimetEMiaPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(listing)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-white/70 transition-colors cursor-pointer"
-                    >
-                      <Power className="h-3.5 w-3.5" />
-                      {listing.is_active ? 'Çaktivo' : 'Aktivo'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteListing(listing)}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-red-500/10 border border-red-500/20 rounded-lg text-xs font-medium text-red-400 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Fshi
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => deleteListing(listing)}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-red-500/10 border border-red-500/20 rounded-lg text-xs font-medium text-red-400 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Fshi
+                  </button>
                 </div>
               ))}
             </div>
