@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus, User, LogOut, Menu, X } from 'lucide-react'
+import { Plus, User, LogOut, Menu, X, MessageCircle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
@@ -23,6 +23,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const [profile, setProfile] = useState({ incomplete: false, firstName: '', avatarUrl: '' })
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(_supabaseClient)
   const router = useRouter()
@@ -54,12 +55,33 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       currentUserId = user?.id ?? null
       if (user) {
         loadProfile(user.id)
+        fetchUnreadCount(user.id)
       }
+    }
+
+    const fetchUnreadCount = async (userId: string) => {
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      if (!convs || convs.length === 0) {
+        setUnreadCount(0)
+        return
+      }
+      const convIds = convs.map(c => c.id)
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .in('conversation_id', convIds)
+        .eq('is_read', false)
+        .neq('sender_id', userId)
+      setUnreadCount(count || 0)
     }
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentUserId) {
         loadProfile(currentUserId)
+        fetchUnreadCount(currentUserId)
       }
     }
 
@@ -201,6 +223,22 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Plus className="h-4 w-4" />
                     Posto banesë
                   </button>
+
+                  {/* Messages */}
+                  <button
+                    type="button"
+                    onClick={() => router.push('/mesazhet')}
+                    className="relative p-2 text-white/70 hover:text-white transition-colors cursor-pointer"
+                    aria-label="Mesazhet"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
                   {/* Custom dropdown — no Base UI, no layout shifts */}
                   <div className="relative flex-shrink-0" ref={dropdownRef}>
                     <button
@@ -251,6 +289,20 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         </div>
 
                         <div className="border-t border-white/10 my-1" />
+
+                        <button
+                          type="button"
+                          onClick={() => { closeDropdown(); router.push('/mesazhet') }}
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-3 text-slate-400" />
+                          Mesazhet
+                          {unreadCount > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                              {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                          )}
+                        </button>
 
                         <button
                           type="button"
@@ -331,6 +383,18 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Posto banesë
+                </button>
+                <button
+                  onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
+                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Mesazhet
+                  {unreadCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Phone, MessageCircle, ExternalLink, ShieldCheck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Phone, MessageCircle, ExternalLink, ShieldCheck, MessagesSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 interface SellerInfo {
@@ -31,18 +32,61 @@ export default function ContactSellerCard({
   className,
 }: ContactSellerCardProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loginUrl, setLoginUrl] = useState(`/login`)
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session?.user)
+      if (session?.user) {
+        setIsLoggedIn(true)
+        setCurrentUserId(session.user.id)
+      } else {
+        setIsLoggedIn(false)
+      }
     })
     setLoginUrl(`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`)
   }, [listingId])
 
   const cleanPhone = seller.phone ? seller.phone.replace(/\D/g, '') : ''
   const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : '#'
+  const isOwnListing = currentUserId === seller.userId
+
+  const handleMessage = async () => {
+    if (!currentUserId || isOwnListing) return
+
+    const supabase = createClient()
+
+    // First check if conversation already exists
+    const { data: existing, error: findError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('listing_id', listingId)
+      .eq('buyer_id', currentUserId)
+      .single()
+
+    if (existing) {
+      window.location.href = `/mesazhet/${existing.id}`
+      return
+    }
+
+    // Create new conversation
+    const { data: newConv, error: createError } = await supabase
+      .from('conversations')
+      .insert({
+        listing_id: listingId,
+        buyer_id: currentUserId,
+        seller_id: seller.userId,
+      })
+      .select('id')
+      .single()
+
+    if (newConv) {
+      window.location.href = `/mesazhet/${newConv.id}`
+    } else if (createError) {
+      console.error('Failed to create conversation:', createError.message)
+    }
+  }
 
   return (
     <div
@@ -122,6 +166,17 @@ export default function ContactSellerCard({
               <p className="text-sm text-white/50 text-center py-2">
                 Shitësi nuk ka numër telefoni të regjistruar.
               </p>
+            )}
+            {/* Message button — only if NOT own listing */}
+            {!isOwnListing && (
+              <button
+                type="button"
+                onClick={handleMessage}
+                className="w-full h-12 bg-white/10 border border-white/20 text-white hover:bg-white/15 hover:border-white/30 rounded-2xl flex items-center justify-center gap-2 font-semibold transition-all cursor-pointer"
+              >
+                <MessagesSquare className="h-5 w-5" />
+                Dërgo mesazh
+              </button>
             )}
           </>
         ) : (

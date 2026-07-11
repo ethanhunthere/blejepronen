@@ -5,8 +5,13 @@ import { MapPin, BedDouble, Maximize2, Tag } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Listing } from '@/lib/supabase'
 
+export type ListingCardData = Pick<
+  Listing,
+  'id' | 'title' | 'price' | 'city' | 'address' | 'rooms' | 'area_m2' | 'type' | 'images' | 'is_featured'
+>
+
 interface ListingCardProps {
-  listing: Listing
+  listing: ListingCardData
   priority?: boolean
 }
 

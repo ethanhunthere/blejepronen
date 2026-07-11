@@ -120,6 +120,45 @@ export type Database = {
           is_featured?: boolean
         }
       }
+      conversations: {
+        Row: {
+          id: string
+          listing_id: string
+          buyer_id: string
+          seller_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          buyer_id: string
+          seller_id: string
+        }
+        Update: {
+          updated_at?: string
+        }
+      }
+      messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          created_at: string
+          is_read: boolean
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          is_read?: boolean
+        }
+        Update: {
+          is_read?: boolean
+        }
+      }
     }
   }
 }
@@ -238,6 +277,8 @@ export async function createAdminSupabaseClient(): Promise<SupabaseClient> {
 // -- Utility types --
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Listing = Database['public']['Tables']['listings']['Row']
+export type Conversation = Database['public']['Tables']['conversations']['Row']
+export type Message = Database['public']['Tables']['messages']['Row']
 
 export type City =
   | 'Prishtinë'
