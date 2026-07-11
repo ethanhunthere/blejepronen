@@ -3,26 +3,96 @@ import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
-import { MapPin, BedDouble, Maximize2, ArrowLeft, Calendar } from 'lucide-react'
+import { Suspense } from 'react'
+import {
+  MapPin,
+  BedDouble,
+  Maximize2,
+  Building2,
+  Home,
+  Sparkles,
+  CalendarDays,
+  ChevronRight,
+} from 'lucide-react'
 import ListingImageGallery from '@/components/ListingImageGallery'
+import ExpandableText from '@/components/ExpandableText'
+import ContactSellerCard from '@/components/ContactSellerCard'
+import MobileContactBar from '@/components/MobileContactBar'
+import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
 
 export const revalidate = 3600
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 const formatPrice = (price: number) =>
-  new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)
+  new Intl.NumberFormat('sq-AL', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(price)
 
 const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
+  new Date(date).toLocaleDateString('sq-AL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+function getRelativeTime(date: string): string {
+  const now = Date.now()
+  const posted = new Date(date).getTime()
+  const diffMs = now - posted
+  const diffMins = Math.floor(diffMs / 60_000)
+  const diffHours = Math.floor(diffMs / 3_600_000)
+  const diffDays = Math.floor(diffMs / 86_400_000)
+
+  if (diffMins < 1) return 'Tani'
+  if (diffMins < 60) return `${diffMins} minuta më parë`
+  if (diffHours < 24) return `${diffHours} orë më parë`
+  if (diffDays === 1) return 'Dje'
+  if (diffDays < 30) return `${diffDays} ditë më parë`
+  const diffMonths = Math.floor(diffDays / 30)
+  if (diffMonths < 12) return `${diffMonths} muaj më parë`
+  return formatDate(date)
+}
+
+const FEATURE_ICONS: Record<string, string> = {
+  parking: '🚗',
+  ashensor: '🛗',
+  ballkon: '🌅',
+  oxhak: '🔥',
+  magazine: '📦',
+  siguri: '🔒',
+  kondicioner: '❄️',
+  ngrohje: '🌡️',
+  intercom: '📞',
+  kamera: '📹',
+  katiperdhe: '🏠',
+  mobiluar: '🪑',
+  pamje: '🏔️',
+  'ujë': '💧',
+  'rrymë': '⚡',
+  'internet': '🌐',
+  'tv-kabllor': '📺',
+  'depo': '📦',
+  'oborr': '🌳',
+  'tarracë': '🏖️',
+  'bodrum': '🏚️',
+  'papafingo': '🏠',
+}
 
 interface ListingDetailPageProps {
   params: Promise<{ id: string }>
 }
 
 interface ListingWithProfile extends Listing {
-  profiles: { first_name: string; last_name: string; phone: string | null; avatar_url: string | null } | null
+  profiles: {
+    first_name: string
+    last_name: string
+    phone: string | null
+    avatar_url: string | null
+    email_verified?: boolean
+  } | null
 }
 
 interface ListingMetadata {
@@ -33,9 +103,8 @@ interface ListingMetadata {
   images: string[] | null
 }
 
-// Lightweight metadata query used only by generateMetadata.
-// It runs in parallel with the page component and uses the cookie-less
-// public client so it works during static generation.
+// ---- Data fetchers ----
+
 async function getListingMetadata(id: string): Promise<ListingMetadata | null> {
   const supabase = createPublicSupabaseClient()
   const { data, error } = await supabase
@@ -49,22 +118,39 @@ async function getListingMetadata(id: string): Promise<ListingMetadata | null> {
   return data as unknown as ListingMetadata
 }
 
-// Full listing query, including the seller profile join. Service-role is used
-// so the public detail page can read seller names/phones despite RLS.
 async function getListing(id: string) {
   const supabase = await createAdminSupabaseClient()
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url,email_verified)'
     )
     .eq('id', id)
     .eq('is_active', true)
     .single()
 }
 
-// Pre-build the 20 most recent listings at deploy time. The rest are still
-// available via dynamic fallback and benefit from the 1-hour ISR cache.
+async function getSimilarListings(
+  city: string,
+  excludeId: string
+): Promise<Listing[]> {
+  const supabase = createPublicSupabaseClient()
+  const { data } = await supabase
+    .from('listings')
+    .select(
+      'id,title,price,city,address,rooms,area_m2,type,images,is_featured'
+    )
+    .eq('city', city)
+    .eq('is_active', true)
+    .neq('id', excludeId)
+    .order('created_at', { ascending: false })
+    .limit(4)
+
+  return (data as Listing[]) || []
+}
+
+// ---- Static generation ----
+
 export async function generateStaticParams() {
   const supabase = createPublicSupabaseClient()
   const { data } = await supabase
@@ -77,7 +163,9 @@ export async function generateStaticParams() {
   return (data || []).map(listing => ({ id: listing.id }))
 }
 
-export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: ListingDetailPageProps): Promise<Metadata> {
   const { id } = await params
   const listing = await getListingMetadata(id)
 
@@ -91,33 +179,93 @@ export async function generateMetadata({ params }: ListingDetailPageProps): Prom
     openGraph: {
       title: listing.title,
       description: listing.description?.slice(0, 155),
-      images: listing.images?.[0] ? [{ url: listing.images[0], width: 1200, height: 630 }] : [],
+      images: listing.images?.[0]
+        ? [{ url: listing.images[0], width: 1200, height: 630 }]
+        : [],
     },
   }
 }
 
-export default async function ListingDetailPage({ params }: ListingDetailPageProps) {
+// ---- Helpers ----
+
+const conditionLabels: Record<string, string> = {
+  'e-re': 'E re',
+  'e-vjeter': 'E vjetër',
+  rinovuar: 'E rinovuar',
+  'ka-nevojë-për-rinovim': 'Ka nevojë për rinovim',
+}
+
+function featureIcon(feature: string): string {
+  const key = feature
+    .toLowerCase()
+    .replace(/ë/g, 'e')
+    .replace(/ç/g, 'c')
+    .replace(/\s+/g, '')
+  return FEATURE_ICONS[key] || '🏷️'
+}
+
+// ---- Streaming sub-components ----
+
+async function SimilarListingsSection({
+  city,
+  excludeId,
+}: {
+  city: string
+  excludeId: string
+}) {
+  const listings = await getSimilarListings(city, excludeId)
+
+  if (!listings || listings.length === 0) return null
+
+  return (
+    <section>
+      <h2 className="text-xl md:text-2xl font-bold text-white mb-6">
+        Banesa të ngjashme në {city}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {listings.map(l => (
+          <ListingCard key={l.id} listing={l} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SimilarListingsSkeleton() {
+  return (
+    <section>
+      <div className="h-8 w-64 animate-pulse rounded bg-white/10 mb-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ListingCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ---- Page ----
+
+export default async function ListingDetailPage({
+  params,
+}: ListingDetailPageProps) {
   const { id } = await params
   const { data, error } = await getListing(id)
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      notFound()
-    }
+    if (error.code === 'PGRST116') notFound()
     console.error('Supabase query error:', error.code, error.message)
     throw new Error(`Failed to load listing: ${error.message}`)
   }
 
   const listing = (data as unknown as ListingWithProfile | null) ?? null
-
   if (!listing) notFound()
 
-  const conditionLabels: Record<string, string> = {
-    'e-re': 'E re',
-    'e-vjeter': 'E vjetër',
-    'rinovuar': 'E rinovuar',
-    'ka-nevojë-për-rinovim': 'Ka nevojë për rinovim'
-  }
+  const priceStr = formatPrice(listing.price)
+  const pricePerSqm =
+    listing.area_m2 > 0 && listing.type === 'shitje'
+      ? formatPrice(Math.round(listing.price / listing.area_m2))
+      : null
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -143,115 +291,229 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="max-w-5xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back */}
-        <Link href="/listings" className="inline-flex items-center text-gray-400 hover:text-[#4d7cff] mb-6 transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kthehu te banesat
-        </Link>
+    <div className="min-h-screen bg-[#0A0F2E] pb-20 lg:pb-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Image gallery */}
-            <ListingImageGallery images={listing.images || []} title={listing.title} />
+      {/* ====== BREADCRUMB ====== */}
+      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+        <nav className="flex items-center gap-1.5 text-xs text-white/30 overflow-x-auto whitespace-nowrap">
+          <Link
+            href="/"
+            className="hover:text-white/60 transition-colors"
+          >
+            Ballina
+          </Link>
+          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+          <Link
+            href="/listings"
+            className="hover:text-white/60 transition-colors"
+          >
+            Banesat
+          </Link>
+          <ChevronRight className="h-3 w-3 flex-shrink-0" />
+          <span className="text-white/50 truncate">{listing.title}</span>
+        </nav>
+      </div>
 
-            {/* Title & meta */}
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">{listing.title}</h1>
-                <Badge className={listing.type === 'shitje' ? 'bg-[#1B4FFF]/20 text-[#4d7cff]' : 'bg-emerald-500/20 text-emerald-400'}>
-                  {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
-                </Badge>
-              </div>
+      {/* ====== PHOTO HERO ====== */}
+      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+        <ListingImageGallery
+          images={listing.images || []}
+          title={listing.title}
+          type={listing.type}
+          featured={listing.is_featured}
+        />
+      </div>
 
-              <div className="flex flex-wrap items-center gap-4 text-gray-400 text-sm mb-4">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {listing.address}, {listing.city}
-                  {listing.neighborhood && ` – ${listing.neighborhood}`}
+      {/* ====== MAIN CONTENT + SIDEBAR ====== */}
+      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10">
+          {/* ---- Left column ---- */}
+          <div className="space-y-8 min-w-0">
+            {/* TITLE + LOCATION */}
+            <section>
+              <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                {listing.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/50">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-white/30" />
+                  {[listing.neighborhood, listing.city, 'Kosovë']
+                    .filter(Boolean)
+                    .join(' › ')}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  {formatDate(listing.created_at)}
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4 text-white/30" />
+                  Postuar {getRelativeTime(listing.created_at)}
                 </span>
               </div>
+            </section>
 
-              {listing.description && (
-                <p className="text-gray-300 leading-relaxed whitespace-pre-line">{listing.description}</p>
-              )}
-            </div>
-
-            {/* Features */}
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10">
-              <h2 className="text-lg font-semibold text-white mb-4">Karakteristikat</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2 text-gray-300">
-                  <BedDouble className="h-5 w-5 text-[#4d7cff]" />
-                  <span>{listing.rooms} dhoma</span>
+            {/* STATS BAR */}
+            <section>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                  <BedDouble className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                  <p className="text-white font-bold text-sm">
+                    {listing.rooms}
+                  </p>
+                  <p className="text-white/40 text-xs">Dhoma</p>
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Maximize2 className="h-5 w-5 text-[#4d7cff]" />
-                  <span>{listing.area_m2} m²</span>
+                <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                  <Maximize2 className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                  <p className="text-white font-bold text-sm">
+                    {listing.area_m2} m²
+                  </p>
+                  <p className="text-white/40 text-xs">Sipërfaqja</p>
                 </div>
-                {listing.condition && (
-                  <div className="text-gray-300">
-                    Gjendja: <span className="text-white">{conditionLabels[listing.condition] || listing.condition}</span>
-                  </div>
-                )}
                 {listing.floor && (
-                  <div className="text-gray-300">
-                    Kati: <span className="text-white">{listing.floor}</span>
+                  <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                    <Building2 className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                    <p className="text-white font-bold text-sm">
+                      {listing.floor}
+                    </p>
+                    <p className="text-white/40 text-xs">Kati</p>
                   </div>
                 )}
                 {listing.apartment_type && (
-                  <div className="text-gray-300">
-                    Tipologjia: <span className="text-white">{listing.apartment_type}</span>
+                  <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                    <Home className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                    <p className="text-white font-bold text-sm">
+                      {listing.apartment_type}
+                    </p>
+                    <p className="text-white/40 text-xs">Tipologjia</p>
                   </div>
                 )}
+                {listing.condition && (
+                  <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                    <Sparkles className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                    <p className="text-white font-bold text-sm">
+                      {conditionLabels[listing.condition] || listing.condition}
+                    </p>
+                    <p className="text-white/40 text-xs">Gjendja</p>
+                  </div>
+                )}
+                <div className="bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-center">
+                  <CalendarDays className="h-5 w-5 mx-auto mb-1 text-[#4d7cff]" />
+                  <p className="text-white font-bold text-sm">
+                    {getRelativeTime(listing.created_at)}
+                  </p>
+                  <p className="text-white/40 text-xs">Postuar</p>
+                </div>
               </div>
 
-              {listing.features && listing.features.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-2">
+              {/* Mobile: price between stats and description */}
+              <div className="mt-5 lg:hidden bg-white/5 border border-white/8 rounded-2xl p-4">
+                <p className="text-2xl font-black text-[#1B4FFF]">
+                  {priceStr}
+                  {listing.type === 'qira' && (
+                    <span className="text-sm font-normal text-white/50">
+                      /muaj
+                    </span>
+                  )}
+                </p>
+                {pricePerSqm && (
+                  <p className="text-xs text-white/50 mt-0.5">
+                    {pricePerSqm}/m²
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* DESCRIPTION */}
+            {listing.description && (
+              <section>
+                <h2 className="text-lg font-semibold text-white mb-3">
+                  Përshkrimi
+                </h2>
+                <ExpandableText text={listing.description} maxLength={350} />
+              </section>
+            )}
+
+            {/* FEATURES */}
+            {listing.features && listing.features.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Karakteristikat
+                </h2>
+                <div className="flex flex-wrap gap-2">
                   {listing.features.map(feature => (
-                    <span key={feature} className="px-3 py-1 rounded-full bg-white/5 text-gray-300 text-sm border border-white/10">
+                    <span
+                      key={feature}
+                      className="inline-flex items-center gap-1.5 bg-[#1B4FFF]/15 border border-[#1B4FFF]/30 text-white/80 rounded-full px-4 py-2 text-sm"
+                    >
+                      <span className="text-base">{featureIcon(feature)}</span>
                       {feature}
                     </span>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
+              </section>
+            )}
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-[#111936] rounded-2xl p-6 border border-white/10 sticky top-24">
-              <p className="text-3xl font-bold text-[#1B4FFF] mb-1">
-                {formatPrice(listing.price)}
-                {listing.type === 'qira' && <span className="text-base font-normal text-gray-400">/muaj</span>}
-              </p>
-              {listing.area_m2 > 0 && listing.type === 'shitje' && (
-                <p className="text-sm text-gray-500 mb-4">
-                  {formatPrice(Math.round(listing.price / listing.area_m2))}/m²
-                </p>
-              )}
-
-              <div className="border-t border-white/10 pt-4 mb-4">
-                <p className="text-sm text-gray-400 mb-1">Shitësi</p>
-                <p className="font-semibold text-white">
-                  {listing.profiles?.first_name} {listing.profiles?.last_name}
-                </p>
+            {/* LOCATION */}
+            <section>
+              <h2 className="text-lg font-semibold text-white mb-3">
+                Vendndodhja
+              </h2>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#1B4FFF]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <MapPin className="h-5 w-5 text-[#4d7cff]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold mb-0.5">
+                      {listing.city}
+                    </p>
+                    <p className="text-white/60 text-sm">
+                      {[
+                        listing.neighborhood,
+                        listing.address ? `Rruga ${listing.address}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
+                    <p className="text-white/40 text-xs mt-1">Kosovë</p>
+                  </div>
+                </div>
               </div>
-
-              <p className="text-sm text-gray-500">
-                Për të kontaktuar shitësin, kyçuni në platformë ose shkoni te profili i tij.
-              </p>
-            </div>
+            </section>
           </div>
+
+          {/* ---- Desktop sidebar ---- */}
+          <aside className="hidden lg:block">
+            <ContactSellerCard
+              price={priceStr}
+              pricePerSqm={pricePerSqm}
+              type={listing.type}
+              seller={{
+                firstName: listing.profiles?.first_name || '',
+                lastName: listing.profiles?.last_name || '',
+                phone: listing.profiles?.phone || null,
+                avatarUrl: listing.profiles?.avatar_url || null,
+                emailVerified: listing.profiles?.email_verified || false,
+                userId: listing.user_id,
+              }}
+              listingId={listing.id}
+            />
+          </aside>
         </div>
       </div>
+
+      {/* ====== SIMILAR LISTINGS ====== */}
+      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <Suspense fallback={<SimilarListingsSkeleton />}>
+          <SimilarListingsSection city={listing.city} excludeId={listing.id} />
+        </Suspense>
+      </div>
+
+      {/* ====== MOBILE CONTACT BAR ====== */}
+      <MobileContactBar
+        price={priceStr}
+        pricePerSqm={pricePerSqm}
+      />
     </div>
   )
 }

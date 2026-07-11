@@ -1,163 +1,228 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { Building2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Images } from 'lucide-react'
+import FullscreenGallery from './FullscreenGallery'
 
 interface ListingImageGalleryProps {
   images: string[]
   title: string
+  type?: 'shitje' | 'qira'
+  featured?: boolean
 }
 
-export default function ListingImageGallery({ images, title }: ListingImageGalleryProps) {
-  const [currentImage, setCurrentImage] = useState(0)
-  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const containerRef = useRef<HTMLDivElement>(null)
-  const hasImages = !!images && images.length > 0
+export default function ListingImageGallery({
+  images,
+  title,
+  type = 'shitje',
+  featured = false,
+}: ListingImageGalleryProps) {
+  const [current, setCurrent] = useState(0)
+  const [fullscreenOpen, setFullscreenOpen] = useState(false)
 
-  const goPrev = () =>
-    setCurrentImage(prev => (prev === 0 ? images.length - 1 : prev - 1))
+  const normalized = images.filter(Boolean)
+  const hasImages = normalized.length > 0
+  const total = normalized.length
 
-  const goNext = () =>
-    setCurrentImage(prev => (prev === images.length - 1 ? 0 : prev + 1))
+  const goPrev = useCallback(() => {
+    setCurrent(prev => (prev === 0 ? total - 1 : prev - 1))
+  }, [total])
 
-  // Keep the active thumbnail visible / centered when navigating with arrows.
+  const goNext = useCallback(() => {
+    setCurrent(prev => (prev === total - 1 ? 0 : prev + 1))
+  }, [total])
+
+  const openFullscreen = useCallback((index: number) => {
+    setCurrent(index)
+    setFullscreenOpen(true)
+  }, [])
+
+  // Scroll to the gallery top when the listing detail page mounts.
   useEffect(() => {
-    thumbRefs.current[currentImage]?.scrollIntoView({
-      behavior: 'smooth',
-      inline: 'center',
-      block: 'nearest',
-    })
-  }, [currentImage])
-
-  // Keyboard navigation: ArrowLeft / ArrowRight cycle through images.
-  useEffect(() => {
-    if (!hasImages || images.length < 2) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        setCurrentImage(prev => (prev === 0 ? images.length - 1 : prev - 1))
-      } else if (e.key === 'ArrowRight') {
-        setCurrentImage(prev => (prev === images.length - 1 ? 0 : prev + 1))
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [hasImages, images.length])
-
-  // Scroll so the gallery starts at the top of the viewport when the listing
-  // detail page mounts (below the back-link area).
-  useEffect(() => {
-    if (typeof window !== 'undefined' && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect()
+    if (typeof window === 'undefined') return
+    const el = document.getElementById('listing-gallery')
+    if (el) {
+      const rect = el.getBoundingClientRect()
       window.scrollTo({ top: rect.top + window.scrollY, behavior: 'instant' })
     }
   }, [])
 
   if (!hasImages) {
     return (
-      <div className="bg-white/5 flex flex-col items-center justify-center h-80 rounded-2xl border border-white/10 text-gray-500">
-        <Building2 className="h-12 w-12 mb-3" />
+      <div
+        id="listing-gallery"
+        className="relative h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden bg-white/5 border border-white/10 flex flex-col items-center justify-center text-white/40"
+      >
+        <Images className="h-12 w-12 mb-3 opacity-50" />
         <p className="text-lg">Nuk ka foto</p>
       </div>
     )
   }
 
-  const showArrows = images.length > 1
-  const showDots = images.length > 1 && images.length <= 10
-  const showThumbnails = images.length > 1
+  const typeLabel = type === 'shitje' ? 'Shitje' : 'Me qira'
 
   return (
-    <div ref={containerRef} className="space-y-4">
-      <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
-        <Image
-          src={images[currentImage]}
-          alt={`${title} – foto ${currentImage + 1}`}
-          fill
-          priority={currentImage === 0}
-          className="object-cover"
-          sizes="(max-width: 1024px) 100vw, 66vw"
-        />
-
-        {/* Image counter */}
-        <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-black/40 text-white text-xs font-medium backdrop-blur-sm">
-          {currentImage + 1} / {images.length}
-        </div>
-
-        {/* Previous arrow */}
-        {showArrows && (
+    <>
+      <div id="listing-gallery" className="relative">
+        {/* Desktop grid */}
+        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-2xl overflow-hidden bg-[#111936]">
+          {/* Main left image */}
           <button
             type="button"
-            onClick={goPrev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
-            aria-label="Fotoja e mëparshme"
+            onClick={() => openFullscreen(0)}
+            className="relative row-span-2 group overflow-hidden focus:outline-none"
+            aria-label="Foto kryesore"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <Image
+              src={normalized[0]}
+              alt={`${title} – foto 1`}
+              fill
+              priority
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              sizes="(max-width: 1024px) 60vw, 55vw"
+            />
           </button>
-        )}
 
-        {/* Next arrow */}
-        {showArrows && (
-          <button
-            type="button"
-            onClick={goNext}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200"
-            aria-label="Fotoja tjetër"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        )}
-
-        {/* Dot indicators */}
-        {showDots && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setCurrentImage(index)}
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  index === currentImage
-                    ? 'bg-white w-4'
-                    : 'bg-white/50 hover:bg-white/75 w-2'
-                }`}
-                aria-label={`Shiko foto ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Thumbnail strip */}
-      {showThumbnails && (
-        <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
-          {images.map((image, index) => (
+          {/* Right top */}
+          {normalized[1] && (
             <button
-              key={index}
               type="button"
-              ref={el => {
-                thumbRefs.current[index] = el
-              }}
-              onClick={() => setCurrentImage(index)}
-              className={`relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer transition-opacity ${
-                index === currentImage
-                  ? 'ring-2 ring-[#1B4FFF] ring-offset-2 ring-offset-black opacity-100'
-                  : 'opacity-50 hover:opacity-80'
+              onClick={() => openFullscreen(1)}
+              className={`relative group overflow-hidden focus:outline-none ${
+                !normalized[2] ? 'row-span-2' : ''
               }`}
-              aria-label={`Shiko foto ${index + 1}`}
+              aria-label="Foto 2"
             >
               <Image
-                src={image}
-                alt={`${title} – foto ${index + 1}`}
+                src={normalized[1]}
+                alt={`${title} – foto 2`}
                 fill
-                className="object-cover"
-                sizes="80px"
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                sizes="(max-width: 1024px) 40vw, 35vw"
               />
             </button>
-          ))}
+          )}
+
+          {/* Right bottom */}
+          {normalized[2] && (
+            <button
+              type="button"
+              onClick={() => openFullscreen(2)}
+              className="relative group overflow-hidden focus:outline-none"
+              aria-label="Foto 3"
+            >
+              <Image
+                src={normalized[2]}
+                alt={`${title} – foto 3`}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                sizes="(max-width: 1024px) 40vw, 35vw"
+              />
+              {total > 3 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <span className="text-white text-xl font-bold">+{total - 3} foto</span>
+                </div>
+              )}
+            </button>
+          )}
+
+          {/* Badges */}
+          <div className="absolute top-4 left-4 z-10">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-[#1B4FFF] text-white shadow-lg">
+              {typeLabel}
+            </span>
+          </div>
+          {featured && (
+            <div className="absolute top-4 right-4 z-10">
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-amber-500 text-white shadow-lg">
+                Featured
+              </span>
+            </div>
+          )}
+
+          {/* View all button */}
+          <button
+            type="button"
+            onClick={() => openFullscreen(0)}
+            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 text-white text-sm font-medium backdrop-blur-sm transition-colors"
+          >
+            <Images className="h-4 w-4" />
+            Shiko të gjitha {total} foto
+          </button>
         </div>
-      )}
-    </div>
+
+        {/* Mobile single image */}
+        <div className="md:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#111936]">
+          <Image
+            src={normalized[current]}
+            alt={`${title} – foto ${current + 1}`}
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+          />
+
+          {/* Badges */}
+          <div className="absolute top-3 left-3 z-10">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#1B4FFF] text-white">
+              {typeLabel}
+            </span>
+          </div>
+          {featured && (
+            <div className="absolute top-3 right-12 z-10">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500 text-white">
+                Featured
+              </span>
+            </div>
+          )}
+
+          {/* Counter */}
+          <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-black/50 text-white text-xs font-medium">
+            {current + 1} / {total}
+          </div>
+
+          {/* Arrows */}
+          {total > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goPrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white"
+                aria-label="Fotoja e mëparshme"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white"
+                aria-label="Fotoja tjetër"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+
+          {/* View all */}
+          <button
+            type="button"
+            onClick={() => openFullscreen(current)}
+            className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs font-medium backdrop-blur-sm"
+          >
+            <Images className="h-3.5 w-3.5" />
+            {total} foto
+          </button>
+        </div>
+      </div>
+
+      <FullscreenGallery
+        images={normalized}
+        title={title}
+        isOpen={fullscreenOpen}
+        initialIndex={current}
+        onClose={() => setFullscreenOpen(false)}
+      />
+    </>
   )
 }
