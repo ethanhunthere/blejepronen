@@ -48,7 +48,7 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
   // Scroll to top when the listing detail page mounts so the gallery is visible.
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'instant' })
+      window.scrollTo({ top: 80, behavior: 'instant' })
     }
   }, [])
 
