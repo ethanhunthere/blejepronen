@@ -206,13 +206,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center rounded-full w-10 h-10 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
                     >
                       {profile.avatarUrl ? (
-                        <Image src={profile.avatarUrl} alt="Foto profili" width={40} height={40} className="rounded-full object-cover" />
+                        <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="36px" className="object-cover rounded-full" />
                       ) : (
                         (profile.firstName || user?.email || '?')[0].toUpperCase()
                       )}
