@@ -55,36 +55,18 @@ export default function ContactSellerCard({
   const handleMessage = async () => {
     if (!currentUserId || isOwnListing) return
 
-    const supabase = createClient()
-
-    // First check if conversation already exists
-    const { data: existing, error: findError } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('listing_id', listingId)
-      .eq('buyer_id', currentUserId)
-      .single()
-
-    if (existing) {
-      window.location.href = `/mesazhet/${existing.id}`
-      return
-    }
-
-    // Create new conversation
-    const { data: newConv, error: createError } = await supabase
-      .from('conversations')
-      .insert({
-        listing_id: listingId,
-        buyer_id: currentUserId,
-        seller_id: seller.userId,
+    try {
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: listingId, seller_id: seller.userId }),
       })
-      .select('id')
-      .single()
-
-    if (newConv) {
-      window.location.href = `/mesazhet/${newConv.id}`
-    } else if (createError) {
-      console.error('Failed to create conversation:', createError.message)
+      const data = await res.json()
+      if (data.conversation_id) {
+        window.location.href = `/mesazhet/${data.conversation_id}`
+      }
+    } catch (err) {
+      console.error('Failed to create conversation:', err)
     }
   }
 

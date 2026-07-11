@@ -24,6 +24,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const realtimeChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(_supabaseClient)
   const router = useRouter()
@@ -76,6 +77,28 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         .eq('is_read', false)
         .neq('sender_id', userId)
       setUnreadCount(count || 0)
+
+      // Set up realtime subscription for unread count updates
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe()
+        realtimeChannelRef.current = null
+      }
+      if (convIds.length > 0) {
+        const ch = supabase
+          .channel('navbar-unread')
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages', filter: convIds.map(id => `conversation_id=eq.${id}`).join(',') },
+            () => { fetchUnreadCount(userId) }
+          )
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'messages', filter: convIds.map(id => `conversation_id=eq.${id}`).join(',') },
+            () => { fetchUnreadCount(userId) }
+          )
+          .subscribe()
+        realtimeChannelRef.current = ch
+      }
     }
 
     const handleVisibilityChange = () => {
@@ -97,6 +120,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
           setDropdownOpen(false)
           setMenuOpen(false)
+          setUnreadCount(0)
+          if (realtimeChannelRef.current) {
+            realtimeChannelRef.current.unsubscribe()
+            realtimeChannelRef.current = null
+          }
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('sb-')) {
               localStorage.removeItem(key)
@@ -121,6 +149,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
     return () => {
       subscription.unsubscribe()
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe()
+        realtimeChannelRef.current = null
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [router])
