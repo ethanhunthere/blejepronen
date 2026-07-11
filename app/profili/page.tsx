@@ -63,9 +63,14 @@ export default function ProfilePage() {
 
     if (err) { setError('Gabim gjatë ruajtjes.'); setSaving(false); return }
     setProfile(prev => prev ? { ...prev, ...formData } : prev)
-    // Bust the ISR cache on all of this seller's listing pages so
-    // visitors immediately see the updated phone / name / avatar.
-    revalidateSellerListings(user.id)
+    // Bust ISR cache + client router cache so listing pages reflect the new
+    // phone / name immediately — even on client-side navigation.
+    try {
+      await revalidateSellerListings(user.id)
+    } catch (e) {
+      console.error('Failed to revalidate listing pages after profile update:', e)
+    }
+    router.refresh()
     setSuccess(true)
     setEditMode(false)
     setTimeout(() => setSuccess(false), 3000)
@@ -113,7 +118,12 @@ export default function ProfilePage() {
       if (updateError) throw updateError
 
       setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev)
-      revalidateSellerListings(user.id)
+      try {
+        await revalidateSellerListings(user.id)
+      } catch (e) {
+        console.error('Failed to revalidate after avatar upload:', e)
+      }
+      router.refresh()
     } catch {
       setError('Ngarkimi i fotos dështoi. Provo përsëri.')
     } finally {
