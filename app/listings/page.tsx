@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
 
 import Image from 'next/image'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users, ChevronDown } from 'lucide-react'
@@ -16,22 +16,12 @@ const PAGE_SIZE = 12
 type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'>
 
 function ListingsContent() {
-  const searchParams = useSearchParams()
   const [listings, setListings] = useState<Listing[]>([])
   const [agentResults, setAgentResults] = useState<AgentResult[]>([])
   const [page, setPage] = useState(0)
   const [fetchState, setFetchState] = useState({ loading: true, hasMore: true })
   const [loadError, setLoadError] = useState(false)
-  const [filters, setFilters] = useState({
-    city: searchParams.get('city') || '',
-    type: searchParams.get('type') || '',
-    minPrice: searchParams.get('minPrice') || '',
-    maxPrice: searchParams.get('maxPrice') || '',
-    rooms: searchParams.get('rooms') || '',
-    search: searchParams.get('search') || '',
-    agentId: searchParams.get('agentId') || '',
-    neighborhood: searchParams.get('neighborhood') || ''
-  })
+  const [filters, setFilters] = useState({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
   const [showFilters, setShowFilters] = useState(false)
   // Close all custom dropdowns on outside click
   useEffect(() => {
@@ -65,27 +55,7 @@ function ListingsContent() {
   const selectedAgent = useMemo(() => (filters.agentId ? agentMap[filters.agentId] ?? null : null), [agentMap, filters.agentId])
   const router = useRouter()
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const isInitialSync = useRef(true)
   const supabase = createClient()
-
-  // Clear all URL search params on mount so filters reset on refresh/reload.
-  useEffect(() => {
-    router.replace('/listings', { scroll: false })
-  }, [])
-
-  // Sync filter state to the URL so searches and filters are shareable.
-  useEffect(() => {
-    if (isInitialSync.current) {
-      isInitialSync.current = false
-      return
-    }
-    const params = new URLSearchParams()
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value)
-    })
-    const query = params.toString()
-    router.replace(query ? `/listings?${query}` : '/listings', { scroll: false })
-  }, [filters, router])
 
   const fetchListings = useCallback(async (pageNum = 0) => {
     if (pageNum === 0) setPage(0)
