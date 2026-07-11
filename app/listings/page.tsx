@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
+import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
 const PAGE_SIZE = 12
@@ -221,6 +222,7 @@ function ListingsContent() {
               <select
                 id="filter-city"
                 className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
+                style={{ colorScheme: 'dark' }}
                 value={filters.city}
                 onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, neighborhood: '' }))}
               >
@@ -234,14 +236,29 @@ function ListingsContent() {
             {/* Neighborhood */}
             <div>
               <label htmlFor="filter-neighborhood" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lagjja</label>
-              <input
-                id="filter-neighborhood"
-                type="text"
-                placeholder="p.sh. Dardania"
-                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white placeholder:text-white/30 rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
-                value={filters.neighborhood}
-                onChange={(e) => setFilters(prev => ({ ...prev, neighborhood: e.target.value }))}
-              />
+              {filters.city ? (
+                <select
+                  id="filter-neighborhood"
+                  className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
+                  style={{ colorScheme: 'dark' }}
+                  value={filters.neighborhood}
+                  onChange={(e) => setFilters(prev => ({ ...prev, neighborhood: e.target.value }))}
+                >
+                  <option value="">Të gjitha lagjet</option>
+                  {(KOSOVO_LOCATIONS[filters.city] || []).map(neighborhood => (
+                    <option key={neighborhood} value={neighborhood}>{neighborhood}</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  id="filter-neighborhood"
+                  disabled
+                  className="w-full h-11 px-3 bg-white/5 border border-white/8 text-white/30 rounded-xl text-sm cursor-not-allowed"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option>Zgjedh qytetin fillimisht</option>
+                </select>
+              )}
             </div>
 
             {/* Type */}
@@ -250,6 +267,7 @@ function ListingsContent() {
               <select
                 id="filter-type"
                 className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
+                style={{ colorScheme: 'dark' }}
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
               >
@@ -291,6 +309,7 @@ function ListingsContent() {
               <select
                 id="filter-rooms"
                 className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
+                style={{ colorScheme: 'dark' }}
                 value={filters.rooms}
                 onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
               >
