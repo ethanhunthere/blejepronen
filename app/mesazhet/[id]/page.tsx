@@ -77,17 +77,14 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [connected, setConnected] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const supabaseRef = useRef(createClient())
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const scrollToBottom = useCallback((smooth = false) => {
-    if (!containerRef.current) return
-    containerRef.current.scrollTo({
-      top: containerRef.current.scrollHeight,
-      behavior: smooth ? 'smooth' : 'instant',
-    })
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
   }, [])
 
   // ---- Load conversation + messages ----
@@ -138,20 +135,16 @@ export default function ChatPage() {
           setMessages(ms)
           const unreadIds = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).map(m => m.id)
           if (unreadIds.length > 0) {
-            // Optimistic: tell Navbar how many messages are about to be marked read
-            // so it can subtract from the badge IMMEDIATELY, before the DB round-trip
             window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadIds.length } }))
             supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then(() => {
               window.dispatchEvent(new CustomEvent('messages-read'))
             })
           }
+          // Auto-scroll to bottom after initial load
+          setTimeout(() => scrollToBottom(false), 50)
         })
     })
-  }, [conversationId, router])
-
-  useEffect(() => {
-    if (!loading && messages.length > 0) scrollToBottom(false)
-  }, [loading, messages.length, scrollToBottom])
+  }, [conversationId, router, scrollToBottom])
 
   // ---- Realtime ----
   useEffect(() => {
@@ -166,7 +159,6 @@ export default function ChatPage() {
         (payload: RealtimePostgresChangesPayload<MessageRow>) => {
           const msg = payload.new as MessageRow
           setMessages(prev => {
-            // Replace optimistic message (temp ID) with real DB message if it matches
             const optimisticIdx = prev.findIndex(
               m => m.id.startsWith('optimistic-') && m.sender_id === msg.sender_id && m.content === msg.content
             )
@@ -175,13 +167,12 @@ export default function ChatPage() {
               next[optimisticIdx] = msg
               return next
             }
-            // Deduplicate by real ID
             if (prev.some(m => m.id === msg.id)) return prev
-            scrollToBottom(true)
             return [...prev, msg]
           })
+          // Scroll to bottom on new message
+          setTimeout(() => scrollToBottom(true), 50)
           if (msg.sender_id !== userId) {
-            // Optimistic: tell Navbar 1 message is being marked read right now
             window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: 1 } }))
             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {
               window.dispatchEvent(new CustomEvent('messages-read'))
@@ -225,7 +216,6 @@ export default function ChatPage() {
 
     setNewMsg('')
 
-    // Optimistic: immediately show the message in the UI
     const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     const optimisticMsg: MessageRow = {
       id: tempId,
@@ -247,7 +237,6 @@ export default function ChatPage() {
     })
 
     if (error) {
-      // Remove optimistic message on failure
       setMessages(prev => prev.filter(m => m.id !== tempId))
     } else {
       supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(() => {})
@@ -264,7 +253,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[#0A0F2E] via-[#0D1235] to-[#0A0F2E]">
+      <div className="h-full flex items-center justify-center bg-gradient-to-br from-[#0A0F2E] via-[#0D1235] to-[#0A0F2E]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B4FFF]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -306,72 +295,62 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-[#0A0F2E] via-[#0D1235] to-[#0A0F2E]">
+    <div className="h-full flex flex-col bg-[#0A0F2E] overflow-hidden">
       {/* ---- HEADER ---- */}
-      <header className="flex-shrink-0 h-16 bg-[#060B1E]/80 backdrop-blur-2xl border-b border-white/[0.06] flex items-center px-3 sm:px-5 gap-3 relative overflow-hidden">
-        {/* Subtle top glow */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1B4FFF]/5 via-transparent to-transparent pointer-events-none" />
-        
-        <Link href="/mesazhet" className="lg:hidden text-white/40 hover:text-white p-1.5 flex-shrink-0 transition-all duration-200 hover:bg-white/[0.06] rounded-xl">
+      <header className="flex-shrink-0 bg-[#060B1E] border-b border-white/[0.08] px-3 py-2.5 flex items-center gap-3">
+        {/* Back button */}
+        <Link
+          href="/mesazhet"
+          className="text-white/50 hover:text-white p-2 -ml-2 rounded-xl hover:bg-white/[0.06] transition-all duration-200"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        {/* Other user */}
-        <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
-          <div className="relative flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] overflow-hidden flex items-center justify-center text-white font-bold text-sm ring-2 ring-[#1B4FFF]/20">
-              {conv.otherUser?.avatar_url ? (
-                <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                (conv.otherUser?.first_name || '?')[0].toUpperCase()
-              )}
-            </div>
-            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#060B1E] transition-colors duration-500 ${
-              connected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-white/20'
-            }`} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
-              {conv.otherUser?.first_name} {conv.otherUser?.last_name}
-            </p>
-            {isTyping && (
-              <p className="text-[11px] text-[#1B4FFF]/70 font-medium animate-fade-in">duke shkruar...</p>
-            )}
-          </div>
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-sm flex-shrink-0 overflow-hidden">
+          {conv.otherUser?.avatar_url ? (
+            <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            (conv.otherUser?.first_name || '?')[0].toUpperCase()
+          )}
         </div>
 
-        {/* Listing mini-card */}
-        {conv.listing && (
+        {/* Name + subtitle */}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-white text-sm truncate">
+            {conv.otherUser?.first_name} {conv.otherUser?.last_name}
+          </p>
+          {conv.listing && (
+            <p className="text-white/40 text-xs truncate">{conv.listing.title}</p>
+          )}
+          {isTyping && (
+            <p className="text-[11px] text-[#1B4FFF]/70 font-medium animate-fade-in">duke shkruar...</p>
+          )}
+        </div>
+
+        {/* Listing thumbnail */}
+        {conv.listing?.images?.[0] && (
           <Link
             href={`/listings/${conv.listing.id}`}
-            className="hidden sm:flex items-center gap-2.5 bg-white/[0.04] hover:bg-white/[0.08] rounded-2xl px-3.5 py-2 flex-shrink-0 transition-all duration-200 max-w-[240px] border border-white/[0.06] hover:border-white/[0.12] group"
+            className="w-10 h-10 rounded-lg overflow-hidden border border-white/[0.1] flex-shrink-0 hover:border-white/[0.2] transition-colors"
           >
-            <div className="w-9 h-9 rounded-xl bg-white/[0.06] overflow-hidden flex-shrink-0 ring-1 ring-white/[0.08]">
-              {conv.listing.images?.[0] ? (
-                <Image src={conv.listing.images[0]} alt="" width={36} height={36} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#1B4FFF]/20 to-transparent" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-white/80 truncate group-hover:text-white transition-colors">{conv.listing.title}</p>
-              <p className="text-[10px] text-white/40 font-medium">
-                {formatPrice(conv.listing.price)}{conv.listing.type === 'qira' ? '/muaj' : ''}
-              </p>
-            </div>
+            <img
+              src={conv.listing.images[0]}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           </Link>
         )}
+
+        {/* Connection status */}
+        <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-500 ${
+          connected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-white/20'
+        }`} />
       </header>
 
-      {/* ---- EXPIRY BANNER ---- */}
-      <div className="flex-shrink-0 px-4 py-1.5 border-b border-white/[0.04] flex items-center justify-center gap-1.5 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent">
-        <Clock3 className="h-3 w-3 text-white/15" />
-        <p className="text-[10px] text-white/20 font-medium tracking-wide">Mesazhet fshihen pas 60 ditësh</p>
-      </div>
-
       {/* ---- MESSAGES ---- */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-3 sm:px-5 py-5 scrollbar-thin">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
+        <div className="max-w-3xl mx-auto">
           {!connected && (
             <div className="flex items-center justify-center gap-2 text-xs text-white/25 py-2 animate-pulse">
               <WifiOff className="h-3 w-3" />
@@ -382,12 +361,12 @@ export default function ChatPage() {
           {renderItems.map((item, i) => {
             if (item.type === 'date') {
               return (
-                <div key={`date-${item.label}-${i}`} className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div key={`date-${item.label}-${i}`} className="flex items-center gap-3 py-3">
+                  <div className="flex-1 h-px bg-white/[0.06]" />
                   <span className="text-[11px] text-white/25 font-medium tracking-wide flex-shrink-0">
                     {item.label}
                   </span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                  <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
               )
             }
@@ -395,8 +374,8 @@ export default function ChatPage() {
             const { msg, isLastInGroup, isFirst } = item
             if (isExpired(msg.created_at)) {
               return (
-                <div key={msg.id} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
-                  <div className="max-w-[70%] md:max-w-[55%] bg-white/[0.02] border border-white/[0.04] rounded-2xl px-4 py-2.5 flex items-center gap-2">
+                <div key={msg.id} className="flex justify-center py-1">
+                  <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-4 py-2 flex items-center gap-2">
                     <ShieldAlert className="h-3.5 w-3.5 text-white/15 flex-shrink-0" />
                     <span className="text-white/20 italic text-xs">Ky mesazh ka skaduar (60 ditë)</span>
                   </div>
@@ -410,13 +389,13 @@ export default function ChatPage() {
                 key={msg.id}
                 className={`flex gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}
                 style={{
-                  marginTop: isFirst ? '0.5rem' : '0.125rem',
+                  marginTop: isFirst ? '0.75rem' : '0.125rem',
                   animation: 'msgSlideIn 0.3s ease-out',
                 }}
               >
                 {!isMine && (
                   isLastInGroup ? (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] overflow-hidden flex-shrink-0 self-end flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-[#1B4FFF]/15">
+                    <div className="w-7 h-7 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                       {conv.otherUser?.avatar_url ? (
                         <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -424,24 +403,24 @@ export default function ChatPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="w-8 flex-shrink-0" />
+                    <div className="w-7 flex-shrink-0" />
                   )
                 )}
 
                 <div
-                  className={`max-w-[70%] md:max-w-[55%] px-4 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[75%] md:max-w-[60%] px-3.5 py-2 text-sm leading-relaxed ${
                     isMine
-                      ? 'bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] text-white rounded-2xl rounded-tr-md shadow-lg shadow-[#1B4FFF]/15'
-                      : 'bg-white/[0.05] backdrop-blur-sm border border-white/[0.08] text-white/90 rounded-2xl rounded-tl-md'
+                      ? 'bg-[#1B4FFF] text-white rounded-2xl rounded-br-md'
+                      : 'bg-[#1E2344] text-white/90 rounded-2xl rounded-bl-md'
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  <div className={`flex items-center gap-1.5 mt-1.5 ${isMine ? 'justify-end' : ''}`}>
-                    <span className={`text-[10px] font-medium ${isMine ? 'text-white/45' : 'text-white/30'}`}>
+                  <div className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}>
+                    <span className={`text-[10px] font-medium ${isMine ? 'text-white/50' : 'text-white/30'}`}>
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
-                      <span className={`text-[10px] ${msg.is_read ? 'text-[#4D7CFF]' : 'text-white/30'}`} title={msg.is_read ? 'E lexuar' : 'E dërguar'}>
+                      <span className={`text-[10px] ${msg.is_read ? 'text-[#8CB4FF]' : 'text-white/35'}`} title={msg.is_read ? 'E lexuar' : 'E dërguar'}>
                         {msg.is_read ? '✓✓' : '✓'}
                       </span>
                     )}
@@ -454,14 +433,14 @@ export default function ChatPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2" style={{ animation: 'fadeSlideUp 0.25s ease-out' }}>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] overflow-hidden flex-shrink-0 self-end flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-[#1B4FFF]/15">
+              <div className="w-7 h-7 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                 {conv.otherUser?.avatar_url ? (
                   <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   (conv.otherUser?.first_name || '?')[0].toUpperCase()
                 )}
               </div>
-              <div className="bg-white/[0.05] backdrop-blur-sm border border-white/[0.08] rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-1.5">
+              <div className="bg-[#1E2344] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
                 {[0, 150, 300].map((delay, j) => (
                   <span
                     key={j}
@@ -473,43 +452,40 @@ export default function ChatPage() {
             </div>
           )}
 
-          <div id="msg-bottom" />
+          {/* Invisible element at bottom — scroll target */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* ---- INPUT ---- */}
-      <footer className="flex-shrink-0 bg-[#060B1E]/80 backdrop-blur-2xl border-t border-white/[0.06] p-3 sm:p-4">
-        <div className="max-w-3xl mx-auto flex items-end gap-3">
-          <div className="flex-1 relative group">
-            <div className="absolute inset-0 rounded-[1.25rem] bg-gradient-to-r from-[#1B4FFF]/10 via-[#1B4FFF]/5 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-lg pointer-events-none" />
-            <textarea
-              ref={textareaRef}
-              value={newMsg}
-              onChange={e => {
-                const v = e.target.value
-                if (v.length <= 1000) setNewMsg(v)
-                broadcastTyping()
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Shkruaj mesazh..."
-              rows={1}
-              className="relative w-full bg-white/[0.04] border border-white/[0.08] rounded-[1.25rem] px-4 py-3 text-white placeholder:text-white/25 text-sm resize-none focus:outline-none focus:border-[#1B4FFF]/25 focus:bg-white/[0.06] transition-all duration-300"
-              style={{ minHeight: '46px', maxHeight: '120px' }}
-              onInput={e => {
-                const el = e.currentTarget
-                el.style.height = 'auto'
-                el.style.height = Math.min(el.scrollHeight, 120) + 'px'
-              }}
-            />
-          </div>
+      <footer className="flex-shrink-0 bg-[#060B1E] border-t border-white/[0.08] px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            value={newMsg}
+            onChange={e => {
+              const v = e.target.value
+              if (v.length <= 1000) setNewMsg(v)
+              broadcastTyping()
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Shkruaj mesazh..."
+            rows={1}
+            className="flex-1 bg-white/[0.08] border border-white/[0.12] rounded-2xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 resize-none min-h-[40px] max-h-[100px] focus:border-[#1B4FFF]/40 focus:outline-none focus:bg-white/[0.1] transition-all duration-200"
+            onInput={e => {
+              const el = e.currentTarget
+              el.style.height = 'auto'
+              el.style.height = Math.min(el.scrollHeight, 100) + 'px'
+            }}
+          />
           <div className="flex flex-col items-center gap-0.5">
             <button
               type="button"
               onClick={sendMessage}
               disabled={!newMsg.trim()}
-              className="w-[46px] h-[46px] bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] hover:from-[#1F5AFF] hover:to-[#5B4AFF] disabled:from-white/[0.08] disabled:to-white/[0.08] rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-95 shadow-lg shadow-[#1B4FFF]/20 hover:shadow-[#1B4FFF]/30 disabled:shadow-none group"
+              className="w-10 h-10 bg-[#1B4FFF] hover:bg-[#1640CC] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
             >
-              <SendHorizonal className={`h-5 w-5 transition-all duration-200 ${newMsg.trim() ? 'text-white group-hover:scale-110 group-hover:rotate-12' : 'text-white/20'}`} />
+              <SendHorizonal className="h-4 w-4 text-white" />
             </button>
             {newMsg.length > 800 && (
               <span className={`text-[10px] font-medium transition-colors ${newMsg.length >= 1000 ? 'text-red-400' : 'text-white/25'}`}>
@@ -533,14 +509,10 @@ export default function ChatPage() {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateX(-8px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); border-radius: 999px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.08); }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
         .animate-fade-in { animation: fadeSlideUp 0.3s ease-out; }
       `}</style>
     </div>
