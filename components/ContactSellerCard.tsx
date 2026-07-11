@@ -125,57 +125,52 @@ export default function ContactSellerCard({
 
       {/* Contact buttons */}
       <div className="space-y-3">
-        {isLoggedIn ? (
-          <>
-            {seller.phone ? (
-              <>
-                <a
-                  href={`tel:${seller.phone}`}
-                  className="w-full bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#1B4FFF]/25 hover:shadow-[#1B4FFF]/40 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Phone className="h-5 w-5" />
-                  {seller.phone}
-                </a>
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 hover:border-[#25D366]/50 py-3 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  WhatsApp
-                </a>
-              </>
-            ) : (
-              <p className="text-sm text-white/50 text-center py-2">
-                Shitësi nuk ka numër telefoni të regjistruar.
-              </p>
-            )}
-            {/* Message button — only if NOT own listing */}
-            {!isOwnListing && (
-              <button
-                type="button"
-                onClick={handleMessage}
-                className="w-full bg-white/6 border border-white/12 text-white/80 hover:bg-white/10 hover:border-white/25 hover:text-white py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <MessagesSquare className="h-5 w-5" />
-                Dërgo mesazh
-              </button>
-            )}
-          </>
-        ) : (
+        {/* Phone & WhatsApp — always visible */}
+        {seller.phone ? (
           <>
             <a
-              href={loginUrl}
+              href={`tel:${seller.phone}`}
               className="w-full bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#1B4FFF]/25 hover:shadow-[#1B4FFF]/40 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-5 w-5" />
-              Kyçu për të parë numrin
+              {seller.phone}
             </a>
-            <p className="text-xs text-white/40 text-center px-2">
-              Kyçu për të kontaktuar shitësin dhe parë numrin e telefonit
-            </p>
+            <a
+              href={whatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 hover:border-[#25D366]/50 py-3 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <MessageCircle className="h-5 w-5" />
+              WhatsApp
+            </a>
           </>
+        ) : (
+          <p className="text-sm text-white/50 text-center py-2">
+            Shitësi nuk ka numër telefoni të regjistruar.
+          </p>
+        )}
+
+        {/* Direct message — gated behind login */}
+        {isLoggedIn ? (
+          !isOwnListing && (
+            <button
+              type="button"
+              onClick={handleMessage}
+              className="w-full bg-white/6 border border-white/12 text-white/80 hover:bg-white/10 hover:border-white/25 hover:text-white py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <MessagesSquare className="h-5 w-5" />
+              Dërgo mesazh
+            </button>
+          )
+        ) : (
+          <a
+            href={loginUrl}
+            className="w-full bg-white/6 border border-white/12 text-white/50 hover:bg-white/10 hover:border-white/25 hover:text-white/80 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer text-sm"
+          >
+            <MessagesSquare className="h-5 w-5" />
+            Kyçu për të kontaktuar direkt me personin
+          </a>
         )}
       </div>
 
