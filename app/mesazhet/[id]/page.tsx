@@ -420,7 +420,7 @@ export default function ChatPage() {
                 )}
 
                 <div
-                  className={`max-w-[75%] md:max-w-[60%] px-3.5 py-1.5 text-sm leading-relaxed ${
+                  className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
                       ? 'bg-[#1B4FFF] text-white rounded-2xl rounded-br-md'
                       : 'bg-[#1E2344] text-white/90 rounded-2xl rounded-bl-md'
@@ -428,7 +428,7 @@ export default function ChatPage() {
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-white/40 text-right">
+                    <span className="text-[9px] text-white/30 text-right">
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
