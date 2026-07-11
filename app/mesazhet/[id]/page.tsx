@@ -92,9 +92,6 @@ export default function ChatPage() {
 
   // ---- Load conversation + messages ----
   useEffect(() => {
-    // Notify Navbar IMMEDIATELY so badge clears before any DB round-trip
-    window.dispatchEvent(new CustomEvent('messages-read'))
-
     const supabase = supabaseRef.current
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -141,6 +138,9 @@ export default function ChatPage() {
           setMessages(ms)
           const unreadIds = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).map(m => m.id)
           if (unreadIds.length > 0) {
+            // Optimistic: tell Navbar how many messages are about to be marked read
+            // so it can subtract from the badge IMMEDIATELY, before the DB round-trip
+            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadIds.length } }))
             supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then(() => {
               window.dispatchEvent(new CustomEvent('messages-read'))
             })
@@ -181,6 +181,8 @@ export default function ChatPage() {
             return [...prev, msg]
           })
           if (msg.sender_id !== userId) {
+            // Optimistic: tell Navbar 1 message is being marked read right now
+            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: 1 } }))
             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {
               window.dispatchEvent(new CustomEvent('messages-read'))
             })

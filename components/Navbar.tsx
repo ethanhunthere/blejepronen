@@ -103,7 +103,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     }
 
     // ---- Belt-and-suspenders: custom event from chat page ----
-    const onMessagesRead = () => {
+    // When detail.count is provided, optimistically subtract from the badge
+    // immediately so it clears before the DB round-trip. Then fetch the
+    // authoritative count.
+    const onMessagesRead = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { count?: number } | undefined
+      const n = detail?.count
+      if (typeof n === 'number' && n > 0) {
+        setUnreadCount(prev => Math.max(0, prev - n))
+      }
       const id = userIdRef.current
       if (id) fetchUnreadCount(id)
     }
