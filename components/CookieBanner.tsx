@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 const CONSENT_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
@@ -19,10 +19,17 @@ function notifyConsentChanged() {
 }
 
 function CookieBanner() {
-  const [show, setShow] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return !window.localStorage.getItem('cookie-consent')
-  })
+  const [show, setShow] = useState(false)
+
+  // Reading localStorage here (instead of in the useState initializer) keeps
+  // the server and client's first render identical, avoiding a hydration
+  // mismatch — this component would otherwise render nothing on the server
+  // but a full banner on the client's first pass.
+  useEffect(() => {
+    if (!window.localStorage.getItem('cookie-consent')) {
+      setShow(true)
+    }
+  }, [])
 
   const accept = () => {
     localStorage.setItem('cookie-consent', 'accepted')

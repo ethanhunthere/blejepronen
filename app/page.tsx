@@ -36,8 +36,6 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#0A0F2E]">
-      <link rel="preload" as="image" href="/pristinalandscape.webp" type="image/webp" />
-
       {/* Hero — photorealistic Pristina background */}
       <section aria-label="Hero section" className="relative overflow-hidden min-h-screen flex flex-col">
         {/* Background photo with Ken Burns zoom */}
