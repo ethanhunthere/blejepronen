@@ -68,6 +68,11 @@ function ListingsContent() {
   const isInitialSync = useRef(true)
   const supabase = createClient()
 
+  // Clear all URL search params on mount so filters reset on refresh/reload.
+  useEffect(() => {
+    router.replace('/listings', { scroll: false })
+  }, [])
+
   // Sync filter state to the URL so searches and filters are shareable.
   useEffect(() => {
     if (isInitialSync.current) {
