@@ -66,12 +66,12 @@ export default function ListingImageGallery({
     <>
       <div id="listing-gallery" className="relative">
         {/* Desktop grid */}
-        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-2xl overflow-hidden bg-[#111936]">
+        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-3xl overflow-hidden bg-[#111936]">
           {/* Main left image */}
           <button
             type="button"
             onClick={() => openFullscreen(0)}
-            className="relative row-span-2 group overflow-hidden focus:outline-none"
+            className="relative row-span-2 group overflow-hidden focus:outline-none cursor-pointer"
             aria-label="Foto kryesore"
           >
             <Image
@@ -79,7 +79,7 @@ export default function ListingImageGallery({
               alt={`${title} – foto 1`}
               fill
               priority
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              className="object-cover transition-all duration-500 group-hover:brightness-95"
               sizes="(max-width: 1024px) 60vw, 55vw"
             />
           </button>
@@ -89,7 +89,7 @@ export default function ListingImageGallery({
             <button
               type="button"
               onClick={() => openFullscreen(1)}
-              className={`relative group overflow-hidden focus:outline-none ${
+              className={`relative group overflow-hidden focus:outline-none cursor-pointer ${
                 !normalized[2] ? 'row-span-2' : ''
               }`}
               aria-label="Foto 2"
@@ -98,7 +98,7 @@ export default function ListingImageGallery({
                 src={normalized[1]}
                 alt={`${title} – foto 2`}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                className="object-cover transition-all duration-300 group-hover:brightness-90"
                 sizes="(max-width: 1024px) 40vw, 35vw"
               />
             </button>
@@ -109,14 +109,14 @@ export default function ListingImageGallery({
             <button
               type="button"
               onClick={() => openFullscreen(2)}
-              className="relative group overflow-hidden focus:outline-none"
+              className="relative group overflow-hidden focus:outline-none cursor-pointer"
               aria-label="Foto 3"
             >
               <Image
                 src={normalized[2]}
                 alt={`${title} – foto 3`}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                className="object-cover transition-all duration-300 group-hover:brightness-90"
                 sizes="(max-width: 1024px) 40vw, 35vw"
               />
               {total > 3 && (
@@ -145,7 +145,7 @@ export default function ListingImageGallery({
           <button
             type="button"
             onClick={() => openFullscreen(0)}
-            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 text-white text-sm font-medium backdrop-blur-sm transition-colors"
+            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white border border-white/20 hover:border-white/40 text-sm font-semibold transition-all duration-200 shadow-lg"
           >
             <Images className="h-4 w-4" />
             Shiko të gjitha {total} foto

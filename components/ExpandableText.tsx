@@ -16,14 +16,14 @@ export default function ExpandableText({ text, maxLength = 300 }: ExpandableText
 
   return (
     <div>
-      <p className="text-white/80 leading-relaxed whitespace-pre-line">
+      <p className="text-white/70 leading-relaxed text-base whitespace-pre-line">
         {displayText}
       </p>
       {shouldTruncate && (
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-[#4d7cff] hover:text-white text-sm font-medium transition-colors"
+          className="mt-2 text-[#4D7CFF] hover:text-[#1B4FFF] text-sm font-medium transition-colors"
         >
           {expanded ? 'Lexo më pak' : 'Lexo më shumë'}
         </button>
