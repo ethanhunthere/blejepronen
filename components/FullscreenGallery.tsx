@@ -128,7 +128,7 @@ export default function FullscreenGallery({
 
       {/* Thumbnails */}
       {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto px-4 py-4 bg-black/80 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto px-4 py-4 bg-black/80 scrollbar-hide justify-center">
           {images.map((img, idx) => (
             <button
               key={idx}
