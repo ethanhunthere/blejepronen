@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Plus, User, LogOut, Menu, X, MessageCircle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -28,8 +28,28 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const userIdRef = useRef<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(_supabaseClient)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
-  const pathname = usePathname()
+
+  // ---- Single source of truth for unread count queries ----
+  const fetchUnreadCount = useCallback(async (uid: string) => {
+    const { data: convs } = await supabaseRef.current
+      .from('conversations')
+      .select('id')
+      .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+    if (!convs || convs.length === 0) {
+      setUnreadCount(0)
+      return
+    }
+    const convIds = convs.map(c => c.id)
+    const { count } = await supabaseRef.current
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .eq('is_read', false)
+      .neq('sender_id', uid)
+    setUnreadCount(count || 0)
+  }, [])
 
   useEffect(() => {
     const supabase = supabaseRef.current
@@ -53,29 +73,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       })
     }
 
-    // ---- fetchUnreadCount: pure query + state update, no side effects ----
-    const fetchUnreadCount = async (uid: string) => {
-      const { data: convs } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
-      if (!convs || convs.length === 0) {
-        setUnreadCount(0)
-        return
-      }
-      const convIds = convs.map(c => c.id)
-      const { count } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .in('conversation_id', convIds)
-        .eq('is_read', false)
-        .neq('sender_id', uid)
-      setUnreadCount(count || 0)
+    // ---- debouncedFetch: prevents rapid-fire DB queries from Realtime events ----
+    const debouncedFetch = (uid: string) => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = setTimeout(() => fetchUnreadCount(uid), 400)
     }
 
     // ---- Set up Realtime channel ONCE per user session ----
     const setupRealtimeChannel = (uid: string) => {
-      // Tear down any existing channel first
       if (realtimeChannelRef.current) {
         realtimeChannelRef.current.unsubscribe()
         realtimeChannelRef.current = null
@@ -87,7 +92,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           { event: 'INSERT', schema: 'public', table: 'messages' },
           () => {
             const id = userIdRef.current
-            if (id) fetchUnreadCount(id)
+            if (id) debouncedFetch(id)
           }
         )
         .on(
@@ -95,7 +100,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           { event: 'UPDATE', schema: 'public', table: 'messages' },
           () => {
             const id = userIdRef.current
-            if (id) fetchUnreadCount(id)
+            // Debounce UPDATE events: when the chat page does UPDATE is_read=true,
+            // the Realtime event fires immediately post-commit. A short debounce
+            // coalesces multiple rapid UPDATEs into one authoritative fetch.
+            if (id) debouncedFetch(id)
           }
         )
         .subscribe()
@@ -104,14 +112,20 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
     // ---- Belt-and-suspenders: custom event from chat page ----
     // When detail.count is provided, optimistically subtract from the badge
-    // immediately so it clears before the DB round-trip. Then fetch the
-    // authoritative count.
+    // IMMEDIATELY — no DB round-trip. The Realtime UPDATE event (which fires
+    // post-commit) will do the authoritative re-fetch.
+    //
+    // Without a count: post-DB-update dispatch. DB has committed, safe to fetch.
     const onMessagesRead = (e: Event) => {
       const detail = (e as CustomEvent).detail as { count?: number } | undefined
       const n = detail?.count
       if (typeof n === 'number' && n > 0) {
+        // Optimistic subtraction — NO DB fetch. The Realtime UPDATE event
+        // fires post-commit and handles the authoritative count.
         setUnreadCount(prev => Math.max(0, prev - n))
+        return
       }
+      // No count = post-DB-update. Safe to fetch from committed state.
       const id = userIdRef.current
       if (id) fetchUnreadCount(id)
     }
@@ -184,34 +198,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('messages-read', onMessagesRead)
     }
-  }, [router])
-
-  // Re-fetch unread count on every navigation (catches route changes to conversations)
-  useEffect(() => {
-    const id = userIdRef.current
-    if (id && pathname) {
-      const supabase = supabaseRef.current
-      const fetchUnreadCount = async (uid: string) => {
-        const { data: convs } = await supabase
-          .from('conversations')
-          .select('id')
-          .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
-        if (!convs || convs.length === 0) {
-          setUnreadCount(0)
-          return
-        }
-        const convIds = convs.map(c => c.id)
-        const { count } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .in('conversation_id', convIds)
-          .eq('is_read', false)
-          .neq('sender_id', uid)
-        setUnreadCount(count || 0)
-      }
-      fetchUnreadCount(id)
-    }
-  }, [pathname])
+  }, [router, fetchUnreadCount])
 
   // Close dropdown on outside click
   useEffect(() => {
