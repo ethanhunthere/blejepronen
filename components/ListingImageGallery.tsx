@@ -45,6 +45,13 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [hasImages, images.length])
 
+  // Scroll to top when the listing detail page mounts so the gallery is visible.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [])
+
   if (!hasImages) {
     return (
       <div className="bg-white/5 flex flex-col items-center justify-center h-80 rounded-2xl border border-white/10 text-gray-500">
