@@ -50,7 +50,8 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
   // detail page mounts (below the back-link area).
   useEffect(() => {
     if (typeof window !== 'undefined' && containerRef.current) {
-      window.scrollTo({ top: containerRef.current.offsetTop, behavior: 'instant' })
+      const rect = containerRef.current.getBoundingClientRect()
+      window.scrollTo({ top: rect.top + window.scrollY, behavior: 'instant' })
     }
   }, [])
 
