@@ -1,4 +1,4 @@
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
+import { createPublicSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -21,11 +21,8 @@ interface ListingDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-interface PublicProfile {
-  first_name: string
-  last_name: string
-  phone: string | null
-  avatar_url: string | null
+interface ListingWithProfile extends Listing {
+  profiles: { first_name: string; last_name: string; phone: string | null; avatar_url: string | null } | null
 }
 
 interface ListingMetadata {
@@ -36,42 +33,57 @@ interface ListingMetadata {
   images: string[] | null
 }
 
+// Lightweight metadata query used only by generateMetadata.
+// It runs in parallel with the page component and uses the cookie-less
+// public client so it works during static generation.
+async function getListingMetadata(id: string): Promise<ListingMetadata | null> {
+  const supabase = createPublicSupabaseClient()
+  const { data, error } = await supabase
+    .from('listings')
+    .select('title,description,price,city,images')
+    .eq('id', id)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !data) return null
+  return data as unknown as ListingMetadata
+}
+
+// Full listing query, including the seller profile join. Service-role is used
+// so the public detail page can read seller names/phones despite RLS.
 async function getListing(id: string) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url)'
     )
     .eq('id', id)
     .eq('is_active', true)
     .single()
 }
 
-async function getPublicProfile(userId: string): Promise<PublicProfile | null> {
-  try {
-    const supabase = await createAdminSupabaseClient()
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('first_name,last_name,phone,avatar_url')
-      .eq('id', userId)
-      .single()
-    if (error || !data) return null
-    return data
-  } catch {
-    return null
-  }
+// Pre-build the 20 most recent listings at deploy time. The rest are still
+// available via dynamic fallback and benefit from the 1-hour ISR cache.
+export async function generateStaticParams() {
+  const supabase = createPublicSupabaseClient()
+  const { data } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return (data || []).map(listing => ({ id: listing.id }))
 }
 
 export async function generateMetadata({ params }: ListingDetailPageProps): Promise<Metadata> {
   const { id } = await params
-  const { data, error } = await getListing(id)
+  const listing = await getListingMetadata(id)
 
-  if (error || !data) {
+  if (!listing) {
     return { title: 'Listim | Bleje Banesën' }
   }
-
-  const listing = data as unknown as ListingMetadata
 
   return {
     title: `${listing.title} – ${listing.city} | Bleje Banesën`,
@@ -96,11 +108,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     throw new Error(`Failed to load listing: ${error.message}`)
   }
 
-  const listing = (data as unknown as Listing | null) ?? null
+  const listing = (data as unknown as ListingWithProfile | null) ?? null
 
   if (!listing) notFound()
-
-  const seller = await getPublicProfile(listing.user_id)
 
   const conditionLabels: Record<string, string> = {
     'e-re': 'E re',
@@ -231,7 +241,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               <div className="border-t border-white/10 pt-4 mb-4">
                 <p className="text-sm text-gray-400 mb-1">Shitësi</p>
                 <p className="font-semibold text-white">
-                  {seller?.first_name} {seller?.last_name}
+                  {listing.profiles?.first_name} {listing.profiles?.last_name}
                 </p>
               </div>
 

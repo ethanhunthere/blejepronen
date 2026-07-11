@@ -219,7 +219,9 @@ export function createPublicSupabaseClient(): SupabaseClient {
 export async function createAdminSupabaseClient(): Promise<SupabaseClient> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!serviceRoleKey) {
-    return createServerSupabaseClient()
+    // Fall back to a cookie-less public client so build-time static generation
+    // (e.g. generateStaticParams) does not fail when cookies are unavailable.
+    return createPublicSupabaseClient()
   }
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
