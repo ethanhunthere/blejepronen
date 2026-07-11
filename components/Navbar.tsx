@@ -225,7 +225,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           <div className="flex items-center min-w-0">
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/listings" className="font-medium text-white hover:text-white/80 transition-colors 2xl:text-base">
+              <Link href="/listings" className="relative font-medium tracking-wide text-white hover:text-white transition-all duration-300 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300 2xl:text-base">
                 Shiko banesat
               </Link>
               {user === undefined ? (
@@ -234,13 +234,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/40 hover:border-white/80 hover:bg-white/15 transition-all duration-300 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-colors cursor-pointer shadow-lg shadow-[#1B4FFF]/25"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold text-[#0A0F2E] bg-white hover:bg-white/90 transition-all duration-300 cursor-pointer shadow-lg shadow-white/10"
                   >
                     Regjistrohu
                   </a>
@@ -250,7 +250,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white text-[#1B4FFF] hover:bg-white/90 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 backdrop-blur-sm transition-all cursor-pointer text-white"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -386,13 +386,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         {/* Mobile Menu */}
         {menuOpen && (
           <div id="mobile-menu" className="lg:hidden border-t border-white/10 bg-[#0A0F2E] py-4 space-y-3">
-            <Link href="/listings" className="block text-white/90 hover:text-white font-medium py-3">
+            <Link href="/listings" className="relative inline-block text-white/90 hover:text-white font-medium tracking-wide py-3 transition-all duration-300 after:content-[''] after:absolute after:bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300">
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-colors cursor-pointer shadow-lg shadow-[#1B4FFF]/25">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/40 hover:border-white/80 hover:bg-white/15 transition-all duration-300 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-bold text-[#0A0F2E] bg-white hover:bg-white/90 transition-all duration-300 cursor-pointer shadow-lg shadow-white/10">Regjistrohu</a>
               </div>
             ) : (
               <>

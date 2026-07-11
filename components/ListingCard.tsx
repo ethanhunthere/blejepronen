@@ -27,13 +27,13 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className={`group h-full flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:bg-white/15 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 ${
+      <div className={`group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/25 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/40 ${
         listing.type === 'shitje'
           ? 'bg-white/10 border border-white/20'
           : 'bg-[#0D1F3C] border border-blue-500/20'
       }`}>
         {/* Image */}
-        <div className="relative h-52 bg-white/5 flex-shrink-0">
+        <div className="relative h-52 bg-white/5 flex-shrink-0 overflow-hidden">
           {mainImage ? (
             <Image
               src={mainImage}
@@ -41,15 +41,17 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
               fill
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-cover"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : null}
+          {/* Gradient overlay at bottom of image */}
+          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
           <div className="absolute top-3 left-3">
             <Badge
               className={
                 listing.type === 'shitje'
-                  ? 'bg-[#1B4FFF]/80 text-white border border-[#1B4FFF]/30'
-                  : 'bg-emerald-500/70 text-white border border-emerald-400/30'
+                  ? 'bg-[#1B4FFF] text-white font-semibold border border-[#1B4FFF]/30'
+                  : 'bg-emerald-500/80 text-white font-semibold border border-emerald-400/30'
               }
             >
               {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
@@ -71,7 +73,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
             {listing.title}
           </h3>
 
-          <p className="text-white font-bold text-2xl mb-3">
+          <p className="text-[#4D7CFF] font-bold text-2xl mb-3">
             {formatPrice(listing.price)}
             {listing.type === 'qira' && <span className="text-sm font-normal text-white/50">/muaj</span>}
           </p>
