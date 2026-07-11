@@ -570,6 +570,7 @@ export default function PostoBanesePage() {
                 <select
                   id="city"
                   name="city"
+                  style={{ colorScheme: 'dark' }}
                   className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                   value={formData.city}
                   onChange={handleChange}
@@ -586,6 +587,7 @@ export default function PostoBanesePage() {
                 <select
                   id="neighborhood"
                   name="neighborhood"
+                  style={{ colorScheme: 'dark' }}
                   className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF] disabled:opacity-50 disabled:cursor-not-allowed"
                   value={formData.neighborhood}
                   onChange={handleChange}
@@ -607,6 +609,7 @@ export default function PostoBanesePage() {
               <select
                 id="rooms"
                 name="rooms"
+                style={{ colorScheme: 'dark' }}
                 className="mt-1 w-full h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
                 value={formData.rooms}
                 onChange={handleChange}
