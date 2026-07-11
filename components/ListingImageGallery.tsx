@@ -12,6 +12,7 @@ interface ListingImageGalleryProps {
 export default function ListingImageGallery({ images, title }: ListingImageGalleryProps) {
   const [currentImage, setCurrentImage] = useState(0)
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const containerRef = useRef<HTMLDivElement>(null)
   const hasImages = !!images && images.length > 0
 
   const goPrev = () =>
@@ -45,10 +46,11 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [hasImages, images.length])
 
-  // Scroll to top when the listing detail page mounts so the gallery is visible.
+  // Scroll so the gallery starts at the top of the viewport when the listing
+  // detail page mounts (below the back-link area).
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 85, behavior: 'instant' })
+    if (typeof window !== 'undefined' && containerRef.current) {
+      window.scrollTo({ top: containerRef.current.offsetTop, behavior: 'instant' })
     }
   }, [])
 
@@ -66,7 +68,7 @@ export default function ListingImageGallery({ images, title }: ListingImageGalle
   const showThumbnails = images.length > 1
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="space-y-4">
       <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-[#111936]">
         <Image
           src={images[currentImage]}
