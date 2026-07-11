@@ -20,7 +20,7 @@ import ContactSellerCard from '@/components/ContactSellerCard'
 import MobileContactBar from '@/components/MobileContactBar'
 import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 

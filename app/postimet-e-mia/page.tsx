@@ -16,6 +16,7 @@ export default function PostimetEMiaPage() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [now] = useState(() => Date.now())
+  const [userId, setUserId] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -44,6 +45,7 @@ export default function PostimetEMiaPage() {
         router.push('/login')
         return
       }
+      setUserId(user.id)
       await fetchListings(user.id)
     }
 
@@ -73,22 +75,24 @@ export default function PostimetEMiaPage() {
     toast.success(newStatus ? 'Listimi u aktivizua.' : 'Listimi u çaktivizua.')
   }
 
-  const softDelete = async (listing: Listing) => {
+  const deleteListing = async (listing: Listing) => {
+    if (!userId) return
+
     const { error } = await supabase
       .from('listings')
-      .update({ is_active: false })
+      .delete()
       .eq('id', listing.id)
+      .eq('user_id', userId)
 
     if (error) {
-      console.error('Soft delete error:', error)
+      console.error('Delete listing error:', error)
       toast.error('Gabim gjatë fshirjes së listimit.')
       return
     }
 
-    setListings(prev =>
-      prev.map(item => (item.id === listing.id ? { ...item, is_active: false } : item))
-    )
-    toast.success('Listimi u fshi.')
+    // Remove from local state immediately
+    setListings(prev => prev.filter(l => l.id !== listing.id))
+    toast.success('Banesa u fshi me sukses.')
   }
 
   const total = listings.length
@@ -198,7 +202,7 @@ export default function PostimetEMiaPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => softDelete(listing)}
+                      onClick={() => deleteListing(listing)}
                       className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-red-500/10 border border-red-500/20 rounded-lg text-xs font-medium text-red-400 transition-colors cursor-pointer"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
