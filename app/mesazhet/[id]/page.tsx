@@ -92,6 +92,9 @@ export default function ChatPage() {
 
   // ---- Load conversation + messages ----
   useEffect(() => {
+    // Notify Navbar IMMEDIATELY so badge clears before any DB round-trip
+    window.dispatchEvent(new CustomEvent('messages-read'))
+
     const supabase = supabaseRef.current
 
     supabase.auth.getSession().then(({ data: { session } }) => {

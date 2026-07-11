@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Plus, User, LogOut, Menu, X, MessageCircle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -29,6 +29,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(_supabaseClient)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const supabase = supabaseRef.current
@@ -176,6 +177,33 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       window.removeEventListener('messages-read', onMessagesRead)
     }
   }, [router])
+
+  // Re-fetch unread count on every navigation (catches route changes to conversations)
+  useEffect(() => {
+    const id = userIdRef.current
+    if (id && pathname) {
+      const supabase = supabaseRef.current
+      const fetchUnreadCount = async (uid: string) => {
+        const { data: convs } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+        if (!convs || convs.length === 0) {
+          setUnreadCount(0)
+          return
+        }
+        const convIds = convs.map(c => c.id)
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('conversation_id', convIds)
+          .eq('is_read', false)
+          .neq('sender_id', uid)
+        setUnreadCount(count || 0)
+      }
+      fetchUnreadCount(id)
+    }
+  }, [pathname])
 
   // Close dropdown on outside click
   useEffect(() => {
