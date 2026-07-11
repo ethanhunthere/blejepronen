@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Camera, CheckCircle2, Mail, Phone, Calendar, Loader2, AlertTriangle } from 'lucide-react'
 import type { Profile } from '@/lib/supabase'
+import { revalidateSellerListings } from '@/app/actions'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -62,6 +63,9 @@ export default function ProfilePage() {
 
     if (err) { setError('Gabim gjatë ruajtjes.'); setSaving(false); return }
     setProfile(prev => prev ? { ...prev, ...formData } : prev)
+    // Bust the ISR cache on all of this seller's listing pages so
+    // visitors immediately see the updated phone / name / avatar.
+    revalidateSellerListings(user.id)
     setSuccess(true)
     setEditMode(false)
     setTimeout(() => setSuccess(false), 3000)
@@ -109,6 +113,7 @@ export default function ProfilePage() {
       if (updateError) throw updateError
 
       setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev)
+      revalidateSellerListings(user.id)
     } catch {
       setError('Ngarkimi i fotos dështoi. Provo përsëri.')
     } finally {
