@@ -133,12 +133,21 @@ export default function ChatPage() {
         .then(({ data: msgs }) => {
           const ms = (msgs || []) as MessageRow[]
           setMessages(ms)
-          const unreadIds = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).map(m => m.id)
-          if (unreadIds.length > 0) {
-            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadIds.length } }))
-            supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then(() => {
-              window.dispatchEvent(new CustomEvent('messages-read'))
-            })
+          const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).length
+          if (unreadCount > 0) {
+            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadCount } }))
+            supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('conversation_id', conversationId)
+              .neq('sender_id', session.user.id)
+              .eq('is_read', false)
+              .then(({ error }) => {
+                if (error) {
+                  console.error('Failed to mark messages as read:', error)
+                }
+                window.dispatchEvent(new Event('messages-read'))
+              })
           }
           // Auto-scroll to bottom after initial load
           setTimeout(() => scrollToBottom(false), 50)
@@ -174,8 +183,11 @@ export default function ChatPage() {
           setTimeout(() => scrollToBottom(true), 50)
           if (msg.sender_id !== userId) {
             window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: 1 } }))
-            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {
-              window.dispatchEvent(new CustomEvent('messages-read'))
+            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(({ error }) => {
+              if (error) {
+                console.error('Failed to mark message as read:', error)
+              }
+              window.dispatchEvent(new Event('messages-read'))
             })
           }
         }
@@ -408,15 +420,15 @@ export default function ChatPage() {
                 )}
 
                 <div
-                  className={`max-w-[75%] md:max-w-[60%] px-3.5 py-2 text-sm leading-relaxed ${
+                  className={`max-w-[75%] md:max-w-[60%] px-3.5 py-1.5 text-sm leading-relaxed ${
                     isMine
                       ? 'bg-[#1B4FFF] text-white rounded-2xl rounded-br-md'
                       : 'bg-[#1E2344] text-white/90 rounded-2xl rounded-bl-md'
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  <div className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}>
-                    <span className={`text-[10px] font-medium ${isMine ? 'text-white/50' : 'text-white/30'}`}>
+                  <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-white/40 text-right">
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
