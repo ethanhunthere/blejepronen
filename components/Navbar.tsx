@@ -52,16 +52,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       })
     }
 
-    const setCurrentUser = (user: SupabaseUser | null) => {
-      setUser(user)
-      currentUserId = user?.id ?? null
-      userIdRef.current = user?.id ?? null
-      if (user) {
-        loadProfile(user.id)
-        fetchUnreadCount(user.id)
-      }
-    }
-
+    // ---- fetchUnreadCount: pure query + state update, no side effects ----
     const fetchUnreadCount = async (uid: string) => {
       const { data: convs } = await supabase
         .from('conversations')
@@ -79,10 +70,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         .eq('is_read', false)
         .neq('sender_id', uid)
       setUnreadCount(count || 0)
+    }
 
-      // Set up realtime subscription for unread count updates.
-      // Listen to ALL message INSERT/UPDATE events (unfiltered) so the
-      // badge updates immediately when messages are marked as read.
+    // ---- Set up Realtime channel ONCE per user session ----
+    const setupRealtimeChannel = (uid: string) => {
+      // Tear down any existing channel first
       if (realtimeChannelRef.current) {
         realtimeChannelRef.current.unsubscribe()
         realtimeChannelRef.current = null
@@ -107,6 +99,23 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         )
         .subscribe()
       realtimeChannelRef.current = ch
+    }
+
+    // ---- Belt-and-suspenders: custom event from chat page ----
+    const onMessagesRead = () => {
+      const id = userIdRef.current
+      if (id) fetchUnreadCount(id)
+    }
+
+    const setCurrentUser = (user: SupabaseUser | null) => {
+      setUser(user)
+      currentUserId = user?.id ?? null
+      userIdRef.current = user?.id ?? null
+      if (user) {
+        loadProfile(user.id)
+        setupRealtimeChannel(user.id)
+        fetchUnreadCount(user.id)
+      }
     }
 
     const handleVisibilityChange = () => {
@@ -155,6 +164,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     )
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('messages-read', onMessagesRead)
 
     return () => {
       subscription.unsubscribe()
@@ -163,6 +173,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         realtimeChannelRef.current = null
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('messages-read', onMessagesRead)
     }
   }, [router])
 

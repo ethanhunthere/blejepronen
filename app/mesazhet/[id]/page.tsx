@@ -138,7 +138,9 @@ export default function ChatPage() {
           setMessages(ms)
           const unreadIds = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).map(m => m.id)
           if (unreadIds.length > 0) {
-            supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then(() => {})
+            supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then(() => {
+              window.dispatchEvent(new CustomEvent('messages-read'))
+            })
           }
         })
     })
@@ -176,7 +178,9 @@ export default function ChatPage() {
             return [...prev, msg]
           })
           if (msg.sender_id !== userId) {
-            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {})
+            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(() => {
+              window.dispatchEvent(new CustomEvent('messages-read'))
+            })
           }
         }
       )
