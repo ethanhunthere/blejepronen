@@ -6,8 +6,7 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
-import { Input } from '@/components/ui/input'
-import { Search, SlidersHorizontal, X, Loader2, CheckCircle2 } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 
 const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
@@ -164,17 +163,21 @@ function ListingsContent() {
       <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Banesat në shitje dhe me qira</h1>
-          <p className="text-gray-400">Gjej banesën e përsosur për ty</p>
+          <span className="inline-block text-xs bg-[#1B4FFF]/20 text-[#4D7CFF] border border-[#1B4FFF]/30 rounded-full px-3 py-1 mb-3">
+            🏠 Të gjitha listimet
+          </span>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
+          <p className="text-white/50 text-base">Gjej banesën e përsosur për ty</p>
         </div>
 
         {/* Search + Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-            <Input
+          <div className="relative flex-1 min-w-0 group shadow-xl shadow-black/20 rounded-xl border border-white/15 focus-within:border-[#1B4FFF]/50 transition-colors duration-300 bg-white/6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+            <input
+              type="text"
               placeholder="Kërko sipas banesës, adresës, qytetit..."
-              className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+              className="w-full h-13 py-3.5 pl-11 pr-4 bg-transparent text-white placeholder:text-white/30 outline-none rounded-xl text-sm"
               value={searchInput}
               onChange={(e) => {
                 const value = e.target.value
@@ -189,7 +192,7 @@ function ListingsContent() {
           <div className="flex gap-3">
             <button
               type="button"
-              className="h-11 px-5 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] whitespace-nowrap rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+              className="h-13 px-5 bg-white/8 border border-white/15 hover:border-white/30 hover:bg-white/12 text-white font-medium rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
               onClick={() => setShowFilters(!showFilters)}
             >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -201,7 +204,7 @@ function ListingsContent() {
             )}
           </button>
           {hasActiveFilters && (
-            <button type="button" onClick={clearFilters} className="h-11 px-5 border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer">
+            <button type="button" onClick={clearFilters} className="h-13 px-4 text-white/50 hover:text-white/80 transition-colors font-medium inline-flex items-center justify-center cursor-pointer whitespace-nowrap">
               <X className="h-4 w-4 mr-1" />
               Pastro
             </button>
@@ -211,13 +214,13 @@ function ListingsContent() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-[#111936] rounded-2xl border border-white/10 p-6 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-[#060B1E] border border-white/10 rounded-2xl p-5 mb-6 shadow-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label htmlFor="filter-city" className="text-sm font-medium text-gray-400 mb-2 block">Qyteti</label>
+              <label htmlFor="filter-city" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Qyteti</label>
               <select
                 id="filter-city"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.city}
                 onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, neighborhood: '' }))}
               >
@@ -230,12 +233,12 @@ function ListingsContent() {
 
             {/* Neighborhood */}
             <div>
-              <label htmlFor="filter-neighborhood" className="text-sm font-medium text-gray-400 mb-2 block">Lagjja</label>
-              <Input
+              <label htmlFor="filter-neighborhood" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lagjja</label>
+              <input
                 id="filter-neighborhood"
                 type="text"
                 placeholder="p.sh. Dardania"
-                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white placeholder:text-white/30 rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.neighborhood}
                 onChange={(e) => setFilters(prev => ({ ...prev, neighborhood: e.target.value }))}
               />
@@ -243,10 +246,10 @@ function ListingsContent() {
 
             {/* Type */}
             <div>
-              <label htmlFor="filter-type" className="text-sm font-medium text-gray-400 mb-2 block">Lloji</label>
+              <label htmlFor="filter-type" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lloji</label>
               <select
                 id="filter-type"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
               >
@@ -258,12 +261,12 @@ function ListingsContent() {
 
             {/* Min Price */}
             <div>
-              <label htmlFor="filter-min-price" className="text-sm font-medium text-gray-400 mb-2 block">Çmimi min (€)</label>
-              <Input
+              <label htmlFor="filter-min-price" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Çmimi min (€)</label>
+              <input
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white placeholder:text-white/30 rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -271,12 +274,12 @@ function ListingsContent() {
 
             {/* Max Price */}
             <div>
-              <label htmlFor="filter-max-price" className="text-sm font-medium text-gray-400 mb-2 block">Çmimi max (€)</label>
-              <Input
+              <label htmlFor="filter-max-price" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Çmimi max (€)</label>
+              <input
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="min-h-11 h-11 text-sm bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white placeholder:text-white/30 rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -284,10 +287,10 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label htmlFor="filter-rooms" className="text-sm font-medium text-gray-400 mb-2 block">Dhoma</label>
+              <label htmlFor="filter-rooms" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Dhoma</label>
               <select
                 id="filter-rooms"
-                className="w-full min-h-11 h-11 px-3 rounded-lg border border-white/10 text-sm bg-[#111936] text-white focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]"
+                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
                 value={filters.rooms}
                 onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
               >
@@ -303,14 +306,17 @@ function ListingsContent() {
         {/* Agent Results */}
         {!fetchState.loading && agentResults.length > 0 && !filters.agentId && (
           <div className="mb-8">
-            <h2 className="text-white/60 text-sm font-medium mb-3">Agjentë & Shitës</h2>
+            <h2 className="text-white/70 text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Agjentë &amp; Shitës
+            </h2>
             <div className="space-y-3">
               {agentResults.map(agent => {
                 const initials = (agent.first_name?.[0] || '?').toUpperCase()
                 return (
                   <div
                     key={agent.id}
-                    className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4"
+                    className="bg-[#060B1E] border border-white/10 rounded-2xl p-4 flex items-center gap-4 hover:border-white/20 hover:bg-white/5 transition-all duration-200 cursor-pointer"
                   >
                     {agent.avatar_url ? (
                       <Image
@@ -318,23 +324,23 @@ function ListingsContent() {
                         alt={`Foto e ${agent.first_name || 'agjentit'}`}
                         width={56}
                         height={56}
-                        className="rounded-full object-cover border border-white/10"
+                        className="rounded-full object-cover border-2 border-[#1B4FFF]/30 w-14 h-14"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white font-bold">
+                      <div className="w-14 h-14 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white font-bold border-2 border-[#1B4FFF]/30">
                         {initials}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-white font-semibold truncate">
+                      <p className="text-white font-bold text-base truncate">
                         {agent.first_name} {agent.last_name}
                       </p>
                       {agent.email_verified && (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-0.5">
+                        <span className="inline-flex items-center gap-1 text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full mt-1">
                           ✓ E verifikuar
                         </span>
                       )}
-                      <p className="text-white/40 text-xs mt-0.5">
+                      <p className="text-white/40 text-xs mt-1">
                         Anëtar që {new Date(agent.created_at).toLocaleDateString('sq-AL', { month: 'long', year: 'numeric' })}
                       </p>
                     </div>
@@ -345,7 +351,7 @@ function ListingsContent() {
                         router.push(`/listings?agentId=${agent.id}`, { scroll: false })
                         setFilters(prev => ({ ...prev, search: '', agentId: agent.id }))
                       }}
-                      className="text-sm font-medium text-[#1B4FFF] hover:text-[#1640CC] whitespace-nowrap cursor-pointer"
+                      className="text-sm font-medium text-[#4D7CFF] hover:text-[#1B4FFF] whitespace-nowrap transition-colors cursor-pointer"
                     >
                       Shiko banesat →
                     </button>
@@ -359,7 +365,7 @@ function ListingsContent() {
         {/* Selected Agent */}
         {!fetchState.loading && filters.agentId && selectedAgent && (
           <div className="mb-8">
-            <div className="bg-white/8 border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="bg-[#060B1E] border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-xl">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 {selectedAgent.avatar_url ? (
                   <Image
@@ -367,19 +373,19 @@ function ListingsContent() {
                     alt={`Foto e ${selectedAgent.first_name || 'agjentit'}`}
                     width={64}
                     height={64}
-                    className="rounded-full object-cover border border-white/10"
+                    className="rounded-full object-cover border-2 border-[#1B4FFF]/30 w-16 h-16"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white text-xl font-bold">
+                  <div className="w-16 h-16 rounded-full bg-[#1B4FFF] flex items-center justify-center text-white text-xl font-bold border-2 border-[#1B4FFF]/30">
                     {(selectedAgent.first_name?.[0] || '?').toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="text-white font-semibold text-lg truncate">
+                  <h2 className="text-white font-bold text-lg truncate">
                     {selectedAgent.first_name} {selectedAgent.last_name}
                   </h2>
                   {selectedAgent.email_verified && (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-1">
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full mt-1">
                       <CheckCircle2 className="h-3 w-3" /> E verifikuar
                     </span>
                   )}
@@ -391,7 +397,7 @@ function ListingsContent() {
                   setFilters(prev => ({ ...prev, agentId: '' }))
                   router.push('/listings', { scroll: false })
                 }}
-                className="h-10 px-4 border-2 border-white text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+                className="h-10 px-4 bg-white/8 border border-white/15 hover:border-white/30 hover:bg-white/12 text-white font-medium rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="h-4 w-4 mr-1" />
                 Pastro filtrin e agjentit
@@ -404,42 +410,49 @@ function ListingsContent() {
         {fetchState.loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-[#111936] rounded-2xl overflow-hidden animate-pulse border border-white/10">
-                <div className="h-52 bg-gray-700" />
+              <div key={i} className="bg-[#060B1E] rounded-2xl overflow-hidden animate-pulse border border-white/10">
+                <div className="h-52 bg-white/5" />
                 <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-700 rounded w-3/4" />
-                  <div className="h-6 bg-gray-700 rounded w-1/2" />
-                  <div className="h-4 bg-gray-700 rounded w-full" />
+                  <div className="h-4 bg-white/8 rounded w-3/4" />
+                  <div className="h-6 bg-white/8 rounded w-1/2" />
+                  <div className="h-4 bg-white/8 rounded w-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : loadError ? (
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-xl font-semibold text-gray-200 mb-2">Diçka shkoi keq</h3>
-            <p className="text-gray-400 mb-6">Shërbimi është përkohësisht i padisponueshëm. Ju lutemi provoni përsëri.</p>
-            <button type="button" onClick={() => fetchListings(0)} className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-xl border-2 border-white bg-transparent px-5 font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer">Provo përsëri</button>
+            <div className="w-20 h-20 mx-auto mb-6 bg-white/5 border border-white/10 rounded-full flex items-center justify-center">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Shërbimi është i padisponueshëm</h3>
+            <p className="text-white/50 mb-6">Ju lutemi provoni përsëri më vonë.</p>
+            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center px-6 py-3 bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#1B4FFF]/25">Provo përsëri</button>
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">🏠</div>
-            <h3 className="text-xl font-semibold text-gray-200 mb-2">Nuk u gjetën banesa</h3>
-            <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
+            <div className="w-20 h-20 mx-auto mb-6 bg-white/5 border border-white/10 rounded-full flex items-center justify-center">
+              <span className="text-3xl">🏠</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Nuk u gjetën banesa</h3>
+            <p className="text-white/50 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-xl border-2 border-white bg-transparent px-5 font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer">Pastro filtrat</button>
+              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center px-6 py-3 bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#1B4FFF]/25">Pastro filtrat</button>
             )}
           </div>
         ) : (
           <>
-            <p aria-live="polite" className="text-sm text-gray-400 mb-4">{listings.length} banesa të gjetura</p>
+            <div className="mb-4">
+              <p aria-live="polite" className="text-white/40 text-sm">{listings.length} banesa të gjetura</p>
+              <div className="mt-3 border-t border-white/5" />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
               {listings.map((listing, index) => (
                 <ListingCard key={listing.id} listing={listing} priority={index < 4} />
               ))}
             </div>
             {fetchState.hasMore && !fetchState.loading && listings.length > 0 && (
-              <div className="text-center mt-10">
+              <div className="text-center mt-12">
                 <button
                   type="button"
                   onClick={() => {
@@ -447,7 +460,7 @@ function ListingsContent() {
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="w-full sm:w-auto px-6 h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+                  className="px-8 py-3 border border-white/15 hover:border-white/30 bg-white/5 hover:bg-white/8 text-white font-medium rounded-xl transition-all duration-200 mx-auto inline-flex items-center justify-center cursor-pointer"
                 >
                   Ngarko më shumë banesa
                 </button>
