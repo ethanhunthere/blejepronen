@@ -80,6 +80,7 @@ export default function ChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const supabaseRef = useRef(createClient())
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const scrollToBottom = useCallback((smooth = false) => {
     if (!containerRef.current) return
@@ -160,6 +161,16 @@ export default function ChatPage() {
         (payload: RealtimePostgresChangesPayload<MessageRow>) => {
           const msg = payload.new as MessageRow
           setMessages(prev => {
+            // Replace optimistic message (temp ID) with real DB message if it matches
+            const optimisticIdx = prev.findIndex(
+              m => m.id.startsWith('optimistic-') && m.sender_id === msg.sender_id && m.content === msg.content
+            )
+            if (optimisticIdx !== -1) {
+              const next = [...prev]
+              next[optimisticIdx] = msg
+              return next
+            }
+            // Deduplicate by real ID
             if (prev.some(m => m.id === msg.id)) return prev
             scrollToBottom(true)
             return [...prev, msg]
@@ -180,27 +191,44 @@ export default function ChatPage() {
         setConnected(status === 'SUBSCRIBED')
       })
 
+    channelRef.current = channel
+
     return () => {
       channel.unsubscribe()
+      channelRef.current = null
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     }
   }, [conversationId, userId, scrollToBottom])
 
   // ---- Typing broadcast ----
   const broadcastTyping = useCallback(() => {
-    supabaseRef.current.channel(`conversation:${conversationId}`).send({
+    channelRef.current?.send({
       type: 'broadcast',
       event: 'typing',
       payload: { userId },
     })
-  }, [conversationId, userId])
+  }, [userId])
 
-  // ---- Send message ----
+  // ---- Send message (optimistic) ----
   const sendMessage = async () => {
     const text = newMsg.trim()
     if (!text || !userId || text.length > 1000) return
 
     setNewMsg('')
+
+    // Optimistic: immediately show the message in the UI
+    const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const optimisticMsg: MessageRow = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_id: userId,
+      content: text,
+      created_at: new Date().toISOString(),
+      is_read: false,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
+    scrollToBottom(true)
+
     const supabase = supabaseRef.current
     const { error } = await supabase.from('messages').insert({
       conversation_id: conversationId,
@@ -209,7 +237,10 @@ export default function ChatPage() {
       is_read: false,
     })
 
-    if (!error) {
+    if (error) {
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempId))
+    } else {
       supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(() => {})
     }
     textareaRef.current?.focus()

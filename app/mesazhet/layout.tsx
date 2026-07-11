@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -54,6 +54,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const pathname = usePathname()
   const router = useRouter()
   const supabaseRef = { current: createClient() }
+  const userIdRef = useRef<string | null>(null)
   const isChatOpen = pathname !== '/mesazhet'
 
   const fetchConversations = useCallback(async (uid: string) => {
@@ -111,8 +112,10 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
     const supabase = supabaseRef.current
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user) { setLoading(false); return }
-      setUserId(session.user.id)
-      fetchConversations(session.user.id).then(() => setLoading(false))
+      const uid = session.user.id
+      setUserId(uid)
+      userIdRef.current = uid
+      fetchConversations(uid).then(() => setLoading(false))
     })
 
     // Realtime: listen for new messages across all conversations to keep list fresh
@@ -122,21 +125,22 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         () => {
-          // Refresh conversation list when any new message arrives
-          if (userId) fetchConversations(userId)
+          const uid = userIdRef.current
+          if (uid) fetchConversations(uid)
         }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'messages' },
         () => {
-          if (userId) fetchConversations(userId)
+          const uid = userIdRef.current
+          if (uid) fetchConversations(uid)
         }
       )
       .subscribe()
 
     return () => { channel.unsubscribe() }
-  }, [fetchConversations, userId])
+  }, [fetchConversations])
 
   const filteredConvs = search.trim()
     ? conversations.filter(
