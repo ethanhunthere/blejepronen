@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
-import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users, ChevronDown } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
@@ -33,6 +33,33 @@ function ListingsContent() {
     neighborhood: searchParams.get('neighborhood') || ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  // Close all custom dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        cityRef.current?.contains(target) ||
+        neighborhoodRef.current?.contains(target) ||
+        typeRef.current?.contains(target) ||
+        roomsRef.current?.contains(target)
+      ) return
+      setCityOpen(false)
+      setNeighborhoodOpen(false)
+      setTypeOpen(false)
+      setRoomsOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const [cityOpen, setCityOpen] = useState(false)
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false)
+  const [typeOpen, setTypeOpen] = useState(false)
+  const [roomsOpen, setRoomsOpen] = useState(false)
+  const cityRef = useRef<HTMLDivElement>(null)
+  const neighborhoodRef = useRef<HTMLDivElement>(null)
+  const typeRef = useRef<HTMLDivElement>(null)
+  const roomsRef = useRef<HTMLDivElement>(null)
   const [searchInput, setSearchInput] = useState(filters.search)
   const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
   const selectedAgent = useMemo(() => (filters.agentId ? agentMap[filters.agentId] ?? null : null), [agentMap, filters.agentId])
@@ -218,63 +245,127 @@ function ListingsContent() {
           <div className="bg-[#060B1E] border border-white/10 rounded-2xl p-5 mb-6 shadow-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label htmlFor="filter-city" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Qyteti</label>
-              <select
-                id="filter-city"
-                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
-                style={{ colorScheme: 'dark' }}
-                value={filters.city}
-                onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, neighborhood: '' }))}
-              >
-                <option value="">Të gjitha</option>
-                {CITIES.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
+              <label className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Qyteti</label>
+              <div className="relative" ref={cityRef}>
+                <button
+                  type="button"
+                  onClick={() => { setCityOpen(!cityOpen); setNeighborhoodOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
+                  className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm flex items-center justify-between transition-all"
+                >
+                  <span className={filters.city ? 'text-white' : 'text-white/40'}>{filters.city || 'Të gjitha'}</span>
+                  <ChevronDown className={`h-4 w-4 text-white/40 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {cityOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#0D1235] border border-white/15 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => { setFilters(prev => ({ ...prev, city: '', neighborhood: '' })); setCityOpen(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.city ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                    >
+                      Të gjitha
+                    </button>
+                    {CITIES.map(city => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => { setFilters(prev => ({ ...prev, city, neighborhood: '' })); setCityOpen(false) }}
+                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.city === city ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Neighborhood */}
             <div>
-              <label htmlFor="filter-neighborhood" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lagjja</label>
-              {filters.city ? (
-                <select
-                  id="filter-neighborhood"
-                  className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
-                  style={{ colorScheme: 'dark' }}
-                  value={filters.neighborhood}
-                  onChange={(e) => setFilters(prev => ({ ...prev, neighborhood: e.target.value }))}
-                >
-                  <option value="">Të gjitha lagjet</option>
-                  {(KOSOVO_LOCATIONS[filters.city] || []).map(neighborhood => (
-                    <option key={neighborhood} value={neighborhood}>{neighborhood}</option>
-                  ))}
-                </select>
-              ) : (
-                <select
-                  id="filter-neighborhood"
-                  disabled
-                  className="w-full h-11 px-3 bg-white/5 border border-white/8 text-white/30 rounded-xl text-sm cursor-not-allowed"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option>Zgjedh qytetin fillimisht</option>
-                </select>
-              )}
+              <label className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lagjja</label>
+              <div className="relative" ref={neighborhoodRef}>
+                {filters.city ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setNeighborhoodOpen(!neighborhoodOpen); setCityOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
+                      className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm flex items-center justify-between transition-all"
+                    >
+                      <span className={filters.neighborhood ? 'text-white' : 'text-white/40'}>{filters.neighborhood || 'Të gjitha lagjet'}</span>
+                      <ChevronDown className={`h-4 w-4 text-white/40 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {neighborhoodOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#0D1235] border border-white/15 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                        <button
+                          type="button"
+                          onClick={() => { setFilters(prev => ({ ...prev, neighborhood: '' })); setNeighborhoodOpen(false) }}
+                          className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.neighborhood ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                        >
+                          Të gjitha lagjet
+                        </button>
+                        {(KOSOVO_LOCATIONS[filters.city] || []).map(neighborhood => (
+                          <button
+                            key={neighborhood}
+                            type="button"
+                            onClick={() => { setFilters(prev => ({ ...prev, neighborhood })); setNeighborhoodOpen(false) }}
+                            className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.neighborhood === neighborhood ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                          >
+                            {neighborhood}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full h-11 px-3 bg-white/5 border border-white/8 text-white/30 rounded-xl text-sm flex items-center justify-between cursor-not-allowed"
+                  >
+                    <span>Zgjedh qytetin fillimisht</span>
+                    <ChevronDown className="h-4 w-4 text-white/20" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Type */}
             <div>
-              <label htmlFor="filter-type" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lloji</label>
-              <select
-                id="filter-type"
-                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
-                style={{ colorScheme: 'dark' }}
-                value={filters.type}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              >
-                <option value="">Të gjitha</option>
-                <option value="shitje">Shitje</option>
-                <option value="qira">Me qira</option>
-              </select>
+              <label className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Lloji</label>
+              <div className="relative" ref={typeRef}>
+                <button
+                  type="button"
+                  onClick={() => { setTypeOpen(!typeOpen); setCityOpen(false); setNeighborhoodOpen(false); setRoomsOpen(false) }}
+                  className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm flex items-center justify-between transition-all"
+                >
+                  <span className={filters.type ? 'text-white' : 'text-white/40'}>{filters.type === 'shitje' ? 'Shitje' : filters.type === 'qira' ? 'Me qira' : 'Të gjitha'}</span>
+                  <ChevronDown className={`h-4 w-4 text-white/40 transition-transform duration-200 ${typeOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {typeOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#0D1235] border border-white/15 rounded-xl shadow-xl z-50">
+                    <button
+                      type="button"
+                      onClick={() => { setFilters(prev => ({ ...prev, type: '' })); setTypeOpen(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.type ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                    >
+                      Të gjitha
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setFilters(prev => ({ ...prev, type: 'shitje' })); setTypeOpen(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.type === 'shitje' ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                    >
+                      Shitje
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setFilters(prev => ({ ...prev, type: 'qira' })); setTypeOpen(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.type === 'qira' ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                    >
+                      Me qira
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Min Price */}
@@ -305,19 +396,38 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label htmlFor="filter-rooms" className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Dhoma</label>
-              <select
-                id="filter-rooms"
-                className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm focus:border-[#1B4FFF]/50 focus:outline-none transition-all"
-                style={{ colorScheme: 'dark' }}
-                value={filters.rooms}
-                onChange={(e) => setFilters(prev => ({ ...prev, rooms: e.target.value }))}
-              >
-                <option value="">Të gjitha</option>
-                {[1,2,3,4,5].map(r => (
-                  <option key={r} value={r}>{r}+</option>
-                ))}
-              </select>
+              <label className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-2 block">Dhoma</label>
+              <div className="relative" ref={roomsRef}>
+                <button
+                  type="button"
+                  onClick={() => { setRoomsOpen(!roomsOpen); setCityOpen(false); setNeighborhoodOpen(false); setTypeOpen(false) }}
+                  className="w-full h-11 px-3 bg-white/8 border border-white/12 hover:border-white/25 text-white rounded-xl text-sm flex items-center justify-between transition-all"
+                >
+                  <span className={filters.rooms ? 'text-white' : 'text-white/40'}>{filters.rooms ? `${filters.rooms}+` : 'Të gjitha'}</span>
+                  <ChevronDown className={`h-4 w-4 text-white/40 transition-transform duration-200 ${roomsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {roomsOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#0D1235] border border-white/15 rounded-xl shadow-xl z-50">
+                    <button
+                      type="button"
+                      onClick={() => { setFilters(prev => ({ ...prev, rooms: '' })); setRoomsOpen(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.rooms ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                    >
+                      Të gjitha
+                    </button>
+                    {[1,2,3,4,5].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => { setFilters(prev => ({ ...prev, rooms: String(r) })); setRoomsOpen(false) }}
+                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.rooms === String(r) ? 'text-[#4D7CFF] bg-[#1B4FFF]/10' : 'text-white hover:bg-white/10'}`}
+                      >
+                        {r}+
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
