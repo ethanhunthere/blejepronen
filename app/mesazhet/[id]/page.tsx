@@ -353,11 +353,6 @@ export default function ChatPage() {
             />
           </Link>
         )}
-
-        {/* Connection status */}
-        <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-500 ${
-          connected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-white/20'
-        }`} />
       </header>
 
       {/* ---- MESSAGES ---- */}
