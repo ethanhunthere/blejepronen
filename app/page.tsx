@@ -35,13 +35,13 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      {/* Hero — search-first, Zillow-inspired */}
+      {/* Hero - search-first, Zillow-inspired */}
       <section
         aria-label="Hero section"
         className="relative overflow-hidden"
         style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, #F3F4F6 0%, #FFFFFF 60%)' }}
       >
-        <div className="relative z-20 py-20 md:py-28">
+        <div className="relative z-20 py-16 md:py-24">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-[40px] sm:text-[48px] md:text-[64px] font-extrabold tracking-tight text-[#111827] leading-[1.1]">
@@ -62,8 +62,8 @@ export default async function HomePage() {
                 />
               </div>
 
-              {/* City strip — horizontal scroll, Airbnb category style */}
-              <div className="flex items-center justify-center gap-2 mt-8 overflow-x-auto scrollbar-hide px-1">
+              {/* City strip - horizontal scroll, Airbnb category style */}
+              <div className="flex items-center justify-center gap-2 mt-10 overflow-x-auto scrollbar-hide px-1">
                 {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                   <Link
                     key={city}
