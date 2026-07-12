@@ -75,16 +75,20 @@ export default async function HomePage() {
                 ))}
               </div>
 
-              {/* Trust signals */}
-              <div className="flex items-center justify-center flex-wrap gap-2 mt-8">
-                {['30 ditë falas', 'Pa ndërmjetës', 'Kontakt direkt'].map((signal) => (
-                  <span
-                    key={signal}
-                    className="inline-flex items-center gap-1.5 bg-[#F9FAFB] text-[#6B7280] text-[12px] font-medium px-3 py-1.5 rounded-full"
-                  >
-                    <span className="text-[#1B4FFF]">✓</span> {signal}
-                  </span>
-                ))}
+              {/* CTA buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                <Link
+                  href="/listings"
+                  className="bg-[#1B4FFF] text-white font-semibold px-8 py-3 rounded-xl hover:bg-[#1440E8] shadow-sm transition-all duration-200"
+                >
+                  Shiko banesat
+                </Link>
+                <Link
+                  href="/posto-banese"
+                  className="border-2 border-[#1B4FFF] text-[#1B4FFF] font-semibold px-8 py-3 rounded-xl hover:bg-[#1B4FFF] hover:text-white transition-all duration-200"
+                >
+                  Posto banesën tënde
+                </Link>
               </div>
             </div>
           </div>
