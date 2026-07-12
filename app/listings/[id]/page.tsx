@@ -409,8 +409,8 @@ export default async function ListingDetailPage({
                 )}
               </div>
 
-              {/* Seller contact — phone + WhatsApp + direct message, visible on all screens */}
-              <div className="mt-5 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
+              {/* Seller contact — phone + WhatsApp + direct message. Desktop already has this in the sidebar ContactSellerCard. */}
+              <div className="mt-5 lg:hidden bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                 <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">
                   Kontakto shitësin
                 </p>
