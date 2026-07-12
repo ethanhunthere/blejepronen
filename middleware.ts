@@ -34,9 +34,14 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  const protectedRoutes = ['/posto-banese', '/profili', '/completo-profilin', '/postimet-e-mia', '/mesazhet']
+  const protectedRoutes = ['/posto-banese', '/completo-profilin', '/postimet-e-mia', '/mesazhet']
 
-  if (!session?.user && protectedRoutes.some(route => pathname.startsWith(route))) {
+  // /profili is protected (edit own profile), but /profili/[id] must stay public
+  const isProtected =
+    pathname === '/profili' ||
+    protectedRoutes.some(route => pathname.startsWith(route))
+
+  if (!session?.user && isProtected) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
