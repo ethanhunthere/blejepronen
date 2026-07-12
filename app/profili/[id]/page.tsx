@@ -56,18 +56,18 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   })
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
         <Link
           href="/listings"
-          className="inline-flex items-center text-white/40 hover:text-white/60 text-sm mb-8 transition-colors"
+          className="inline-flex items-center text-gray-400 hover:text-gray-600 text-sm mb-8 transition-colors"
         >
           ← Kthehu te banesat
         </Link>
 
         {/* Profile header */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-10">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8 mb-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <div className="w-20 h-20 rounded-full bg-[#1B4FFF] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
               {profile.avatar_url ? (
@@ -82,7 +82,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                <h1 className="text-2xl md:text-3xl font-bold text-[#1A1A2E]">
                   {profile.first_name} {profile.last_name}
                 </h1>
                 {profile.email_verified && (
@@ -91,7 +91,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                   </span>
                 )}
               </div>
-              <p className="text-white/50 text-sm flex items-center gap-1.5">
+              <p className="text-gray-400 text-sm flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
                 Anëtar që nga {memberSince}
               </p>
@@ -100,19 +100,19 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         </div>
 
         {/* Listings */}
-        <h2 className="text-xl font-bold text-white mb-6">
+        <h2 className="text-xl font-bold text-[#1A1A2E] mb-6">
           Banesat e {profile.first_name}
           {listings.length > 0 && (
-            <span className="text-white/40 font-normal ml-2">
+            <span className="text-gray-400 font-normal ml-2">
               ({listings.length})
             </span>
           )}
         </h2>
 
         {listings.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
-            <MapPin className="h-12 w-12 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40 text-lg">
+          <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-12 text-center">
+            <MapPin className="h-12 w-12 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 text-lg">
               Ky përdorues nuk ka banesa aktive.
             </p>
           </div>
