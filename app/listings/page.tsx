@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
-import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users, ChevronDown } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, ChevronDown } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
@@ -102,11 +103,24 @@ function ListingsContent() {
       const [{ data: listingData, error: listingError }, { data: profileData }] = await Promise.all([
         listingQuery,
         searchTerm && pageNum === 0 && !filters.agentId
-          ? supabase
-              .from('profiles_public')
-              .select('id,first_name,last_name,avatar_url,email_verified,created_at')
-              .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
-              .limit(20)
+          ? (() => {
+              const words = searchTerm.split(/\s+/).filter(Boolean)
+              let profileQuery = supabase
+                .from('profiles_public')
+                .select('id,first_name,last_name,avatar_url,email_verified,created_at')
+
+              if (words.length > 1) {
+                const [first, ...restWords] = words
+                const rest = restWords.join(' ')
+                profileQuery = profileQuery.or(
+                  `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,and(first_name.ilike.%${first}%,last_name.ilike.%${rest}%),and(first_name.ilike.%${rest}%,last_name.ilike.%${first}%)`
+                )
+              } else {
+                profileQuery = profileQuery.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+              }
+
+              return profileQuery.limit(20)
+            })()
           : Promise.resolve({ data: [] })
       ])
 
@@ -418,58 +432,51 @@ function ListingsContent() {
         {/* Agent Results */}
         {!fetchState.loading && agentResults.length > 0 && !filters.agentId && (
           <div className="mb-8">
-            <h2 className="text-gray-600 text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4" />
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
               Agjentë &amp; Shitës
             </h2>
-            <div className="space-y-3">
-              {agentResults.map(agent => {
-                const initials = (agent.first_name?.[0] || '?').toUpperCase()
-                return (
-                  <div
-                    key={agent.id}
-                    className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4 flex items-center gap-4 hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
-                  >
+            <div>
+              {agentResults.map(agent => (
+                <div
+                  key={agent.id}
+                  className="flex items-center gap-4 py-4 px-0 border-b border-gray-100 last:border-0"
+                >
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
                     {agent.avatar_url ? (
                       <Image
                         src={agent.avatar_url}
                         alt={`Foto e ${agent.first_name || 'agjentit'}`}
-                        width={56}
-                        height={56}
-                        className="rounded-full object-cover border-2 border-[#111827]/30 w-14 h-14"
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-[#111827] flex items-center justify-center text-white font-bold border-2 border-[#111827]/30">
-                        {initials}
+                      <div className="w-full h-full bg-gray-100 text-gray-600 font-semibold text-lg flex items-center justify-center">
+                        {(agent.first_name?.[0] || '?').toUpperCase()}
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[#1A1A2E] font-bold text-base truncate">
-                        {agent.first_name} {agent.last_name}
-                      </p>
-                      {agent.email_verified && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-0.5 rounded-full mt-1">
-                          ✓ E verifikuar
-                        </span>
-                      )}
-                      <p className="text-gray-400 text-xs mt-1">
-                        Anëtar që {new Date(agent.created_at).toLocaleDateString('sq-AL', { month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchInput('')
-                        router.push(`/listings?agentId=${agent.id}`, { scroll: false })
-                        setFilters(prev => ({ ...prev, search: '', agentId: agent.id }))
-                      }}
-                      className="text-sm font-medium text-[#111827] hover:text-[#1F2937] whitespace-nowrap transition-colors cursor-pointer"
-                    >
-                      Shiko banesat →
-                    </button>
                   </div>
-                )
-              })}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-[#111827] text-base truncate">
+                      {agent.first_name} {agent.last_name}
+                    </p>
+                    {agent.email_verified && (
+                      <p className="text-emerald-600 text-xs">✓ E verifikuar</p>
+                    )}
+                    <p className="text-gray-400 text-xs">
+                      Anëtar që nga {new Date(agent.created_at).getFullYear()}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/profili/${agent.id}`}
+                    className="text-sm text-[#111827] hover:underline font-medium whitespace-nowrap"
+                  >
+                    Shiko profilin →
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
         )}
