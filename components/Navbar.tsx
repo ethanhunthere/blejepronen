@@ -538,16 +538,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   )}
                 </button>
 
-                {/* Profili im */}
-                <button
-                  type="button"
-                  onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <User className="h-5 w-5 text-gray-400 shrink-0" />
-                  Profili im
-                </button>
-
                 {/* Banesat e mia */}
                 <button
                   type="button"
