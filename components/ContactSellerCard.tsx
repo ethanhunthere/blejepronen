@@ -104,7 +104,7 @@ export default function ContactSellerCard({
           className="h-4 w-4"
           fill={isFav ? 'currentColor' : 'none'}
         />
-        {isFav ? 'E ruajtur ♥' : 'Ruaj banesën'}
+        {isFav ? 'E ruajtur' : 'Ruaj banesën'}
       </button>
 
       <div className="border-t border-gray-100 my-4" />
