@@ -434,7 +434,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               )}
             </div>
 
-            {/* Mobile menu button */}
+            {/* Mobile menu button — single line morphs into X */}
             <button
               className="lg:hidden relative w-11 h-11 rounded-xl flex items-center justify-center bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer group"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -442,23 +442,17 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               aria-expanded={menuOpen}
             >
               <span className="sr-only">{menuOpen ? 'Mbyll menunë' : 'Hap menunë'}</span>
-              <span className="relative w-5 h-[14px] flex flex-col justify-between">
-                {/* Top bar */}
+              <span className="relative w-5 h-5 flex items-center justify-center">
+                {/* Primary line: always visible, rotates clockwise to \ */}
                 <span
-                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
-                    menuOpen ? 'translate-y-[6px] rotate-45' : ''
+                  className={`absolute h-[2.5px] w-5 rounded-full bg-[#374151] transition-all duration-400 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] ${
+                    menuOpen ? 'rotate-45' : 'rotate-0'
                   }`}
                 />
-                {/* Middle bar — fades out when open */}
+                {/* Ghost line: fades in from center as / completing the X */}
                 <span
-                  className={`block h-[2px] rounded-full bg-[#374151] origin-center transition-all duration-200 ease-out ${
-                    menuOpen ? 'w-0 opacity-0' : 'w-full opacity-100'
-                  }`}
-                />
-                {/* Bottom bar */}
-                <span
-                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
-                    menuOpen ? '-translate-y-[6px] -rotate-45' : ''
+                  className={`absolute h-[2.5px] w-5 rounded-full bg-[#374151] transition-all duration-400 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] ${
+                    menuOpen ? 'opacity-100 -rotate-45 scale-100' : 'opacity-0 rotate-0 scale-0'
                   }`}
                 />
               </span>
