@@ -8,60 +8,85 @@ interface SearchBarProps {
   className?: string
   placeholder?: string
   buttonText?: string
-  hoverButtonTexts?: string[]
+  hoverWords?: string[]
 }
 
-const DEFAULT_HOVER_BUTTON_TEXTS = [
-  'Kërko Banesë',
-  'Kërko Agjent',
-  'Kërko Kompani',
-  'Kërko Adresë',
-]
+const DEFAULT_HOVER_WORDS = ['Banesë', 'Agjent', 'Kompani', 'Adresë']
+
+type TypePhase = 'typing' | 'pausing' | 'deleting'
 
 function SearchBar({
   className = '',
   placeholder = 'Kërko banesë, agjent, kompani, adresë...',
   buttonText = 'Kërko Banesë',
-  hoverButtonTexts = DEFAULT_HOVER_BUTTON_TEXTS,
+  hoverWords = DEFAULT_HOVER_WORDS,
 }: SearchBarProps) {
   const [value, setValue] = useState('')
   const [isHovered, setIsHovered] = useState(false)
-  const [buttonIndex, setButtonIndex] = useState(0)
-  const [animating, setAnimating] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [typedWord, setTypedWord] = useState('')
+  const wordIndexRef = useRef(0)
+  const charIndexRef = useRef(0)
+  const phaseRef = useRef<TypePhase>('typing')
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
 
   const displayedButtonText = isHovered
-    ? hoverButtonTexts[buttonIndex]
+    ? `Kërko ${typedWord}`
     : buttonText
 
-  const cycleButtonText = useCallback(() => {
-    setAnimating(true)
-    setTimeout(() => {
-      setButtonIndex(prev => (prev + 1) % hoverButtonTexts.length)
-      setAnimating(false)
-    }, 200)
-  }, [hoverButtonTexts.length])
+  const runTypewriter = useCallback(() => {
+    const word = hoverWords[wordIndexRef.current]
+    const phase = phaseRef.current
+
+    if (phase === 'typing') {
+      if (charIndexRef.current < word.length) {
+        charIndexRef.current++
+        setTypedWord(word.slice(0, charIndexRef.current))
+        timerRef.current = setTimeout(runTypewriter, 80)
+      } else {
+        // Finished typing, pause before deleting
+        phaseRef.current = 'pausing'
+        timerRef.current = setTimeout(runTypewriter, 1800)
+      }
+    } else if (phase === 'pausing') {
+      phaseRef.current = 'deleting'
+      timerRef.current = setTimeout(runTypewriter, 50)
+    } else if (phase === 'deleting') {
+      if (charIndexRef.current > 0) {
+        charIndexRef.current--
+        setTypedWord(word.slice(0, charIndexRef.current))
+        timerRef.current = setTimeout(runTypewriter, 40)
+      } else {
+        // Move to next word
+        wordIndexRef.current = (wordIndexRef.current + 1) % hoverWords.length
+        phaseRef.current = 'typing'
+        charIndexRef.current = 0
+        timerRef.current = setTimeout(runTypewriter, 150)
+      }
+    }
+  }, [hoverWords])
 
   useEffect(() => {
     if (isHovered) {
-      intervalRef.current = setInterval(cycleButtonText, 2500)
+      wordIndexRef.current = 0
+      charIndexRef.current = 0
+      phaseRef.current = 'typing'
+      setTypedWord('')
+      timerRef.current = setTimeout(runTypewriter, 300)
+    } else {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+      setTypedWord('')
     }
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
       }
     }
-  }, [isHovered, cycleButtonText])
-
-  // Reset index when hover stops
-  useEffect(() => {
-    if (!isHovered) {
-      setButtonIndex(0)
-      setAnimating(false)
-    }
-  }, [isHovered])
+  }, [isHovered, runTypewriter])
 
   const handleSearch = () => {
     const trimmed = value.trim()
@@ -95,13 +120,12 @@ function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className={`flex-shrink-0 bg-[#111827] hover:bg-[#0A0A0A] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer min-w-[130px] text-center ${
-          animating
-            ? 'opacity-0 translate-y-1'
-            : 'opacity-100 translate-y-0'
-        }`}
+        className="flex-shrink-0 bg-[#111827] hover:bg-[#0A0A0A] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap"
       >
-        {displayedButtonText}
+        <span>{displayedButtonText}</span>
+        {isHovered && (
+          <span className="inline-block w-[1px] h-[14px] bg-white/60 ml-0.5 align-middle animate-pulse" />
+        )}
       </button>
     </div>
   )
