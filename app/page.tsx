@@ -69,7 +69,7 @@ export default async function HomePage() {
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="bg-white/15 hover:bg-white/25 border border-white/30 transition-all duration-200 font-medium text-white rounded-full px-4 py-1.5"
+                    className="bg-white border border-gray-300 shadow-sm transition-all duration-200 font-medium text-gray-700 rounded-full px-4 py-1.5 hover:border-[#1B4FFF] hover:text-[#1B4FFF]"
                   >
                     {city}
                   </Link>
@@ -86,7 +86,7 @@ export default async function HomePage() {
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-semibold border-2 border-white text-white hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-semibold border-2 border-[#1B4FFF] text-[#1B4FFF] bg-white hover:bg-[#1B4FFF] hover:text-white shadow-sm transition-all duration-300 cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
