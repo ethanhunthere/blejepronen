@@ -73,8 +73,6 @@ export default function PostimetEMiaPage() {
   }
 
   const total = listings.length
-  const activeCount = listings.filter(l => l.is_active).length
-  const inactiveCount = listings.filter(l => !l.is_active).length
 
   const getTrialStatus = (listing: Listing) => {
     if (!listing.free_trial_until) return null
@@ -123,18 +121,12 @@ export default function PostimetEMiaPage() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl">
-              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-[#1A1A2E]">{total}</p>
-                <p className="text-xs text-gray-400 mt-1">Gjithsej</p>
-              </div>
-              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-500">{activeCount}</p>
-                <p className="text-xs text-gray-400 mt-1">Aktive</p>
-              </div>
-              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-red-500">{inactiveCount}</p>
-                <p className="text-xs text-gray-400 mt-1">Joaktive</p>
+            <div className="mb-8">
+              <div className="inline-flex bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center min-w-[120px]">
+                <div>
+                  <p className="text-2xl font-bold text-[#1A1A2E]">{total}</p>
+                  <p className="text-xs text-gray-400 mt-1">Gjithsej</p>
+                </div>
               </div>
             </div>
 
