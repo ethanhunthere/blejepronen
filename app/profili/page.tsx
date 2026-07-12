@@ -64,7 +64,7 @@ export default function ProfilePage() {
     if (err) { setError('Gabim gjatë ruajtjes.'); setSaving(false); return }
     setProfile(prev => prev ? { ...prev, ...formData } : prev)
     // Bust ISR cache + client router cache so listing pages reflect the new
-    // phone / name immediately — even on client-side navigation.
+    // phone / name immediately - even on client-side navigation.
     try {
       await revalidateSellerListings(user.id)
     } catch (e) {

@@ -125,7 +125,7 @@ export default function ContactSellerCard({
 
       {/* Contact buttons */}
       <div className="space-y-3">
-        {/* Phone & WhatsApp — always visible */}
+        {/* Phone & WhatsApp - always visible */}
         {seller.phone ? (
           <>
             <a
@@ -151,7 +151,7 @@ export default function ContactSellerCard({
           </p>
         )}
 
-        {/* Direct message — gated behind login */}
+        {/* Direct message - gated behind login */}
         {isLoggedIn ? (
           !isOwnListing && (
             <button

@@ -42,7 +42,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
             />
           ) : null}
 
-          {/* Type badge — quiet, uncolored (Airbnb style) */}
+          {/* Type badge - quiet, uncolored (Airbnb style) */}
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center bg-white/90 backdrop-blur-sm text-[#111827] text-[11px] font-semibold px-2.5 py-1 rounded-full">
               {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}

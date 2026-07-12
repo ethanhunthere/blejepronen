@@ -23,7 +23,7 @@ function CookieBanner() {
 
   // Reading localStorage here (instead of in the useState initializer) keeps
   // the server and client's first render identical, avoiding a hydration
-  // mismatch — this component would otherwise render nothing on the server
+  // mismatch - this component would otherwise render nothing on the server
   // but a full banner on the client's first pass.
   useEffect(() => {
     if (!window.localStorage.getItem('cookie-consent')) {

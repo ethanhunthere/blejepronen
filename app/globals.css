@@ -342,7 +342,7 @@ textarea:focus-visible {
 }
 
 /* =========================================================
-   Type scale — 4px grid based
+   Type scale - 4px grid based
    ========================================================= */
 .text-display { font-size: 48px; line-height: 56px; font-weight: 800; letter-spacing: -0.02em; }
 .text-h1 { font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.01em; }
@@ -357,7 +357,7 @@ textarea:focus-visible {
 .transition-ui { transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); }
 .transition-slow { transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); }
 
-/* Card hover — Apple-style lift */
+/* Card hover - Apple-style lift */
 .card-hover {
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -368,7 +368,7 @@ textarea:focus-visible {
   box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
 }
 
-/* Focus ring — accessible */
+/* Focus ring - accessible */
 .focus-ring:focus-visible {
   outline: 2px solid #111827;
   outline-offset: 2px;

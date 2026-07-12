@@ -102,7 +102,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       realtimeChannelRef.current = ch
 
       // Dedicated channel: fires immediately when any message is marked as read.
-      // No debounce — the UPDATE has already committed, so fetchUnreadCount is safe.
+      // No debounce - the UPDATE has already committed, so fetchUnreadCount is safe.
       if (unreadChannelRef.current) {
         unreadChannelRef.current.unsubscribe()
         unreadChannelRef.current = null
@@ -334,7 +334,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     )}
                   </button>
 
-                  {/* Custom dropdown — no Base UI, no layout shifts */}
+                  {/* Custom dropdown - no Base UI, no layout shifts */}
                   <div className="relative flex-shrink-0" ref={dropdownRef}>
                     <button
                       type="button"

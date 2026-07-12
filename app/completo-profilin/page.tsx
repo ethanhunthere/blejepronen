@@ -69,7 +69,7 @@ export default function CompletoProfilinPage() {
         }
       }
 
-      // Check if profile is already complete — redirect home
+      // Check if profile is already complete - redirect home
       const { data: profile } = await supabase
         .from('profiles')
         .select('first_name, email_verified')
