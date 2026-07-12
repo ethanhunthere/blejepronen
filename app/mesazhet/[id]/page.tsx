@@ -135,7 +135,6 @@ export default function ChatPage() {
           setMessages(ms)
           const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).length
           if (unreadCount > 0) {
-            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadCount } }))
             supabase
               .from('messages')
               .update({ is_read: true })
@@ -146,7 +145,6 @@ export default function ChatPage() {
                 if (error) {
                   console.error('Failed to mark messages as read:', error)
                 }
-                window.dispatchEvent(new Event('messages-read'))
               })
           }
           // Auto-scroll to bottom after initial load
@@ -182,12 +180,10 @@ export default function ChatPage() {
           // Scroll to bottom on new message
           setTimeout(() => scrollToBottom(true), 50)
           if (msg.sender_id !== userId) {
-            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: 1 } }))
             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(({ error }) => {
               if (error) {
                 console.error('Failed to mark message as read:', error)
               }
-              window.dispatchEvent(new Event('messages-read'))
             })
           }
         }

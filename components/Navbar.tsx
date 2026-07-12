@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Plus, User, LogOut, Menu, X, MessageCircle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -30,6 +30,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const supabaseRef = useRef(_supabaseClient)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
+  const unreadChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
 
   // ---- Single source of truth for unread count queries ----
   const fetchUnreadCount = useCallback(async (uid: string) => {
@@ -95,39 +97,32 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             if (id) debouncedFetch(id)
           }
         )
+        .subscribe()
+      realtimeChannelRef.current = ch
+
+      // Dedicated channel: fires immediately when any message is marked as read.
+      // No debounce — the UPDATE has already committed, so fetchUnreadCount is safe.
+      if (unreadChannelRef.current) {
+        unreadChannelRef.current.unsubscribe()
+        unreadChannelRef.current = null
+      }
+      const uch = supabase
+        .channel('navbar-messages-watch')
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'messages' },
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: 'is_read=eq.true',
+          },
           () => {
             const id = userIdRef.current
-            // Debounce UPDATE events: when the chat page does UPDATE is_read=true,
-            // the Realtime event fires immediately post-commit. A short debounce
-            // coalesces multiple rapid UPDATEs into one authoritative fetch.
-            if (id) debouncedFetch(id)
+            if (id) fetchUnreadCount(id)
           }
         )
         .subscribe()
-      realtimeChannelRef.current = ch
-    }
-
-    // ---- Belt-and-suspenders: custom event from chat page ----
-    // When detail.count is provided, optimistically subtract from the badge
-    // IMMEDIATELY — no DB round-trip. The Realtime UPDATE event (which fires
-    // post-commit) will do the authoritative re-fetch.
-    //
-    // Without a count: post-DB-update dispatch. DB has committed, safe to fetch.
-    const onMessagesRead = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { count?: number } | undefined
-      const n = detail?.count
-      if (typeof n === 'number' && n > 0) {
-        // Optimistic subtraction — NO DB fetch. The Realtime UPDATE event
-        // fires post-commit and handles the authoritative count.
-        setUnreadCount(prev => Math.max(0, prev - n))
-        return
-      }
-      // No count = post-DB-update. Safe to fetch from committed state.
-      const id = userIdRef.current
-      if (id) fetchUnreadCount(id)
+      unreadChannelRef.current = uch
     }
 
     const setCurrentUser = (user: SupabaseUser | null) => {
@@ -166,6 +161,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             realtimeChannelRef.current.unsubscribe()
             realtimeChannelRef.current = null
           }
+          if (unreadChannelRef.current) {
+            unreadChannelRef.current.unsubscribe()
+            unreadChannelRef.current = null
+          }
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('sb-')) {
               localStorage.removeItem(key)
@@ -187,7 +186,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     )
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('messages-read', onMessagesRead)
 
     return () => {
       subscription.unsubscribe()
@@ -195,10 +193,21 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         realtimeChannelRef.current.unsubscribe()
         realtimeChannelRef.current = null
       }
+      if (unreadChannelRef.current) {
+        unreadChannelRef.current.unsubscribe()
+        unreadChannelRef.current = null
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('messages-read', onMessagesRead)
     }
   }, [router, fetchUnreadCount])
+
+  // ---- Re-fetch unread count when navigating into a chat ----
+  useEffect(() => {
+    if (pathname?.startsWith('/mesazhet/')) {
+      const uid = userIdRef.current
+      if (uid) fetchUnreadCount(uid)
+    }
+  }, [pathname, fetchUnreadCount])
 
   // Close dropdown on outside click
   useEffect(() => {
