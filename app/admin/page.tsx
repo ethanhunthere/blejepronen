@@ -53,7 +53,7 @@ export default async function AdminPage() {
             { label: 'Përdorues', value: typedProfiles.length },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-              <p className="text-3xl font-bold text-[#1B4FFF]">{stat.value}</p>
+              <p className="text-3xl font-bold text-[#111827]">{stat.value}</p>
               <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
             </div>
           ))}
@@ -93,7 +93,7 @@ export default async function AdminPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/listings/${listing.id}`} className="text-[#1B4FFF] hover:underline text-sm whitespace-nowrap">
+                      <Link href={`/listings/${listing.id}`} className="text-[#111827] hover:underline text-sm whitespace-nowrap">
                         Shiko →
                       </Link>
                     </td>
@@ -125,7 +125,7 @@ export default async function AdminPage() {
                     <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-[#1A1A2E]">
                       {profile.first_name} {profile.last_name}
                     </td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{profile.phone || '—'}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{profile.phone || '-'}</td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={profile.email_verified ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-yellow-50 text-yellow-600 border border-yellow-200'}>
                         {profile.email_verified ? 'Po' : 'Jo'}

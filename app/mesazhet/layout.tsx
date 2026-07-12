@@ -165,13 +165,13 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
         <div className="flex-shrink-0 px-5 py-5 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] flex items-center justify-center shadow-lg shadow-[#1B4FFF]/20">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111827] to-[#4D3CFF] flex items-center justify-center shadow-lg shadow-[#111827]/20">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <h1 className="text-lg font-bold text-[#1A1A2E] tracking-tight">Mesazhet</h1>
             </div>
             {totalUnread > 0 && (
-              <span className="bg-[#1B4FFF] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#1B4FFF]/30 animate-pulse"
+              <span className="bg-[#111827] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#111827]/30 animate-pulse"
                 style={{ animationDuration: '3s' }}>
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
@@ -179,13 +179,13 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           </div>
           {/* Search */}
           <div className="relative group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#1B4FFF]/60 transition-colors duration-300" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#111827]/60 transition-colors duration-300" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Kërko bisedë..."
-              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:border-[#1B4FFF]/30 transition-all duration-300"
+              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:border-[#111827]/30 transition-all duration-300"
             />
           </div>
         </div>
@@ -207,8 +207,8 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           ) : filteredConvs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full px-6 py-16 text-center">
               <div className="relative mb-5">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#1B4FFF]/10 to-transparent flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1B4FFF]/20 to-transparent flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#111827]/10 to-transparent flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#111827]/20 to-transparent flex items-center justify-center">
                     <MessageCircle className="h-6 w-6 text-gray-200" />
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                     onClick={() => router.push(`/mesazhet/${conv.id}`)}
                     className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 group border-b border-gray-50 ${
                       isActive
-                        ? 'bg-[#1B4FFF]/5 border-l-2 border-l-[#1B4FFF]'
+                        ? 'bg-[#111827]/5 border-l-2 border-l-[#111827]'
                         : 'hover:bg-gray-50 hover:translate-x-[2px] border-l-2 border-l-transparent'
                     }`}
                   >
@@ -239,8 +239,8 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                     <div className="relative flex-shrink-0">
                       <div className={`w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-sm transition-all duration-300 ${
                         conv.otherUser?.avatar_url
-                          ? 'ring-2 ring-gray-100 group-hover:ring-[#1B4FFF]/30'
-                          : 'bg-gradient-to-br from-[#1B4FFF] to-[#4D3CFF] ring-2 ring-[#1B4FFF]/20 group-hover:ring-[#1B4FFF]/40'
+                          ? 'ring-2 ring-gray-100 group-hover:ring-[#111827]/30'
+                          : 'bg-gradient-to-br from-[#111827] to-[#4D3CFF] ring-2 ring-[#111827]/20 group-hover:ring-[#111827]/40'
                       }`}>
                         {conv.otherUser?.avatar_url ? (
                           <img
@@ -281,7 +281,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                           </p>
                         )}
                         {conv.unreadCount > 0 && (
-                          <span className="bg-[#1B4FFF] text-white text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center px-1.5 flex-shrink-0 shadow-md shadow-[#1B4FFF]/25"
+                          <span className="bg-[#111827] text-white text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center px-1.5 flex-shrink-0 shadow-md shadow-[#111827]/25"
                             style={{ animation: 'unreadPulse 2.5s ease-in-out infinite' }}>
                             {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                           </span>

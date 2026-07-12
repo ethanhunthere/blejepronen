@@ -97,7 +97,7 @@ export default function FullscreenGallery({
       <div className="relative flex-1 flex items-center justify-center">
         <Image
           src={images[current]}
-          alt={`${title} – foto ${current + 1}`}
+          alt={`${title} - foto ${current + 1}`}
           fill
           className="object-contain"
           sizes="100vw"
@@ -141,7 +141,7 @@ export default function FullscreenGallery({
             >
               <Image
                 src={img}
-                alt={`${title} – foto ${idx + 1}`}
+                alt={`${title} - foto ${idx + 1}`}
                 fill
                 className="object-cover"
                 sizes="80px"

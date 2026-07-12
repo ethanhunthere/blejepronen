@@ -119,7 +119,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke hyrë...' : 'Hyr'}
@@ -129,13 +129,13 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-2">
             <p className="text-sm text-gray-400 text-center">
-              <Link href="/forgot-password" className="text-[#1B4FFF] hover:underline font-medium">
+              <Link href="/forgot-password" className="text-[#111827] hover:underline font-medium">
                 Keni harruar fjalëkalimin?
               </Link>
             </p>
             <p className="text-sm text-gray-400 text-center">
               Nuk ke llogari?{' '}
-              <Link href="/register" className="text-[#1B4FFF] hover:underline font-medium">
+              <Link href="/register" className="text-[#111827] hover:underline font-medium">
                 Regjistrohu falas
               </Link>
             </p>

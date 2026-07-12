@@ -313,7 +313,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#1B4FFF] hover:bg-[#1440E8] shadow-sm transition-all duration-200 cursor-pointer text-white"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#111827] hover:bg-[#0A0A0A] shadow-sm transition-all duration-200 cursor-pointer text-white"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -339,7 +339,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none border border-gray-200"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#111827] text-white text-sm font-bold hover:bg-[#1F2937] transition-colors cursor-pointer flex-shrink-0 outline-none border border-gray-200"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -463,7 +463,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   {profile.avatarUrl ? (
                     <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="rounded-full object-cover shrink-0" />
                   ) : (
-                    <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold shrink-0">
+                    <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#111827] text-white text-sm font-bold shrink-0">
                       {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                     </span>
                   )}
@@ -474,14 +474,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="inline-flex items-center justify-center w-full rounded-lg bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center w-full rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Posto banesë
                 </button>
                 <button
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#1B4FFF] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#111827] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Mesazhet
@@ -493,7 +493,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#1B4FFF] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#111827] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <User className="h-4 w-4" />
                   Profili & Banesat e Mia

@@ -59,12 +59,12 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#1A1A2E] mb-3">7. Kontakti</h2>
             <p className="text-gray-600 leading-relaxed">
               Për pyetje rreth privatësisë, na kontaktoni në:{' '}
-              <a href="mailto:blejebanesen@gmail.com" className="text-[#1B4FFF] hover:underline">blejebanesen@gmail.com</a>
+              <a href="mailto:blejebanesen@gmail.com" className="text-[#111827] hover:underline">blejebanesen@gmail.com</a>
             </p>
           </section>
 
           <div className="border-t border-gray-100 pt-6 text-center">
-            <Link href="/" className="text-[#1B4FFF] hover:underline">← Kthehu në faqen kryesore</Link>
+            <Link href="/" className="text-[#111827] hover:underline">← Kthehu në faqen kryesore</Link>
           </div>
         </div>
       </div>

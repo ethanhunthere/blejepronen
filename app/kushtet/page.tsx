@@ -77,7 +77,7 @@ export default function TermsPage() {
           </section>
 
           <div className="border-t border-gray-100 pt-6 text-center">
-            <Link href="/" className="text-[#1B4FFF] hover:underline">← Kthehu në faqen kryesore</Link>
+            <Link href="/" className="text-[#111827] hover:underline">← Kthehu në faqen kryesore</Link>
           </div>
         </div>
       </div>

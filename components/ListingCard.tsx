@@ -60,7 +60,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
               <Heart className="h-5 w-5" />
             </button>
             {listing.is_featured && (
-              <span className="inline-flex items-center bg-[#1B4FFF] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
+              <span className="inline-flex items-center bg-[#111827] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
                 <Tag className="h-3 w-3 mr-1" />
                 Featured
               </span>

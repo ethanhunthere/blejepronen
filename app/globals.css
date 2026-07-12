@@ -50,16 +50,16 @@
 
 :root {
   /* Brand: Bleje Banesën */
-  --brand: #1b4fff;
+  --brand: #111827;
   --brand-foreground: #ffffff;
-  --brand-light: #eef2ff;
-  --brand-dark: #1438c4;
+  --brand-light: #F3F4F6;
+  --brand-dark: #0A0A0A;
 
   /* ---- Semantic design tokens ---- */
-  --color-brand: #1B4FFF;
-  --color-brand-hover: #1440E8;
-  --color-brand-light: #EEF2FF;
-  --color-brand-muted: rgba(27, 79, 255, 0.08);
+  --color-brand: #111827;
+  --color-brand-hover: #0A0A0A;
+  --color-brand-light: #F3F4F6;
+  --color-brand-muted: rgba(17, 24, 39, 0.08);
 
   --color-ink-primary: #111827;
   --color-ink-secondary: #374151;
@@ -88,13 +88,13 @@
   --card-foreground: #1a1a2e;
   --popover: #ffffff;
   --popover-foreground: #1a1a2e;
-  --primary: #1b4fff;
+  --primary: #111827;
   --primary-foreground: #ffffff;
   --secondary: #f5f7fa;
   --secondary-foreground: #1a1a2e;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
-  --accent: #eef2ff;
+  --accent: #F3F4F6;
   --accent-foreground: #1a1a2e;
   --destructive: #ef4444;
   --border: #e5e7eb;
@@ -117,17 +117,17 @@
 }
 
 .dark {
-  --brand: #4d7cff;
+  --brand: #374151;
   --brand-foreground: #0a0e1a;
-  --brand-light: #1a1f3a;
-  --brand-dark: #2d5ae0;
+  --brand-light: #1F2937;
+  --brand-dark: #0A0A0A;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #4d7cff;
+  --primary: #374151;
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -185,11 +185,11 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1B4FFF;
+  background: #111827;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1640CC;
+  background: #1F2937;
 }
 
 /* Base animate-on-scroll state */
@@ -319,7 +319,7 @@ html {
 
 /* Accessible focus styles */
 :focus-visible {
-  outline: 2px solid #1B4FFF;
+  outline: 2px solid #111827;
   outline-offset: 2px;
 }
 button:focus-visible,
@@ -327,7 +327,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #1B4FFF;
+  outline: 2px solid #111827;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -370,7 +370,7 @@ textarea:focus-visible {
 
 /* Focus ring — accessible */
 .focus-ring:focus-visible {
-  outline: 2px solid #1B4FFF;
+  outline: 2px solid #111827;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -407,7 +407,7 @@ button:active { transform: scale(0.98); }
 /* Input focus glow */
 input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(27, 79, 255, 0.12);
-  border-color: #1B4FFF !important;
+  border-color: #111827 !important;
 }
 
 /* Link underline animation */

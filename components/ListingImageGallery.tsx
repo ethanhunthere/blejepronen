@@ -76,7 +76,7 @@ export default function ListingImageGallery({
           >
             <Image
               src={normalized[0]}
-              alt={`${title} – foto 1`}
+              alt={`${title} - foto 1`}
               fill
               priority
               className="object-cover transition-all duration-500 group-hover:brightness-95"
@@ -96,7 +96,7 @@ export default function ListingImageGallery({
             >
               <Image
                 src={normalized[1]}
-                alt={`${title} – foto 2`}
+                alt={`${title} - foto 2`}
                 fill
                 className="object-cover transition-all duration-300 group-hover:brightness-90"
                 sizes="(max-width: 1024px) 40vw, 35vw"
@@ -114,7 +114,7 @@ export default function ListingImageGallery({
             >
               <Image
                 src={normalized[2]}
-                alt={`${title} – foto 3`}
+                alt={`${title} - foto 3`}
                 fill
                 className="object-cover transition-all duration-300 group-hover:brightness-90"
                 sizes="(max-width: 1024px) 40vw, 35vw"
@@ -129,7 +129,7 @@ export default function ListingImageGallery({
 
           {/* Badges */}
           <div className="absolute top-4 left-4 z-10">
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-[#1B4FFF] text-white shadow-lg">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-[#111827] text-white shadow-lg">
               {typeLabel}
             </span>
           </div>
@@ -156,7 +156,7 @@ export default function ListingImageGallery({
         <div className="md:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
           <Image
             src={normalized[current]}
-            alt={`${title} – foto ${current + 1}`}
+            alt={`${title} - foto ${current + 1}`}
             fill
             priority
             className="object-cover"
@@ -165,7 +165,7 @@ export default function ListingImageGallery({
 
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#1B4FFF] text-white">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#111827] text-white">
               {typeLabel}
             </span>
           </div>

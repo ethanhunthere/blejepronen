@@ -141,7 +141,7 @@ export default function ProfilePage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
+      <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
     </div>
   )
 
@@ -187,8 +187,8 @@ export default function ProfilePage() {
                   className="rounded-full object-cover border border-gray-200"
                 />
               ) : (
-                <div className="w-24 h-24 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-gray-100">
-                  <span className="text-4xl font-semibold text-[#1B4FFF]">{initials}</span>
+                <div className="w-24 h-24 bg-[#111827]/10 rounded-full flex items-center justify-center border border-gray-100">
+                  <span className="text-4xl font-semibold text-[#111827]">{initials}</span>
                 </div>
               )}
               <button
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-white hover:bg-[#1640CC] transition-colors cursor-pointer"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#111827] text-white flex items-center justify-center border-2 border-white hover:bg-[#1F2937] transition-colors cursor-pointer"
               >
                 {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
@@ -252,11 +252,11 @@ export default function ProfilePage() {
           </div>
 
           {!isVerified && (
-            <div className="mt-6 bg-[#1B4FFF]/10 border border-[#1B4FFF]/30 rounded-2xl p-5">
+            <div className="mt-6 bg-[#111827]/10 border border-[#111827]/30 rounded-2xl p-5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#1B4FFF]/20 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="h-5 w-5 text-[#1B4FFF]" />
+                  <div className="h-10 w-10 rounded-full bg-[#111827]/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-[#111827]" />
                   </div>
                   <p className="text-gray-700 text-sm">
                     Verifikoni llogarinë tuaj për të pasur qasje të plotë në platformë
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                 </div>
                 <Link
                   href="/completo-profilin"
-                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#111827] text-white hover:bg-[#1F2937] transition-colors whitespace-nowrap"
                 >
                   Verifiko tani →
                 </Link>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
                       <Button
                         type="submit"
                         disabled={saving}
-                        className="flex-1 h-11 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold cursor-pointer"
+                        className="flex-1 h-11 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold cursor-pointer"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                       </Button>

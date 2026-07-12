@@ -24,7 +24,7 @@ export default function RouteError({ error, reset }: RouteErrorProps) {
         </p>
         <Button
           onClick={reset}
-          className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white cursor-pointer"
+          className="bg-[#111827] hover:bg-[#1F2937] text-white cursor-pointer"
         >
           Provo përsëri
         </Button>

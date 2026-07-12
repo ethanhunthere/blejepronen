@@ -29,7 +29,7 @@ export default function ListingsError({
           Nuk mundëm të ngarkonim banesat. Ju lutemi provoni përsëri.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
+          <Button onClick={reset} className="bg-[#111827] hover:bg-[#1F2937] text-white">
             Provo përsëri
           </Button>
           <Link href="/">

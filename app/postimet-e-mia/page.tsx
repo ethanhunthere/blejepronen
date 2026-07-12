@@ -113,7 +113,7 @@ export default function PostimetEMiaPage() {
               Postoni banesën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-banese">
-              <Button className="h-11 px-6 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">
+              <Button className="h-11 px-6 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold">
                 Posto banesën tënde
               </Button>
             </Link>

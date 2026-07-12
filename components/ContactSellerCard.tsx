@@ -92,7 +92,7 @@ export default function ContactSellerCard({
       {/* Seller info */}
       <p className="text-gray-400 text-xs uppercase tracking-widest mb-3">Shitësi</p>
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-12 h-12 rounded-full bg-[#1B4FFF] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
+        <div className="w-12 h-12 rounded-full bg-[#111827] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
           {seller.avatarUrl ? (
             <img
               src={seller.avatarUrl}
@@ -116,7 +116,7 @@ export default function ContactSellerCard({
           </div>
           <a
             href={`/profili/${seller.userId}`}
-            className="text-xs text-[#1B4FFF] hover:text-[#1640CC] inline-flex items-center gap-1 transition-colors"
+            className="text-xs text-[#111827] hover:text-[#1F2937] inline-flex items-center gap-1 transition-colors"
           >
             Shiko profilin <ExternalLink className="h-3 w-3" />
           </a>
@@ -130,7 +130,7 @@ export default function ContactSellerCard({
           <>
             <a
               href={`tel:${seller.phone}`}
-              className="w-full bg-[#1B4FFF] hover:bg-[#1640CC] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#1B4FFF]/25 hover:shadow-[#1B4FFF]/40 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#111827] hover:bg-[#1F2937] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#111827]/25 hover:shadow-[#111827]/40 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-5 w-5" />
               {seller.phone}

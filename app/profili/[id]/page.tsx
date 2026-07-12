@@ -69,7 +69,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         {/* Profile header */}
         <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8 mb-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-[#1B4FFF] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
+            <div className="w-20 h-20 rounded-full bg-[#111827] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -87,7 +87,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                 </h1>
                 {profile.email_verified && (
                   <span title="I verifikuar">
-                    <ShieldCheck className="h-5 w-5 text-[#1B4FFF]" />
+                    <ShieldCheck className="h-5 w-5 text-[#111827]" />
                   </span>
                 )}
               </div>

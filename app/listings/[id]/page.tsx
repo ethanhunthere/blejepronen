@@ -174,7 +174,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${listing.title} – ${listing.city} | Bleje Banesën`,
+    title: `${listing.title} - ${listing.city} | Bleje Banesën`,
     description: listing.description?.slice(0, 155),
     openGraph: {
       title: listing.title,
@@ -329,12 +329,12 @@ export default async function ListingDetailPage({
                 <h1 className="text-2xl md:text-3xl font-black text-[#1A1A2E] tracking-tight leading-tight">
                   {listing.title}
                 </h1>
-                <span className="inline-flex bg-[#1B4FFF]/20 text-[#1B4FFF] border border-[#1B4FFF]/30 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap">
+                <span className="inline-flex bg-[#111827]/20 text-[#111827] border border-[#111827]/30 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap">
                   {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-gray-500 text-sm mt-2">
-                <MapPin className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                <MapPin className="h-4 w-4 text-[#111827] flex-shrink-0" />
                 <span>
                   {[listing.city, listing.neighborhood, listing.address]
                     .filter(Boolean)
@@ -351,30 +351,30 @@ export default async function ListingDetailPage({
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
-                    <BedDouble className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                    <BedDouble className="h-4 w-4 text-[#111827] flex-shrink-0" />
                     <span className="text-[#1A1A2E] font-semibold text-sm">{listing.rooms}</span>
                     <span className="text-gray-400 text-xs">dhoma</span>
                   </div>
                   <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
-                    <Maximize2 className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                    <Maximize2 className="h-4 w-4 text-[#111827] flex-shrink-0" />
                     <span className="text-[#1A1A2E] font-semibold text-sm">{listing.area_m2} m²</span>
                   </div>
                   {listing.floor && (
                     <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
-                      <Building2 className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <Building2 className="h-4 w-4 text-[#111827] flex-shrink-0" />
                       <span className="text-[#1A1A2E] font-semibold text-sm">{listing.floor}</span>
                       <span className="text-gray-400 text-xs">kati</span>
                     </div>
                   )}
                   {listing.apartment_type && (
                     <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
-                      <Home className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <Home className="h-4 w-4 text-[#111827] flex-shrink-0" />
                       <span className="text-[#1A1A2E] font-semibold text-sm">{listing.apartment_type}</span>
                     </div>
                   )}
                   {listing.condition && (
                     <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
-                      <Sparkles className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <Sparkles className="h-4 w-4 text-[#111827] flex-shrink-0" />
                       <span className="text-[#1A1A2E] font-semibold text-sm">
                         {conditionLabels[listing.condition] || listing.condition}
                       </span>
@@ -422,7 +422,7 @@ export default async function ListingDetailPage({
                   {listing.features.map(feature => (
                     <span
                       key={feature}
-                      className="inline-flex items-center gap-1.5 bg-[#1B4FFF]/8 border border-[#1B4FFF]/20 text-[#1B4FFF] hover:bg-[#1B4FFF]/15 rounded-full px-4 py-2 text-sm transition-all duration-200"
+                      className="inline-flex items-center gap-1.5 bg-[#111827]/8 border border-[#111827]/20 text-[#111827] hover:bg-[#111827]/15 rounded-full px-4 py-2 text-sm transition-all duration-200"
                     >
                       <span className="text-base">{featureIcon(feature)}</span>
                       {feature}
@@ -439,8 +439,8 @@ export default async function ListingDetailPage({
               </h2>
               <div className="bg-white border border-gray-100 rounded-2xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#1B4FFF]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <MapPin className="h-5 w-5 text-[#1B4FFF]" />
+                  <div className="w-10 h-10 rounded-full bg-[#111827]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <MapPin className="h-5 w-5 text-[#111827]" />
                   </div>
                   <div>
                     <p className="text-[#1A1A2E] font-semibold">
@@ -486,7 +486,7 @@ export default async function ListingDetailPage({
 
       {/* ====== SIMILAR LISTINGS ====== */}
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
-        <h2 className="text-xl md:text-2xl font-bold text-[#1A1A2E] border-l-4 border-[#1B4FFF] pl-3 mb-2">
+        <h2 className="text-xl md:text-2xl font-bold text-[#1A1A2E] border-l-4 border-[#111827] pl-3 mb-2">
           Banesa të ngjashme
         </h2>
         <p className="text-gray-400 text-sm mb-6">

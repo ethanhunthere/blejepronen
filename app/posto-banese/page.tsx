@@ -414,12 +414,12 @@ export default function PostoBanesePage() {
         {uploading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5F7FA]/90 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
-              <Loader2 className="h-10 w-10 animate-spin text-[#1B4FFF] mx-auto mb-4" />
+              <Loader2 className="h-10 w-10 animate-spin text-[#111827] mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-[#1A1A2E] mb-2">Duke postuar banesën...</h2>
               <p className="text-sm text-gray-500 mb-4">Ju lutemi mos e mbyllni faqen.</p>
               <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#1B4FFF] transition-all duration-300"
+                  className="h-full bg-[#111827] transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
@@ -441,7 +441,7 @@ export default function PostoBanesePage() {
             <div className="mt-3">
               <Link
                 href="/completo-profilin"
-                className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-[#1B4FFF] text-white hover:bg-[#1640CC] transition-colors"
+                className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-[#111827] text-white hover:bg-[#1F2937] transition-colors"
               >
                 Verifiko profilin
               </Link>
@@ -463,7 +463,7 @@ export default function PostoBanesePage() {
                   onClick={() => setFormData(prev => ({ ...prev, type: t }))}
                   className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
                     formData.type === t
-                      ? 'bg-[#1B4FFF] text-white border border-[#1B4FFF]'
+                      ? 'bg-[#111827] text-white border border-[#111827]'
                       : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
@@ -483,7 +483,7 @@ export default function PostoBanesePage() {
                 id="title"
                 name="title"
                 placeholder="p.sh. Banesë 3+1 në qendër të Prishtinës"
-                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#1B4FFF]/50"
+                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#111827]/50"
                 value={formData.title}
                 onChange={handleChange}
                 maxLength={MAX_TITLE_LENGTH}
@@ -498,7 +498,7 @@ export default function PostoBanesePage() {
                 id="description"
                 name="description"
                 placeholder="Përshkruaj banesën, lagjen, kushtet e shitjes..."
-                className="mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]/50 resize-none"
+                className="mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#111827]/50 resize-none"
                 value={formData.description}
                 onChange={handleChange}
                 maxLength={MAX_DESCRIPTION_LENGTH}
@@ -519,7 +519,7 @@ export default function PostoBanesePage() {
                     onClick={() => setFormData(prev => ({ ...prev, condition: c.value }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.condition === c.value
-                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
@@ -540,7 +540,7 @@ export default function PostoBanesePage() {
                   type="number"
                   step="100"
                   placeholder={formData.type === 'shitje' ? '85000' : '400'}
-                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#1B4FFF]/50"
+                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#111827]/50"
                   value={formData.price}
                   onChange={handleChange}
                   required
@@ -554,7 +554,7 @@ export default function PostoBanesePage() {
                   type="number"
                   min="1"
                   placeholder="75"
-                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#1B4FFF]/50"
+                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#111827]/50"
                   value={formData.area_m2}
                   onChange={handleChange}
                   required
@@ -567,7 +567,7 @@ export default function PostoBanesePage() {
                       onClick={() => setFormData(prev => ({ ...prev, area_m2: preset.value.toString() }))}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
                         formData.area_m2 === preset.value.toString()
-                          ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white'
+                          ? 'bg-[#111827] border border-[#111827] text-white'
                           : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                       }`}
                     >
@@ -585,7 +585,7 @@ export default function PostoBanesePage() {
                   id="city"
                   name="city"
                   style={{ colorScheme: 'light' }}
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]/50"
+                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#111827]/50"
                   value={formData.city}
                   onChange={handleChange}
                   required
@@ -602,7 +602,7 @@ export default function PostoBanesePage() {
                   id="neighborhood"
                   name="neighborhood"
                   style={{ colorScheme: 'light' }}
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#111827]/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   value={formData.neighborhood}
                   onChange={handleChange}
                   disabled={!formData.city}
@@ -624,7 +624,7 @@ export default function PostoBanesePage() {
                 id="rooms"
                 name="rooms"
                 style={{ colorScheme: 'light' }}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#1B4FFF]/50"
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#111827]/50"
                 value={formData.rooms}
                 onChange={handleChange}
                 required
@@ -642,7 +642,7 @@ export default function PostoBanesePage() {
                 id="address"
                 name="address"
                 placeholder="p.sh. Rruga Fehmi Agani"
-                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#1B4FFF]/50"
+                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#111827]/50"
                 value={formData.address}
                 onChange={handleChange}
                 required
@@ -665,7 +665,7 @@ export default function PostoBanesePage() {
                     onClick={() => setFormData(prev => ({ ...prev, floor: prev.floor === floor ? '' : floor }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.floor === floor
-                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
@@ -686,7 +686,7 @@ export default function PostoBanesePage() {
                     onClick={() => setFormData(prev => ({ ...prev, apartment_type: prev.apartment_type === type ? '' : type }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.apartment_type === type
-                        ? 'bg-[#1B4FFF] border border-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/20'
+                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
@@ -716,7 +716,7 @@ export default function PostoBanesePage() {
                       }
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                         selected
-                          ? 'bg-[#1B4FFF]/10 border border-[#1B4FFF]/40 text-[#1B4FFF]'
+                          ? 'bg-[#111827]/10 border border-[#111827]/40 text-[#111827]'
                           : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
                       }`}
                     >
@@ -734,7 +734,7 @@ export default function PostoBanesePage() {
             <p className="text-sm text-gray-500 mb-4">Shto deri në 10 foto. Foto e parë do të jetë kryesorja.</p>
 
             {/* Upload Zone */}
-            <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#1B4FFF] bg-gray-50 hover:bg-[#1B4FFF]/5 transition-all">
+            <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#111827] bg-gray-50 hover:bg-[#111827]/5 transition-all">
               <Upload className="h-8 w-8 text-gray-400 mb-2" />
               <span className="text-sm text-gray-500">Kliko për të ngarkuar foto</span>
               <span className="text-xs text-gray-400 mt-1">PNG, JPG deri 10MB</span>
@@ -754,7 +754,7 @@ export default function PostoBanesePage() {
                   <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
                     <img src={preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                     {i === 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-[#1B4FFF] text-white text-xs text-center py-1">
+                      <div className="absolute bottom-0 left-0 right-0 bg-[#111827] text-white text-xs text-center py-1">
                         Kryesorja
                       </div>
                     )}
@@ -776,7 +776,7 @@ export default function PostoBanesePage() {
           <Button
             type="submit"
             disabled={uploading}
-            className="w-full h-12 bg-[#1B4FFF] hover:bg-[#1640CC] text-white text-base font-semibold py-4 rounded-xl cursor-pointer"
+            className="w-full h-12 bg-[#111827] hover:bg-[#1F2937] text-white text-base font-semibold py-4 rounded-xl cursor-pointer"
           >
             {uploading ? (
               <>
@@ -790,7 +790,7 @@ export default function PostoBanesePage() {
 
           <p className="text-center text-sm text-gray-500">
             Duke postuar, pranon{' '}
-            <a href="/kushtet" className="underline hover:text-[#1B4FFF]">kushtet e shërbimit</a>
+            <a href="/kushtet" className="underline hover:text-[#111827]">kushtet e shërbimit</a>
           </p>
         </form>
       </div>

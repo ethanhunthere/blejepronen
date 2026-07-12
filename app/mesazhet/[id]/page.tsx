@@ -262,9 +262,9 @@ export default function ChatPage() {
     return (
       <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#F5F7FA]">
         <div className="relative">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B4FFF]/20 to-transparent animate-pulse" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#1B4FFF] rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#111827] rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -314,7 +314,7 @@ export default function ChatPage() {
         </Link>
 
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-sm flex-shrink-0 overflow-hidden">
+        <div className="w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
           {conv.otherUser?.avatar_url ? (
             <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -331,7 +331,7 @@ export default function ChatPage() {
             <p className="text-gray-500 text-xs truncate">{conv.listing.title}</p>
           )}
           {isTyping && (
-            <p className="text-[11px] text-[#1B4FFF]/70 font-medium animate-fade-in">duke shkruar...</p>
+            <p className="text-[11px] text-[#111827]/70 font-medium animate-fade-in">duke shkruar...</p>
           )}
         </div>
 
@@ -395,7 +395,7 @@ export default function ChatPage() {
               >
                 {!isMine && (
                   isLastInGroup ? (
-                    <div className="w-7 h-7 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+                    <div className="w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                       {conv.otherUser?.avatar_url ? (
                         <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -410,7 +410,7 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
-                      ? 'bg-[#1B4FFF] text-white rounded-2xl rounded-br-md'
+                      ? 'bg-[#111827] text-white rounded-2xl rounded-br-md'
                       : 'bg-white border border-gray-100 shadow-sm text-[#1A1A2E] rounded-2xl rounded-bl-md'
                   }`}
                 >
@@ -420,7 +420,7 @@ export default function ChatPage() {
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
-                      <span className={`text-[10px] ${msg.is_read ? 'text-[#8CB4FF]' : 'text-white/35'}`} title={msg.is_read ? 'E lexuar' : 'E dërguar'}>
+                      <span className={`text-[10px] ${msg.is_read ? 'text-[#6B7280]' : 'text-white/35'}`} title={msg.is_read ? 'E lexuar' : 'E dërguar'}>
                         {msg.is_read ? '✓✓' : '✓'}
                       </span>
                     )}
@@ -433,7 +433,7 @@ export default function ChatPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2" style={{ animation: 'fadeSlideUp 0.25s ease-out' }}>
-              <div className="w-7 h-7 rounded-full bg-[#1B4FFF]/20 border border-[#1B4FFF]/30 flex items-center justify-center text-[#4D7CFF] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+              <div className="w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                 {conv.otherUser?.avatar_url ? (
                   <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -444,7 +444,7 @@ export default function ChatPage() {
                 {[0, 150, 300].map((delay, j) => (
                   <span
                     key={j}
-                    className="w-2 h-2 rounded-full bg-[#4D7CFF]/70 inline-block"
+                    className="w-2 h-2 rounded-full bg-[#374151]/70 inline-block"
                     style={{ animation: `typingWave 1.2s ${delay}ms infinite` }}
                   />
                 ))}
@@ -468,7 +468,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#1B4FFF]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#111827]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -480,7 +480,7 @@ export default function ChatPage() {
               type="button"
               onClick={sendMessage}
               disabled={!newMsg.trim()}
-              className="w-10 h-10 bg-[#1B4FFF] hover:bg-[#1640CC] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+              className="w-10 h-10 bg-[#111827] hover:bg-[#1F2937] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
             >
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>

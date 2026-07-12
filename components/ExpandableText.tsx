@@ -23,7 +23,7 @@ export default function ExpandableText({ text, maxLength = 300 }: ExpandableText
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-[#4D7CFF] hover:text-[#1B4FFF] text-sm font-medium transition-colors"
+          className="mt-2 text-[#374151] hover:text-[#111827] text-sm font-medium transition-colors"
         >
           {expanded ? 'Lexo më pak' : 'Lexo më shumë'}
         </button>

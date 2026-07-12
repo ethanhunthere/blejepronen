@@ -17,7 +17,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Bleje Banesën – Banesa në Kosovë",
+  title: "Bleje Banesën - Banesa në Kosovë",
   description:
     "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
 };
@@ -71,13 +71,13 @@ export default function RootLayout({
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
               <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-600">
-                <a href="/kushtet" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/kushtet" className="hover:text-[#111827] transition-colors">
                   Kushtet e përdorimit
                 </a>
-                <a href="/privatesia" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/privatesia" className="hover:text-[#111827] transition-colors">
                   Privatësia
                 </a>
-                <a href="/kontakti" className="hover:text-[#1B4FFF] transition-colors">
+                <a href="/kontakti" className="hover:text-[#111827] transition-colors">
                   Kontakti
                 </a>
               </div>

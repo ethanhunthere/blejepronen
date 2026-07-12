@@ -17,7 +17,7 @@ export default function NotFound() {
           Na vjen keq, faqja që po kërkoni nuk ekziston ose është zhvendosur.
         </p>
         <Link href="/">
-          <Button className="bg-[#1B4FFF] hover:bg-[#1640CC] text-white">
+          <Button className="bg-[#111827] hover:bg-[#1F2937] text-white">
             Kthehu në ballinë
           </Button>
         </Link>

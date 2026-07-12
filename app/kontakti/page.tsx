@@ -19,23 +19,23 @@ export default function ContactPage() {
 
           <div className="space-y-4 mb-8">
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-              <Mail className="h-5 w-5 text-[#1B4FFF]" />
+              <Mail className="h-5 w-5 text-[#111827]" />
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <a href="mailto:blejebanesen@gmail.com" className="text-[#1B4FFF] hover:underline font-medium">
+                <a href="mailto:blejebanesen@gmail.com" className="text-[#111827] hover:underline font-medium">
                   blejebanesen@gmail.com
                 </a>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-              <MessageCircle className="h-5 w-5 text-[#1B4FFF]" />
+              <MessageCircle className="h-5 w-5 text-[#111827]" />
               <div>
                 <p className="text-sm text-gray-500">Koha e përgjigjes</p>
                 <p className="text-[#1A1A2E] font-medium">Brenda 24 orëve gjatë ditëve të punës</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-              <MapPin className="h-5 w-5 text-[#1B4FFF]" />
+              <MapPin className="h-5 w-5 text-[#111827]" />
               <div>
                 <p className="text-sm text-gray-500">Zona e shërbimit</p>
                 <p className="text-[#1A1A2E] font-medium">Kosovë, Shqipëri dhe Maqedoni e Veriut</p>
@@ -52,7 +52,7 @@ export default function ContactPage() {
               <li>Sugjerime për përmirësimin e shërbimit</li>
             </ul>
             <div className="text-center">
-              <Link href="/" className="text-[#1B4FFF] hover:underline">← Kthehu në faqen kryesore</Link>
+              <Link href="/" className="text-[#111827] hover:underline">← Kthehu në faqen kryesore</Link>
             </div>
           </div>
         </div>
