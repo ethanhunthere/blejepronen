@@ -52,26 +52,26 @@
   /* Brand: Bleje Banesën */
   --brand: #1b4fff;
   --brand-foreground: #ffffff;
-  --brand-light: #1a2348;
+  --brand-light: #eef2ff;
   --brand-dark: #1438c4;
-  /* Navy dark theme */
-  --background: #0a0f2e;
-  --foreground: #f8f9ff;
-  --card: #111936;
-  --card-foreground: #f8f9ff;
-  --popover: #111936;
-  --popover-foreground: #f8f9ff;
+  /* Light theme */
+  --background: #f5f7fa;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
   --primary: #1b4fff;
   --primary-foreground: #ffffff;
-  --secondary: #111936;
-  --secondary-foreground: #f8f9ff;
-  --muted: #0d1235;
-  --muted-foreground: #94a3b8;
-  --accent: #1a2348;
-  --accent-foreground: #f8f9ff;
+  --secondary: #f5f7fa;
+  --secondary-foreground: #1a1a2e;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #eef2ff;
+  --accent-foreground: #1a1a2e;
   --destructive: #ef4444;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.12);
+  --border: #e5e7eb;
+  --input: #e5e7eb;
   --ring: var(--brand);
   --chart-1: var(--brand);
   --chart-2: oklch(0.556 0 0);
@@ -129,7 +129,7 @@
 
 @layer base {
   html, body {
-    background-color: #0A0F2E;
+    background-color: #F5F7FA;
   }
   * {
     @apply border-border outline-ring/50;
@@ -244,6 +244,17 @@ html {
   100% { transform: scale(1.08); }
 }
 
+/* Slow-shifting gradient for the light-theme hero */
+.hero-gradient-animate {
+  background-size: 200% 200%;
+  animation: hero-gradient-shift 18s ease-in-out infinite alternate;
+}
+
+@keyframes hero-gradient-shift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
 
 /* Large screen font scaling */
 @media (min-width: 2560px) {
@@ -260,6 +271,10 @@ html {
   }
 
   .ken-burns {
+    animation: none;
+  }
+
+  .hero-gradient-animate {
     animation: none;
   }
 

@@ -269,11 +269,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-transparent overflow-visible border-none ${className || ''}`}>
+    <nav className={`${positionClasses} bg-white border-b border-gray-200 shadow-sm overflow-visible ${className || ''}`}>
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20 2xl:h-24">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0 [&_img]:invert">
+          <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0">
             <Logo variant="navbar" className="h-8 2xl:h-10 2xl:w-56" />
           </Link>
 
@@ -281,7 +281,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           <div className="flex items-center min-w-0">
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/listings" className="relative font-medium tracking-wide text-white hover:text-white transition-all duration-300 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300 2xl:text-base">
+              <Link href="/listings" className="relative font-medium tracking-wide text-gray-600 hover:text-[#1B4FFF] transition-all duration-300 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#1B4FFF] hover:after:w-full after:transition-all after:duration-300 2xl:text-base">
                 Shiko banesat
               </Link>
               {user === undefined ? (
@@ -290,13 +290,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white border border-white/40 hover:border-white/80 hover:bg-white/15 transition-all duration-300 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold border border-gray-300 text-gray-700 hover:border-[#1B4FFF] hover:text-[#1B4FFF] transition-all duration-300 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold text-[#0A0F2E] bg-white hover:bg-white/90 transition-all duration-300 cursor-pointer shadow-lg shadow-white/10"
+                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-all duration-300 cursor-pointer shadow-sm"
                   >
                     Regjistrohu
                   </a>
@@ -306,7 +306,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 backdrop-blur-sm transition-all cursor-pointer text-white"
+                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-[#1B4FFF] hover:bg-[#1640CC] transition-all cursor-pointer text-white"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -316,7 +316,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/mesazhet')}
-                    className="relative p-2 text-white/70 hover:text-white transition-colors cursor-pointer"
+                    className="relative p-2 text-gray-600 hover:text-[#1B4FFF] transition-colors cursor-pointer"
                     aria-label="Mesazhet"
                   >
                     <MessageCircle className="h-5 w-5" />
@@ -332,7 +332,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#1B4FFF] text-white text-sm font-bold hover:bg-[#1640CC] transition-colors cursor-pointer flex-shrink-0 outline-none border border-gray-200"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -345,14 +345,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     </button>
 
                     {dropdownOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-56 bg-[#0A0F2E] rounded-lg shadow-lg border border-white/10 py-1 z-50">
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 text-[#1A1A2E]">
                         {/* User info header */}
                         <div
-                          className="px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors group"
+                          className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors group"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0 overflow-hidden">
+                            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-[#1A1A2E] flex-shrink-0 overflow-hidden">
                               {profile.avatarUrl ? (
                                 <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="object-cover" />
                               ) : (
@@ -360,15 +360,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs text-white/40 group-hover:text-white/60 font-medium mb-1">Profili im →</p>
+                              <p className="text-xs text-gray-400 group-hover:text-gray-600 font-medium mb-1">Profili im →</p>
                               {!profile.incomplete && (
-                                <p className="text-sm font-medium text-white truncate">
+                                <p className="text-sm font-medium text-[#1A1A2E] truncate">
                                   {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
                                 </p>
                               )}
-                              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                               {profile.incomplete && (
-                                <span className="inline-flex items-center mt-1 text-xs text-orange-400">
+                                <span className="inline-flex items-center mt-1 text-xs text-orange-500">
                                   ⚠️ Verifiko profilin
                                 </span>
                               )}
@@ -376,14 +376,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           </div>
                         </div>
 
-                        <div className="border-t border-white/10 my-1" />
+                        <div className="border-t border-gray-100 my-1" />
 
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/mesazhet') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <MessageCircle className="h-4 w-4 mr-3 text-slate-400" />
+                          <MessageCircle className="h-4 w-4 mr-3 text-gray-400" />
                           Mesazhet
                           {unreadCount > 0 && (
                             <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
@@ -395,27 +395,27 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/posto-banese') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <Plus className="h-4 w-4 mr-3 text-slate-400" />
+                          <Plus className="h-4 w-4 mr-3 text-gray-400" />
                           Posto banesë
                         </button>
 
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <User className="h-4 w-4 mr-3 text-slate-400" />
+                          <User className="h-4 w-4 mr-3 text-gray-400" />
                           Banesat e mia
                         </button>
 
-                        <div className="border-t border-white/10 my-1" />
+                        <div className="border-t border-gray-100 my-1" />
 
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
                         >
                           <LogOut className="h-4 w-4 mr-3" />
                           Dil
@@ -429,7 +429,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button */}
             <button
-              className="lg:hidden p-2 rounded-lg min-h-11 min-w-11 flex items-center justify-center text-white bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+              className="lg:hidden p-2 rounded-lg min-h-11 min-w-11 flex items-center justify-center text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
@@ -441,14 +441,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-white/10 bg-[#0A0F2E] py-4 space-y-3">
-            <Link href="/listings" className="relative inline-block text-white/90 hover:text-white font-medium tracking-wide py-3 transition-all duration-300 after:content-[''] after:absolute after:bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300">
+          <div id="mobile-menu" className="lg:hidden border-t border-gray-200 bg-white py-4 space-y-3">
+            <Link href="/listings" className="relative inline-block text-gray-700 hover:text-[#1B4FFF] font-medium tracking-wide py-3 transition-all duration-300 after:content-[''] after:absolute after:bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-[#1B4FFF] hover:after:w-full after:transition-all after:duration-300">
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold text-white border border-white/40 hover:border-white/80 hover:bg-white/15 transition-all duration-300 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-bold text-[#0A0F2E] bg-white hover:bg-white/90 transition-all duration-300 cursor-pointer shadow-lg shadow-white/10">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold border border-gray-300 text-gray-700 hover:border-[#1B4FFF] hover:text-[#1B4FFF] transition-all duration-300 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-bold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-all duration-300 cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>
@@ -460,7 +460,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                     </span>
                   )}
-                  <span className="text-sm font-medium text-white truncate">
+                  <span className="text-sm font-medium text-[#1A1A2E] truncate">
                     {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
                   </span>
                 </div>
@@ -474,7 +474,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </button>
                 <button
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#1B4FFF] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Mesazhet
@@ -486,13 +486,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </button>
                 <button
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-white/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#1B4FFF] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
                 >
                   <User className="h-4 w-4" />
                   Profili & Banesat e Mia
                 </button>
-                <div className="border-t border-white/10 pt-2">
-                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg px-4 py-2.5 font-semibold cursor-pointer">
+                <div className="border-t border-gray-200 pt-2">
+                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg px-4 py-2.5 font-semibold cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     Dil
                   </button>

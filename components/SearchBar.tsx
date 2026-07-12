@@ -33,16 +33,15 @@ function SearchBar({
 
   return (
     <div
-      className={`bg-white/15 backdrop-blur-lg rounded-2xl p-3 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto border border-white/20 ${className}`}
-      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+      className={`bg-white shadow-xl rounded-2xl p-3 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto ${className}`}
     >
       <div className="flex-1 flex items-center px-3 gap-2">
-        <Search className="h-5 w-5 text-white flex-shrink-0" />
+        <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
         <input
           type="text"
           placeholder={placeholder}
           aria-label="Kërko banesa"
-          className="w-full text-white placeholder:text-white/50 outline-none text-base sm:text-sm bg-transparent"
+          className="w-full text-gray-700 placeholder:text-gray-400 outline-none text-base sm:text-sm bg-transparent"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -51,7 +50,7 @@ function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white px-6 py-2.5 rounded-xl font-semibold transition-colors cursor-pointer"
+        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white border-2 border-white/30 px-6 py-2.5 rounded-xl font-semibold transition-colors cursor-pointer"
       >
         {buttonText}
       </button>

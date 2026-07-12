@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
@@ -35,103 +34,61 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0F2E]">
-      {/* Hero — photorealistic Pristina background */}
-      <section aria-label="Hero section" className="relative overflow-hidden min-h-screen flex flex-col">
-        {/* Background photo with Ken Burns zoom */}
-        <Image
-          src="/pristinalandscape.webp"
-          alt="Prishtina"
-          fill
-          priority
-          className="object-cover ken-burns z-0"
-          sizes="100vw"
-        />
-
-        {/* Soft radial vignette */}
-        <div
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 45%, rgba(5,10,35,0.22) 0%, transparent 100%)' }}
-        />
-
-        {/* Top fade from page background to blend navbar seamlessly */}
-        <div
-          className="pointer-events-none absolute top-0 left-0 right-0 h-24 z-10"
-          style={{ background: 'linear-gradient(to top, transparent 0%, rgba(10,15,46,0.3) 50%, #0A0F2E 100%)' }}
-        />
-
-        {/* Bottom fade into page background */}
-        <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 z-10"
-          style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(10,15,46,0.5) 50%, #0A0F2E 100%)' }}
-        />
-
+    <main className="min-h-screen bg-[#F5F7FA]">
+      {/* Hero — clean gradient */}
+      <section
+        aria-label="Hero section"
+        className="relative overflow-hidden min-h-[80vh] md:min-h-[85vh] flex flex-col bg-gradient-to-br from-[#1B4FFF] via-[#2563EB] to-[#1E40AF] hero-gradient-animate"
+      >
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 md:py-18 2xl:py-24 w-full">
             <div className="relative text-center max-w-3xl mx-auto">
-              <div
-                className="absolute inset-0 pointer-events-none z-[5]"
-                style={{ background: 'radial-gradient(ellipse 85% 75% at 50% 55%, rgba(5,10,40,0.8) 0%, rgba(5,10,40,0.35) 45%, transparent 80%)' }}
+              <h1 className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2">
+                Gjej banesën e duhur në Kosovë
+              </h1>
+
+              <p className="inline-block text-lg md:text-xl text-white/80 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium">
+                Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
+              </p>
+
+              <p className="inline-block text-white text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1">
+                Kërko sipas qytetit ose lagjes
+              </p>
+
+              {/* Search Bar */}
+              <SearchBar
+                placeholder="Kërko banesë, agjent, kompani, adresë..."
+                buttonText="Kërko Banesë"
+                className="2xl:max-w-4xl 2xl:h-16"
               />
-              <div className="relative z-10">
-                <h1
-                  className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2 drop-shadow-2xl"
-                  style={{ textShadow: '0 0 80px rgba(0,0,0,1), 0 6px 20px rgba(0,0,0,1), 3px 3px 0px rgba(0,0,0,0.85), 0 0 120px rgba(0,0,0,0.6)' }}
-                >
-                  Gjej banesën e duhur në Kosovë
-                </h1>
 
-                <p
-                  className="inline-block text-lg md:text-xl text-white/75 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium"
-                  style={{ textShadow: '0 2px 15px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.7)' }}
-                >
-                  Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
-                </p>
-
-                <p
-                  className="inline-block text-white text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1"
-                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)' }}
-                >
-                  Kërko sipas qytetit ose lagjes
-                </p>
-
-                {/* Search Bar */}
-                <div className="shadow-2xl shadow-black/40 rounded-2xl">
-                <SearchBar
-                  placeholder="Kërko banesë, agjent, kompani, adresë..."
-                  buttonText="Kërko Banesë"
-                  className="2xl:max-w-4xl 2xl:h-16"
-                />
-                </div>
-
-                {/* City links */}
-                <div className="flex items-center justify-center flex-wrap gap-2 mt-6 text-sm">
-                  {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
-                    <Link
-                      key={city}
-                      href={`/listings?city=${encodeURIComponent(city)}`}
-                      className="border border-white/20 hover:border-white/50 hover:bg-white/10 backdrop-blur-sm transition-all duration-200 font-medium text-white/60 hover:text-white rounded-full px-4 py-1.5"
-                    >
-                      {city}
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+              {/* City links */}
+              <div className="flex items-center justify-center flex-wrap gap-2 mt-6 text-sm">
+                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                   <Link
-                    href="/listings"
-                    className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-bold bg-white text-[#0A0F2E] hover:bg-white/95 transition-all duration-300 hover:scale-105 cursor-pointer shadow-xl shadow-black/20"
+                    key={city}
+                    href={`/listings?city=${encodeURIComponent(city)}`}
+                    className="bg-white/15 hover:bg-white/25 border border-white/30 transition-all duration-200 font-medium text-white rounded-full px-4 py-1.5"
                   >
-                    Shiko banesat
+                    {city}
                   </Link>
-                  <Link
-                    href="/posto-banese"
-                    className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-semibold border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/60 transition-all duration-300 cursor-pointer"
-                  >
-                    Posto banesën tënde
-                  </Link>
-                </div>
+                ))}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                <Link
+                  href="/listings"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-bold bg-white text-[#1B4FFF] hover:bg-gray-50 transition-all duration-300 hover:scale-105 cursor-pointer shadow-xl shadow-black/10"
+                >
+                  Shiko banesat
+                </Link>
+                <Link
+                  href="/posto-banese"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-semibold border-2 border-white text-white hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                >
+                  Posto banesën tënde
+                </Link>
               </div>
             </div>
           </div>
@@ -141,8 +98,8 @@ export default async function HomePage() {
       {/* Error state */}
       {error && (
         <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8">
-          <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 text-center">
-            <p className="text-red-300 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <p className="text-red-600 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
             <Link
               href="/"
               className="inline-flex items-center justify-center w-full sm:w-auto h-11 px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold transition-colors"
@@ -154,13 +111,13 @@ export default async function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section aria-label="Banesat e disponueshme" className="bg-[#0A0F2E] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-[#F5F7FA] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white border-l-4 border-[#1B4FFF] pl-4">Banesa në Shitje dhe me Qira</h2>
-            <p className="text-white/50 text-sm mt-1">Të gjitha banesat e disponueshme në platformë</p>
+            <h2 className="text-2xl font-black text-[#1A1A2E] border-l-4 border-[#1B4FFF] pl-4">Banesa në Shitje dhe me Qira</h2>
+            <p className="text-gray-500 text-sm mt-1">Të gjitha banesat e disponueshme në platformë</p>
           </div>
-          <Link href="/listings" className="text-sm font-medium text-white/70 hover:text-white transition-all px-5 py-2.5 rounded-xl border border-white/20 hover:border-white/40 hover:bg-white/5">
+          <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-[#1B4FFF] transition-all px-5 py-2.5 rounded-xl border border-gray-300 hover:border-[#1B4FFF]">
             Shiko të gjitha →
           </Link>
         </div>
@@ -174,10 +131,10 @@ export default async function HomePage() {
             ))}
           </AnimateOnScroll>
         ) : (
-          <div className="text-center py-16 bg-[#111936] rounded-2xl border border-white/10">
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
             <div className="text-5xl mb-4">🏠</div>
-            <h3 className="text-lg font-semibold text-white mb-2">Ende nuk ka listime</h3>
-            <p className="text-slate-400 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
+            <h3 className="text-lg font-semibold text-[#1A1A2E] mb-2">Ende nuk ka listime</h3>
+            <p className="text-gray-500 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
               <Button className="h-11 w-full sm:w-auto px-5 bg-[#1B4FFF] hover:bg-[#1640CC] text-white rounded-xl font-semibold">
                 Posto banesën tënde falas

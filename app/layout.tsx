@@ -40,15 +40,15 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${albertSans.variable} h-full antialiased`}
-      style={{ backgroundColor: "#0A0F2E" }}
+      style={{ backgroundColor: "#F5F7FA" }}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.style.backgroundColor='#0A0F2E';document.body&&(document.body.style.backgroundColor='#0A0F2E')",
+            __html: "document.documentElement.style.backgroundColor='#F5F7FA';document.body&&(document.body.style.backgroundColor='#F5F7FA')",
           }}
         />
-        <meta name="theme-color" content="#0A0F2E" />
+        <meta name="theme-color" content="#F5F7FA" />
         {supabaseUrl && (
           <>
             <link rel="preconnect" href={supabaseUrl} />
@@ -57,20 +57,20 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#0A0F2E] text-foreground overflow-x-hidden" style={{ backgroundColor: "#0A0F2E" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F5F7FA] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#F5F7FA" }}>
         <header>
           <Navbar variant="static" />
         </header>
         <main className="flex-1 relative">{children}</main>
         <Toaster richColors position="top-center" />
         {/* Footer */}
-        <footer className="border-t border-white/10 bg-[#060B1E] py-8 mt-16">
+        <footer className="bg-white border-t border-gray-200 py-8 mt-16">
           <div className="mx-auto max-w-[1800px] 2xl:max-w-[2200px] px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-              <p className="text-sm text-slate-400 text-center sm:text-left">
+              <p className="text-sm text-gray-600 text-center sm:text-left">
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-slate-400">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-600">
                 <a href="/kushtet" className="hover:text-[#1B4FFF] transition-colors">
                   Kushtet e përdorimit
                 </a>

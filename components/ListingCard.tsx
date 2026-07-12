@@ -27,13 +27,9 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className={`group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/25 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/40 ${
-        listing.type === 'shitje'
-          ? 'bg-white/10 border border-white/20'
-          : 'bg-[#0D1F3C] border border-blue-500/20'
-      }`}>
+      <div className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden transition-all duration-300 bg-white border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 hover:-translate-y-1.5">
         {/* Image */}
-        <div className="relative h-52 bg-white/5 flex-shrink-0 overflow-hidden">
+        <div className="relative h-52 bg-gray-100 flex-shrink-0 overflow-hidden">
           {mainImage ? (
             <Image
               src={mainImage}
@@ -68,28 +64,28 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-[140px] bg-gradient-to-b from-white/5 to-transparent p-4 flex flex-col">
-          <h3 className="font-semibold text-white text-base leading-tight line-clamp-2 h-12 overflow-hidden mb-2">
+        <div className="flex-1 min-h-[140px] p-4 flex flex-col">
+          <h3 className="font-semibold text-[#1A1A2E] text-base leading-tight line-clamp-2 h-12 overflow-hidden mb-2">
             {listing.title}
           </h3>
 
-          <p className="text-[#4D7CFF] font-bold text-2xl mb-3">
+          <p className="text-[#1B4FFF] font-bold text-2xl mb-3">
             {formatPrice(listing.price)}
-            {listing.type === 'qira' && <span className="text-sm font-normal text-white/50">/muaj</span>}
+            {listing.type === 'qira' && <span className="text-sm font-normal text-gray-400">/muaj</span>}
           </p>
 
-          <div className="flex items-center text-white/60 text-sm mb-3">
+          <div className="flex items-center text-gray-500 text-sm mb-3">
             <MapPin className="h-4 w-4 mr-1.5 flex-shrink-0" />
             <span className="truncate">{listing.city} · {listing.address}</span>
           </div>
 
-          <div className="flex items-center space-x-4 text-sm text-white/70 pt-3 border-t border-white/10">
+          <div className="flex items-center space-x-4 text-sm text-gray-600 pt-3 border-t border-gray-100">
             <div className="flex items-center">
-              <BedDouble className="h-4 w-4 mr-1.5 text-white/40" />
+              <BedDouble className="h-4 w-4 mr-1.5 text-gray-400" />
               <span>{listing.rooms} dhoma</span>
             </div>
             <div className="flex items-center">
-              <Maximize2 className="h-4 w-4 mr-1.5 text-white/40" />
+              <Maximize2 className="h-4 w-4 mr-1.5 text-gray-400" />
               <span>{listing.area_m2} m²</span>
             </div>
           </div>
@@ -104,15 +100,15 @@ export default ListingCard
 /** Skeleton loader for ListingCard */
 export function ListingCardSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-white/8 border border-white/15 rounded-2xl overflow-hidden">
-      <div className="h-52 flex-shrink-0 animate-pulse bg-white/5" />
+    <div className="h-full flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="h-52 flex-shrink-0 animate-pulse bg-gray-100" />
       <div className="p-4 space-y-3">
-        <div className="h-5 w-48 animate-pulse rounded bg-white/10" />
-        <div className="h-8 w-32 animate-pulse rounded bg-white/10" />
-        <div className="h-4 w-36 animate-pulse rounded bg-white/10" />
-        <div className="flex gap-4 pt-3 border-t border-white/10">
-          <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
-          <div className="h-4 w-16 animate-pulse rounded bg-white/10" />
+        <div className="h-5 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
+        <div className="h-4 w-36 animate-pulse rounded bg-gray-200" />
+        <div className="flex gap-4 pt-3 border-t border-gray-100">
+          <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
         </div>
       </div>
     </div>
