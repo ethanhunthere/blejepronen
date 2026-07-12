@@ -435,23 +435,24 @@ function ListingsContent() {
 
         {/* Agent Results */}
         {!fetchState.loading && agentResults.length > 0 && !filters.agentId && (
-          <div className="mb-8">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
               Agjentë &amp; Shitës
             </h2>
-            <div>
+            <div className="flex flex-row gap-6 flex-wrap mb-8">
               {agentResults.map(agent => (
-                <div
+                <Link
                   key={agent.id}
-                  className="flex items-center gap-4 py-4 px-0 border-b border-gray-100 last:border-0"
+                  href={`/profili/${agent.id}`}
+                  className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-24"
                 >
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm flex-shrink-0">
                     {agent.avatar_url ? (
                       <Image
                         src={agent.avatar_url}
                         alt={`Foto e ${agent.first_name || 'agjentit'}`}
-                        width={48}
-                        height={48}
+                        width={64}
+                        height={64}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -460,26 +461,13 @@ function ListingsContent() {
                       </div>
                     )}
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-[#111827] text-base truncate">
-                      {agent.first_name} {agent.last_name}
-                    </p>
-                    {agent.email_verified && (
-                      <p className="text-emerald-600 text-xs">✓ E verifikuar</p>
-                    )}
-                    <p className="text-gray-400 text-xs">
-                      Anëtar që nga {new Date(agent.created_at).getFullYear()}
-                    </p>
-                  </div>
-
-                  <Link
-                    href={`/profili/${agent.id}`}
-                    className="text-sm text-[#111827] hover:underline font-medium whitespace-nowrap"
-                  >
-                    Shiko profilin →
-                  </Link>
-                </div>
+                  <p className="text-sm font-semibold text-[#111827] text-center truncate w-full">
+                    {agent.first_name} {agent.last_name}
+                  </p>
+                  {agent.email_verified && (
+                    <p className="text-xs text-emerald-600 text-center">E verifikuar</p>
+                  )}
+                </Link>
               ))}
             </div>
           </div>
