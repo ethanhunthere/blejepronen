@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, BedDouble, Maximize2, Heart, Tag } from 'lucide-react'
@@ -23,24 +23,93 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price)
 
+const MAX_CYCLE_IMAGES = 6
+const CYCLE_INTERVAL_MS = 1100
+
 const ListingCard = React.memo(function ListingCard({ listing, priority = false }: ListingCardProps) {
-  const mainImage = listing.images?.[0] || ''
+  const cycleImages = (listing.images || []).filter(Boolean).slice(0, MAX_CYCLE_IMAGES)
+  const hasMultiple = cycleImages.length > 1
+
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [hasInteracted, setHasInteracted] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopCycle = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    setActiveIndex(0)
+  }, [])
+
+  const startCycle = useCallback(() => {
+    if (!hasMultiple) return
+    setHasInteracted(true)
+    stopCycle()
+    intervalRef.current = setInterval(() => {
+      setActiveIndex(prev => (prev + 1) % cycleImages.length)
+    }, CYCLE_INTERVAL_MS)
+  }, [hasMultiple, cycleImages.length, stopCycle])
+
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+  }, [])
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white shadow-sm card-hover">
+      <div
+        className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white shadow-sm card-hover"
+        onMouseEnter={startCycle}
+        onMouseLeave={stopCycle}
+      >
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100 flex-shrink-0 overflow-hidden rounded-2xl">
-          {mainImage ? (
-            <Image
-              src={mainImage}
-              alt={listing.title}
-              fill
-              priority={priority}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            />
+          {cycleImages.length > 0 ? (
+            <>
+              <Image
+                src={cycleImages[0]}
+                alt={listing.title}
+                fill
+                priority={priority}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className={`object-cover transition-all duration-700 ease-out group-hover:scale-[1.06] ${
+                  hasMultiple && activeIndex !== 0 ? 'opacity-0' : 'opacity-100'
+                }`}
+              />
+              {hasMultiple && hasInteracted && cycleImages.slice(1).map((img, idx) => {
+                const i = idx + 1
+                return (
+                  <Image
+                    key={img + i}
+                    src={img}
+                    alt={listing.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className={`object-cover transition-all duration-700 ease-out group-hover:scale-[1.06] ${
+                      i === activeIndex ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                )
+              })}
+            </>
           ) : null}
+
+          {/* Bottom scrim + progress dots — only for multi-photo listings, only on hover */}
+          {hasMultiple && (
+            <>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="pointer-events-none absolute bottom-3 inset-x-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {cycleImages.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === activeIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Type badge - quiet, uncolored (Airbnb style) */}
           <div className="absolute top-3 left-3">
