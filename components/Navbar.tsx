@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus, User, LogOut, MessageCircle } from 'lucide-react'
+import { Plus, User, LogOut, MessageCircle, Home, AlertTriangle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
@@ -310,15 +310,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </div>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#111827] hover:bg-[#0A0A0A] shadow-sm transition-all duration-200 cursor-pointer text-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Posto banesë
-                  </button>
-
                   {/* Messages */}
                   <button
                     type="button"
@@ -479,7 +470,12 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-3 px-1 py-2">
+                {/* Clickable user info — matches desktop dropdown header */}
+                <button
+                  type="button"
+                  onClick={() => { router.push('/profili'); setMenuOpen(false) }}
+                  className="flex items-center gap-3 w-full text-left py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
+                >
                   {profile.avatarUrl ? (
                     <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="rounded-full object-cover shrink-0" />
                   ) : (
@@ -487,40 +483,87 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                     </span>
                   )}
-                  <span className="text-sm font-medium text-[#1A1A2E] truncate">
-                    {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
-                  </span>
-                </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-400 font-medium">Profili im →</p>
+                    {!profile.incomplete && (
+                      <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                        {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                    {profile.incomplete && (
+                      <span className="inline-flex items-center mt-1 text-xs text-orange-500">
+                        ⚠️ Verifiko profilin
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                {/* Verifiko profilin — only when incomplete */}
+                {profile.incomplete && (
+                  <a
+                    href="/completo-profilin"
+                    className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+                    <span className="text-orange-600">Verifiko profilin</span>
+                  </a>
+                )}
+
+                {/* Posto banesë */}
                 <button
                   type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="inline-flex items-center justify-center w-full rounded-lg bg-[#111827] hover:bg-[#1F2937] text-white px-5 py-2 text-sm font-semibold transition-colors cursor-pointer"
+                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-5 w-5 text-gray-400 shrink-0" />
                   Posto banesë
                 </button>
+
+                {/* Mesazhet */}
                 <button
+                  type="button"
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#111827] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-5 w-5 text-gray-400 shrink-0" />
                   Mesazhet
                   {unreadCount > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      {unreadCount}
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </button>
+
+                {/* Profili im */}
                 <button
+                  type="button"
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-2 w-full text-left text-gray-700 hover:text-[#111827] hover:bg-gray-50 rounded-lg px-4 py-2.5 font-medium cursor-pointer"
+                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <User className="h-4 w-4" />
-                  Profili & Banesat e Mia
+                  <User className="h-5 w-5 text-gray-400 shrink-0" />
+                  Profili im
                 </button>
-                <div className="border-t border-gray-200 pt-2">
-                  <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg px-4 py-2.5 font-semibold cursor-pointer">
-                    <LogOut className="h-4 w-4" />
+
+                {/* Banesat e mia */}
+                <button
+                  type="button"
+                  onClick={() => { router.push('/postimet-e-mia'); setMenuOpen(false) }}
+                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  <Home className="h-5 w-5 text-gray-400 shrink-0" />
+                  Banesat e mia
+                </button>
+
+                {/* Divider + Dil */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full py-3 text-red-600 text-sm font-semibold cursor-pointer hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <LogOut className="h-5 w-5 shrink-0" />
                     Dil
                   </button>
                 </div>
