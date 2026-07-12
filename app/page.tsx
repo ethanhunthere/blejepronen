@@ -63,12 +63,12 @@ export default async function HomePage() {
               </div>
 
               {/* City strip - horizontal scroll, Airbnb category style */}
-              <div className="flex items-center justify-center gap-2 mt-10 overflow-x-auto scrollbar-hide px-1">
+              <div className="relative z-20 flex items-center justify-center gap-2 mt-10 overflow-x-auto scrollbar-hide px-1">
                 {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="flex-shrink-0 text-[13px] font-medium text-[#374151] px-4 py-1.5 rounded-full border border-transparent hover:bg-[#F3F4F6] hover:text-[#111827] hover:border-[#111827]/15 hover:-translate-y-0.5 transition-all duration-200"
+                    className="relative flex-shrink-0 text-[13px] font-medium text-[#374151] px-4 py-1.5 rounded-full border border-transparent hover:bg-[#F3F4F6] hover:text-[#111827] hover:border-[#111827]/15 hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                   >
                     {city}
                   </Link>
