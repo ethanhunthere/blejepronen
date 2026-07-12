@@ -283,10 +283,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <div className="hidden lg:flex items-center space-x-6">
               <Link
                 href="/listings"
-                className={`relative text-[14px] transition-all duration-200 after:content-[''] after:absolute after:-bottom-5 after:left-0 after:h-0.5 after:bg-[#111827] after:transition-all after:duration-200 ${
+                className={`text-[14px] font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
                   pathname === '/listings'
-                    ? 'text-[#111827] font-semibold after:w-full'
-                    : 'text-[#374151] font-medium hover:text-[#111827] after:w-0'
+                    ? 'text-[#111827] bg-[#F3F4F6] font-semibold'
+                    : 'text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6]'
                 }`}
               >
                 Shiko banesat
@@ -449,7 +449,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         {/* Mobile Menu */}
         {menuOpen && (
           <div id="mobile-menu" className="lg:hidden border-t border-gray-200 bg-white py-4 space-y-3">
-            <Link href="/listings" className={`relative inline-block py-3 transition-all duration-200 ${pathname === '/listings' ? 'text-[#111827] font-semibold' : 'text-[#374151] font-medium hover:text-[#111827]'}`}>
+            <Link href="/listings" className={`block px-4 py-3 rounded-lg text-[14px] font-medium transition-all duration-200 ${pathname === '/listings' ? 'text-[#111827] bg-[#F3F4F6] font-semibold' : 'text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6]'}`}>
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
