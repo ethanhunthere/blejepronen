@@ -91,12 +91,12 @@ export default function PostimetEMiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Postimet e Mia</h1>
-          <p className="text-white/40 text-sm mt-1">Menaxho banesat që ke postuar në platformë</p>
+          <h1 className="text-2xl font-bold text-[#1A1A2E]">Postimet e Mia</h1>
+          <p className="text-gray-400 text-sm mt-1">Menaxho banesat që ke postuar në platformë</p>
         </div>
 
         {loading ? (
@@ -107,11 +107,11 @@ export default function PostimetEMiaPage() {
           </div>
         ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-20">
-            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-              <Building2 className="h-10 w-10 text-white/40" />
+            <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6">
+              <Building2 className="h-10 w-10 text-gray-400" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">Nuk keni postuar asnjë banesë</h2>
-            <p className="text-white/50 max-w-md mb-8">
+            <h2 className="text-xl font-semibold text-[#1A1A2E] mb-2">Nuk keni postuar asnjë banesë</h2>
+            <p className="text-gray-400 max-w-md mb-8">
               Postoni banesën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-banese">
@@ -124,17 +124,17 @@ export default function PostimetEMiaPage() {
           <>
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-white">{total}</p>
-                <p className="text-xs text-white/40 mt-1">Gjithsej</p>
+              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-[#1A1A2E]">{total}</p>
+                <p className="text-xs text-gray-400 mt-1">Gjithsej</p>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-400">{activeCount}</p>
-                <p className="text-xs text-white/40 mt-1">Aktive</p>
+              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-500">{activeCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Aktive</p>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-red-400">{inactiveCount}</p>
-                <p className="text-xs text-white/40 mt-1">Joaktive</p>
+              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-red-500">{inactiveCount}</p>
+                <p className="text-xs text-gray-400 mt-1">Joaktive</p>
               </div>
             </div>
 
@@ -171,7 +171,7 @@ export default function PostimetEMiaPage() {
                   <button
                     type="button"
                     onClick={() => deleteListing(listing)}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-red-500/10 border border-red-500/20 rounded-lg text-xs font-medium text-red-400 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-medium text-red-500 transition-colors cursor-pointer"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Fshi

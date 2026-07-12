@@ -259,11 +259,11 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-[#0A0F2E] via-[#0D1235] to-[#0A0F2E]">
+      <div className="h-full flex items-center justify-center bg-[#F5F7FA]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B4FFF]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-[#1B4FFF] rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#1B4FFF] rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -301,13 +301,13 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-full flex flex-col bg-[#0A0F2E] overflow-hidden">
+    <div className="h-full flex flex-col bg-[#F5F7FA] overflow-hidden">
       {/* ---- HEADER ---- */}
-      <header className="flex-shrink-0 bg-[#060B1E] border-b border-white/[0.08] px-3 py-2.5 flex items-center gap-3">
+      <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button */}
         <Link
           href="/mesazhet"
-          className="text-white/50 hover:text-white p-2 -ml-2 rounded-xl hover:bg-white/[0.06] transition-all duration-200"
+          className="text-gray-400 hover:text-[#1A1A2E] p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -323,11 +323,11 @@ export default function ChatPage() {
 
         {/* Name + subtitle */}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white text-sm truncate">
+          <p className="font-semibold text-[#1A1A2E] text-sm truncate">
             {conv.otherUser?.first_name} {conv.otherUser?.last_name}
           </p>
           {conv.listing && (
-            <p className="text-white/40 text-xs truncate">{conv.listing.title}</p>
+            <p className="text-gray-500 text-xs truncate">{conv.listing.title}</p>
           )}
           {isTyping && (
             <p className="text-[11px] text-[#1B4FFF]/70 font-medium animate-fade-in">duke shkruar...</p>
@@ -338,7 +338,7 @@ export default function ChatPage() {
         {conv.listing?.images?.[0] && (
           <Link
             href={`/listings/${conv.listing.id}`}
-            className="w-10 h-10 rounded-lg overflow-hidden border border-white/[0.1] flex-shrink-0 hover:border-white/[0.2] transition-colors"
+            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 hover:border-gray-200 transition-colors"
           >
             <img
               src={conv.listing.images[0]}
@@ -353,7 +353,7 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
         <div className="max-w-3xl mx-auto">
           {!connected && (
-            <div className="flex items-center justify-center gap-2 text-xs text-white/25 py-2 animate-pulse">
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-300 py-2 animate-pulse">
               <WifiOff className="h-3 w-3" />
               Duke u rilidhur...
             </div>
@@ -362,12 +362,10 @@ export default function ChatPage() {
           {renderItems.map((item, i) => {
             if (item.type === 'date') {
               return (
-                <div key={`date-${item.label}-${i}`} className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px bg-white/[0.06]" />
-                  <span className="text-[11px] text-white/25 font-medium tracking-wide flex-shrink-0">
+                <div key={`date-${item.label}-${i}`} className="flex items-center justify-center py-3">
+                  <span className="text-[11px] text-gray-400 font-medium tracking-wide bg-gray-100 rounded-full px-3 py-1">
                     {item.label}
                   </span>
-                  <div className="flex-1 h-px bg-white/[0.06]" />
                 </div>
               )
             }
@@ -376,9 +374,9 @@ export default function ChatPage() {
             if (isExpired(msg.created_at)) {
               return (
                 <div key={msg.id} className="flex justify-center py-1">
-                  <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl px-4 py-2 flex items-center gap-2">
-                    <ShieldAlert className="h-3.5 w-3.5 text-white/15 flex-shrink-0" />
-                    <span className="text-white/20 italic text-xs">Ky mesazh ka skaduar (60 ditë)</span>
+                  <div className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2 flex items-center gap-2">
+                    <ShieldAlert className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />
+                    <span className="text-gray-300 italic text-xs">Ky mesazh ka skaduar (60 ditë)</span>
                   </div>
                 </div>
               )
@@ -412,12 +410,12 @@ export default function ChatPage() {
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
                       ? 'bg-[#1B4FFF] text-white rounded-2xl rounded-br-md'
-                      : 'bg-[#1E2344] text-white/90 rounded-2xl rounded-bl-md'
+                      : 'bg-white border border-gray-100 shadow-sm text-[#1A1A2E] rounded-2xl rounded-bl-md'
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className="text-[9px] text-white/30 text-right">
+                    <span className={`text-[9px] text-right ${isMine ? 'text-white/50' : 'text-gray-400'}`}>
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
@@ -441,7 +439,7 @@ export default function ChatPage() {
                   (conv.otherUser?.first_name || '?')[0].toUpperCase()
                 )}
               </div>
-              <div className="bg-[#1E2344] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
+              <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
                 {[0, 150, 300].map((delay, j) => (
                   <span
                     key={j}
@@ -459,7 +457,7 @@ export default function ChatPage() {
       </div>
 
       {/* ---- INPUT ---- */}
-      <footer className="flex-shrink-0 bg-[#060B1E] border-t border-white/[0.08] px-4 py-3">
+      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -472,7 +470,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-white/[0.08] border border-white/[0.12] rounded-2xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 resize-none min-h-[40px] max-h-[100px] focus:border-[#1B4FFF]/40 focus:outline-none focus:bg-white/[0.1] transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#1B4FFF]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -489,7 +487,7 @@ export default function ChatPage() {
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>
             {newMsg.length > 800 && (
-              <span className={`text-[10px] font-medium transition-colors ${newMsg.length >= 1000 ? 'text-red-400' : 'text-white/25'}`}>
+              <span className={`text-[10px] font-medium transition-colors ${newMsg.length >= 1000 ? 'text-red-400' : 'text-gray-300'}`}>
                 {newMsg.length}/1000
               </span>
             )}
@@ -512,8 +510,8 @@ export default function ChatPage() {
         }
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 999px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
         .animate-fade-in { animation: fadeSlideUp 0.3s ease-out; }
       `}</style>
     </div>

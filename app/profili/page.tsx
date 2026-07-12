@@ -140,7 +140,7 @@ export default function ProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
     </div>
   )
@@ -153,13 +153,13 @@ export default function ProfilePage() {
   const initials = profile?.first_name ? profile.first_name[0].toUpperCase() : (userEmail ? userEmail[0].toUpperCase() : '?')
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E] py-10">
+    <div className="min-h-screen bg-[#F5F7FA] py-10">
       <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6">
-        <h1 className="text-2xl font-bold text-white mb-8">Profili im</h1>
+        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Profili im</h1>
 
         {success && (
-          <Alert className="mb-6 bg-green-900/20 border-green-800">
-            <AlertDescription className="text-green-300">Profili u ruajt!</AlertDescription>
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertDescription className="text-green-700">Profili u ruajt!</AlertDescription>
           </Alert>
         )}
         {error && (
@@ -168,13 +168,13 @@ export default function ProfilePage() {
           </Alert>
         )}
         {deleteMessage && (
-          <Alert className="mb-6 bg-blue-900/20 border-blue-800">
-            <AlertDescription className="text-blue-300">{deleteMessage}</AlertDescription>
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <AlertDescription className="text-blue-700">{deleteMessage}</AlertDescription>
           </Alert>
         )}
 
         {/* Profile Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar */}
             <div className="relative w-24 h-24 flex-shrink-0">
@@ -184,10 +184,10 @@ export default function ProfilePage() {
                   alt="Avatar"
                   width={96}
                   height={96}
-                  className="rounded-full object-cover border border-white/10"
+                  className="rounded-full object-cover border border-gray-200"
                 />
               ) : (
-                <div className="w-24 h-24 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-white/10">
+                <div className="w-24 h-24 bg-[#1B4FFF]/10 rounded-full flex items-center justify-center border border-gray-100">
                   <span className="text-4xl font-semibold text-[#1B4FFF]">{initials}</span>
                 </div>
               )}
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-[#0A0F2E] hover:bg-[#1640CC] transition-colors cursor-pointer"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#1B4FFF] text-white flex items-center justify-center border-2 border-white hover:bg-[#1640CC] transition-colors cursor-pointer"
               >
                 {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
@@ -214,38 +214,38 @@ export default function ProfilePage() {
               {isVerified ? (
                 <>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                    <h2 className="text-xl font-semibold text-white">
+                    <h2 className="text-xl font-semibold text-[#1A1A2E]">
                       {profile?.first_name} {profile?.last_name}
                     </h2>
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-600 border border-green-200 rounded-full px-2 py-0.5">
                       <CheckCircle2 className="h-3 w-3" /> E verifikuar
                     </span>
                   </div>
                   <div className="space-y-2 mt-3">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-500 text-sm">
                       <Mail className="h-4 w-4" />
-                      <span className="text-white font-medium">{userEmail}</span>
+                      <span className="text-[#1A1A2E] font-medium">{userEmail}</span>
                     </div>
                     {profile?.phone && (
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                      <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-500 text-sm">
                         <Phone className="h-4 w-4" />
-                        <span className="text-white font-medium">{profile.phone}</span>
+                        <span className="text-[#1A1A2E] font-medium">{profile.phone}</span>
                       </div>
                     )}
-                    <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-500 text-sm">
                       <Calendar className="h-4 w-4" />
-                      <span className="text-white/40 text-xs uppercase tracking-wider mr-1">Anëtar që nga</span>
-                      <span className="text-white font-medium">{memberSince}</span>
+                      <span className="text-gray-400 text-xs uppercase tracking-wider mr-1">Anëtar që nga</span>
+                      <span className="text-[#1A1A2E] font-medium">{memberSince}</span>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-white/60 text-sm mb-1">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-500 text-sm mb-1">
                     <Mail className="h-4 w-4" />
-                    <span className="text-white font-medium">{userEmail}</span>
+                    <span className="text-[#1A1A2E] font-medium">{userEmail}</span>
                   </div>
-                  <p className="text-sm text-white/50 mt-1">Llogaria juaj nuk është e verifikuar</p>
+                  <p className="text-sm text-gray-400 mt-1">Llogaria juaj nuk është e verifikuar</p>
                 </>
               )}
             </div>
@@ -258,7 +258,7 @@ export default function ProfilePage() {
                   <div className="h-10 w-10 rounded-full bg-[#1B4FFF]/20 flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="h-5 w-5 text-[#1B4FFF]" />
                   </div>
-                  <p className="text-white/80 text-sm">
+                  <p className="text-gray-700 text-sm">
                     Verifikoni llogarinë tuaj për të pasur qasje të plotë në platformë
                   </p>
                 </div>
@@ -276,50 +276,50 @@ export default function ProfilePage() {
         {/* Edit Form - verified only */}
         {isVerified && (
           <>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6">
               {!editMode ? (
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white font-semibold text-lg">Të dhënat e profilit</h3>
+                  <h3 className="text-[#1A1A2E] font-semibold text-lg">Të dhënat e profilit</h3>
                   <button
                     type="button"
                     onClick={() => setEditMode(true)}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-gray-100 text-[#1A1A2E] hover:bg-gray-200 transition-colors cursor-pointer"
                   >
                     Ndrysho profilin
                   </button>
                 </div>
               ) : (
                 <>
-                  <h3 className="text-white font-semibold text-lg mb-5">Ndrysho të dhënat</h3>
+                  <h3 className="text-[#1A1A2E] font-semibold text-lg mb-5">Ndrysho të dhënat</h3>
                   <form onSubmit={handleSave} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="first_name" className="text-white/40 text-xs uppercase tracking-wider">Emri</Label>
+                        <Label htmlFor="first_name" className="text-gray-400 text-xs uppercase tracking-wider">Emri</Label>
                         <Input
                           id="first_name"
-                          className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                          className="mt-1 h-11 bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl"
                           value={formData.first_name}
                           onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="last_name" className="text-white/40 text-xs uppercase tracking-wider">Mbiemri</Label>
+                        <Label htmlFor="last_name" className="text-gray-400 text-xs uppercase tracking-wider">Mbiemri</Label>
                         <Input
                           id="last_name"
-                          className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                          className="mt-1 h-11 bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl"
                           value={formData.last_name}
                           onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="phone" className="text-white/40 text-xs uppercase tracking-wider">
+                      <Label htmlFor="phone" className="text-gray-400 text-xs uppercase tracking-wider">
                         <Phone className="h-3 w-3 inline mr-1" />
                         Numri i telefonit
                       </Label>
                       <Input
                         id="phone"
-                        className="mt-1 h-11 bg-white/8 border-white/15 text-white rounded-xl"
+                        className="mt-1 h-11 bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl"
                         placeholder="+383 44 123 456"
                         value={formData.phone}
                         onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
@@ -345,7 +345,7 @@ export default function ProfilePage() {
                             })
                           }
                         }}
-                        className="flex-1 h-11 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-semibold transition-colors cursor-pointer"
+                        className="flex-1 h-11 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-[#1A1A2E] font-semibold transition-colors cursor-pointer"
                       >
                         Anulo
                       </button>
@@ -356,15 +356,15 @@ export default function ProfilePage() {
             </div>
 
             {/* Danger Zone */}
-            <div className="border border-red-500/20 bg-red-500/5 rounded-2xl p-5 mb-6">
-              <h3 className="text-white font-semibold text-lg mb-2">Zona e rrezikut</h3>
-              <p className="text-white/50 text-sm mb-4">
+            <div className="border border-red-200 bg-red-50 rounded-2xl p-5 mb-6">
+              <h3 className="text-[#1A1A2E] font-semibold text-lg mb-2">Zona e rrezikut</h3>
+              <p className="text-gray-500 text-sm mb-4">
                 Pasi të fshini llogarinë, të gjitha të dhënat tuaja do të humbasin. Ky veprim nuk mund të kthehet.
               </p>
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
               >
                 Fshij llogarinë
               </button>
