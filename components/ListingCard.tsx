@@ -72,7 +72,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
                 fill
                 priority={priority}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                className={`object-cover transition-all duration-700 ease-out group-hover:scale-[1.06] ${
+                className={`object-cover transition-opacity duration-700 ease-out ${
                   hasMultiple && activeIndex !== 0 ? 'opacity-0' : 'opacity-100'
                 }`}
               />
@@ -85,7 +85,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
                     alt={listing.title}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className={`object-cover transition-all duration-700 ease-out group-hover:scale-[1.06] ${
+                    className={`object-cover transition-opacity duration-700 ease-out ${
                       i === activeIndex ? 'opacity-100' : 'opacity-0'
                     }`}
                   />
