@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus, User, LogOut, Menu, X, MessageCircle } from 'lucide-react'
+import { Plus, User, LogOut, MessageCircle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { Logo } from '@/components/Logo'
 
@@ -436,12 +436,32 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button */}
             <button
-              className="lg:hidden p-2 rounded-lg min-h-11 min-w-11 flex items-center justify-center text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+              className="lg:hidden relative w-11 h-11 rounded-xl flex items-center justify-center bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer group"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
             >
-              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <span className="sr-only">{menuOpen ? 'Mbyll menunë' : 'Hap menunë'}</span>
+              <span className="relative w-5 h-[14px] flex flex-col justify-between">
+                {/* Top bar */}
+                <span
+                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
+                    menuOpen ? 'translate-y-[6px] rotate-45' : ''
+                  }`}
+                />
+                {/* Middle bar — fades out when open */}
+                <span
+                  className={`block h-[2px] rounded-full bg-[#374151] origin-center transition-all duration-200 ease-out ${
+                    menuOpen ? 'w-0 opacity-0' : 'w-full opacity-100'
+                  }`}
+                />
+                {/* Bottom bar */}
+                <span
+                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
+                    menuOpen ? '-translate-y-[6px] -rotate-45' : ''
+                  }`}
+                />
+              </span>
             </button>
           </div>
         </div>
