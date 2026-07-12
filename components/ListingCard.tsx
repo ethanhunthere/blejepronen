@@ -69,31 +69,33 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-[120px] pt-3 flex flex-col">
-          <h3 className="font-semibold text-[#111827] text-[14px] leading-snug line-clamp-2 h-10 overflow-hidden mb-1">
+        <div className="flex-1 flex flex-col gap-2 p-4">
+          <h3 className="font-semibold text-[#111827] text-sm leading-snug line-clamp-2 min-h-[40px]">
             {listing.title}
           </h3>
 
-          <div className="flex items-center text-[#6B7280] text-[13px] mb-2 truncate">
+          <div className="flex items-center text-[#6B7280] text-[13px] truncate mt-1">
             <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
             <span className="truncate">{listing.city} · {listing.address}</span>
           </div>
 
-          <div className="flex items-center gap-3 text-[13px] text-[#6B7280] mb-2">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3 text-[13px] text-[#6B7280]">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <BedDouble className="h-3.5 w-3.5" />
-              <span>{listing.rooms} dhoma</span>
+              <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Maximize2 className="h-3.5 w-3.5" />
-              <span>{listing.area_m2} m²</span>
+              <span className="whitespace-nowrap">{listing.area_m2} m²</span>
             </div>
           </div>
 
-          <p className="text-[15px] font-semibold text-[#111827] mt-auto">
-            {formatPrice(listing.price)}
-            {listing.type === 'qira' && <span className="font-normal text-[#6B7280]"> /muaj</span>}
-          </p>
+          <div className="flex items-baseline gap-1 mt-auto">
+            <span className="text-[15px] font-semibold text-[#111827] whitespace-nowrap">
+              {formatPrice(listing.price)}
+            </span>
+            {listing.type === 'qira' && <span className="text-[13px] text-[#6B7280]">/muaj</span>}
+          </div>
         </div>
       </div>
     </Link>
