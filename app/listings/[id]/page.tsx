@@ -501,6 +501,7 @@ export default async function ListingDetailPage({
       <MobileContactBar
         price={priceStr}
         pricePerSqm={pricePerSqm}
+        phone={listing.profiles?.phone || null}
       />
     </div>
   )

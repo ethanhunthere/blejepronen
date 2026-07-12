@@ -5,9 +5,10 @@ import { Phone } from 'lucide-react'
 interface MobileContactBarProps {
   price: string
   pricePerSqm?: string | null
+  phone?: string | null
 }
 
-export default function MobileContactBar({ price, pricePerSqm }: MobileContactBarProps) {
+export default function MobileContactBar({ price, pricePerSqm, phone }: MobileContactBarProps) {
   const scrollToContact = () => {
     if (typeof window === 'undefined') return
     const el = document.getElementById('contact-card')
@@ -25,14 +26,24 @@ export default function MobileContactBar({ price, pricePerSqm }: MobileContactBa
             <p className="text-xs text-gray-400 truncate">{pricePerSqm}</p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={scrollToContact}
-          className="shrink-0 inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
-        >
-          <Phone className="h-4 w-4" />
-          Kontakto
-        </button>
+        {phone ? (
+          <a
+            href={`tel:${phone}`}
+            className="shrink-0 inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            Kontakto
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={scrollToContact}
+            className="shrink-0 inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            Kontakto
+          </button>
+        )}
       </div>
     </div>
   )
