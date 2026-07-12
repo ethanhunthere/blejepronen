@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'rea
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, ChevronDown } from 'lucide-react'
@@ -60,8 +60,22 @@ function ListingsContent() {
   const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
   const selectedAgent = useMemo(() => (filters.agentId ? agentMap[filters.agentId] ?? null : null), [agentMap, filters.agentId])
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialParamsAppliedRef = useRef(false)
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
+
+  // Pre-populate the search filter from the ?search= URL param once, on initial mount only.
+  useEffect(() => {
+    if (initialParamsAppliedRef.current) return
+    initialParamsAppliedRef.current = true
+
+    const urlSearch = searchParams.get('search')
+    if (urlSearch) {
+      setSearchInput(urlSearch)
+      setFilters(prev => ({ ...prev, search: urlSearch }))
+    }
+  }, [searchParams])
 
   const fetchListings = useCallback(async (pageNum = 0) => {
     if (pageNum === 0) setPage(0)
