@@ -55,7 +55,7 @@ export default async function HomePage() {
               </p>
 
               {/* Search Bar */}
-              <div className="mt-10">
+              <div className="relative z-0 mt-10">
                 <SearchBar
                   placeholder="Kërko banesë, agjent, kompani, adresë..."
                   buttonText="Kërko Banesë"
