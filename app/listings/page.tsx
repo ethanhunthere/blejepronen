@@ -10,7 +10,7 @@ import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, Users, ChevronDown
 import type { Listing, Profile } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
-const CITIES = ['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë', 'Ferizaj']
+const CITIES = Object.keys(KOSOVO_LOCATIONS)
 const PAGE_SIZE = 12
 
 type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'>
