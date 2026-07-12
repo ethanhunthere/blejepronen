@@ -77,14 +77,15 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [connected, setConnected] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const supabaseRef = useRef(createClient())
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const scrollToBottom = useCallback((smooth = false) => {
-    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
+    const el = containerRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' })
   }, [])
 
   // ---- Load conversation + messages ----
@@ -259,7 +260,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#F5F7FA]">
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#F5F7FA]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B4FFF]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -301,7 +302,7 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-full flex flex-col bg-[#F5F7FA] overflow-hidden">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#F5F7FA] overflow-hidden">
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button */}
@@ -350,7 +351,7 @@ export default function ChatPage() {
       </header>
 
       {/* ---- MESSAGES ---- */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
         <div className="max-w-3xl mx-auto">
           {!connected && (
             <div className="flex items-center justify-center gap-2 text-xs text-gray-300 py-2 animate-pulse">
@@ -450,9 +451,6 @@ export default function ChatPage() {
               </div>
             </div>
           )}
-
-          {/* Invisible element at bottom — scroll target */}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
