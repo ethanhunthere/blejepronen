@@ -310,6 +310,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </div>
               ) : (
                 <>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/posto-banese')}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#111827] hover:bg-[#0A0A0A] shadow-sm transition-all duration-200 cursor-pointer text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Posto banesë
+                  </button>
+
                   {/* Messages */}
                   <button
                     type="button"
@@ -388,15 +397,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               {unreadCount > 9 ? '9+' : unreadCount}
                             </span>
                           )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => { closeDropdown(); router.push('/posto-banese') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                          <Plus className="h-4 w-4 mr-3 text-gray-400" />
-                          Posto banesë
                         </button>
 
                         <button
