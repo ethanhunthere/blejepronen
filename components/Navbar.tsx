@@ -345,7 +345,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       aria-haspopup="true"
                     >
                       {profile.avatarUrl ? (
-                        <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="36px" className="object-cover rounded-full" />
+                        <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="36px" className="object-cover" />
                       ) : (
                         (profile.firstName || user?.email || '?')[0].toUpperCase()
                       )}
@@ -359,9 +359,9 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           onClick={() => { closeDropdown(); router.push('/profili') }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-[#1A1A2E] flex-shrink-0 overflow-hidden">
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center text-sm font-semibold text-[#1A1A2E]">
                               {profile.avatarUrl ? (
-                                <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="object-cover" />
+                                <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="40px" className="object-cover" />
                               ) : (
                                 (profile.firstName || user?.email || '?')[0].toUpperCase()
                               )}
@@ -476,13 +476,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
                   className="flex items-center gap-3 w-full text-left py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  {profile.avatarUrl ? (
-                    <Image src={profile.avatarUrl} alt="Foto profili" width={36} height={36} className="rounded-full object-cover shrink-0" />
-                  ) : (
-                    <span className="inline-flex items-center justify-center rounded-full w-9 h-9 bg-[#111827] text-white text-sm font-bold shrink-0">
-                      {(profile.firstName || user?.email || '?')[0].toUpperCase()}
-                    </span>
-                  )}
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[#111827] flex items-center justify-center">
+                    {profile.avatarUrl ? (
+                      <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="40px" className="object-cover" />
+                    ) : (
+                      <span className="text-white text-sm font-bold">
+                        {(profile.firstName || user?.email || '?')[0].toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-xs text-gray-400 font-medium">Profili im →</p>
                     {!profile.incomplete && (
