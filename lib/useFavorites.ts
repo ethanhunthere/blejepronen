@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 export function useFavorites() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
@@ -20,7 +19,7 @@ export function useFavorites() {
         return
       }
       setIsLoggedIn(true)
-      fetch('/api/favorites')
+      fetch('/api/favorites', { credentials: 'include' })
         .then(res => (res.ok ? res.json() : { listing_ids: [] }))
         .then(({ listing_ids }) => {
           if (!cancelled) {
@@ -28,7 +27,8 @@ export function useFavorites() {
             setLoaded(true)
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('useFavorites: failed to load favorites', err)
           if (!cancelled) setLoaded(true)
         })
     })
@@ -37,7 +37,14 @@ export function useFavorites() {
 
   const toggleFavorite = useCallback((id: string) => {
     if (!isLoggedIn) {
-      router.push('/login')
+      toast.info('Kyçuni për të ruajtur banesat', {
+        action: {
+          label: 'Kyçu',
+          onClick: () => {
+            window.location.href = '/login'
+          },
+        },
+      })
       return
     }
     const isFav = favoriteIds.includes(id)
@@ -47,19 +54,22 @@ export function useFavorites() {
     fetch('/api/favorites', {
       method: isFav ? 'DELETE' : 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ listing_id: id }),
     })
       .then(res => {
         if (!res.ok) {
+          console.error('useFavorites: toggle failed', res.status)
           // Rollback on failure
           setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('useFavorites: network error on toggle', err)
         // Rollback on network error
         setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
       })
-  }, [isLoggedIn, favoriteIds, router])
+  }, [isLoggedIn, favoriteIds])
 
   return { favoriteIds, toggleFavorite, isLoggedIn, loaded }
 }

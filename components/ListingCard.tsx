@@ -130,7 +130,12 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
                 e.stopPropagation()
                 onToggleFavorite?.(listing.id)
               }}
-              className="bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-110 transition-transform duration-200 cursor-pointer"
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onToggleFavorite?.(listing.id)
+              }}
+              className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
             >
               <Heart
                 className={`h-4 w-4 ${isFavorited ? 'text-red-500' : 'text-gray-400'}`}

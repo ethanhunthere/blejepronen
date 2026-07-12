@@ -93,8 +93,12 @@ export default function ContactSellerCard({
       {/* Favorite heart button */}
       <button
         type="button"
-        onClick={() => toggleFavorite(listingId)}
-        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 font-semibold text-sm cursor-pointer ${
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          toggleFavorite(listingId)
+        }}
+        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 font-semibold text-sm cursor-pointer touch-manipulation ${
           isFav
             ? 'border-red-200 bg-red-50 text-red-500 hover:bg-red-100'
             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
