@@ -13,6 +13,8 @@ import {
   Sparkles,
   CalendarDays,
   ChevronLeft,
+  Phone,
+  MessageCircle,
 } from 'lucide-react'
 import ListingImageGallery from '@/components/ListingImageGallery'
 import ExpandableText from '@/components/ExpandableText'
@@ -264,6 +266,11 @@ export default async function ListingDetailPage({
       ? formatPrice(Math.round(listing.price / listing.area_m2))
       : null
 
+  const sellerPhone = listing.profiles?.phone || null
+  const sellerWhatsAppUrl = sellerPhone
+    ? `https://wa.me/${sellerPhone.replace(/\D/g, '')}`
+    : null
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateListing',
@@ -400,6 +407,35 @@ export default async function ListingDetailPage({
                   </p>
                 )}
               </div>
+
+              {/* Seller contact — phone + WhatsApp, visible on all screens */}
+              {sellerPhone && (
+                <div className="mt-5 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
+                  <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">
+                    Kontakto shitësin
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <a
+                      href={`tel:${sellerPhone}`}
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                    >
+                      <Phone className="h-4 w-4" />
+                      {sellerPhone}
+                    </a>
+                    {sellerWhatsAppUrl && (
+                      <a
+                        href={sellerWhatsAppUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 font-semibold py-3 px-5 rounded-xl transition-colors"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* DESCRIPTION */}
