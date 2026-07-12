@@ -168,6 +168,107 @@ create policy "Users can update their own avatar"
     bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]
   );
 
+-- ============================================================================
+-- Conversations & Messages (manually created in Supabase dashboard — captured
+-- here for version control and reproducibility)
+-- ============================================================================
+
+-- Conversations table
+create table if not exists public.conversations (
+  id uuid default uuid_generate_v4() primary key,
+  listing_id uuid references public.listings(id) on delete cascade not null,
+  buyer_id uuid references public.profiles(id) on delete cascade not null,
+  seller_id uuid references public.profiles(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Messages table
+create table if not exists public.messages (
+  id uuid default uuid_generate_v4() primary key,
+  conversation_id uuid references public.conversations(id) on delete cascade not null,
+  sender_id uuid references public.profiles(id) on delete cascade not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  is_read boolean default false
+);
+
+-- Indexes for common query patterns
+create index if not exists idx_messages_conversation_id on public.messages(conversation_id, created_at);
+create index if not exists idx_messages_sender_id on public.messages(sender_id);
+create index if not exists idx_conversations_buyer_id on public.conversations(buyer_id);
+create index if not exists idx_conversations_seller_id on public.conversations(seller_id);
+create index if not exists idx_conversations_listing_id on public.conversations(listing_id);
+
+-- Updated_at trigger for conversations
+create trigger handle_updated_at_conversations
+  before update on public.conversations
+  for each row execute procedure public.handle_updated_at();
+
+-- Enable RLS
+alter table public.conversations enable row level security;
+alter table public.messages enable row level security;
+
+-- --------------------------------------------------------------------------
+-- Conversations policies
+-- --------------------------------------------------------------------------
+
+-- Participants can view their own conversations
+create policy "Participants can view their conversations"
+  on public.conversations for select
+  using (auth.uid() = buyer_id or auth.uid() = seller_id);
+
+-- Participants can create conversations
+create policy "Users can create conversations"
+  on public.conversations for insert
+  with check (auth.uid() = buyer_id);
+
+-- Participants can update the updated_at timestamp
+create policy "Participants can update their conversations"
+  on public.conversations for update
+  using (auth.uid() = buyer_id or auth.uid() = seller_id);
+
+-- --------------------------------------------------------------------------
+-- Messages policies
+-- --------------------------------------------------------------------------
+
+-- Participants can view messages in their conversations
+create policy "Participants can view messages"
+  on public.messages for select
+  using (
+    conversation_id in (
+      select id from public.conversations
+      where buyer_id = auth.uid() or seller_id = auth.uid()
+    )
+  );
+
+-- Participants can insert messages into their conversations
+create policy "Participants can insert messages"
+  on public.messages for insert
+  with check (
+    sender_id = auth.uid()
+    and conversation_id in (
+      select id from public.conversations
+      where buyer_id = auth.uid() or seller_id = auth.uid()
+    )
+  );
+
+-- Participants can mark messages as read in their conversations
+create policy "Users can mark messages as read"
+  on public.messages for update
+  using (
+    conversation_id in (
+      select id from public.conversations
+      where buyer_id = auth.uid() or seller_id = auth.uid()
+    )
+  )
+  with check (
+    conversation_id in (
+      select id from public.conversations
+      where buyer_id = auth.uid() or seller_id = auth.uid()
+    )
+  );
+
 -- Performance indexes for search and common queries
 CREATE INDEX IF NOT EXISTS idx_listings_title_gin ON public.listings USING gin(to_tsvector('simple', title));
 CREATE INDEX IF NOT EXISTS idx_listings_description_gin ON public.listings USING gin(to_tsvector('simple', description));
