@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
@@ -8,7 +8,7 @@ import type { Listing } from '@/lib/supabase'
 import ListingCard from '@/components/ListingCard'
 import { ListingCardSkeleton } from '@/components/ListingCard'
 import { Button } from '@/components/ui/button'
-import { Building2, Trash2 } from 'lucide-react'
+import { Building2, Trash2, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function PostimetEMiaPage() {
@@ -17,6 +17,10 @@ export default function PostimetEMiaPage() {
   const [loading, setLoading] = useState(true)
   const [now] = useState(() => Date.now())
   const [userId, setUserId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'mine' | 'favorites'>('mine')
+  const [favoriteListings, setFavoriteListings] = useState<Listing[]>([])
+  const [favoritesLoading, setFavoritesLoading] = useState(false)
+  const hasFetchedFavoritesRef = useRef(false)
 
   const supabase = createClient()
 
@@ -51,6 +55,48 @@ export default function PostimetEMiaPage() {
 
     init()
   }, [router, supabase, fetchListings])
+
+  const fetchFavorites = useCallback(async () => {
+    setFavoritesLoading(true)
+    try {
+      const res = await fetch('/api/favorites')
+      if (!res.ok) throw new Error('Failed to fetch favorites')
+      const { listing_ids } = await res.json()
+
+      if (!listing_ids || listing_ids.length === 0) {
+        setFavoriteListings([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('listings')
+        .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
+        .in('id', listing_ids)
+
+      if (error) throw error
+      setFavoriteListings((data || []) as unknown as Listing[])
+    } catch (err) {
+      console.error('Fetch favorites error:', err)
+      toast.error('Gabim gjatë ngarkimit të të preferuarave.')
+    } finally {
+      setFavoritesLoading(false)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    if (activeTab !== 'favorites' || hasFetchedFavoritesRef.current) return
+    hasFetchedFavoritesRef.current = true
+    fetchFavorites()
+  }, [activeTab, fetchFavorites])
+
+  const handleUnfavorite = useCallback((id: string) => {
+    setFavoriteListings(prev => prev.filter(l => l.id !== id))
+    fetch('/api/favorites', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: id }),
+    }).catch(() => {})
+  }, [])
 
   const deleteListing = async (listing: Listing) => {
     if (!userId) return
@@ -97,7 +143,56 @@ export default function PostimetEMiaPage() {
           <p className="text-gray-400 text-sm mt-1">Menaxho banesat që ke postuar në platformë</p>
         </div>
 
-        {loading ? (
+        {/* Tabs */}
+        <div className="flex items-center gap-6 border-b border-gray-100 mb-8">
+          <button
+            type="button"
+            onClick={() => setActiveTab('mine')}
+            className={`pb-3 text-sm cursor-pointer transition-colors ${
+              activeTab === 'mine' ? 'border-b-2 border-[#111827] text-[#111827] font-semibold' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            Postimet e mia
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('favorites')}
+            className={`pb-3 text-sm cursor-pointer transition-colors ${
+              activeTab === 'favorites' ? 'border-b-2 border-[#111827] text-[#111827] font-semibold' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            Të preferuarat
+          </button>
+        </div>
+
+        {activeTab === 'favorites' ? (
+          favoritesLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <ListingCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : favoriteListings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-20">
+              <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6">
+                <Heart className="h-10 w-10 text-gray-400" />
+              </div>
+              <h2 className="text-xl font-semibold text-[#1A1A2E] mb-2">Nuk keni banesë të preferuar ende</h2>
+              <p className="text-gray-400 max-w-md mb-8">Klikoni zemrën në çdo banesë për ta ruajtur</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {favoriteListings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  isFavorited
+                  onToggleFavorite={handleUnfavorite}
+                />
+              ))}
+            </div>
+          )
+        ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <ListingCardSkeleton key={i} />

@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
-import ListingCard from '@/components/ListingCard'
 import SearchBar from '@/components/SearchBar'
-import AnimateOnScroll from '@/components/AnimateOnScroll'
+import FavoritableListingsGrid from '@/components/FavoritableListingsGrid'
 import ScrollToTop from '@/components/ScrollToTop'
 import { Button } from '@/components/ui/button'
 
@@ -127,13 +126,7 @@ export default async function HomePage() {
         </div>
 
         {listings.length > 0 ? (
-          <AnimateOnScroll className="stagger-children grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-            {listings.map((listing) => (
-              <div key={listing.id} className="aos-fade-up">
-                <ListingCard listing={listing} />
-              </div>
-            ))}
-          </AnimateOnScroll>
+          <FavoritableListingsGrid listings={listings} />
         ) : (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
             <div className="text-5xl mb-4">🏠</div>

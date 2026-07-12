@@ -14,6 +14,8 @@ export type ListingCardData = Pick<
 interface ListingCardProps {
   listing: ListingCardData
   priority?: boolean
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
 }
 
 const formatPrice = (price: number) =>
@@ -26,7 +28,7 @@ const formatPrice = (price: number) =>
 const MAX_CYCLE_IMAGES = 6
 const CYCLE_INTERVAL_MS = 1100
 
-const ListingCard = React.memo(function ListingCard({ listing, priority = false }: ListingCardProps) {
+const ListingCard = React.memo(function ListingCard({ listing, priority = false, isFavorited = false, onToggleFavorite }: ListingCardProps) {
   const cycleImages = (listing.images || []).filter(Boolean).slice(0, MAX_CYCLE_IMAGES)
   const hasMultiple = cycleImages.length > 1
 
@@ -122,11 +124,18 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
           <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
             <button
               type="button"
-              aria-label="Ruaj listimin"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-              className="text-white hover:text-red-500 transition-colors duration-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] cursor-pointer"
+              aria-label={isFavorited ? 'Hiq nga të preferuarat' : 'Ruaj listimin'}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onToggleFavorite?.(listing.id)
+              }}
+              className="bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-110 transition-transform duration-200 cursor-pointer"
             >
-              <Heart className="h-5 w-5" />
+              <Heart
+                className={`h-4 w-4 ${isFavorited ? 'text-red-500' : 'text-gray-400'}`}
+                fill={isFavorited ? 'currentColor' : 'none'}
+              />
             </button>
             {listing.is_featured && (
               <span className="inline-flex items-center bg-[#111827] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">

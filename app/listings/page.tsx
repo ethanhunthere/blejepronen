@@ -64,6 +64,47 @@ function ListingsContent() {
   const initialParamsAppliedRef = useRef(false)
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // Load the current user's favorites (if logged in) so hearts render correctly.
+  useEffect(() => {
+    let cancelled = false
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return
+      setIsLoggedIn(true)
+      fetch('/api/favorites')
+        .then(res => (res.ok ? res.json() : { listing_ids: [] }))
+        .then(({ listing_ids }) => {
+          if (!cancelled) setFavoriteIds(listing_ids || [])
+        })
+        .catch(() => {})
+    })
+    return () => { cancelled = true }
+  }, [supabase])
+
+  const handleToggleFavorite = useCallback((id: string) => {
+    if (!isLoggedIn) {
+      router.push('/login')
+      return
+    }
+    const isFav = favoriteIds.includes(id)
+    setFavoriteIds(prev => (isFav ? prev.filter(x => x !== id) : [...prev, id]))
+
+    fetch('/api/favorites', {
+      method: isFav ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: id }),
+    })
+      .then(res => {
+        if (!res.ok) {
+          setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
+        }
+      })
+      .catch(() => {
+        setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
+      })
+  }, [isLoggedIn, favoriteIds, router])
 
   // Pre-populate the search filter from the ?search= URL param once, on initial mount only.
   useEffect(() => {
@@ -604,7 +645,13 @@ function ListingsContent() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
               {listings.map((listing, index) => (
-                <ListingCard key={listing.id} listing={listing} priority={index < 4} />
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  priority={index < 4}
+                  isFavorited={favoriteIds.includes(listing.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               ))}
             </div>
             {fetchState.hasMore && !fetchState.loading && listings.length > 0 && (

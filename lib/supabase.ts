@@ -159,6 +159,20 @@ export type Database = {
           is_read?: boolean
         }
       }
+      favorites: {
+        Row: {
+          id: string
+          user_id: string
+          listing_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          listing_id: string
+        }
+        Update: Record<string, never>
+      }
     }
   }
 }
@@ -279,6 +293,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Listing = Database['public']['Tables']['listings']['Row']
 export type Conversation = Database['public']['Tables']['conversations']['Row']
 export type Message = Database['public']['Tables']['messages']['Row']
+export type Favorite = Database['public']['Tables']['favorites']['Row']
 
 export type City =
   | 'Prishtinë'
