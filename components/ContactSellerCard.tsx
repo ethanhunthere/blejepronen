@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Phone, MessageCircle, ExternalLink, CheckCircle, MessagesSquare } from 'lucide-react'
+import { Phone, MessageCircle, ExternalLink, CheckCircle, MessagesSquare, Heart } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useFavorites } from '@/lib/useFavorites'
 
 interface SellerInfo {
   firstName: string
@@ -34,6 +35,7 @@ export default function ContactSellerCard({
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loginUrl, setLoginUrl] = useState(`/login`)
+  const { favoriteIds, toggleFavorite } = useFavorites()
 
   useEffect(() => {
     const supabase = createClient()
@@ -51,6 +53,7 @@ export default function ContactSellerCard({
   const cleanPhone = seller.phone ? seller.phone.replace(/\D/g, '') : ''
   const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : '#'
   const isOwnListing = currentUserId === seller.userId
+  const isFav = favoriteIds.includes(listingId)
 
   const handleMessage = async () => {
     if (!currentUserId || isOwnListing) return
@@ -86,6 +89,23 @@ export default function ContactSellerCard({
       {pricePerSqm && (
         <p className="text-sm text-gray-400 mb-4">≈ {pricePerSqm}/m²</p>
       )}
+
+      {/* Favorite heart button */}
+      <button
+        type="button"
+        onClick={() => toggleFavorite(listingId)}
+        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 font-semibold text-sm cursor-pointer ${
+          isFav
+            ? 'border-red-200 bg-red-50 text-red-500 hover:bg-red-100'
+            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+        }`}
+      >
+        <Heart
+          className="h-4 w-4"
+          fill={isFav ? 'currentColor' : 'none'}
+        />
+        {isFav ? 'E ruajtur ♥' : 'Ruaj banesën'}
+      </button>
 
       <div className="border-t border-gray-100 my-4" />
 
