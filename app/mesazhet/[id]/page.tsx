@@ -276,6 +276,8 @@ export default function ChatPage() {
   const formatMsgTime = (d: string) =>
     new Date(d).toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })
 
+  const otherUserId = conv.buyer_id === userId ? conv.seller_id : conv.buyer_id
+
   // Group messages: date separators + sender groups
   const renderItems: (
     | { type: 'date'; label: string }
@@ -313,27 +315,33 @@ export default function ChatPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
-          {conv.otherUser?.avatar_url ? (
-            <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            (conv.otherUser?.first_name || '?')[0].toUpperCase()
-          )}
-        </div>
+        {/* Avatar + Name — link to public profile */}
+        <Link
+          href={`/profili/${otherUserId}`}
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          {/* Avatar */}
+          <div className="w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
+            {conv.otherUser?.avatar_url ? (
+              <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              (conv.otherUser?.first_name || '?')[0].toUpperCase()
+            )}
+          </div>
 
-        {/* Name + subtitle */}
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[#1A1A2E] text-sm truncate">
-            {conv.otherUser?.first_name} {conv.otherUser?.last_name}
-          </p>
-          {conv.listing && (
-            <p className="text-gray-500 text-xs truncate">{conv.listing.title}</p>
-          )}
-          {isTyping && (
-            <p className="text-[11px] text-[#111827]/70 font-medium animate-fade-in">duke shkruar...</p>
-          )}
-        </div>
+          {/* Name + subtitle */}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-[#1A1A2E] text-sm truncate">
+              {conv.otherUser?.first_name} {conv.otherUser?.last_name}
+            </p>
+            {conv.listing && (
+              <p className="text-gray-500 text-xs truncate">{conv.listing.title}</p>
+            )}
+            {isTyping && (
+              <p className="text-[11px] text-[#111827]/70 font-medium animate-fade-in">duke shkruar...</p>
+            )}
+          </div>
+        </Link>
 
         {/* Listing thumbnail */}
         {conv.listing?.images?.[0] && (
