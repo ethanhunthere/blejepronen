@@ -52,7 +52,7 @@ export default function ListingImageGallery({
     return (
       <div
         id="listing-gallery"
-        className="relative h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden bg-white/5 border border-white/10 flex flex-col items-center justify-center text-white/40"
+        className="relative h-[50vh] md:h-[60vh] rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-gray-400"
       >
         <Images className="h-12 w-12 mb-3 opacity-50" />
         <p className="text-lg">Nuk ka foto</p>
@@ -66,7 +66,7 @@ export default function ListingImageGallery({
     <>
       <div id="listing-gallery" className="relative">
         {/* Desktop grid */}
-        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-3xl overflow-hidden bg-[#111936]">
+        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-3xl overflow-hidden bg-gray-100">
           {/* Main left image */}
           <button
             type="button"
@@ -145,7 +145,7 @@ export default function ListingImageGallery({
           <button
             type="button"
             onClick={() => openFullscreen(0)}
-            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white border border-white/20 hover:border-white/40 text-sm font-semibold transition-all duration-200 shadow-lg"
+            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-[#1A1A2E] border border-gray-200 text-sm font-semibold transition-all duration-200 shadow-sm"
           >
             <Images className="h-4 w-4" />
             Shiko të gjitha {total} foto
@@ -153,7 +153,7 @@ export default function ListingImageGallery({
         </div>
 
         {/* Mobile single image */}
-        <div className="md:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#111936]">
+        <div className="md:hidden relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
           <Image
             src={normalized[current]}
             alt={`${title} – foto ${current + 1}`}
@@ -188,7 +188,7 @@ export default function ListingImageGallery({
               <button
                 type="button"
                 onClick={goPrev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[#1A1A2E] shadow-md border border-gray-100"
                 aria-label="Fotoja e mëparshme"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function ListingImageGallery({
               <button
                 type="button"
                 onClick={goNext}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[#1A1A2E] shadow-md border border-gray-100"
                 aria-label="Fotoja tjetër"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -208,7 +208,7 @@ export default function ListingImageGallery({
           <button
             type="button"
             onClick={() => openFullscreen(current)}
-            className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs font-medium backdrop-blur-sm"
+            className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white text-[#1A1A2E] text-xs font-medium shadow-sm border border-gray-200"
           >
             <Images className="h-3.5 w-3.5" />
             {total} foto

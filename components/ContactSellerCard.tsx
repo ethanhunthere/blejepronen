@@ -73,24 +73,24 @@ export default function ContactSellerCard({
   return (
     <div
       id="contact-card"
-      className={`bg-[#060B1E] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/40 sticky top-24 ${className || ''}`}
+      className={`bg-white border border-gray-100 shadow-xl rounded-3xl p-6 sticky top-24 ${className || ''}`}
     >
       {/* Price */}
-      <p className="text-white/30 text-xs uppercase tracking-widest mb-1">Çmimi</p>
-      <p className="text-4xl font-black text-white mb-1">
+      <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Çmimi</p>
+      <p className="text-4xl font-black text-[#1A1A2E] mb-1">
         {price}
         {type === 'qira' && (
-          <span className="text-base font-normal text-white/50">/muaj</span>
+          <span className="text-base font-normal text-gray-400">/muaj</span>
         )}
       </p>
       {pricePerSqm && (
-        <p className="text-sm text-white/40 mb-4">≈ {pricePerSqm}/m²</p>
+        <p className="text-sm text-gray-400 mb-4">≈ {pricePerSqm}/m²</p>
       )}
 
-      <div className="border-t border-white/8 my-4" />
+      <div className="border-t border-gray-100 my-4" />
 
       {/* Seller info */}
-      <p className="text-white/30 text-xs uppercase tracking-widest mb-3">Shitësi</p>
+      <p className="text-gray-400 text-xs uppercase tracking-widest mb-3">Shitësi</p>
       <div className="flex items-center gap-3 mb-5">
         <div className="w-12 h-12 rounded-full bg-[#1B4FFF] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
           {seller.avatarUrl ? (
@@ -105,18 +105,18 @@ export default function ContactSellerCard({
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="font-bold text-white truncate">
+            <p className="font-bold text-[#1A1A2E] truncate">
               {seller.firstName} {seller.lastName}
             </p>
             {seller.emailVerified && (
               <span title="I verifikuar" className="flex-shrink-0">
-                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
               </span>
             )}
           </div>
           <a
             href={`/profili/${seller.userId}`}
-            className="text-xs text-[#4D7CFF] hover:text-white inline-flex items-center gap-1 transition-colors"
+            className="text-xs text-[#1B4FFF] hover:text-[#1640CC] inline-flex items-center gap-1 transition-colors"
           >
             Shiko profilin <ExternalLink className="h-3 w-3" />
           </a>
@@ -146,7 +146,7 @@ export default function ContactSellerCard({
             </a>
           </>
         ) : (
-          <p className="text-sm text-white/50 text-center py-2">
+          <p className="text-sm text-gray-400 text-center py-2">
             Shitësi nuk ka numër telefoni të regjistruar.
           </p>
         )}
@@ -157,7 +157,7 @@ export default function ContactSellerCard({
             <button
               type="button"
               onClick={handleMessage}
-              className="w-full bg-white/6 border border-white/12 text-white/80 hover:bg-white/10 hover:border-white/25 hover:text-white py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessagesSquare className="h-5 w-5" />
               Dërgo mesazh
@@ -166,7 +166,7 @@ export default function ContactSellerCard({
         ) : (
           <a
             href={loginUrl}
-            className="w-full bg-white/6 border border-white/12 text-white/50 hover:bg-white/10 hover:border-white/25 hover:text-white/80 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer text-sm"
+            className="w-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
             <MessagesSquare className="h-5 w-5" />
             Kyçu për të kontaktuar direkt me personin
@@ -175,7 +175,7 @@ export default function ContactSellerCard({
       </div>
 
       {/* Listing ID */}
-      <p className="text-white/15 text-[10px] text-center mt-4">
+      <p className="text-gray-200 text-[10px] text-center mt-4">
         ID: {listingId.slice(0, 8)}
       </p>
     </div>

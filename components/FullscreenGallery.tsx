@@ -82,7 +82,7 @@ export default function FullscreenGallery({
         <button
           type="button"
           onClick={onClose}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
           aria-label="Mbyll"
         >
           <X className="h-5 w-5" />

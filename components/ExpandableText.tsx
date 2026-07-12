@@ -16,7 +16,7 @@ export default function ExpandableText({ text, maxLength = 300 }: ExpandableText
 
   return (
     <div>
-      <p className="text-white/70 leading-relaxed text-base whitespace-pre-line">
+      <p className="text-gray-600 leading-relaxed text-base whitespace-pre-line">
         {displayText}
       </p>
       {shouldTruncate && (

@@ -17,12 +17,12 @@ export default function MobileContactBar({ price, pricePerSqm }: MobileContactBa
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#0A0F2E]/95 backdrop-blur-md border-t border-white/10 px-4 py-3">
+    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 shadow-lg px-4 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xl font-black text-[#1B4FFF] truncate">{price}</p>
+          <p className="text-xl font-black text-[#1A1A2E] truncate">{price}</p>
           {pricePerSqm && (
-            <p className="text-xs text-white/50 truncate">{pricePerSqm}</p>
+            <p className="text-xs text-gray-400 truncate">{pricePerSqm}</p>
           )}
         </div>
         <button
