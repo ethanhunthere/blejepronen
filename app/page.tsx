@@ -38,20 +38,21 @@ export default async function HomePage() {
       {/* Hero — clean gradient */}
       <section
         aria-label="Hero section"
-        className="relative overflow-hidden min-h-[80vh] md:min-h-[85vh] flex flex-col bg-gradient-to-br from-[#1B4FFF] via-[#2563EB] to-[#1E40AF] hero-gradient-animate"
+        className="relative overflow-hidden min-h-[80vh] md:min-h-[85vh] flex flex-col hero-gradient-animate"
+        style={{ background: 'linear-gradient(135deg, #F5F7FA 0%, #EEF2FF 40%, #F0F4FF 70%, #F5F7FA 100%)' }}
       >
         <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 md:py-18 2xl:py-24 w-full">
             <div className="relative text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-white leading-tight tracking-tight text-center px-3 sm:px-4 py-2">
+              <h1 className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-[#1A1A2E] leading-tight tracking-tight text-center px-3 sm:px-4 py-2">
                 Gjej banesën e duhur në Kosovë
               </h1>
 
-              <p className="inline-block text-lg md:text-xl text-white/80 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium">
+              <p className="inline-block text-lg md:text-xl text-gray-600 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium">
                 Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
               </p>
 
-              <p className="inline-block text-white text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1">
+              <p className="inline-block text-gray-400 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1">
                 Kërko sipas qytetit ose lagjes
               </p>
 
