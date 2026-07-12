@@ -233,14 +233,14 @@ export default function CompletoProfilinPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#1B4FFF]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E] flex items-start justify-center pt-24 md:pt-32 p-4">
+    <div className="min-h-screen bg-[#F5F7FA] flex items-start justify-center pt-24 md:pt-32 p-4">
       <div className="w-full max-w-lg">
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-3 mb-8">
@@ -250,44 +250,44 @@ export default function CompletoProfilinPage() {
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                   s <= step
                     ? 'bg-[#1B4FFF] text-white shadow-lg shadow-[#1B4FFF]/30'
-                    : 'bg-white/5 border border-white/10 text-white/30'
+                    : 'bg-gray-100 border border-gray-200 text-gray-400'
                 }`}
               >
                 {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
               </div>
               {s < 2 && (
-                <div className={`w-12 h-0.5 rounded-full transition-colors duration-300 ${s < step ? 'bg-[#1B4FFF]' : 'bg-white/10'}`} />
+                <div className={`w-12 h-0.5 rounded-full transition-colors duration-300 ${s < step ? 'bg-[#1B4FFF]' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
         </div>
 
         {/* Premium card */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl shadow-2xl shadow-black/40 p-8 md:p-10">
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-8 md:p-10">
 
           {/* === STEP 1: Profile Form === */}
           {step === 1 && (
             <>
               <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Kompleto profilin</h2>
-                <p className="text-white/50 text-sm">Plotëso të dhënat për të vazhduar</p>
+                <h2 className="text-2xl font-bold text-[#1A1A2E] mb-2">Kompleto profilin</h2>
+                <p className="text-gray-500 text-sm">Plotëso të dhënat për të vazhduar</p>
               </div>
 
               {submitted && error && (
-                <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400 rounded-xl">
+                <Alert variant="destructive" className="mb-6 bg-red-50 border-red-200 text-red-600 rounded-xl">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <form onSubmit={handleStep1Submit} className="space-y-5">
                 <div>
-                  <Label htmlFor="firstName" className="text-white/60 text-sm font-medium mb-1.5">Emri</Label>
+                  <Label htmlFor="firstName" className="text-gray-600 text-sm font-medium mb-1.5">Emri</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="firstName"
                       placeholder="Emri yt"
-                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#1B4FFF]/60"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -296,13 +296,13 @@ export default function CompletoProfilinPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="lastName" className="text-white/60 text-sm font-medium mb-1.5">Mbiemri</Label>
+                  <Label htmlFor="lastName" className="text-gray-600 text-sm font-medium mb-1.5">Mbiemri</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="lastName"
                       placeholder="Mbiemri yt"
-                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#1B4FFF]/60"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -311,14 +311,14 @@ export default function CompletoProfilinPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-white/60 text-sm font-medium mb-1.5">Numri i telefonit</Label>
+                  <Label htmlFor="phone" className="text-gray-600 text-sm font-medium mb-1.5">Numri i telefonit</Label>
                   <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="phone"
                       type="tel"
                       placeholder="+383 44 123 456"
-                      className="pl-11 h-12 rounded-xl bg-white/8 border-white/15 text-white placeholder:text-white/30 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#1B4FFF]/60"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -345,14 +345,14 @@ export default function CompletoProfilinPage() {
           {step === 2 && (
             <>
               <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Verifiko email-in</h2>
-                <p className="text-white/50 text-sm">
+                <h2 className="text-2xl font-bold text-[#1A1A2E] mb-2">Verifiko email-in</h2>
+                <p className="text-gray-500 text-sm">
                   Shkruani kodin 6-shifror që dërguam në {userEmail}
                 </p>
               </div>
 
               {error && (
-                <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-400 rounded-xl">
+                <Alert variant="destructive" className="mb-6 bg-red-50 border-red-200 text-red-600 rounded-xl">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -378,11 +378,11 @@ export default function CompletoProfilinPage() {
                       if (error) setError('')
                       if (value.length === 6) verifyOtp(value)
                     }}
-                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white/8 border border-white/15 rounded-xl text-white placeholder:text-white/20 focus:border-[#1B4FFF]/60 focus:bg-white/12"
+                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white border border-gray-200 rounded-xl text-[#1A1A2E] placeholder:text-gray-300 focus:border-[#1B4FFF]/60"
                   />
                 </div>
 
-                <p className="text-sm text-center text-white/40">
+                <p className="text-sm text-center text-gray-400">
                   {canResend ? (
                     <button
                       type="button"
@@ -400,7 +400,7 @@ export default function CompletoProfilinPage() {
                 <button
                   type="button"
                   onClick={() => { router.push('/'); router.refresh() }}
-                  className="w-full h-12 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white font-medium transition-colors inline-flex items-center justify-center cursor-pointer"
+                  className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-[#1A1A2E] font-medium transition-colors inline-flex items-center justify-center cursor-pointer"
                 >
                   Vazhdo pa verifikim
                   <ArrowRight className="h-4 w-4 ml-2" />

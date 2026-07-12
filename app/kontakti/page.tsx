@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-white py-16">
+    <div className="min-h-screen bg-[#F5F7FA] py-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl p-8 border border-gray-100">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Kontakti</h1>
+        <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+          <h1 className="text-3xl font-bold text-[#1A1A2E] mb-4">Kontakti</h1>
           <p className="text-gray-500 mb-8">
             Kemi kënaqësinë t&apos;ju ndihmojmë. Na shkruani për çdo pyetje, sugjerim apo problem.
           </p>
@@ -31,20 +31,20 @@ export default function ContactPage() {
               <MessageCircle className="h-5 w-5 text-[#1B4FFF]" />
               <div>
                 <p className="text-sm text-gray-500">Koha e përgjigjes</p>
-                <p className="text-gray-900 font-medium">Brenda 24 orëve gjatë ditëve të punës</p>
+                <p className="text-[#1A1A2E] font-medium">Brenda 24 orëve gjatë ditëve të punës</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
               <MapPin className="h-5 w-5 text-[#1B4FFF]" />
               <div>
                 <p className="text-sm text-gray-500">Zona e shërbimit</p>
-                <p className="text-gray-900 font-medium">Kosovë, Shqipëri dhe Maqedoni e Veriut</p>
+                <p className="text-[#1A1A2E] font-medium">Kosovë, Shqipëri dhe Maqedoni e Veriut</p>
               </div>
             </div>
           </div>
 
           <div className="border-t border-gray-100 pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Çfarë mund të raportoni?</h2>
+            <h2 className="text-lg font-semibold text-[#1A1A2E] mb-3">Çfarë mund të raportoni?</h2>
             <ul className="list-disc list-inside text-gray-600 space-y-1 mb-6">
               <li>Listime të dyshimta ose mashtruese</li>
               <li>Probleme teknike me platformën</li>

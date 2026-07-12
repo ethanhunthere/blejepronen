@@ -61,20 +61,20 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg border-0">
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl border border-gray-100 rounded-3xl">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="h-8 w-8 text-green-400" />
+            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
+              <Mail className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Kontrollo email-in!</h2>
-            <p className="text-gray-400">
+            <h2 className="text-2xl font-bold text-[#1A1A2E]">Kontrollo email-in!</h2>
+            <p className="text-gray-500">
               Dërguam një link konfirmimi te <strong>{email}</strong>.
               Kliko linkun për të aktivizuar llogarinë tënde.
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-white bg-transparent px-5 py-2 text-sm font-semibold text-white hover:bg-white hover:text-[#1B4FFF] transition-colors cursor-pointer"
+              className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#1B4FFF] hover:bg-[#1640CC] px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
@@ -86,26 +86,26 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F2E] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-xl border border-gray-100 rounded-3xl">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Krijo llogari</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl font-bold text-center text-[#1A1A2E]">Krijo llogari</CardTitle>
+            <CardDescription className="text-center text-gray-500">
               30 ditë falas, pa kartë krediti
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="bg-red-50 border border-red-200 text-red-600">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <button
               type="button"
-              className="w-full h-11 border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#1B4FFF] rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+              className="w-full h-11 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -114,23 +114,23 @@ export default function RegisterPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/10" />
+                <span className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#0A0F2E] px-2 text-gray-500">ose</span>
+                <span className="bg-[#F5F7FA] px-2 text-gray-400">ose</span>
               </div>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-600 font-medium">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="pl-10 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -139,14 +139,14 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Fjalëkalimi</Label>
+                <Label htmlFor="password" className="text-gray-600 font-medium">Fjalëkalimi</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password"
                     type="password"
                     placeholder="Minimum 6 karaktere"
-                    className="pl-10 h-11 bg-white/10 text-white placeholder:text-white/40 border-white/10"
+                    className="pl-10 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
