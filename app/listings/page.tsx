@@ -444,19 +444,19 @@ function ListingsContent() {
                 <Link
                   key={agent.id}
                   href={`/profili/${agent.id}`}
-                  className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-24"
+                  className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-32"
                 >
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm flex-shrink-0">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm flex-shrink-0">
                     {agent.avatar_url ? (
                       <Image
                         src={agent.avatar_url}
                         alt={`Foto e ${agent.first_name || 'agjentit'}`}
-                        width={64}
-                        height={64}
+                        width={96}
+                        height={96}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-100 text-gray-600 font-semibold text-lg flex items-center justify-center">
+                      <div className="w-full h-full bg-gray-100 text-gray-600 font-semibold text-2xl flex items-center justify-center">
                         {(agent.first_name?.[0] || '?').toUpperCase()}
                       </div>
                     )}
@@ -464,8 +464,10 @@ function ListingsContent() {
                   <p className="text-sm font-semibold text-[#111827] text-center truncate w-full">
                     {agent.first_name} {agent.last_name}
                   </p>
-                  {agent.email_verified && (
+                  {agent.email_verified ? (
                     <p className="text-xs text-emerald-600 text-center">E verifikuar</p>
+                  ) : (
+                    <p className="text-xs text-gray-400 text-center">E pa verifikuar</p>
                   )}
                 </Link>
               ))}
