@@ -186,6 +186,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     )
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('messages-read', fetchUnreadCount)
 
     return () => {
       subscription.unsubscribe()
@@ -198,6 +199,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         unreadChannelRef.current = null
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('messages-read', fetchUnreadCount)
     }
   }, [router, fetchUnreadCount])
 
