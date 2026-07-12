@@ -269,19 +269,26 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-white border-b border-gray-200 shadow-sm overflow-visible ${className || ''}`}>
+    <nav className={`${positionClasses} bg-white border-b border-[#F3F4F6] shadow-[0_1px_0_#E5E7EB] overflow-visible ${className || ''}`}>
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20 2xl:h-24">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0">
-            <Logo variant="navbar" className="h-8 2xl:h-10 2xl:w-56" />
+          <Link href="/" className="flex items-center flex-shrink-0 [&_img]:brightness-0 transition-transform duration-200 hover:scale-105">
+            <Logo variant="navbar" className="h-8" />
           </Link>
 
           {/* Right nav section */}
           <div className="flex items-center min-w-0">
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/listings" className="relative font-medium tracking-wide text-gray-600 hover:text-[#1B4FFF] transition-all duration-300 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#1B4FFF] hover:after:w-full after:transition-all after:duration-300 2xl:text-base">
+              <Link
+                href="/listings"
+                className={`relative text-[14px] transition-all duration-200 after:content-[''] after:absolute after:-bottom-5 after:left-0 after:h-0.5 after:bg-[#111827] after:transition-all after:duration-200 ${
+                  pathname === '/listings'
+                    ? 'text-[#111827] font-semibold after:w-full'
+                    : 'text-[#374151] font-medium hover:text-[#111827] after:w-0'
+                }`}
+              >
                 Shiko banesat
               </Link>
               {user === undefined ? (
@@ -290,13 +297,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold border border-gray-300 text-gray-700 hover:border-[#1B4FFF] hover:text-[#1B4FFF] transition-all duration-300 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-all duration-300 cursor-pointer shadow-sm"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-white bg-[#111827] hover:bg-[#374151] shadow-sm transition-all duration-200 cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -306,7 +313,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-lg px-5 py-2 2xl:px-7 2xl:py-3 gap-1.5 text-sm font-semibold whitespace-nowrap bg-[#1B4FFF] hover:bg-[#1640CC] transition-all cursor-pointer text-white"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#1B4FFF] hover:bg-[#1440E8] shadow-sm transition-all duration-200 cursor-pointer text-white"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -316,12 +323,12 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/mesazhet')}
-                    className="relative p-2 text-gray-600 hover:text-[#1B4FFF] transition-colors cursor-pointer"
+                    className="relative p-2 rounded-xl text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer"
                     aria-label="Mesazhet"
                   >
                     <MessageCircle className="h-5 w-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                      <span className="badge-new absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
@@ -442,13 +449,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         {/* Mobile Menu */}
         {menuOpen && (
           <div id="mobile-menu" className="lg:hidden border-t border-gray-200 bg-white py-4 space-y-3">
-            <Link href="/listings" className="relative inline-block text-gray-700 hover:text-[#1B4FFF] font-medium tracking-wide py-3 transition-all duration-300 after:content-[''] after:absolute after:bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-[#1B4FFF] hover:after:w-full after:transition-all after:duration-300">
+            <Link href="/listings" className={`relative inline-block py-3 transition-all duration-200 ${pathname === '/listings' ? 'text-[#111827] font-semibold' : 'text-[#374151] font-medium hover:text-[#111827]'}`}>
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-semibold border border-gray-300 text-gray-700 hover:border-[#1B4FFF] hover:text-[#1B4FFF] transition-all duration-300 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-full px-5 py-2.5 text-sm font-bold text-white bg-[#1B4FFF] hover:bg-[#1640CC] transition-all duration-300 cursor-pointer shadow-sm">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#111827] hover:bg-[#374151] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>

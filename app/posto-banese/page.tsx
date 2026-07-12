@@ -395,6 +395,20 @@ export default function PostoBanesePage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#1A1A2E]">Posto banesën tënde</h1>
           <p className="text-gray-500 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>
+
+          <div className="flex items-center gap-2 mt-5" aria-hidden="true">
+            {['Lloji', 'Detajet', 'Fotot'].map((label, i) => (
+              <div key={label} className="flex items-center gap-2 flex-1 last:flex-none">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-400 whitespace-nowrap">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
+                    {i + 1}
+                  </span>
+                  {label}
+                </div>
+                {i < 2 && <div className="h-px flex-1 bg-gray-200" />}
+              </div>
+            ))}
+          </div>
         </div>
 
         {uploading && (
@@ -464,7 +478,7 @@ export default function PostoBanesePage() {
             <h2 className="font-semibold text-[#1A1A2E]">Informacioni bazë</h2>
 
             <div>
-              <Label htmlFor="title">Titulli i listimit *</Label>
+              <Label htmlFor="title">Titulli i listimit<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="title"
                 name="title"
@@ -479,7 +493,7 @@ export default function PostoBanesePage() {
             </div>
 
             <div>
-              <Label htmlFor="description">Përshkrimi *</Label>
+              <Label htmlFor="description">Përshkrimi<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <textarea
                 id="description"
                 name="description"
@@ -518,7 +532,7 @@ export default function PostoBanesePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="price">
-                  Çmimi (€) {formData.type === 'qira' ? '/muaj' : ''} *
+                  Çmimi (€) {formData.type === 'qira' ? '/muaj' : ''}<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id="price"
@@ -533,7 +547,7 @@ export default function PostoBanesePage() {
                 />
               </div>
               <div>
-                <Label htmlFor="area_m2">Sipërfaqja (m²) *</Label>
+                <Label htmlFor="area_m2">Sipërfaqja (m²)<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="area_m2"
                   name="area_m2"
@@ -566,7 +580,7 @@ export default function PostoBanesePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="city">Qyteti *</Label>
+                <Label htmlFor="city">Qyteti<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <select
                   id="city"
                   name="city"
@@ -605,7 +619,7 @@ export default function PostoBanesePage() {
             </div>
 
             <div>
-              <Label htmlFor="rooms">Numri i dhomave *</Label>
+              <Label htmlFor="rooms">Numri i dhomave<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <select
                 id="rooms"
                 name="rooms"
@@ -623,7 +637,7 @@ export default function PostoBanesePage() {
             </div>
 
             <div>
-              <Label htmlFor="address">Rruga dhe numri *</Label>
+              <Label htmlFor="address">Rruga dhe numri<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="address"
                 name="address"

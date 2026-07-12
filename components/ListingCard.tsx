@@ -1,8 +1,9 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, BedDouble, Maximize2, Tag } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { MapPin, BedDouble, Maximize2, Heart, Tag } from 'lucide-react'
 import type { Listing } from '@/lib/supabase'
 
 export type ListingCardData = Pick<
@@ -27,9 +28,9 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <div className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden transition-all duration-300 bg-white border border-gray-200 shadow-sm hover:shadow-lg hover:border-gray-300 hover:-translate-y-1.5">
+      <div className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white shadow-sm card-hover">
         {/* Image */}
-        <div className="relative h-52 bg-gray-100 flex-shrink-0 overflow-hidden">
+        <div className="relative aspect-[4/3] bg-gray-100 flex-shrink-0 overflow-hidden rounded-2xl">
           {mainImage ? (
             <Image
               src={mainImage}
@@ -37,58 +38,62 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false 
               fill
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             />
           ) : null}
-          {/* Gradient overlay at bottom of image */}
-          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+
+          {/* Type badge — quiet, uncolored (Airbnb style) */}
           <div className="absolute top-3 left-3">
-            <Badge
-              className={
-                listing.type === 'shitje'
-                  ? 'bg-[#1B4FFF] text-white font-semibold border border-[#1B4FFF]/30'
-                  : 'bg-emerald-500/80 text-white font-semibold border border-emerald-400/30'
-              }
-            >
+            <span className="inline-flex items-center bg-white/90 backdrop-blur-sm text-[#111827] text-[11px] font-semibold px-2.5 py-1 rounded-full">
               {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
-            </Badge>
+            </span>
           </div>
-          {listing.is_featured && (
-            <div className="absolute top-3 right-3">
-              <Badge className="bg-amber-500/70 text-white border border-amber-400/30">
+
+          {/* Save + Featured stack */}
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+            <button
+              type="button"
+              aria-label="Ruaj listimin"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+              className="text-white hover:text-red-500 transition-colors duration-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] cursor-pointer"
+            >
+              <Heart className="h-5 w-5" />
+            </button>
+            {listing.is_featured && (
+              <span className="inline-flex items-center bg-[#1B4FFF] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
                 <Tag className="h-3 w-3 mr-1" />
                 Featured
-              </Badge>
-            </div>
-          )}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-[140px] p-4 flex flex-col">
-          <h3 className="font-semibold text-[#1A1A2E] text-base leading-tight line-clamp-2 h-12 overflow-hidden mb-2">
+        <div className="flex-1 min-h-[120px] pt-3 flex flex-col">
+          <h3 className="font-semibold text-[#111827] text-[14px] leading-snug line-clamp-2 h-10 overflow-hidden mb-1">
             {listing.title}
           </h3>
 
-          <p className="text-[#1B4FFF] font-bold text-2xl mb-3">
-            {formatPrice(listing.price)}
-            {listing.type === 'qira' && <span className="text-sm font-normal text-gray-400">/muaj</span>}
-          </p>
-
-          <div className="flex items-center text-gray-500 text-sm mb-3">
-            <MapPin className="h-4 w-4 mr-1.5 flex-shrink-0" />
+          <div className="flex items-center text-[#6B7280] text-[13px] mb-2 truncate">
+            <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
             <span className="truncate">{listing.city} · {listing.address}</span>
           </div>
 
-          <div className="flex items-center space-x-4 text-sm text-gray-600 pt-3 border-t border-gray-100">
-            <div className="flex items-center">
-              <BedDouble className="h-4 w-4 mr-1.5 text-gray-400" />
+          <div className="flex items-center gap-3 text-[13px] text-[#6B7280] mb-2">
+            <div className="flex items-center gap-1">
+              <BedDouble className="h-3.5 w-3.5" />
               <span>{listing.rooms} dhoma</span>
             </div>
-            <div className="flex items-center">
-              <Maximize2 className="h-4 w-4 mr-1.5 text-gray-400" />
+            <div className="flex items-center gap-1">
+              <Maximize2 className="h-3.5 w-3.5" />
               <span>{listing.area_m2} m²</span>
             </div>
           </div>
+
+          <p className="text-[15px] font-semibold text-[#111827] mt-auto">
+            {formatPrice(listing.price)}
+            {listing.type === 'qira' && <span className="font-normal text-[#6B7280]"> /muaj</span>}
+          </p>
         </div>
       </div>
     </Link>
@@ -100,16 +105,13 @@ export default ListingCard
 /** Skeleton loader for ListingCard */
 export function ListingCardSkeleton() {
   return (
-    <div className="h-full flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden">
-      <div className="h-52 flex-shrink-0 animate-pulse bg-gray-100" />
-      <div className="p-4 space-y-3">
-        <div className="h-5 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-4 w-36 animate-pulse rounded bg-gray-200" />
-        <div className="flex gap-4 pt-3 border-t border-gray-100">
-          <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-          <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
-        </div>
+    <div className="h-full flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm">
+      <div className="aspect-[4/3] flex-shrink-0 rounded-2xl skeleton" />
+      <div className="pt-3 space-y-2">
+        <div className="h-4 w-40 rounded skeleton" />
+        <div className="h-3.5 w-32 rounded skeleton" />
+        <div className="h-3.5 w-28 rounded skeleton" />
+        <div className="h-4 w-24 rounded skeleton" />
       </div>
     </div>
   )

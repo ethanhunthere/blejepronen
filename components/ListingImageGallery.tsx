@@ -66,7 +66,7 @@ export default function ListingImageGallery({
     <>
       <div id="listing-gallery" className="relative">
         {/* Desktop grid */}
-        <div className="hidden md:grid h-[55vh] lg:h-[60vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-3xl overflow-hidden bg-gray-100">
+        <div className="hidden md:grid h-[60vh] lg:h-[70vh] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2 rounded-3xl overflow-hidden bg-gray-100">
           {/* Main left image */}
           <button
             type="button"

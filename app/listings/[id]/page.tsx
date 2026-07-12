@@ -349,38 +349,35 @@ export default async function ListingDetailPage({
             {/* STATS BAR */}
             <section>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4">
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                  <div className="bg-gray-50 rounded-xl p-3 text-center hover:bg-gray-100 transition-colors">
-                    <BedDouble className="h-5 w-5 mx-auto mb-1.5 text-[#1B4FFF]" />
-                    <p className="text-[#1A1A2E] font-bold text-base">{listing.rooms}</p>
-                    <p className="text-gray-400 text-xs mt-0.5 uppercase tracking-wide">Dhoma</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
+                    <BedDouble className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                    <span className="text-[#1A1A2E] font-semibold text-sm">{listing.rooms}</span>
+                    <span className="text-gray-400 text-xs">dhoma</span>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-3 text-center hover:bg-gray-100 transition-colors">
-                    <Maximize2 className="h-5 w-5 mx-auto mb-1.5 text-[#1B4FFF]" />
-                    <p className="text-[#1A1A2E] font-bold text-base">{listing.area_m2} m²</p>
-                    <p className="text-gray-400 text-xs mt-0.5 uppercase tracking-wide">Sipërfaqja</p>
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
+                    <Maximize2 className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                    <span className="text-[#1A1A2E] font-semibold text-sm">{listing.area_m2} m²</span>
                   </div>
                   {listing.floor && (
-                    <div className="bg-gray-50 rounded-xl p-3 text-center hover:bg-gray-100 transition-colors">
-                      <Building2 className="h-5 w-5 mx-auto mb-1.5 text-[#1B4FFF]" />
-                      <p className="text-[#1A1A2E] font-bold text-base">{listing.floor}</p>
-                      <p className="text-gray-400 text-xs mt-0.5 uppercase tracking-wide">Kati</p>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
+                      <Building2 className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <span className="text-[#1A1A2E] font-semibold text-sm">{listing.floor}</span>
+                      <span className="text-gray-400 text-xs">kati</span>
                     </div>
                   )}
                   {listing.apartment_type && (
-                    <div className="bg-gray-50 rounded-xl p-3 text-center hover:bg-gray-100 transition-colors">
-                      <Home className="h-5 w-5 mx-auto mb-1.5 text-[#1B4FFF]" />
-                      <p className="text-[#1A1A2E] font-bold text-base">{listing.apartment_type}</p>
-                      <p className="text-gray-400 text-xs mt-0.5 uppercase tracking-wide">Tipologjia</p>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
+                      <Home className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <span className="text-[#1A1A2E] font-semibold text-sm">{listing.apartment_type}</span>
                     </div>
                   )}
                   {listing.condition && (
-                    <div className="bg-gray-50 rounded-xl p-3 text-center hover:bg-gray-100 transition-colors">
-                      <Sparkles className="h-5 w-5 mx-auto mb-1.5 text-[#1B4FFF]" />
-                      <p className="text-[#1A1A2E] font-bold text-base">
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 hover:bg-gray-100 transition-colors">
+                      <Sparkles className="h-4 w-4 text-[#1B4FFF] flex-shrink-0" />
+                      <span className="text-[#1A1A2E] font-semibold text-sm">
                         {conditionLabels[listing.condition] || listing.condition}
-                      </p>
-                      <p className="text-gray-400 text-xs mt-0.5 uppercase tracking-wide">Gjendja</p>
+                      </span>
                     </div>
                   )}
                 </div>

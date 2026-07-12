@@ -35,61 +35,56 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      {/* Hero — clean gradient */}
+      {/* Hero — search-first, Zillow-inspired */}
       <section
         aria-label="Hero section"
-        className="relative overflow-hidden min-h-[80vh] md:min-h-[85vh] flex flex-col hero-gradient-animate"
-        style={{ background: 'linear-gradient(135deg, #F5F7FA 0%, #EEF2FF 40%, #F0F4FF 70%, #F5F7FA 100%)' }}
+        className="relative overflow-hidden"
+        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, #EEF2FF 0%, #FFFFFF 60%)' }}
       >
-        <div className="relative z-20 flex-1 flex items-center pt-4 md:pt-8">
-          <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-10 sm:py-14 md:py-18 2xl:py-24 w-full">
-            <div className="relative text-center max-w-3xl mx-auto">
-              <h1 className="inline-block uppercase text-4xl md:text-5xl lg:text-6xl 2xl:text-8xl font-black text-[#1A1A2E] leading-tight tracking-tight text-center px-3 sm:px-4 py-2">
-                Gjej banesën e duhur në Kosovë
+        <div className="relative z-20 py-20 md:py-28">
+          <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
+            <div className="text-center max-w-3xl mx-auto">
+              <h1 className="text-[40px] sm:text-[48px] md:text-[64px] font-extrabold tracking-tight text-[#111827] leading-[1.1]">
+                Gjej banesën
+                <br />
+                <span className="text-[#1B4FFF]">e duhur</span> në Kosovë
               </h1>
 
-              <p className="inline-block text-lg md:text-xl text-gray-600 max-w-2xl mt-6 leading-relaxed text-center mx-auto px-3 sm:px-4 py-2 font-medium">
-                Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët. Shiko qindra banesa në të gjitha qytetet kryesore të Kosovës.
-              </p>
-
-              <p className="inline-block text-gray-400 text-xs sm:text-sm text-center mb-3 mt-10 px-3 py-1">
-                Kërko sipas qytetit ose lagjes
+              <p className="text-[16px] text-[#6B7280] max-w-lg mx-auto leading-relaxed mt-4">
+                Bli, shit ose jep me qira banesën tënde duke kontaktuar drejtpërdrejt me pronarët — pa ndërmjetës.
               </p>
 
               {/* Search Bar */}
-              <SearchBar
-                placeholder="Kërko banesë, agjent, kompani, adresë..."
-                buttonText="Kërko Banesë"
-                className="2xl:max-w-4xl 2xl:h-16"
-              />
+              <div className="mt-10">
+                <SearchBar
+                  placeholder="Kërko banesë, agjent, kompani, adresë..."
+                  buttonText="Kërko Banesë"
+                />
+              </div>
 
-              {/* City links */}
-              <div className="flex items-center justify-center flex-wrap gap-2 mt-6 text-sm">
+              {/* City strip — horizontal scroll, Airbnb category style */}
+              <div className="flex items-center justify-center gap-5 mt-8 overflow-x-auto scrollbar-hide px-1">
                 {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="bg-white border border-gray-300 shadow-sm transition-all duration-200 font-medium text-gray-700 rounded-full px-4 py-1.5 hover:border-[#1B4FFF] hover:text-[#1B4FFF]"
+                    className="link-underline flex-shrink-0 text-[13px] font-medium text-[#374151] hover:text-[#111827] transition-colors duration-200 py-1"
                   >
                     {city}
                   </Link>
                 ))}
               </div>
 
-              {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-                <Link
-                  href="/listings"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-bold bg-white text-[#1B4FFF] hover:bg-gray-50 transition-all duration-300 hover:scale-105 cursor-pointer shadow-xl shadow-black/10"
-                >
-                  Shiko banesat
-                </Link>
-                <Link
-                  href="/posto-banese"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl px-8 py-3.5 font-semibold border-2 border-[#1B4FFF] text-[#1B4FFF] bg-white hover:bg-[#1B4FFF] hover:text-white shadow-sm transition-all duration-300 cursor-pointer"
-                >
-                  Posto banesën tënde
-                </Link>
+              {/* Trust signals */}
+              <div className="flex items-center justify-center flex-wrap gap-2 mt-8">
+                {['30 ditë falas', 'Pa ndërmjetës', 'Kontakt direkt'].map((signal) => (
+                  <span
+                    key={signal}
+                    className="inline-flex items-center gap-1.5 bg-[#F9FAFB] text-[#6B7280] text-[12px] font-medium px-3 py-1.5 rounded-full"
+                  >
+                    <span className="text-[#1B4FFF]">✓</span> {signal}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -113,6 +108,7 @@ export default async function HomePage() {
 
       {/* Unified Listings */}
       <section aria-label="Banesat e disponueshme" className="bg-[#F5F7FA] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+        <div className="border-t border-[#F3F4F6] mb-8" />
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-black text-[#1A1A2E] border-l-4 border-[#1B4FFF] pl-4">Banesa në Shitje dhe me Qira</h2>

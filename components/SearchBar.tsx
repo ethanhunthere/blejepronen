@@ -33,24 +33,22 @@ function SearchBar({
 
   return (
     <div
-      className={`bg-white shadow-xl rounded-2xl p-3 flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto ${className}`}
+      className={`bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#1B4FFF]/30 transition-all duration-200 px-4 py-2 flex items-center gap-3 max-w-2xl mx-auto ${className}`}
     >
-      <div className="flex-1 flex items-center px-3 gap-2">
-        <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
-        <input
-          type="text"
-          placeholder={placeholder}
-          aria-label="Kërko banesa"
-          className="w-full text-gray-700 placeholder:text-gray-400 outline-none text-base sm:text-sm bg-transparent"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-      </div>
+      <Search className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
+      <input
+        type="text"
+        placeholder={placeholder}
+        aria-label="Kërko banesa"
+        className="flex-1 min-w-0 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] outline-none border-none bg-transparent"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
       <button
         type="button"
         onClick={handleSearch}
-        className="w-full sm:w-auto bg-[#1B4FFF] hover:bg-[#1640CC] text-white border-2 border-white/30 px-6 py-2.5 rounded-xl font-semibold transition-colors cursor-pointer"
+        className="flex-shrink-0 bg-[#1B4FFF] hover:bg-[#1440E8] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer"
       >
         {buttonText}
       </button>

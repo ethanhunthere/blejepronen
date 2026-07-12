@@ -23,6 +23,9 @@ function ListingsContent() {
   const [loadError, setLoadError] = useState(false)
   const [filters, setFilters] = useState({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
   const [showFilters, setShowFilters] = useState(false)
+  const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc'>('newest')
+  const [sortOpen, setSortOpen] = useState(false)
+  const sortRef = useRef<HTMLDivElement>(null)
   // Close all custom dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -31,12 +34,14 @@ function ListingsContent() {
         cityRef.current?.contains(target) ||
         neighborhoodRef.current?.contains(target) ||
         typeRef.current?.contains(target) ||
-        roomsRef.current?.contains(target)
+        roomsRef.current?.contains(target) ||
+        sortRef.current?.contains(target)
       ) return
       setCityOpen(false)
       setNeighborhoodOpen(false)
       setTypeOpen(false)
       setRoomsOpen(false)
+      setSortOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -83,9 +88,15 @@ function ListingsContent() {
       )
     }
 
-    listingQuery = listingQuery
-      .order('created_at', { ascending: false })
-      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
+    if (sortBy === 'price_asc') {
+      listingQuery = listingQuery.order('price', { ascending: true })
+    } else if (sortBy === 'price_desc') {
+      listingQuery = listingQuery.order('price', { ascending: false })
+    } else {
+      listingQuery = listingQuery.order('created_at', { ascending: false })
+    }
+
+    listingQuery = listingQuery.range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
 
     try {
       const [{ data: listingData, error: listingError }, { data: profileData }] = await Promise.all([
@@ -128,7 +139,7 @@ function ListingsContent() {
       setLoadError(true)
       setFetchState({ loading: false, hasMore: false })
     }
-  }, [filters, supabase])
+  }, [filters, sortBy, supabase])
 
   useEffect(() => {
     fetchListings(0)
@@ -532,8 +543,10 @@ function ListingsContent() {
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center">
-              <span className="text-3xl">🏠</span>
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 bg-gray-100 rounded-2xl" />
+              <div className="absolute inset-x-4 top-2 h-8 bg-white border-2 border-gray-200 rounded-t-lg" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-b-[14px] border-b-gray-200" />
             </div>
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Nuk u gjetën banesa</h3>
             <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
@@ -543,9 +556,36 @@ function ListingsContent() {
           </div>
         ) : (
           <>
-            <div className="mb-4">
-              <p aria-live="polite" className="text-gray-400 text-sm">{listings.length} banesa të gjetura</p>
-              <div className="mt-3 border-t border-gray-100" />
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p aria-live="polite" className="text-[13px] text-[#6B7280] font-medium">Gjenden {listings.length} banesa</p>
+              <div className="relative flex-shrink-0" ref={sortRef}>
+                <button
+                  type="button"
+                  onClick={() => setSortOpen(!sortOpen)}
+                  className="h-9 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[13px] font-medium text-gray-700 rounded-lg transition-all duration-200 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  {sortBy === 'newest' ? 'Më të rejat' : sortBy === 'price_asc' ? 'Çmimi rritës' : 'Çmimi zbritës'}
+                  <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {sortOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 min-w-[160px] overflow-hidden">
+                    {([
+                      { value: 'newest', label: 'Më të rejat' },
+                      { value: 'price_asc', label: 'Çmimi rritës' },
+                      { value: 'price_desc', label: 'Çmimi zbritës' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
+                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${sortBy === opt.value ? 'text-[#1B4FFF] bg-[#1B4FFF]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
               {listings.map((listing, index) => (
