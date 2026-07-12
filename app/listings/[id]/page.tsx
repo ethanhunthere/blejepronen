@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Phone,
   MessageCircle,
+  MessagesSquare,
 } from 'lucide-react'
 import ListingImageGallery from '@/components/ListingImageGallery'
 import ExpandableText from '@/components/ExpandableText'
@@ -408,34 +409,51 @@ export default async function ListingDetailPage({
                 )}
               </div>
 
-              {/* Seller contact — phone + WhatsApp, visible on all screens */}
-              {sellerPhone && (
-                <div className="mt-5 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                  <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">
-                    Kontakto shitësin
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <a
-                      href={`tel:${sellerPhone}`}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
-                    >
-                      <Phone className="h-4 w-4" />
-                      {sellerPhone}
-                    </a>
-                    {sellerWhatsAppUrl && (
+              {/* Seller contact — phone + WhatsApp + direct message, visible on all screens */}
+              <div className="mt-5 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
+                <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">
+                  Kontakto shitësin
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {sellerPhone ? (
+                    <>
                       <a
-                        href={sellerWhatsAppUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 font-semibold py-3 px-5 rounded-xl transition-colors"
+                        href={`tel:${sellerPhone}`}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
                       >
-                        <MessageCircle className="h-4 w-4" />
-                        WhatsApp
+                        <Phone className="h-4 w-4" />
+                        {sellerPhone}
                       </a>
-                    )}
-                  </div>
+                      {sellerWhatsAppUrl && (
+                        <a
+                          href={sellerWhatsAppUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 inline-flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 font-semibold py-3 px-5 rounded-xl transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          WhatsApp
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-400 py-2">
+                      Shitësi nuk ka numër telefoni të regjistruar.
+                    </p>
+                  )}
                 </div>
-              )}
+
+                {/* Direct message — login gate */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <a
+                    href={`/login?next=${encodeURIComponent(`/listings/${listing.id}`)}`}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-[#111827] font-medium py-3 px-5 rounded-xl transition-all duration-200"
+                  >
+                    <MessagesSquare className="h-4 w-4" />
+                    Kyçu për ta kontaktuar direkt
+                  </a>
+                </div>
+              </div>
             </section>
 
             {/* DESCRIPTION */}
