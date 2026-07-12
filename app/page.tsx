@@ -63,7 +63,7 @@ export default async function HomePage() {
               </div>
 
               {/* City strip - horizontal scroll, Airbnb category style */}
-              <div className="relative z-20 flex items-center justify-center gap-2 mt-10 overflow-x-auto scrollbar-hide px-1">
+              <div className="relative z-20 flex items-center justify-center gap-2 mt-10 overflow-x-auto overflow-y-visible scrollbar-hide px-1">
                 {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                   <Link
                     key={city}
