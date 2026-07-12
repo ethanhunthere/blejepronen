@@ -34,7 +34,9 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const unreadChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
 
   // ---- Single source of truth for unread count queries ----
-  const fetchUnreadCount = useCallback(async (uid: string) => {
+  const fetchUnreadCount = useCallback(async () => {
+    const uid = userIdRef.current
+    if (!uid) return
     const { data: convs } = await supabaseRef.current
       .from('conversations')
       .select('id')
@@ -76,9 +78,9 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     }
 
     // ---- debouncedFetch: prevents rapid-fire DB queries from Realtime events ----
-    const debouncedFetch = (uid: string) => {
+    const debouncedFetch = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = setTimeout(() => fetchUnreadCount(uid), 400)
+      debounceTimerRef.current = setTimeout(() => fetchUnreadCount(), 400)
     }
 
     // ---- Set up Realtime channel ONCE per user session ----
@@ -93,8 +95,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages' },
           () => {
-            const id = userIdRef.current
-            if (id) debouncedFetch(id)
+            debouncedFetch()
           }
         )
         .subscribe()
@@ -117,8 +118,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             filter: 'is_read=eq.true',
           },
           () => {
-            const id = userIdRef.current
-            if (id) fetchUnreadCount(id)
+            fetchUnreadCount()
           }
         )
         .subscribe()
@@ -132,14 +132,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       if (user) {
         loadProfile(user.id)
         setupRealtimeChannel(user.id)
-        fetchUnreadCount(user.id)
+        fetchUnreadCount()
       }
     }
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && currentUserId) {
         loadProfile(currentUserId)
-        fetchUnreadCount(currentUserId)
+        fetchUnreadCount()
       }
     }
 
@@ -202,10 +202,12 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }, [router, fetchUnreadCount])
 
   // ---- Re-fetch unread count when navigating into a chat ----
+  // Also poll every 10 seconds as a fallback for realtime misses
   useEffect(() => {
     if (pathname?.startsWith('/mesazhet/')) {
-      const uid = userIdRef.current
-      if (uid) fetchUnreadCount(uid)
+      fetchUnreadCount()
+      const interval = setInterval(() => fetchUnreadCount(), 10000)
+      return () => clearInterval(interval)
     }
   }, [pathname, fetchUnreadCount])
 

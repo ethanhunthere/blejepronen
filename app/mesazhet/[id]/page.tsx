@@ -141,11 +141,6 @@ export default function ChatPage() {
               .eq('conversation_id', conversationId)
               .neq('sender_id', session.user.id)
               .eq('is_read', false)
-              .then(({ error }) => {
-                if (error) {
-                  console.error('Failed to mark messages as read:', error)
-                }
-              })
           }
           // Auto-scroll to bottom after initial load
           setTimeout(() => scrollToBottom(false), 50)
