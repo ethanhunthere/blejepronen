@@ -100,7 +100,7 @@ function ListingsContent() {
     listingQuery = listingQuery.range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
 
     try {
-      const [{ data: listingData, error: listingError }, { data: profileData }] = await Promise.all([
+      const [{ data: listingData, error: listingError }, { data: profileData, error: profileError }] = await Promise.all([
         listingQuery,
         searchTerm && pageNum === 0 && !filters.agentId
           ? (() => {
@@ -121,13 +121,17 @@ function ListingsContent() {
 
               return profileQuery.limit(20)
             })()
-          : Promise.resolve({ data: [] })
+          : Promise.resolve({ data: [], error: null })
       ])
 
       if (listingError) throw listingError
 
       const listingResults = (listingData || []) as unknown as Listing[]
       const agentResultsData = (profileData || []) as unknown as AgentResult[]
+
+      if (searchTerm && pageNum === 0 && !filters.agentId) {
+        console.log('Agent search for:', searchTerm, 'results:', profileData, 'error:', profileError)
+      }
 
       if (pageNum === 0) {
         setListings(listingResults)
