@@ -8,44 +8,44 @@ interface SearchBarProps {
   className?: string
   placeholder?: string
   buttonText?: string
-  hoverPlaceholders?: string[]
+  hoverButtonTexts?: string[]
 }
 
-const DEFAULT_HOVER_PLACEHOLDERS = [
-  'Kërko banesë...',
-  'Kërko agjent...',
-  'Kërko kompani...',
-  'Kërko adresë...',
+const DEFAULT_HOVER_BUTTON_TEXTS = [
+  'Kërko Banesë',
+  'Kërko Agjent',
+  'Kërko Kompani',
+  'Kërko Adresë',
 ]
 
 function SearchBar({
   className = '',
   placeholder = 'Kërko banesë, agjent, kompani, adresë...',
-  buttonText = 'Kërko',
-  hoverPlaceholders = DEFAULT_HOVER_PLACEHOLDERS,
+  buttonText = 'Kërko Banesë',
+  hoverButtonTexts = DEFAULT_HOVER_BUTTON_TEXTS,
 }: SearchBarProps) {
   const [value, setValue] = useState('')
   const [isHovered, setIsHovered] = useState(false)
-  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const [buttonIndex, setButtonIndex] = useState(0)
   const [animating, setAnimating] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const router = useRouter()
 
-  const displayedPlaceholder = isHovered
-    ? hoverPlaceholders[placeholderIndex]
-    : placeholder
+  const displayedButtonText = isHovered
+    ? hoverButtonTexts[buttonIndex]
+    : buttonText
 
-  const cyclePlaceholder = useCallback(() => {
+  const cycleButtonText = useCallback(() => {
     setAnimating(true)
     setTimeout(() => {
-      setPlaceholderIndex(prev => (prev + 1) % hoverPlaceholders.length)
+      setButtonIndex(prev => (prev + 1) % hoverButtonTexts.length)
       setAnimating(false)
     }, 200)
-  }, [hoverPlaceholders.length])
+  }, [hoverButtonTexts.length])
 
   useEffect(() => {
-    if (isHovered && !value) {
-      intervalRef.current = setInterval(cyclePlaceholder, 2500)
+    if (isHovered) {
+      intervalRef.current = setInterval(cycleButtonText, 2500)
     }
     return () => {
       if (intervalRef.current) {
@@ -53,12 +53,12 @@ function SearchBar({
         intervalRef.current = null
       }
     }
-  }, [isHovered, value, cyclePlaceholder])
+  }, [isHovered, cycleButtonText])
 
   // Reset index when hover stops
   useEffect(() => {
     if (!isHovered) {
-      setPlaceholderIndex(0)
+      setButtonIndex(0)
       setAnimating(false)
     }
   }, [isHovered])
@@ -85,13 +85,9 @@ function SearchBar({
       <Search className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
       <input
         type="text"
-        placeholder={displayedPlaceholder}
+        placeholder={placeholder}
         aria-label="Kërko banesa"
-        className={`flex-1 min-w-0 text-[14px] text-[#111827] outline-none border-none bg-transparent transition-all duration-200 ${
-          animating
-            ? 'placeholder:opacity-0 placeholder:translate-y-1'
-            : 'placeholder:opacity-100 placeholder:translate-y-0'
-        }`}
+        className="flex-1 min-w-0 text-[14px] text-[#111827] placeholder:text-[#9CA3AF] outline-none border-none bg-transparent"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -99,9 +95,13 @@ function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className="flex-shrink-0 bg-[#111827] hover:bg-[#0A0A0A] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer"
+        className={`flex-shrink-0 bg-[#111827] hover:bg-[#0A0A0A] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer min-w-[130px] text-center ${
+          animating
+            ? 'opacity-0 translate-y-1'
+            : 'opacity-100 translate-y-0'
+        }`}
       >
-        {buttonText}
+        {displayedButtonText}
       </button>
     </div>
   )
