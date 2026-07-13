@@ -274,7 +274,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105">
-            <Logo variant="navbar" className="h-8" />
+            <Logo variant="navbar" className="h-9" />
           </Link>
 
           {/* Right nav section */}
