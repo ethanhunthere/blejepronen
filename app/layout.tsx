@@ -20,6 +20,30 @@ export const metadata: Metadata = {
   title: "Bleje Banesën - Banesa në Kosovë",
   description:
     "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
+  openGraph: {
+    title: "Bleje Banesën - Banesa në Kosovë",
+    description:
+      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
+    url: siteUrl,
+    siteName: "Bleje Banesën",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1548,
+        height: 666,
+        alt: "Bleje Banesën",
+      },
+    ],
+    locale: "sq_AL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bleje Banesën - Banesa në Kosovë",
+    description:
+      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
+    images: ["/og-image.png"],
+  },
 };
 
 const organizationJsonLd = {
