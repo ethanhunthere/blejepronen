@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
+import { useFavorites } from '@/lib/useFavorites'
 import ListingCard from '@/components/ListingCard'
 import { ListingCardSkeleton } from '@/components/ListingCard'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ export default function PostimetEMiaPage() {
   const hasFetchedFavoritesRef = useRef(false)
 
   const supabase = createClient()
+  const { toggleFavorite } = useFavorites()
 
   const fetchListings = useCallback(async (uid: string) => {
     setLoading(true)
@@ -91,12 +93,8 @@ export default function PostimetEMiaPage() {
 
   const handleUnfavorite = useCallback((id: string) => {
     setFavoriteListings(prev => prev.filter(l => l.id !== id))
-    fetch('/api/favorites', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listing_id: id }),
-    }).catch(() => {})
-  }, [])
+    toggleFavorite(id)
+  }, [toggleFavorite])
 
   const deleteListing = async (listing: Listing) => {
     if (!userId) return

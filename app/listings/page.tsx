@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useFavorites } from '@/lib/useFavorites'
 import ListingCard from '@/components/ListingCard'
 import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, ChevronDown } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
@@ -64,61 +65,7 @@ function ListingsContent() {
   const initialParamsAppliedRef = useRef(false)
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  // Load the current user's favorites (if logged in) so hearts render correctly.
-  useEffect(() => {
-    let cancelled = false
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (cancelled || !user) return
-      setIsLoggedIn(true)
-      fetch('/api/favorites', { credentials: 'include' })
-        .then(res => (res.ok ? res.json() : { listing_ids: [] }))
-        .then(({ listing_ids }) => {
-          if (!cancelled) setFavoriteIds(listing_ids || [])
-        })
-        .catch((err) => {
-          console.error('Listings: failed to load favorites', err)
-        })
-    })
-    return () => { cancelled = true }
-  }, [supabase])
-
-  const handleToggleFavorite = useCallback((id: string) => {
-    if (!isLoggedIn) {
-      import('sonner').then(({ toast }) => {
-        toast.info('Kyçuni për të ruajtur banesat', {
-          action: {
-            label: 'Kyçu',
-            onClick: () => {
-              window.location.href = '/login'
-            },
-          },
-        })
-      })
-      return
-    }
-    const isFav = favoriteIds.includes(id)
-    setFavoriteIds(prev => (isFav ? prev.filter(x => x !== id) : [...prev, id]))
-
-    fetch('/api/favorites', {
-      method: isFav ? 'DELETE' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ listing_id: id }),
-    })
-      .then(res => {
-        if (!res.ok) {
-          console.error('Listings: toggle failed', res.status)
-          setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
-        }
-      })
-      .catch((err) => {
-        console.error('Listings: network error on toggle', err)
-        setFavoriteIds(prev => (isFav ? [...prev, id] : prev.filter(x => x !== id)))
-      })
-  }, [isLoggedIn, favoriteIds])
+  const { favoriteIds, toggleFavorite } = useFavorites()
 
   // Pre-populate the search filter from the ?search= URL param once, on initial mount only.
   useEffect(() => {
@@ -198,8 +145,8 @@ function ListingsContent() {
       const listingResults = (listingData || []) as unknown as Listing[]
       const agentResultsData = (profileData || []) as unknown as AgentResult[]
 
-      if (searchTerm && pageNum === 0 && !filters.agentId) {
-        console.log('Agent search for:', searchTerm, 'results:', profileData, 'error:', profileError)
+      if (profileError) {
+        console.error('Agent search error:', profileError)
       }
 
       if (pageNum === 0) {
@@ -664,7 +611,7 @@ function ListingsContent() {
                   listing={listing}
                   priority={index < 4}
                   isFavorited={favoriteIds.includes(listing.id)}
-                  onToggleFavorite={handleToggleFavorite}
+                  onToggleFavorite={toggleFavorite}
                 />
               ))}
             </div>

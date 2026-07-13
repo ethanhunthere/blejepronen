@@ -1,7 +1,7 @@
 'use client'
 
-import RouteError from '@/components/RouteError'
+import PageError from '@/components/PageError'
 
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <RouteError error={error} reset={reset} />
+  return <PageError error={error} reset={reset} />
 }

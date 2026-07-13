@@ -4,12 +4,12 @@ import { useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-interface RouteErrorProps {
+interface PageErrorProps {
   error: Error & { digest?: string }
   reset: () => void
 }
 
-export default function RouteError({ error, reset }: RouteErrorProps) {
+export default function PageError({ error, reset }: PageErrorProps) {
   useEffect(() => {
     console.error(error)
   }, [error])

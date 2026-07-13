@@ -1,5 +1,12 @@
--- Enable UUID extension
+-- ============================================================================
+-- EXTENSIONS
+-- ============================================================================
+
 create extension if not exists "uuid-ossp";
+
+-- ============================================================================
+-- TABLES
+-- ============================================================================
 
 -- Profiles table (extends auth.users)
 create table public.profiles (
@@ -54,6 +61,50 @@ create table public.listings (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Conversations table (manually created in Supabase dashboard — captured here
+-- for version control and reproducibility)
+create table if not exists public.conversations (
+  id uuid default uuid_generate_v4() primary key,
+  listing_id uuid references public.listings(id) on delete cascade not null,
+  buyer_id uuid references public.profiles(id) on delete cascade not null,
+  seller_id uuid references public.profiles(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Messages table
+create table if not exists public.messages (
+  id uuid default uuid_generate_v4() primary key,
+  conversation_id uuid references public.conversations(id) on delete cascade not null,
+  sender_id uuid references public.profiles(id) on delete cascade not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  is_read boolean default false
+);
+
+-- Favorites table
+create table if not exists public.favorites (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  listing_id uuid references public.listings(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (user_id, listing_id)
+);
+
+-- ============================================================================
+-- STORAGE BUCKETS
+-- ============================================================================
+
+-- Storage bucket for listing images
+insert into storage.buckets (id, name, public) values ('listings', 'listings', true);
+
+-- Storage bucket for user avatars
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
+
+-- ============================================================================
+-- TRIGGERS
+-- ============================================================================
+
 -- Auto-create profile on user signup
 create or replace function public.handle_new_user()
 returns trigger as $$
@@ -74,7 +125,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- Updated_at trigger
+-- Updated_at trigger function
 create or replace function public.handle_updated_at()
 returns trigger as $$
 begin
@@ -91,11 +142,20 @@ create trigger handle_updated_at_listings
   before update on public.listings
   for each row execute procedure public.handle_updated_at();
 
--- Row Level Security
-alter table public.profiles enable row level security;
-alter table public.listings enable row level security;
+create trigger handle_updated_at_conversations
+  before update on public.conversations
+  for each row execute procedure public.handle_updated_at();
 
--- Profiles policies
+-- ============================================================================
+-- RLS POLICIES
+-- ============================================================================
+
+-- --------------------------------------------------------------------------
+-- Profiles
+-- --------------------------------------------------------------------------
+
+alter table public.profiles enable row level security;
+
 -- Drop the old overly permissive public policy if re-running this migration.
 drop policy if exists "Public profiles are viewable by everyone" on public.profiles;
 drop policy if exists "Profiles are viewable by everyone" on public.profiles;
@@ -118,7 +178,12 @@ create or replace view public.profiles_public as
 
 grant select on public.profiles_public to anon, authenticated;
 
--- Listings policies
+-- --------------------------------------------------------------------------
+-- Listings
+-- --------------------------------------------------------------------------
+
+alter table public.listings enable row level security;
+
 create policy "Active listings are viewable by everyone"
   on public.listings for select using (is_active = true);
 
@@ -134,8 +199,9 @@ create policy "Users can update their own listings"
 create policy "Users can delete their own listings"
   on public.listings for delete using (auth.uid() = user_id);
 
--- Storage bucket for listing images
-insert into storage.buckets (id, name, public) values ('listings', 'listings', true);
+-- --------------------------------------------------------------------------
+-- Storage: listing images
+-- --------------------------------------------------------------------------
 
 create policy "Anyone can view listing images"
   on storage.objects for select using (bucket_id = 'listings');
@@ -152,8 +218,9 @@ create policy "Users can delete their own listing images"
     bucket_id = 'listings' and auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- Storage bucket for user avatars
-insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
+-- --------------------------------------------------------------------------
+-- Storage: avatars
+-- --------------------------------------------------------------------------
 
 create policy "Avatar images are publicly accessible"
   on storage.objects for select using (bucket_id = 'avatars');
@@ -168,80 +235,11 @@ create policy "Users can update their own avatar"
     bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- ============================================================================
--- Conversations & Messages (manually created in Supabase dashboard — captured
--- here for version control and reproducibility)
--- ============================================================================
+-- --------------------------------------------------------------------------
+-- Conversations
+-- --------------------------------------------------------------------------
 
--- Conversations table
-create table if not exists public.conversations (
-  id uuid default uuid_generate_v4() primary key,
-  listing_id uuid references public.listings(id) on delete cascade not null,
-  buyer_id uuid references public.profiles(id) on delete cascade not null,
-  seller_id uuid references public.profiles(id) on delete cascade not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Messages table
-create table if not exists public.messages (
-  id uuid default uuid_generate_v4() primary key,
-  conversation_id uuid references public.conversations(id) on delete cascade not null,
-  sender_id uuid references public.profiles(id) on delete cascade not null,
-  content text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  is_read boolean default false
-);
-
--- Indexes for common query patterns
-create index if not exists idx_messages_conversation_id on public.messages(conversation_id, created_at);
-create index if not exists idx_messages_sender_id on public.messages(sender_id);
-create index if not exists idx_conversations_buyer_id on public.conversations(buyer_id);
-create index if not exists idx_conversations_seller_id on public.conversations(seller_id);
-
--- ============================================================================
--- Favorites
--- ============================================================================
-
-create table if not exists public.favorites (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  listing_id uuid references public.listings(id) on delete cascade not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique (user_id, listing_id)
-);
-
-alter table public.favorites enable row level security;
-
-drop policy if exists "Users can view their own favorites" on public.favorites;
-drop policy if exists "Users can insert their own favorites" on public.favorites;
-drop policy if exists "Users can delete their own favorites" on public.favorites;
-
-create policy "Users can view their own favorites"
-  on public.favorites for select using (auth.uid() = user_id);
-
-create policy "Users can insert their own favorites"
-  on public.favorites for insert with check (auth.uid() = user_id);
-
-create policy "Users can delete their own favorites"
-  on public.favorites for delete using (auth.uid() = user_id);
-
-create index if not exists idx_favorites_user_id on public.favorites(user_id);
-create index if not exists idx_favorites_listing_id on public.favorites(listing_id);
-create index if not exists idx_conversations_listing_id on public.conversations(listing_id);
-
--- Updated_at trigger for conversations
-create trigger handle_updated_at_conversations
-  before update on public.conversations
-  for each row execute procedure public.handle_updated_at();
-
--- Enable RLS
 alter table public.conversations enable row level security;
-alter table public.messages enable row level security;
-
--- --------------------------------------------------------------------------
--- Conversations policies
--- --------------------------------------------------------------------------
 
 -- Participants can view their own conversations
 create policy "Participants can view their conversations"
@@ -259,8 +257,10 @@ create policy "Participants can update their conversations"
   using (auth.uid() = buyer_id or auth.uid() = seller_id);
 
 -- --------------------------------------------------------------------------
--- Messages policies
+-- Messages
 -- --------------------------------------------------------------------------
+
+alter table public.messages enable row level security;
 
 -- Participants can view messages in their conversations
 create policy "Participants can view messages"
@@ -299,9 +299,40 @@ create policy "Users can mark messages as read"
     )
   );
 
--- Performance indexes for search and common queries
-CREATE INDEX IF NOT EXISTS idx_listings_title_gin ON public.listings USING gin(to_tsvector('simple', title));
-CREATE INDEX IF NOT EXISTS idx_listings_description_gin ON public.listings USING gin(to_tsvector('simple', description));
-CREATE INDEX IF NOT EXISTS idx_listings_address_gin ON public.listings USING gin(to_tsvector('simple', coalesce(address, '')));
-CREATE INDEX IF NOT EXISTS idx_profiles_name_gin ON public.profiles USING gin(to_tsvector('simple', coalesce(first_name, '') || ' ' || coalesce(last_name, '')));
-CREATE INDEX IF NOT EXISTS idx_listings_active_city_type ON public.listings(is_active, city, type) WHERE is_active = true;
+-- --------------------------------------------------------------------------
+-- Favorites
+-- --------------------------------------------------------------------------
+
+alter table public.favorites enable row level security;
+
+drop policy if exists "Users can view their own favorites" on public.favorites;
+drop policy if exists "Users can insert their own favorites" on public.favorites;
+drop policy if exists "Users can delete their own favorites" on public.favorites;
+
+create policy "Users can view their own favorites"
+  on public.favorites for select using (auth.uid() = user_id);
+
+create policy "Users can insert their own favorites"
+  on public.favorites for insert with check (auth.uid() = user_id);
+
+create policy "Users can delete their own favorites"
+  on public.favorites for delete using (auth.uid() = user_id);
+
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
+
+create index if not exists idx_messages_conversation_id on public.messages(conversation_id, created_at);
+create index if not exists idx_messages_sender_id on public.messages(sender_id);
+create index if not exists idx_conversations_buyer_id on public.conversations(buyer_id);
+create index if not exists idx_conversations_seller_id on public.conversations(seller_id);
+create index if not exists idx_conversations_listing_id on public.conversations(listing_id);
+create index if not exists idx_favorites_user_id on public.favorites(user_id);
+create index if not exists idx_favorites_listing_id on public.favorites(listing_id);
+
+-- Full-text search indexes
+create index if not exists idx_listings_title_gin on public.listings using gin(to_tsvector('simple', title));
+create index if not exists idx_listings_description_gin on public.listings using gin(to_tsvector('simple', description));
+create index if not exists idx_listings_address_gin on public.listings using gin(to_tsvector('simple', coalesce(address, '')));
+create index if not exists idx_profiles_name_gin on public.profiles using gin(to_tsvector('simple', coalesce(first_name, '') || ' ' || coalesce(last_name, '')));
+create index if not exists idx_listings_active_city_type on public.listings(is_active, city, type) where is_active = true;
