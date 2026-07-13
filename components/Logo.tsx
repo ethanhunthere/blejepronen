@@ -12,8 +12,8 @@ export function Logo({ variant = 'navbar', className }: LogoProps) {
         <Image
           src="/logo.png"
           alt="Bleje Banesën"
-          width={253}
-          height={251}
+          width={682}
+          height={157}
           className="h-full w-auto object-contain object-left"
           priority
         />
