@@ -10,10 +10,10 @@ export function Logo({ variant = 'navbar', className }: LogoProps) {
     return (
       <div className={`${className || 'h-8'}`}>
         <Image
-          src="/logo.png"
+          src="/logo-icon.png"
           alt="Bleje Banesën"
-          width={682}
-          height={157}
+          width={544}
+          height={483}
           className="h-full w-auto object-contain object-left"
           priority
         />
