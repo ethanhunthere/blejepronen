@@ -44,6 +44,20 @@ export const metadata: Metadata = {
       "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
     images: ["/og-image.png"],
   },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180" },
+      { url: "/favicon-167.png", sizes: "167x167" },
+      { url: "/favicon-152.png", sizes: "152x152" },
+    ],
+    shortcut: "/favicon.ico",
+  },
 };
 
 const organizationJsonLd = {
@@ -73,10 +87,6 @@ export default function RootLayout({
           }}
         />
         <meta name="theme-color" content="#F2F7F7" />
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
-        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
-        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         {supabaseUrl && (
           <>
             <link rel="preconnect" href={supabaseUrl} />
