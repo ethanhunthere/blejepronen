@@ -272,14 +272,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105">
+          <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 mt-[3px]">
             {/* eslint-disable-next-line @next/next/no-img-element -- local SVG, next/image blocks SVG optimization by default */}
             <img
               src="/logo-kryesore.svg"
               alt="Bleje Banesën"
               width={100}
               height={100}
-              className="h-8 lg:h-9 w-auto object-contain object-left block mt-0.5"
+              className="h-8 lg:h-9 w-auto object-contain object-left block"
             />
           </Link>
 
