@@ -82,7 +82,7 @@
   --shadow-xl-token: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
 
   /* Light theme */
-  --background: #f5f7fa;
+  --background: #f4f9f8;
   --foreground: #1a1a2e;
   --card: #ffffff;
   --card-foreground: #1a1a2e;
@@ -156,7 +156,7 @@
 
 @layer base {
   html, body {
-    background-color: #F5F7FA;
+    background-color: #f4f9f8;
   }
   * {
     @apply border-border outline-ring/50;
