@@ -7,7 +7,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Plus, User, LogOut, MessageCircle, Home, AlertTriangle } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import { Logo } from '@/components/Logo'
 
 // Singleton Supabase client so we don't recreate it on every mount
 const _supabaseClient = createClient()
@@ -274,7 +273,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105">
-            <Logo variant="navbar" className="h-8 lg:h-9" />
+            <Image
+              src="/logokryesore.png"
+              alt="Bleje Banesën"
+              width={493}
+              height={493}
+              className="h-8 lg:h-9 w-auto object-contain object-left"
+              priority
+            />
           </Link>
 
           {/* Right nav section */}
