@@ -133,7 +133,7 @@ export default function PostimetEMiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f4f9f8]">
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="mb-8">

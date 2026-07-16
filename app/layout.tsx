@@ -64,15 +64,15 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${albertSans.variable} h-full antialiased`}
-      style={{ backgroundColor: "#F5F7FA" }}
+      style={{ backgroundColor: "#f4f9f8" }}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.style.backgroundColor='#F5F7FA';document.body&&(document.body.style.backgroundColor='#F5F7FA')",
+            __html: "document.documentElement.style.backgroundColor='#f4f9f8';document.body&&(document.body.style.backgroundColor='#f4f9f8')",
           }}
         />
-        <meta name="theme-color" content="#F5F7FA" />
+        <meta name="theme-color" content="#f4f9f8" />
         {supabaseUrl && (
           <>
             <link rel="preconnect" href={supabaseUrl} />
@@ -81,7 +81,7 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F5F7FA] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#F5F7FA" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#f4f9f8] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#f4f9f8" }}>
         <header>
           <Navbar variant="static" />
         </header>

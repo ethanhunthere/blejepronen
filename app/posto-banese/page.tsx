@@ -390,7 +390,7 @@ export default function PostoBanesePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f4f9f8]">
       <div className="max-w-2xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#1A1A2E]">Posto banesën tënde</h1>
@@ -412,7 +412,7 @@ export default function PostoBanesePage() {
         </div>
 
         {uploading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5F7FA]/90 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#f4f9f8]/90 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
               <Loader2 className="h-10 w-10 animate-spin text-[#111827] mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-[#1A1A2E] mb-2">Duke postuar banesën...</h2>

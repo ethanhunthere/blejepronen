@@ -296,7 +296,7 @@ export default async function ListingDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[#f4f9f8] pb-20 lg:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

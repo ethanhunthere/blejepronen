@@ -33,7 +33,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F7FA]">
+    <main className="min-h-screen bg-[#f4f9f8]">
       {/* Hero - search-first, Zillow-inspired */}
       <section
         aria-label="Hero section"
@@ -113,7 +113,7 @@ export default async function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section aria-label="Banesat e disponueshme" className="bg-[#F5F7FA] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-[#f4f9f8] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="border-t border-[#F3F4F6] mb-8" />
         <div className="flex items-center justify-between mb-8">
           <div>

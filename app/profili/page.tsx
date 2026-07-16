@@ -140,7 +140,7 @@ export default function ProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
     </div>
   )
@@ -153,7 +153,7 @@ export default function ProfilePage() {
   const initials = profile?.first_name ? profile.first_name[0].toUpperCase() : (userEmail ? userEmail[0].toUpperCase() : '?')
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-10">
+    <div className="min-h-screen bg-[#f4f9f8] py-10">
       <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6">
         <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Profili im</h1>
 

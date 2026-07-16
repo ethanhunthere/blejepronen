@@ -56,7 +56,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   })
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f4f9f8]">
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
         <Link

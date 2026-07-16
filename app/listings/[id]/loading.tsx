@@ -1,6 +1,6 @@
 export default function ListingDetailLoading() {
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f4f9f8]">
       <div className="max-w-5xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link skeleton */}
         <div className="h-5 w-36 bg-gray-200 rounded animate-pulse mb-6" />

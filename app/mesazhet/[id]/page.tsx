@@ -260,7 +260,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#F5F7FA]">
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#f4f9f8]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -304,7 +304,7 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#F5F7FA] overflow-hidden">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#f4f9f8] overflow-hidden">
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button */}

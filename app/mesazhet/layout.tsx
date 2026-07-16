@@ -154,7 +154,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F5F7FA] flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#f4f9f8] flex">
       {/* ---- SIDEBAR ---- */}
       <aside
         className={`${
@@ -297,7 +297,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* ---- RIGHT PANEL ---- */}
-      <main className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#F5F7FA]`}>
+      <main className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#f4f9f8]`}>
         {children}
       </main>
 

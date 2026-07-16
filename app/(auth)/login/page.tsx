@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-xl border border-gray-100 rounded-3xl">
           <CardHeader className="space-y-1">
@@ -80,7 +80,7 @@ export default function LoginPage() {
                 <span className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#F5F7FA] px-2 text-gray-400">ose</span>
+                <span className="bg-[#f4f9f8] px-2 text-gray-400">ose</span>
               </div>
             </div>
 

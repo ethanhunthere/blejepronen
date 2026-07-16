@@ -207,7 +207,7 @@ function ListingsContent() {
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f4f9f8]">
       <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -640,7 +640,7 @@ function ListingsContent() {
 export default function ListingsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
       </div>
     }>

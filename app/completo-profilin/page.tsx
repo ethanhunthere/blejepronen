@@ -233,14 +233,14 @@ export default function CompletoProfilinPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex items-start justify-center pt-24 md:pt-32 p-4">
+    <div className="min-h-screen bg-[#f4f9f8] flex items-start justify-center pt-24 md:pt-32 p-4">
       <div className="w-full max-w-lg">
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-3 mb-8">

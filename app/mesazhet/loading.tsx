@@ -1,6 +1,6 @@
 export default function MesazhetLoading() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F5F7FA] flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#f4f9f8] flex">
       <aside className="hidden lg:flex flex-col w-80 xl:w-96 flex-shrink-0 border-r border-gray-100 bg-white">
         <div className="px-4 py-4 border-b border-gray-100">
           <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-3" />
@@ -18,7 +18,7 @@ export default function MesazhetLoading() {
           ))}
         </div>
       </aside>
-      <main className="hidden lg:flex flex-1 items-center justify-center bg-[#F5F7FA]">
+      <main className="hidden lg:flex flex-1 items-center justify-center bg-[#f4f9f8]">
         <div className="w-20 h-20 rounded-full bg-gray-100 animate-pulse" />
       </main>
     </div>
