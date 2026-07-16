@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
+    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
       <div className="text-center px-4">
         <div className="text-7xl mb-6">🏚️</div>
         <h1 className="text-4xl font-bold text-[#1A1A2E] mb-3">Faqja nuk u gjet</h1>
@@ -17,7 +17,7 @@ export default function NotFound() {
           Na vjen keq, faqja që po kërkoni nuk ekziston ose është zhvendosur.
         </p>
         <Link href="/">
-          <Button className="bg-[#111827] hover:bg-[#1F2937] text-white">
+          <Button className="bg-[#006459] hover:bg-[#005048] text-white">
             Kthehu në ballinë
           </Button>
         </Link>

@@ -61,7 +61,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border border-gray-100 rounded-3xl">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
@@ -74,7 +74,7 @@ export default function RegisterPage() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#111827] hover:bg-[#1F2937] px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
+              className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#006459] hover:bg-[#005048] px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
@@ -86,7 +86,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-xl border border-gray-100 rounded-3xl">
           <CardHeader className="space-y-1">
@@ -117,7 +117,7 @@ export default function RegisterPage() {
                 <span className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#f4f9f8] px-2 text-gray-400">ose</span>
+                <span className="bg-[#F2F7F7] px-2 text-gray-400">ose</span>
               </div>
             </div>
 
@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}

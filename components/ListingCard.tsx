@@ -138,12 +138,12 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
               className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
             >
               <Heart
-                className={`h-4 w-4 ${isFavorited ? 'text-red-500' : 'text-gray-400'}`}
+                className={`h-4 w-4 ${isFavorited ? 'text-[#006459]' : 'text-gray-400'}`}
                 fill={isFavorited ? 'currentColor' : 'none'}
               />
             </button>
             {listing.is_featured && (
-              <span className="inline-flex items-center bg-[#111827] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
+              <span className="inline-flex items-center bg-[#C8B882] text-[#111827] text-[11px] font-semibold px-2.5 py-1 rounded-full">
                 <Tag className="h-3 w-3 mr-1" />
                 Featured
               </span>

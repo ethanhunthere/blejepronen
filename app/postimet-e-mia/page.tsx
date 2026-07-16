@@ -133,7 +133,7 @@ export default function PostimetEMiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8]">
+    <div className="min-h-screen bg-[#F2F7F7]">
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="mb-8">
@@ -147,7 +147,7 @@ export default function PostimetEMiaPage() {
             type="button"
             onClick={() => setActiveTab('mine')}
             className={`pb-3 text-sm cursor-pointer transition-colors ${
-              activeTab === 'mine' ? 'border-b-2 border-[#111827] text-[#111827] font-semibold' : 'text-gray-400 hover:text-gray-600'
+              activeTab === 'mine' ? 'border-b-2 border-[#006459] text-[#006459] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             Postimet e mia
@@ -156,7 +156,7 @@ export default function PostimetEMiaPage() {
             type="button"
             onClick={() => setActiveTab('favorites')}
             className={`pb-3 text-sm cursor-pointer transition-colors ${
-              activeTab === 'favorites' ? 'border-b-2 border-[#111827] text-[#111827] font-semibold' : 'text-gray-400 hover:text-gray-600'
+              activeTab === 'favorites' ? 'border-b-2 border-[#006459] text-[#006459] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             Të preferuarat
@@ -206,7 +206,7 @@ export default function PostimetEMiaPage() {
               Postoni banesën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-banese">
-              <Button className="h-11 px-6 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold">
+              <Button className="h-11 px-6 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold">
                 Posto banesën tënde
               </Button>
             </Link>

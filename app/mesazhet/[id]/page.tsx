@@ -260,11 +260,11 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#f4f9f8]">
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#F2F7F7]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#111827] rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#006459] rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -304,7 +304,7 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#f4f9f8] overflow-hidden">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#F2F7F7] overflow-hidden">
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button */}
@@ -418,7 +418,7 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
-                      ? 'bg-[#111827] text-white rounded-2xl rounded-br-md'
+                      ? 'bg-[#006459] text-white rounded-2xl rounded-br-md'
                       : 'bg-white border border-gray-100 shadow-sm text-[#1A1A2E] rounded-2xl rounded-bl-md'
                   }`}
                 >
@@ -476,7 +476,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#111827]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#006459]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -488,7 +488,7 @@ export default function ChatPage() {
               type="button"
               onClick={sendMessage}
               disabled={!newMsg.trim()}
-              className="w-10 h-10 bg-[#111827] hover:bg-[#1F2937] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+              className="w-10 h-10 bg-[#006459] hover:bg-[#005048] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
             >
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>

@@ -2,9 +2,9 @@ import { ListingCardSkeleton } from '@/components/ListingCard'
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#f4f9f8]">
+    <div className="min-h-screen bg-[#F2F7F7]">
       {/* Hero skeleton */}
-      <div className="min-h-[80vh] md:min-h-[85vh] flex items-center" style={{ background: 'linear-gradient(135deg, #f4f9f8 0%, #F3F4F6 40%, #F0F4FF 70%, #f4f9f8 100%)' }}>
+      <div className="min-h-[80vh] md:min-h-[85vh] flex items-center" style={{ background: 'linear-gradient(135deg, #F2F7F7 0%, #F3F4F6 40%, #F0F4FF 70%, #F2F7F7 100%)' }}>
         <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="text-center max-w-3xl mx-auto">
             <div className="h-12 max-w-lg w-full bg-gray-200 rounded-xl animate-pulse mx-auto mb-4" />

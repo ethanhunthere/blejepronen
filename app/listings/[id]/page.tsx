@@ -296,7 +296,7 @@ export default async function ListingDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8] pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[#F2F7F7] pb-20 lg:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -419,7 +419,7 @@ export default async function ListingDetailPage({
                     <>
                       <a
                         href={`tel:${sellerPhone}`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#006459] hover:bg-[#005048] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
                       >
                         <Phone className="h-4 w-4" />
                         {sellerPhone}

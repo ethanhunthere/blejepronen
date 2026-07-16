@@ -50,16 +50,16 @@
 
 :root {
   /* Brand: Bleje Banesën */
-  --brand: #111827;
+  --brand: #006459;
   --brand-foreground: #ffffff;
-  --brand-light: #F3F4F6;
-  --brand-dark: #0A0A0A;
+  --brand-light: #E6F2F1;
+  --brand-dark: #005048;
 
   /* ---- Semantic design tokens ---- */
-  --color-brand: #111827;
-  --color-brand-hover: #0A0A0A;
+  --color-brand: #006459;
+  --color-brand-hover: #005048;
   --color-brand-light: #F3F4F6;
-  --color-brand-muted: rgba(17, 24, 39, 0.08);
+  --color-brand-muted: rgba(0, 100, 89, 0.08);
 
   --color-ink-primary: #111827;
   --color-ink-secondary: #374151;
@@ -82,13 +82,13 @@
   --shadow-xl-token: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
 
   /* Light theme */
-  --background: #f4f9f8;
+  --background: #F2F7F7;
   --foreground: #1a1a2e;
   --card: #ffffff;
   --card-foreground: #1a1a2e;
   --popover: #ffffff;
   --popover-foreground: #1a1a2e;
-  --primary: #111827;
+  --primary: #006459;
   --primary-foreground: #ffffff;
   --secondary: #e8f3f1;
   --secondary-foreground: #1a1a2e;
@@ -120,7 +120,7 @@
   --brand: #374151;
   --brand-foreground: #0a0e1a;
   --brand-light: #1F2937;
-  --brand-dark: #0A0A0A;
+  --brand-dark: #005048;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -156,7 +156,7 @@
 
 @layer base {
   html, body {
-    background-color: #f4f9f8;
+    background-color: #F2F7F7;
   }
   * {
     @apply border-border outline-ring/50;

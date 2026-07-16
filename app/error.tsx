@@ -19,7 +19,7 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -29,7 +29,7 @@ export default function Error({
           Diçka shkoi keq. Ju lutemi provoni përsëri ose kthehuni në faqen kryesore.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-[#111827] hover:bg-[#1F2937] text-white">
+          <Button onClick={reset} className="bg-[#006459] hover:bg-[#005048] text-white">
             Provo përsëri
           </Button>
           <Link href="/">

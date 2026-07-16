@@ -40,7 +40,7 @@ export default async function AdminPage() {
   const total = typedListings.length
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8]">
+    <div className="min-h-screen bg-[#F2F7F7]">
       <div className="max-w-6xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 py-10">
         <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Admin Dashboard</h1>
 

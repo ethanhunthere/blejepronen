@@ -64,15 +64,15 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${albertSans.variable} h-full antialiased`}
-      style={{ backgroundColor: "#f4f9f8" }}
+      style={{ backgroundColor: "#F2F7F7" }}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.style.backgroundColor='#f4f9f8';document.body&&(document.body.style.backgroundColor='#f4f9f8')",
+            __html: "document.documentElement.style.backgroundColor='#F2F7F7';document.body&&(document.body.style.backgroundColor='#F2F7F7')",
           }}
         />
-        <meta name="theme-color" content="#f4f9f8" />
+        <meta name="theme-color" content="#F2F7F7" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
         <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
@@ -85,7 +85,7 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#f4f9f8] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#f4f9f8" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F2F7F7] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#F2F7F7" }}>
         <header>
           <Navbar variant="static" />
         </header>

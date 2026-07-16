@@ -55,7 +55,7 @@ export default function MobileContactBar({ price, pricePerSqm, phone, listingId 
         {phone ? (
           <a
             href={`tel:${phone}`}
-            className="shrink-0 inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
+            className="shrink-0 inline-flex items-center gap-2 bg-[#006459] hover:bg-[#005048] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
           >
             <Phone className="h-4 w-4" />
             Kontakto
@@ -64,7 +64,7 @@ export default function MobileContactBar({ price, pricePerSqm, phone, listingId 
           <button
             type="button"
             onClick={scrollToContact}
-            className="shrink-0 inline-flex items-center gap-2 bg-[#111827] hover:bg-[#1F2937] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
+            className="shrink-0 inline-flex items-center gap-2 bg-[#006459] hover:bg-[#005048] text-white font-bold px-5 py-3 rounded-2xl text-sm transition-colors"
           >
             <Phone className="h-4 w-4" />
             Kontakto

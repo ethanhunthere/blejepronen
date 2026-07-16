@@ -207,7 +207,7 @@ function ListingsContent() {
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8]">
+    <div className="min-h-screen bg-[#F2F7F7]">
       <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -217,7 +217,7 @@ function ListingsContent() {
 
         {/* Search + Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1 min-w-0 group shadow-sm rounded-xl border border-gray-200 focus-within:border-[#111827]/50 transition-colors duration-300 bg-white">
+          <div className="relative flex-1 min-w-0 group shadow-sm rounded-xl border border-gray-200 focus-within:border-[#006459]/50 transition-colors duration-300 bg-white">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -392,7 +392,7 @@ function ListingsContent() {
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#111827]/50 focus:outline-none transition-all"
+                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#006459]/50 focus:outline-none transition-all"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -405,7 +405,7 @@ function ListingsContent() {
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#111827]/50 focus:outline-none transition-all"
+                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#006459]/50 focus:outline-none transition-all"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -556,7 +556,7 @@ function ListingsContent() {
             </div>
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Shërbimi është i padisponueshëm</h3>
             <p className="text-gray-400 mb-6">Ju lutemi provoni përsëri më vonë.</p>
-            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center px-6 py-3 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#111827]/25">Provo përsëri</button>
+            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center px-6 py-3 bg-[#006459] hover:bg-[#005048] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#006459]/25">Provo përsëri</button>
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
@@ -568,7 +568,7 @@ function ListingsContent() {
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Nuk u gjetën banesa</h3>
             <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center px-6 py-3 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#111827]/25">Pastro filtrat</button>
+              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center px-6 py-3 bg-[#006459] hover:bg-[#005048] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#006459]/25">Pastro filtrat</button>
             )}
           </div>
         ) : (
@@ -640,7 +640,7 @@ function ListingsContent() {
 export default function ListingsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
       </div>
     }>

@@ -140,7 +140,7 @@ export default function ProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#f4f9f8] flex items-center justify-center">
+    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
     </div>
   )
@@ -153,7 +153,7 @@ export default function ProfilePage() {
   const initials = profile?.first_name ? profile.first_name[0].toUpperCase() : (userEmail ? userEmail[0].toUpperCase() : '?')
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8] py-10">
+    <div className="min-h-screen bg-[#F2F7F7] py-10">
       <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6">
         <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Profili im</h1>
 
@@ -187,7 +187,7 @@ export default function ProfilePage() {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-[#111827]/10 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-[#006459]/10 flex items-center justify-center">
                   <span className="text-4xl font-semibold text-[#111827]">{initials}</span>
                 </div>
               )}
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#111827] text-white flex items-center justify-center border-2 border-white hover:bg-[#1F2937] transition-colors cursor-pointer"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#006459] text-white flex items-center justify-center border-2 border-white hover:bg-[#005048] transition-colors cursor-pointer"
               >
                 {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
@@ -252,10 +252,10 @@ export default function ProfilePage() {
           </div>
 
           {!isVerified && (
-            <div className="mt-6 bg-[#111827]/10 border border-[#111827]/30 rounded-2xl p-5">
+            <div className="mt-6 bg-[#006459]/10 border border-[#006459]/30 rounded-2xl p-5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#111827]/20 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-[#006459]/20 flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="h-5 w-5 text-[#111827]" />
                   </div>
                   <p className="text-gray-700 text-sm">
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                 </div>
                 <Link
                   href="/completo-profilin"
-                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#111827] text-white hover:bg-[#1F2937] transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] transition-colors whitespace-nowrap"
                 >
                   Verifiko tani →
                 </Link>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
                       <Button
                         type="submit"
                         disabled={saving}
-                        className="flex-1 h-11 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold cursor-pointer"
+                        className="flex-1 h-11 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold cursor-pointer"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                       </Button>

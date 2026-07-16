@@ -33,7 +33,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f9f8]">
+    <main className="min-h-screen bg-[#F2F7F7]">
       {/* Hero - search-first, Zillow-inspired */}
       <section
         aria-label="Hero section"
@@ -69,7 +69,7 @@ export default async function HomePage() {
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="relative flex-shrink-0 text-[13px] font-medium text-[#374151] px-4 py-1.5 rounded-full border border-transparent hover:bg-[#F3F4F6] hover:text-[#111827] hover:border-[#111827]/15 hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                    className="relative flex-shrink-0 text-[13px] font-medium text-[#374151] px-4 py-1.5 rounded-full border border-transparent hover:bg-[#F3F4F6] hover:text-[#006459] hover:border-[#006459]/15 hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                   >
                     {city}
                   </Link>
@@ -81,13 +81,13 @@ export default async function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <Link
                   href="/listings"
-                  className="bg-[#111827] text-white font-semibold px-8 py-3 rounded-xl hover:bg-[#0A0A0A] shadow-sm transition-all duration-200"
+                  className="bg-[#006459] text-white font-semibold px-8 py-3 rounded-xl hover:bg-[#005048] shadow-sm transition-all duration-200"
                 >
                   Shiko banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="border-2 border-[#111827] text-[#111827] font-semibold px-8 py-3 rounded-xl hover:bg-[#111827] hover:text-white transition-all duration-200"
+                  className="border-2 border-[#006459] text-[#006459] font-semibold px-8 py-3 rounded-xl hover:bg-[#006459] hover:text-white transition-all duration-200"
                 >
                   Posto banesën tënde
                 </Link>
@@ -104,7 +104,7 @@ export default async function HomePage() {
             <p className="text-red-600 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center w-full sm:w-auto h-11 px-5 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold transition-colors"
+              className="inline-flex items-center justify-center w-full sm:w-auto h-11 px-5 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold transition-colors"
             >
               Provo përsëri
             </Link>
@@ -113,14 +113,14 @@ export default async function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section aria-label="Banesat e disponueshme" className="bg-[#f4f9f8] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-[#F2F7F7] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="border-t border-[#F3F4F6] mb-8" />
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-black text-[#1A1A2E] border-l-4 border-[#111827] pl-4">Banesa në Shitje dhe me Qira</h2>
+            <h2 className="text-2xl font-black text-[#1A1A2E] border-l-4 border-[#006459] pl-4">Banesa në Shitje dhe me Qira</h2>
             <p className="text-gray-500 text-sm mt-1">Të gjitha banesat e disponueshme në platformë</p>
           </div>
-          <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-[#111827] transition-all px-5 py-2.5 rounded-xl border border-gray-300 hover:border-[#111827]">
+          <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-[#006459] transition-all px-5 py-2.5 rounded-xl border border-gray-300 hover:border-[#006459]">
             Shiko të gjitha →
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default async function HomePage() {
             <h3 className="text-lg font-semibold text-[#1A1A2E] mb-2">Ende nuk ka listime</h3>
             <p className="text-gray-500 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
-              <Button className="h-11 w-full sm:w-auto px-5 bg-[#111827] hover:bg-[#1F2937] text-white rounded-xl font-semibold">
+              <Button className="h-11 w-full sm:w-auto px-5 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold">
                 Posto banesën tënde falas
               </Button>
             </Link>

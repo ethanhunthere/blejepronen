@@ -56,7 +56,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   })
 
   return (
-    <div className="min-h-screen bg-[#f4f9f8]">
+    <div className="min-h-screen bg-[#F2F7F7]">
       <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}
         <Link
@@ -69,7 +69,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         {/* Profile header */}
         <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8 mb-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-[#111827] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
+            <div className="w-20 h-20 rounded-full bg-[#006459] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}

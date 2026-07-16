@@ -154,7 +154,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#f4f9f8] flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#F2F7F7] flex">
       {/* ---- SIDEBAR ---- */}
       <aside
         className={`${
@@ -171,7 +171,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
               <h1 className="text-lg font-bold text-[#1A1A2E] tracking-tight">Mesazhet</h1>
             </div>
             {totalUnread > 0 && (
-              <span className="bg-[#111827] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#111827]/30 animate-pulse"
+              <span className="bg-[#006459] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#006459]/30 animate-pulse"
                 style={{ animationDuration: '3s' }}>
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
@@ -185,7 +185,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Kërko bisedë..."
-              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:border-[#111827]/30 transition-all duration-300"
+              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:border-[#006459]/30 transition-all duration-300"
             />
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                     onClick={() => router.push(`/mesazhet/${conv.id}`)}
                     className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 group border-b border-gray-50 ${
                       isActive
-                        ? 'bg-[#111827]/5 border-l-2 border-l-[#111827]'
+                        ? 'bg-[#006459]/5 border-l-2 border-l-[#006459]'
                         : 'hover:bg-gray-50 hover:translate-x-[2px] border-l-2 border-l-transparent'
                     }`}
                   >
@@ -281,7 +281,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                           </p>
                         )}
                         {conv.unreadCount > 0 && (
-                          <span className="bg-[#111827] text-white text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center px-1.5 flex-shrink-0 shadow-md shadow-[#111827]/25"
+                          <span className="bg-[#006459] text-white text-[10px] font-bold min-w-[20px] h-[20px] rounded-full flex items-center justify-center px-1.5 flex-shrink-0 shadow-md shadow-[#006459]/25"
                             style={{ animation: 'unreadPulse 2.5s ease-in-out infinite' }}>
                             {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                           </span>
@@ -297,7 +297,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* ---- RIGHT PANEL ---- */}
-      <main className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#f4f9f8]`}>
+      <main className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#F2F7F7]`}>
         {children}
       </main>
 
