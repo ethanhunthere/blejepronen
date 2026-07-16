@@ -268,7 +268,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-white border-b border-[#F3F4F6] shadow-[0_1px_0_#E5E7EB] overflow-visible ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#00645a] border-b border-[#005a51] shadow-[0_1px_0_#005249] overflow-visible ${className || ''}`}>
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -291,8 +291,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 href="/listings"
                 className={`relative text-[14px] px-3.5 py-2 transition-all duration-200 ${
                   pathname === '/listings'
-                    ? 'text-[#111827] font-semibold after:absolute after:bottom-1.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#111827] after:rounded-full'
-                    : 'text-[#374151] font-medium hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg'
+                    ? 'text-white font-semibold after:absolute after:bottom-1.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#f1d89a] after:rounded-full'
+                    : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#007a6e] rounded-lg'
                 }`}
               >
                 Shiko banesat
@@ -303,13 +303,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#007a6e] transition-all duration-200 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-white bg-[#111827] hover:bg-[#374151] shadow-sm transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#00645a] bg-white hover:bg-[#f1d89a] shadow-sm transition-all duration-200 cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -319,7 +319,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-[#111827] hover:bg-[#0A0A0A] shadow-sm transition-all duration-200 cursor-pointer text-white"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#f1d89a] shadow-sm transition-all duration-200 cursor-pointer text-[#00645a]"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -329,7 +329,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/mesazhet')}
-                    className="relative p-2 rounded-xl text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer"
+                    className="relative p-2 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#007a6e] transition-all duration-200 cursor-pointer"
                     aria-label="Mesazhet"
                   >
                     <MessageCircle className="h-5 w-5" />
@@ -345,7 +345,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-[#111827] text-white text-sm font-bold hover:bg-[#1F2937] transition-colors cursor-pointer flex-shrink-0 outline-none border border-gray-200"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#00645a] text-sm font-bold hover:bg-[#f1d89a] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -433,7 +433,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button — classic 3-line hamburger morphing to X */}
             <button
-              className="lg:hidden relative w-11 h-11 rounded-xl flex items-center justify-center bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer group"
+              className="lg:hidden relative w-11 h-11 rounded-xl flex items-center justify-center bg-white/20 hover:bg-white/30 transition-colors cursor-pointer group"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
@@ -442,19 +442,19 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <span className="relative w-5 h-[14px] flex flex-col justify-between">
                 {/* Top bar */}
                 <span
-                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
+                  className={`block h-[2px] w-full rounded-full bg-white origin-center transition-all duration-300 ease-out ${
                     menuOpen ? 'translate-y-[6px] rotate-45' : ''
                   }`}
                 />
                 {/* Middle bar — fades out when open */}
                 <span
-                  className={`block h-[2px] rounded-full bg-[#374151] origin-center transition-all duration-200 ease-out ${
+                  className={`block h-[2px] rounded-full bg-white origin-center transition-all duration-200 ease-out ${
                     menuOpen ? 'w-0 opacity-0' : 'w-full opacity-100'
                   }`}
                 />
                 {/* Bottom bar */}
                 <span
-                  className={`block h-[2px] w-full rounded-full bg-[#374151] origin-center transition-all duration-300 ease-out ${
+                  className={`block h-[2px] w-full rounded-full bg-white origin-center transition-all duration-300 ease-out ${
                     menuOpen ? '-translate-y-[6px] -rotate-45' : ''
                   }`}
                 />
@@ -465,14 +465,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-gray-200 bg-white py-4 space-y-3">
-            <Link href="/listings" className={`relative block px-4 py-3 text-[14px] transition-all duration-200 ${pathname === '/listings' ? 'text-[#111827] font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#111827] after:rounded-full' : 'text-[#374151] font-medium hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg'}`}>
+          <div id="mobile-menu" className="lg:hidden border-t border-[#005249] bg-[#005249] py-4 space-y-3">
+            <Link href="/listings" className={`relative block px-4 py-3 text-[14px] transition-all duration-200 ${pathname === '/listings' ? 'text-white font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#f1d89a] after:rounded-full' : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#007a6e] rounded-lg'}`}>
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6] transition-all duration-200 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-[#111827] hover:bg-[#374151] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#007a6e] transition-all duration-200 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#00645a] bg-white hover:bg-[#f1d89a] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>
@@ -480,21 +480,21 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full text-left py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full text-left py-3 border-b border-[#005249] cursor-pointer hover:bg-[#007a6e] transition-colors"
                 >
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[#111827] flex items-center justify-center">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
                     {profile.avatarUrl ? (
                       <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="40px" className="object-cover" />
                     ) : (
-                      <span className="text-white text-sm font-bold">
+                      <span className="text-[#00645a] text-sm font-bold">
                         {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-400 font-medium">Profili im →</p>
+                    <p className="text-xs text-[#b3d8d4] font-medium">Profili im →</p>
                     {!profile.incomplete && (
-                      <p className="text-sm font-medium text-[#1A1A2E] truncate">
+                      <p className="text-sm font-medium text-white truncate">
                         {profile.firstName || user?.email?.split('@')[0] || 'Përdorues'}
                       </p>
                     )}
@@ -511,7 +511,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 {profile.incomplete && (
                   <a
                     href="/completo-profilin"
-                    className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 w-full py-3 border-b border-[#005249] text-white text-sm font-medium cursor-pointer hover:bg-[#007a6e] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
@@ -525,7 +525,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
                   className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <Plus className="h-5 w-5 text-gray-400 shrink-0" />
+                  <Plus className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Posto banesë
                 </button>
 
@@ -535,7 +535,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
                   className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <MessageCircle className="h-5 w-5 text-gray-400 shrink-0" />
+                  <MessageCircle className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Mesazhet
                   {unreadCount > 0 && (
                     <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
@@ -550,7 +550,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   onClick={() => { router.push('/postimet-e-mia'); setMenuOpen(false) }}
                   className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
                 >
-                  <Home className="h-5 w-5 text-gray-400 shrink-0" />
+                  <Home className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Banesat e mia
                 </button>
 
@@ -559,7 +559,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full py-3 text-red-600 text-sm font-semibold cursor-pointer hover:bg-red-50 rounded-lg transition-colors"
+                    className="flex items-center gap-3 w-full py-3 text-red-400 text-sm font-semibold cursor-pointer hover:bg-red-500/20 rounded-lg transition-colors"
                   >
                     <LogOut className="h-5 w-5 shrink-0" />
                     Dil
