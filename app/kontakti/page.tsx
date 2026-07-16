@@ -22,8 +22,8 @@ export default function ContactPage() {
               <Mail className="h-5 w-5 text-[#111827]" />
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <a href="mailto:blejebanesen@gmail.com" className="text-[#111827] hover:underline font-medium">
-                  blejebanesen@gmail.com
+                <a href="mailto:blejepronen@gmail.com" className="text-[#111827] hover:underline font-medium">
+                  blejepronen@gmail.com
                 </a>
               </div>
             </div>

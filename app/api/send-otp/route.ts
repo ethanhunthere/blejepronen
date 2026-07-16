@@ -78,7 +78,7 @@ export async function POST() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Bleje Banesën <noreply@blejebanesen.com>',
+        from: 'Bleje Banesën <noreply@blejepronen.com>',
         to: user.email,
         subject: 'Kodi juaj i verifikimit - Bleje Banesën',
         html,
