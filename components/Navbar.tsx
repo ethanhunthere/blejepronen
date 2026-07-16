@@ -279,7 +279,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               alt="Bleje Banesën"
               width={100}
               height={100}
-              className="h-8 lg:h-9 w-auto object-contain object-left"
+              className="h-8 lg:h-9 w-auto object-contain object-left block"
             />
           </Link>
 
