@@ -73,6 +73,10 @@ export default function RootLayout({
           }}
         />
         <meta name="theme-color" content="#f4f9f8" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         {supabaseUrl && (
           <>
             <link rel="preconnect" href={supabaseUrl} />
