@@ -441,7 +441,7 @@ export default function PostoBanesePage() {
             <div className="mt-3">
               <Link
                 href="/completo-profilin"
-                className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] transition-colors"
+                className="inline-flex items-center justify-center min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
               >
                 Verifiko profilin
               </Link>
@@ -464,7 +464,7 @@ export default function PostoBanesePage() {
                   className={`flex-1 min-h-11 py-3 rounded-xl font-medium transition-all text-sm cursor-pointer ${
                     formData.type === t
                       ? 'bg-[#006459] text-white border border-[#006459]'
-                      : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                   }`}
                 >
                   {t === 'shitje' ? '🏠 Shitje' : '🔑 Me qira'}
@@ -520,7 +520,7 @@ export default function PostoBanesePage() {
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.condition === c.value
                         ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
-                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
                     {c.label}
@@ -568,7 +568,7 @@ export default function PostoBanesePage() {
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
                         formData.area_m2 === preset.value.toString()
                           ? 'bg-[#111827] border border-[#111827] text-white'
-                          : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                          : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                       }`}
                     >
                       {preset.label} m²
@@ -666,7 +666,7 @@ export default function PostoBanesePage() {
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.floor === floor
                         ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
-                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
                     {floor}
@@ -687,7 +687,7 @@ export default function PostoBanesePage() {
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.apartment_type === type
                         ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
-                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                        : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
                     {type}
@@ -717,7 +717,7 @@ export default function PostoBanesePage() {
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                         selected
                           ? 'bg-[#111827]/10 border border-[#111827]/40 text-[#111827]'
-                          : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100'
+                          : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                       }`}
                     >
                       {feature}
@@ -762,7 +762,7 @@ export default function PostoBanesePage() {
                       type="button"
                       onClick={() => removeImage(i)}
                       aria-label={`Hiq foton ${i + 1}`}
-                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500/20 text-red-400 border border-red-500/30 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-500/30"
+                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500/20 text-red-400 border border-red-500/30 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 ease-out cursor-pointer hover:bg-red-500/30 hover:scale-110 active:scale-95"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -776,7 +776,7 @@ export default function PostoBanesePage() {
           <Button
             type="submit"
             disabled={uploading}
-            className="w-full h-12 bg-[#006459] hover:bg-[#005048] text-white text-base font-semibold py-4 rounded-xl cursor-pointer"
+            className="w-full h-12 bg-[#006459] text-white text-base font-semibold py-4 rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {uploading ? (
               <>

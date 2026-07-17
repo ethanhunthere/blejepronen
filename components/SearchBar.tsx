@@ -120,7 +120,7 @@ function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className="flex-shrink-0 bg-[#006459] hover:bg-[#005048] text-white px-5 py-2 rounded-full text-[13px] font-semibold transition-all duration-200 cursor-pointer whitespace-nowrap"
+        className="flex-shrink-0 min-h-[44px] bg-[#006459] text-white px-5 py-2 rounded-full text-[13px] font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap"
       >
         <span>{displayedButtonText}</span>
         {isHovered && (

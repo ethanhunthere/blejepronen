@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
               Dërguam linkun e rivendosjes te <strong>{email}</strong>.
               Kliko linkun për të vendosur fjalëkalimin e ri.
             </p>
-            <Link href="/login" className="mt-4 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <Link href="/login" className="mt-4 inline-flex items-center justify-center min-h-[44px] rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
               Shko te hyrja
             </Link>
           </CardContent>
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                 disabled={loading}
               >
                 {loading ? 'Duke dërguar...' : 'Dërgo linkun'}
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
           </CardContent>
 
           <CardFooter>
-            <Link href="/login" className="w-full inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+            <Link href="/login" className="w-full inline-flex items-center justify-center min-h-[44px] rounded-xl border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Kthehu te hyrja
             </Link>

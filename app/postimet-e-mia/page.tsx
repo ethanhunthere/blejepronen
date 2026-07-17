@@ -146,7 +146,7 @@ export default function PostimetEMiaPage() {
           <button
             type="button"
             onClick={() => setActiveTab('mine')}
-            className={`pb-3 text-sm cursor-pointer transition-colors ${
+            className={`pb-3 text-sm cursor-pointer transition-colors duration-150 ${
               activeTab === 'mine' ? 'border-b-2 border-[#006459] text-[#006459] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -155,7 +155,7 @@ export default function PostimetEMiaPage() {
           <button
             type="button"
             onClick={() => setActiveTab('favorites')}
-            className={`pb-3 text-sm cursor-pointer transition-colors ${
+            className={`pb-3 text-sm cursor-pointer transition-colors duration-150 ${
               activeTab === 'favorites' ? 'border-b-2 border-[#006459] text-[#006459] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -206,7 +206,7 @@ export default function PostimetEMiaPage() {
               Postoni banesën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-banese">
-              <Button className="h-11 px-6 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold">
+              <Button className="h-11 px-6 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
                 Posto banesën tënde
               </Button>
             </Link>
@@ -256,7 +256,7 @@ export default function PostimetEMiaPage() {
                   <button
                     type="button"
                     onClick={() => deleteListing(listing)}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-medium text-red-500 transition-colors cursor-pointer"
+                    className="w-full min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs font-medium text-red-500 hover:bg-red-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Fshi

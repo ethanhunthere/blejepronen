@@ -145,7 +145,7 @@ export default function ListingImageGallery({
           <button
             type="button"
             onClick={() => openFullscreen(0)}
-            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-[#1A1A2E] border border-gray-200 text-sm font-semibold transition-all duration-200 shadow-sm"
+            className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-[#1A1A2E] border border-gray-200 text-sm font-semibold shadow-sm hover:bg-white hover:shadow-lg hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
           >
             <Images className="h-4 w-4" />
             Shiko të gjitha {total} foto
@@ -188,7 +188,7 @@ export default function ListingImageGallery({
               <button
                 type="button"
                 onClick={goPrev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[#1A1A2E] shadow-md border border-gray-100"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 text-[#1A1A2E] shadow-md border border-gray-100 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
                 aria-label="Fotoja e mëparshme"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function ListingImageGallery({
               <button
                 type="button"
                 onClick={goNext}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 hover:bg-white text-[#1A1A2E] shadow-md border border-gray-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/90 text-[#1A1A2E] shadow-md border border-gray-100 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
                 aria-label="Fotoja tjetër"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -208,7 +208,7 @@ export default function ListingImageGallery({
           <button
             type="button"
             onClick={() => openFullscreen(current)}
-            className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white text-[#1A1A2E] text-xs font-medium shadow-sm border border-gray-200"
+            className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/90 text-[#1A1A2E] text-xs font-medium shadow-sm border border-gray-200 hover:bg-white hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
           >
             <Images className="h-3.5 w-3.5" />
             {total} foto

@@ -58,14 +58,14 @@ function CookieBanner() {
           <button
             type="button"
             onClick={reject}
-            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
           >
             Refuzo
           </button>
           <button
             type="button"
             onClick={accept}
-            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#006459] px-4 text-sm font-medium text-white hover:bg-[#005048] transition-colors"
+            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#006459] px-4 text-sm font-medium text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
           >
             Prano
           </button>

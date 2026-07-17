@@ -419,7 +419,7 @@ export default async function ListingDetailPage({
                     <>
                       <a
                         href={`tel:${sellerPhone}`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#006459] hover:bg-[#005048] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                        className="flex-1 inline-flex items-center justify-center min-h-[44px] gap-2 bg-[#006459] text-white font-semibold py-3 px-5 rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
                       >
                         <Phone className="h-4 w-4" />
                         {sellerPhone}
@@ -429,7 +429,7 @@ export default async function ListingDetailPage({
                           href={sellerWhatsAppUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 inline-flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 font-semibold py-3 px-5 rounded-xl transition-colors"
+                          className="flex-1 inline-flex items-center justify-center min-h-[44px] gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold py-3 px-5 rounded-xl hover:bg-[#25D366]/20 hover:shadow-lg hover:shadow-[#25D366]/25 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                         >
                           <MessageCircle className="h-4 w-4" />
                           WhatsApp
@@ -447,7 +447,7 @@ export default async function ListingDetailPage({
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <a
                     href={`/login?next=${encodeURIComponent(`/listings/${listing.id}`)}`}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-[#111827] font-medium py-3 px-5 rounded-xl transition-all duration-200"
+                    className="w-full inline-flex items-center justify-center min-h-[44px] gap-2 bg-gray-50 border border-gray-200 text-gray-600 font-medium py-3 px-5 rounded-xl hover:bg-gray-100 hover:text-[#111827] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                   >
                     <MessagesSquare className="h-4 w-4" />
                     Kyçu për ta kontaktuar direkt

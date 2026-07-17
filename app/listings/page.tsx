@@ -237,7 +237,7 @@ function ListingsContent() {
           <div className="flex gap-3">
             <button
               type="button"
-              className="h-13 px-5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
+              className="h-13 px-5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 text-gray-700 font-medium rounded-xl transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
               onClick={() => setShowFilters(!showFilters)}
             >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -249,7 +249,7 @@ function ListingsContent() {
             )}
           </button>
           {hasActiveFilters && (
-            <button type="button" onClick={clearFilters} className="h-13 px-4 text-gray-400 hover:text-gray-600 transition-colors font-medium inline-flex items-center justify-center cursor-pointer whitespace-nowrap">
+            <button type="button" onClick={clearFilters} className="h-13 px-4 text-gray-400 hover:text-gray-600 transition-colors duration-150 font-medium inline-flex items-center justify-center cursor-pointer whitespace-nowrap">
               <X className="h-4 w-4 mr-1" />
               Pastro
             </button>
@@ -526,7 +526,7 @@ function ListingsContent() {
                   setFilters(prev => ({ ...prev, agentId: '' }))
                   router.push('/listings', { scroll: false })
                 }}
-                className="h-10 px-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all duration-200 inline-flex items-center justify-center cursor-pointer"
+                className="h-10 px-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 text-gray-700 font-medium rounded-xl transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="h-4 w-4 mr-1" />
                 Pastro filtrin e agjentit
@@ -556,7 +556,7 @@ function ListingsContent() {
             </div>
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Shërbimi është i padisponueshëm</h3>
             <p className="text-gray-400 mb-6">Ju lutemi provoni përsëri më vonë.</p>
-            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center px-6 py-3 bg-[#006459] hover:bg-[#005048] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#006459]/25">Provo përsëri</button>
+            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#006459] text-white font-semibold rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Provo përsëri</button>
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
@@ -568,7 +568,7 @@ function ListingsContent() {
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Nuk u gjetën banesa</h3>
             <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center px-6 py-3 bg-[#006459] hover:bg-[#005048] text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-[#006459]/25">Pastro filtrat</button>
+              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#006459] text-white font-semibold rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Pastro filtrat</button>
             )}
           </div>
         ) : (
@@ -624,7 +624,7 @@ function ListingsContent() {
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="px-8 py-3 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-all duration-200 mx-auto inline-flex items-center justify-center cursor-pointer"
+                  className="min-h-[44px] px-8 py-3 border border-gray-200 bg-white text-gray-700 font-medium rounded-xl hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out mx-auto inline-flex items-center justify-center cursor-pointer"
                 >
                   Ngarko më shumë banesa
                 </button>

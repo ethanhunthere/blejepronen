@@ -98,7 +98,7 @@ export default function ContactSellerCard({
           e.stopPropagation()
           toggleFavorite(listingId)
         }}
-        className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 font-semibold text-sm cursor-pointer touch-manipulation ${
+        className={`w-full min-h-[44px] flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 ease-out font-semibold text-sm cursor-pointer touch-manipulation hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 ${
           isFav
             ? 'border-red-200 bg-red-50 text-red-500 hover:bg-red-100'
             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
@@ -154,7 +154,7 @@ export default function ContactSellerCard({
           <>
             <a
               href={`tel:${seller.phone}`}
-              className="w-full bg-[#006459] hover:bg-[#005048] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#006459]/25 hover:shadow-[#006459]/40 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-[#006459] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#006459]/25 hover:bg-[#005048] hover:shadow-[#006459]/40 hover:-translate-y-[1px] active:translate-y-0 active:shadow-[#006459]/25 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-5 w-5" />
               {seller.phone}
@@ -163,7 +163,7 @@ export default function ContactSellerCard({
               href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 hover:border-[#25D366]/50 py-3 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] py-3 rounded-2xl font-semibold hover:bg-[#25D366]/20 hover:border-[#25D366]/50 hover:shadow-lg hover:shadow-[#25D366]/25 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageCircle className="h-5 w-5" />
               WhatsApp
@@ -181,7 +181,7 @@ export default function ContactSellerCard({
             <button
               type="button"
               onClick={handleMessage}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-gray-50 border border-gray-200 text-gray-600 py-3 rounded-2xl font-medium hover:bg-gray-100 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessagesSquare className="h-5 w-5" />
               Dërgo mesazh
@@ -190,7 +190,7 @@ export default function ContactSellerCard({
         ) : (
           <a
             href={loginUrl}
-            className="w-full bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer text-sm"
+            className="w-full min-h-[44px] bg-gray-50 border border-gray-200 text-gray-500 py-3 rounded-2xl font-medium hover:bg-gray-100 hover:text-gray-700 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
             <MessagesSquare className="h-5 w-5" />
             Kyçu për të kontaktuar direkt me personin

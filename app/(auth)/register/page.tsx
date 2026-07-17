@@ -74,7 +74,7 @@ export default function RegisterPage() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#006459] hover:bg-[#005048] px-5 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
+              className="mt-4 inline-flex items-center justify-center min-h-[44px] rounded-xl bg-[#006459] text-white px-5 py-2 text-sm font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
@@ -105,7 +105,7 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              className="w-full h-11 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer"
+              className="w-full h-11 bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}

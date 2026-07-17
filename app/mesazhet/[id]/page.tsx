@@ -488,7 +488,7 @@ export default function ChatPage() {
               type="button"
               onClick={sendMessage}
               disabled={!newMsg.trim()}
-              className="w-10 h-10 bg-[#006459] hover:bg-[#005048] rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+              className="w-10 h-10 bg-[#006459] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
             >
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>

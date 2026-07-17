@@ -289,7 +289,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <div className="hidden lg:flex items-center space-x-6">
               <Link
                 href="/listings"
-                className={`relative text-[14px] px-3.5 py-2 transition-all duration-200 ${
+                className={`relative text-[14px] px-3.5 py-2 transition-all duration-200 cursor-pointer ${
                   pathname === '/listings'
                     ? 'text-white font-semibold after:absolute after:bottom-1.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
                     : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'
@@ -309,7 +309,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#006459] bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] shadow-sm transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#006459] bg-white border-2 border-white hover:bg-transparent hover:text-white hover:shadow-lg hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -319,7 +319,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
+                    className="inline-flex items-center justify-center rounded-xl px-5 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white text-[#006459] border-2 border-white hover:bg-transparent hover:text-white hover:shadow-lg hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -329,7 +329,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/mesazhet')}
-                    className="relative p-2 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
+                    className="relative p-2 rounded-full text-[#b3d8d4] hover:text-white hover:bg-white/15 transition-colors duration-150 cursor-pointer"
                     aria-label="Mesazhet"
                   >
                     <MessageCircle className="h-5 w-5" />
@@ -345,7 +345,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#006459] text-sm font-bold border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#006459] text-sm font-bold border-2 border-white hover:shadow-lg hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -361,7 +361,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 text-[#1A1A2E]">
                         {/* User info header */}
                         <div
-                          className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors group"
+                          className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors duration-150 group"
                           onClick={() => { closeDropdown(); router.push('/profili') }}
                         >
                           <div className="flex items-center gap-3">
@@ -394,7 +394,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/mesazhet') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                         >
                           <MessageCircle className="h-4 w-4 mr-3 text-gray-400" />
                           Mesazhet
@@ -408,7 +408,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                         >
                           <User className="h-4 w-4 mr-3 text-gray-400" />
                           Banesat e mia
@@ -419,7 +419,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors duration-150 cursor-pointer"
                         >
                           <LogOut className="h-4 w-4 mr-3" />
                           Dil
@@ -433,7 +433,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
             {/* Mobile menu button — classic 3-line hamburger morphing to X */}
             <button
-              className="lg:hidden relative w-11 h-11 rounded-xl flex items-center justify-center bg-white/20 hover:bg-white/30 transition-colors cursor-pointer group"
+              className="lg:hidden relative w-11 h-11 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 transition-colors duration-150 cursor-pointer group"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
@@ -466,13 +466,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         {/* Mobile Menu */}
         {menuOpen && (
           <div id="mobile-menu" className="lg:hidden border-t border-[#005048] bg-[#005048] py-4 space-y-3">
-            <Link href="/listings" className={`relative block px-4 py-3 text-[14px] transition-all duration-200 ${pathname === '/listings' ? 'text-white font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full' : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'}`}>
+            <Link href="/listings" className={`relative block min-h-[44px] flex items-center px-4 py-3 text-[14px] transition-all duration-200 cursor-pointer ${pathname === '/listings' ? 'text-white font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full' : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'}`}>
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#006459] bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold text-[#006459] bg-white border-2 border-white hover:bg-transparent hover:text-white hover:shadow-lg transition-all duration-200 ease-out cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>
@@ -480,7 +480,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full text-left py-3 border-b border-[#005048] cursor-pointer hover:bg-[#005048] transition-colors"
+                  className="flex items-center gap-3 w-full min-h-[44px] text-left py-3 border-b border-[#005048] cursor-pointer hover:bg-[#005048] transition-colors duration-150"
                 >
                   <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
                     {profile.avatarUrl ? (
@@ -511,7 +511,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 {profile.incomplete && (
                   <a
                     href="/completo-profilin"
-                    className="flex items-center gap-3 w-full py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors duration-150"
                     onClick={() => setMenuOpen(false)}
                   >
                     <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
@@ -523,7 +523,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full min-h-[44px] py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors duration-150"
                 >
                   <Plus className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Posto banesë
@@ -533,7 +533,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full min-h-[44px] py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors duration-150"
                 >
                   <MessageCircle className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Mesazhet
@@ -548,7 +548,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/postimet-e-mia'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full min-h-[44px] py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors duration-150"
                 >
                   <Home className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Banesat e mia
@@ -559,7 +559,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full py-3 text-red-400 text-sm font-semibold cursor-pointer hover:bg-red-500/20 rounded-lg transition-colors"
+                    className="flex items-center gap-3 w-full min-h-[44px] py-3 text-red-400 text-sm font-semibold cursor-pointer hover:bg-red-500/20 rounded-lg transition-colors duration-150"
                   >
                     <LogOut className="h-5 w-5 shrink-0" />
                     Dil

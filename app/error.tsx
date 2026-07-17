@@ -29,11 +29,11 @@ export default function Error({
           Diçka shkoi keq. Ju lutemi provoni përsëri ose kthehuni në faqen kryesore.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-[#006459] hover:bg-[#005048] text-white">
+          <Button onClick={reset} className="bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">
             Provo përsëri
           </Button>
           <Link href="/">
-            <Button variant="outline" className="bg-white border-gray-200 text-gray-600">
+            <Button variant="outline" className="bg-white border-gray-200 text-gray-600 hover:border-[#006459] hover:text-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
               Kthehu në ballinë
             </Button>
           </Link>

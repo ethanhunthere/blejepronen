@@ -81,13 +81,13 @@ export default async function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <Link
                   href="/listings"
-                  className="bg-[#006459] text-white font-semibold px-8 py-3 rounded-xl hover:bg-[#005048] shadow-sm transition-all duration-200"
+                  className="inline-flex items-center justify-center min-h-[44px] bg-[#006459] text-white font-semibold px-8 py-3 rounded-xl shadow-sm hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
                 >
                   Shiko banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="border-2 border-[#006459] text-[#006459] font-semibold px-8 py-3 rounded-xl hover:bg-[#006459] hover:text-white transition-all duration-200"
+                  className="inline-flex items-center justify-center min-h-[44px] bg-white border-2 border-[#006459] text-[#006459] font-semibold px-8 py-3 rounded-xl hover:bg-[#006459] hover:text-white hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
@@ -104,7 +104,7 @@ export default async function HomePage() {
             <p className="text-red-600 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center w-full sm:w-auto h-11 px-5 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold transition-colors"
+              className="inline-flex items-center justify-center w-full sm:w-auto min-h-[44px] h-11 px-5 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
             >
               Provo përsëri
             </Link>
@@ -120,7 +120,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-black text-[#1A1A2E] border-l-4 border-[#006459] pl-4">Banesa në Shitje dhe me Qira</h2>
             <p className="text-gray-500 text-sm mt-1">Të gjitha banesat e disponueshme në platformë</p>
           </div>
-          <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-[#006459] transition-all px-5 py-2.5 rounded-xl border border-gray-300 hover:border-[#006459]">
+          <Link href="/listings" className="inline-flex items-center min-h-[44px] text-sm font-medium text-gray-600 px-5 py-2.5 rounded-xl border border-gray-300 hover:text-[#006459] hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out cursor-pointer">
             Shiko të gjitha →
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default async function HomePage() {
             <h3 className="text-lg font-semibold text-[#1A1A2E] mb-2">Ende nuk ka listime</h3>
             <p className="text-gray-500 mb-6">Bëhu i pari që poston banesën tënde në platformën tonë falas!</p>
             <Link href="/posto-banese">
-              <Button className="h-11 w-full sm:w-auto px-5 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold">
+              <Button className="h-11 w-full sm:w-auto px-5 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
                 Posto banesën tënde falas
               </Button>
             </Link>

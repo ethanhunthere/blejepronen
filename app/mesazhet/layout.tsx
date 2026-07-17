@@ -229,7 +229,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                     key={conv.id}
                     type="button"
                     onClick={() => router.push(`/mesazhet/${conv.id}`)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 group border-b border-gray-50 ${
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 ease-out group border-b border-gray-50 cursor-pointer ${
                       isActive
                         ? 'bg-[#006459]/5 border-l-2 border-l-[#006459]'
                         : 'hover:bg-gray-50 hover:translate-x-[2px] border-l-2 border-l-transparent'

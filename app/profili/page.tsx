@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#006459] text-white flex items-center justify-center border-2 border-white hover:bg-[#005048] transition-colors cursor-pointer"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#006459] text-white flex items-center justify-center border-2 border-white hover:bg-[#005048] hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer disabled:hover:scale-100"
               >
                 {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                 </div>
                 <Link
                   href="/completo-profilin"
-                  className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out whitespace-nowrap cursor-pointer"
                 >
                   Verifiko tani →
                 </Link>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setEditMode(true)}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-gray-100 text-[#1A1A2E] hover:bg-gray-200 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold bg-gray-100 text-[#1A1A2E] hover:bg-gray-200 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                   >
                     Ndrysho profilin
                   </button>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
                       <Button
                         type="submit"
                         disabled={saving}
-                        className="flex-1 h-11 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold cursor-pointer"
+                        className="flex-1 h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0 disabled:hover:shadow-none"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                       </Button>
@@ -345,7 +345,7 @@ export default function ProfilePage() {
                             })
                           }
                         }}
-                        className="flex-1 h-11 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-[#1A1A2E] font-semibold transition-colors cursor-pointer"
+                        className="flex-1 h-11 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-semibold hover:bg-gray-100 hover:text-[#1A1A2E] hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                       >
                         Anulo
                       </button>
@@ -364,7 +364,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-white border border-red-300 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 hover:shadow-lg hover:shadow-red-600/25 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
               >
                 Fshij llogarinë
               </button>

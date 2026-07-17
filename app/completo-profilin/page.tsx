@@ -327,7 +327,7 @@ export default function CompletoProfilinPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-xl font-semibold text-white bg-[#006459] hover:bg-[#005048] shadow-lg shadow-[#006459]/25 cursor-pointer"
+                  className="w-full h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-lg shadow-[#006459]/25 hover:bg-[#005048] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0"
                   disabled={loading}
                 >
                   {loading ? 'Duke u përpunuar...' : (
@@ -388,7 +388,7 @@ export default function CompletoProfilinPage() {
                       type="button"
                       onClick={handleResendOtp}
                       disabled={resending}
-                      className="text-[#111827] hover:text-[#1F2937] font-medium cursor-pointer disabled:opacity-50"
+                      className="text-[#111827] hover:text-[#1F2937] hover:underline font-medium transition-colors duration-150 cursor-pointer disabled:opacity-50"
                     >
                       {resending ? 'Duke u ridërguar...' : 'Ridërgo kodin'}
                     </button>
@@ -400,7 +400,7 @@ export default function CompletoProfilinPage() {
                 <button
                   type="button"
                   onClick={() => { router.push('/'); router.refresh() }}
-                  className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-[#1A1A2E] font-medium transition-colors inline-flex items-center justify-center cursor-pointer"
+                  className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-medium hover:bg-gray-100 hover:text-[#1A1A2E] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
                 >
                   Vazhdo pa verifikim
                   <ArrowRight className="h-4 w-4 ml-2" />

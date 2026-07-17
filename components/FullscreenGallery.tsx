@@ -82,7 +82,7 @@ export default function FullscreenGallery({
         <button
           type="button"
           onClick={onClose}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 hover:scale-110 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
           aria-label="Mbyll"
         >
           <X className="h-5 w-5" />
@@ -109,7 +109,7 @@ export default function FullscreenGallery({
             <button
               type="button"
               onClick={goPrev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 hover:scale-110 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
               aria-label="Fotoja e mëparshme"
             >
               <ChevronLeft className="h-6 w-6" />
@@ -117,7 +117,7 @@ export default function FullscreenGallery({
             <button
               type="button"
               onClick={goNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 hover:scale-110 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
               aria-label="Fotoja tjetër"
             >
               <ChevronRight className="h-6 w-6" />
@@ -134,8 +134,8 @@ export default function FullscreenGallery({
               key={idx}
               type="button"
               onClick={() => setCurrent(idx)}
-              className={`relative w-20 h-14 flex-shrink-0 rounded-lg overflow-hidden transition-opacity ${
-                idx === current ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80'
+              className={`relative w-20 h-14 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ease-out ${
+                idx === current ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80 hover:scale-105'
               }`}
               aria-label={`Shiko foto ${idx + 1}`}
             >
