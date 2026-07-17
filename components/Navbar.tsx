@@ -309,7 +309,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#006459] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#006459] bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] shadow-sm transition-all duration-200 cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -319,7 +319,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -345,7 +345,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#006459] text-sm font-bold hover:bg-[#C8B882] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#006459] text-sm font-bold border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -472,7 +472,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
                 <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#006459] bg-white hover:bg-[#C8B882] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#006459] bg-white border border-transparent hover:border-[#006459] hover:bg-[#F2F7F7] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>
