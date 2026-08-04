@@ -272,7 +272,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       <div className="w-full mx-auto">
         <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 translate-y-[3px]">
+          <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 translate-y-[5px]">
             <img
               src="/logo-icon.png"
               alt="Bleje Banesën"
