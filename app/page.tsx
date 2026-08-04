@@ -33,43 +33,23 @@ export default async function HomePage() {
     error = true
   }
 
-  const heroImage = listings[0]?.images?.[0] || ''
-
   return (
-    <main className="min-h-screen bg-[#F2F7F7]">
-      {/* Hero - search-first, Zillow-inspired */}
+    <main className="min-h-screen bg-white">
+      {/* Hero - search-first, clean white */}
       <section
         aria-label="Hero section"
-        className="relative overflow-hidden bg-[#003830]"
+        className="relative overflow-hidden bg-white"
       >
-        {/* Cinematic backdrop: latest listing photo with Ken Burns, brand gradient fallback */}
-        {heroImage ? (
-          <Image
-            src={heroImage}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover ken-burns"
-          />
-        ) : (
-          <div aria-hidden className="absolute inset-0 bg-[linear-gradient(160deg,#006459_0%,#00433C_55%,#003830_100%)]" />
-        )}
-        {/* Scrims + gold light */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,40,35,0.62)_0%,rgba(0,40,35,0.45)_45%,rgba(0,40,35,0.72)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(45%_35%_at_85%_8%,rgba(200,184,130,0.18),transparent_70%)]" />
-        </div>
-        <div className="relative z-20 py-20 md:py-28">
+        <div className="relative z-20 py-16 md:py-24">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="font-display text-[42px] sm:text-[54px] md:text-[68px] font-semibold tracking-tight text-white leading-[1.08]">
+              <h1 className="font-display text-[42px] sm:text-[54px] md:text-[68px] font-semibold tracking-tight text-[#1A1A2E] leading-[1.08]">
                 Gjej banesën
                 <br />
                 <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
               </h1>
 
-              <p className="text-[16px] text-white/80 max-w-lg mx-auto leading-relaxed mt-5 [text-shadow:0_1px_16px_rgba(0,40,35,0.6)]">
+              <p className="text-[16px] text-gray-500 max-w-lg mx-auto leading-relaxed mt-5">
                 Bli, shit ose jep me qira banesën tënde duke folur direkt me pronarët, pa ndërmjetës.
               </p>
 
@@ -89,7 +69,7 @@ export default async function HomePage() {
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="relative flex-shrink-0 text-[13px] font-medium text-white/85 px-4 py-1.5 rounded-full border border-white/15 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:text-white hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                    className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                   >
                     {city}
                   </Link>
@@ -107,7 +87,7 @@ export default async function HomePage() {
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="inline-flex items-center justify-center min-h-[44px] bg-white/10 backdrop-blur-md border border-white/30 text-white font-semibold px-8 py-3 rounded-full hover:bg-white hover:text-[#005048] hover:shadow-[0_16px_32px_-8px_rgba(0,40,35,0.5)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                  className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
@@ -133,7 +113,7 @@ export default async function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section aria-label="Banesat e disponueshme" className="bg-[#F2F7F7] max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-white max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-end justify-between mb-8">
           <div>
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
