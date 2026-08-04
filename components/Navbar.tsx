@@ -268,7 +268,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-lg shadow-black/20 overflow-visible transition-all duration-300 px-5 py-2 ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-[0_1px_0_rgba(255,255,255,0.15)_inset,0_12px_32px_-12px_rgba(0,40,36,0.55)] overflow-visible transition-all duration-300 px-5 py-2 ${className || ''}`}>
       <div className="w-full mx-auto">
         <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}

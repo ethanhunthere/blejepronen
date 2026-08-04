@@ -60,14 +60,14 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
   return (
     <Link href={`/listings/${listing.id}`}>
       <div
-        className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white shadow-sm card-hover"
+        className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-black/5 shadow-[0_1px_3px_rgba(16,24,40,0.08)] card-hover"
         onMouseEnter={startCycle}
         onMouseLeave={stopCycle}
       >
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gray-100 flex-shrink-0 overflow-hidden rounded-2xl">
           {cycleImages.length > 0 ? (
-            <>
+            <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-[1.05]">
               <Image
                 src={cycleImages[0]}
                 alt={listing.title}
@@ -93,7 +93,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
                   />
                 )
               })}
-            </>
+            </div>
           ) : null}
 
           {/* Bottom scrim + progress dots — only for multi-photo listings, only on hover */}
@@ -174,7 +174,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
           </div>
 
           <div className="flex items-baseline gap-1 mt-auto">
-            <span className="text-[15px] font-semibold text-[#111827] whitespace-nowrap">
+            <span className="text-base font-bold text-[#006459] tracking-tight whitespace-nowrap">
               {formatPrice(listing.price)}
             </span>
             {listing.type === 'qira' && <span className="text-[13px] text-[#6B7280]">/muaj</span>}

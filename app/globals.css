@@ -185,11 +185,16 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #111827;
+  background: rgba(0, 100, 89, 0.45);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1F2937;
+  background: #006459;
+}
+
+::selection {
+  background: #006459;
+  color: #ffffff;
 }
 
 /* Base animate-on-scroll state */
@@ -319,7 +324,7 @@ html {
 
 /* Accessible focus styles */
 :focus-visible {
-  outline: 2px solid #111827;
+  outline: 2px solid #006459;
   outline-offset: 2px;
 }
 button:focus-visible,
@@ -327,7 +332,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #111827;
+  outline: 2px solid #006459;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -359,13 +364,14 @@ textarea:focus-visible {
 
 /* Card hover - Apple-style lift */
 .card-hover {
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+  transform: translateY(-4px);
+  box-shadow: 0 2px 6px rgba(0, 80, 72, 0.06),
+              0 20px 44px -16px rgba(0, 80, 72, 0.22);
 }
 
 /* Focus ring - accessible */
@@ -406,8 +412,8 @@ button:active { transform: scale(0.98); }
 
 /* Input focus glow */
 input:focus, textarea:focus, select:focus {
-  box-shadow: 0 0 0 3px rgba(27, 79, 255, 0.12);
-  border-color: #111827 !important;
+  box-shadow: 0 0 0 3px rgba(0, 100, 89, 0.14);
+  border-color: #006459 !important;
 }
 
 /* Link underline animation */

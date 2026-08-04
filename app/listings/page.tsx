@@ -211,7 +211,8 @@ function ListingsContent() {
       <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black text-[#1A1A2E] tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
+          <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#1A1A2E] tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
           <p className="text-gray-500 text-base">Gjej banesën e përsosur për ty</p>
         </div>
 
