@@ -334,7 +334,7 @@ export default async function ListingDetailPage({
             {/* TITLE + LOCATION */}
             <section>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h1 className="text-2xl md:text-3xl font-black text-[#1A1A2E] tracking-tight leading-tight">
+                <h1 className="font-display text-2xl md:text-[32px] font-semibold text-[#1A1A2E] tracking-tight leading-tight">
                   {listing.title}
                 </h1>
                 <span className="inline-flex bg-[#111827]/20 text-[#111827] border border-[#111827]/30 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Albert_Sans } from "next/font/google";
+import { Albert_Sans, Playfair_Display } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsWrapper from "@/components/AnalyticsWrapper";
@@ -9,6 +9,13 @@ import "./globals.css";
 const albertSans = Albert_Sans({
   subsets: ["latin", "latin-ext"],
   variable: "--font-albert-sans",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600", "700"],
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -95,27 +102,31 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F2F7F7] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#F2F7F7" }}>
+      <body suppressHydrationWarning className={`min-h-full flex flex-col bg-[#F2F7F7] text-[#1A1A2E] overflow-x-hidden ${playfair.variable}`} style={{ backgroundColor: "#F2F7F7" }}>
         <header>
           <Navbar variant="static" />
         </header>
         <main className="flex-1 relative">{children}</main>
         <Toaster richColors position="top-center" />
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-8 mt-16">
-          <div className="mx-auto max-w-[1800px] 2xl:max-w-[2200px] px-4 sm:px-6 lg:px-8">
+        <footer className="relative overflow-hidden bg-[linear-gradient(160deg,#005048_0%,#003830_100%)] py-10 mt-16">
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(40%_60%_at_90%_0%,rgba(200,184,130,0.12),transparent_70%)]" />
+          </div>
+          <div className="relative mx-auto max-w-[1800px] 2xl:max-w-[2200px] px-4 sm:px-6 lg:px-8">
+            <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-6 mx-auto sm:mx-0" />
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-              <p className="text-sm text-gray-600 text-center sm:text-left">
+              <p className="text-sm text-white/60 text-center sm:text-left">
                 © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
               </p>
-              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-600">
-                <a href="/kushtet" className="hover:text-[#111827] transition-colors">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-white/60">
+                <a href="/kushtet" className="hover:text-[#C8B882] transition-colors">
                   Kushtet e përdorimit
                 </a>
-                <a href="/privatesia" className="hover:text-[#111827] transition-colors">
+                <a href="/privatesia" className="hover:text-[#C8B882] transition-colors">
                   Privatësia
                 </a>
-                <a href="/kontakti" className="hover:text-[#111827] transition-colors">
+                <a href="/kontakti" className="hover:text-[#C8B882] transition-colors">
                   Kontakti
                 </a>
               </div>

@@ -33,36 +33,43 @@ export default async function HomePage() {
     error = true
   }
 
+  const heroImage = listings[0]?.images?.[0] || ''
+
   return (
     <main className="min-h-screen bg-[#F2F7F7]">
       {/* Hero - search-first, Zillow-inspired */}
       <section
         aria-label="Hero section"
-        className="relative overflow-hidden"
-        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, #F3F4F6 0%, #FFFFFF 60%)' }}
+        className="relative overflow-hidden bg-[#003830]"
       >
-        {/* Ambient brand layer: soft teal + gold light, house watermark */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_0%,rgba(0,100,89,0.08),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(35%_30%_at_88%_10%,rgba(200,184,130,0.16),transparent_70%)]" />
+        {/* Cinematic backdrop: latest listing photo with Ken Burns, brand gradient fallback */}
+        {heroImage ? (
           <Image
-            src="/logo-teal.png"
+            src={heroImage}
             alt=""
-            width={512}
-            height={512}
-            className="absolute -right-20 -bottom-28 w-[360px] max-w-none opacity-[0.05] -rotate-6"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover ken-burns"
           />
+        ) : (
+          <div aria-hidden className="absolute inset-0 bg-[linear-gradient(160deg,#006459_0%,#00433C_55%,#003830_100%)]" />
+        )}
+        {/* Scrims + gold light */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,40,35,0.62)_0%,rgba(0,40,35,0.45)_45%,rgba(0,40,35,0.72)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(45%_35%_at_85%_8%,rgba(200,184,130,0.18),transparent_70%)]" />
         </div>
-        <div className="relative z-20 py-16 md:py-24">
+        <div className="relative z-20 py-20 md:py-28">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-[40px] sm:text-[48px] md:text-[64px] font-extrabold tracking-tight text-[#111827] leading-[1.1]">
+              <h1 className="font-display text-[42px] sm:text-[54px] md:text-[68px] font-semibold tracking-tight text-white leading-[1.08]">
                 Gjej banesën
                 <br />
-                <span className="text-[#111827] underline decoration-[#C8B882] decoration-4 underline-offset-[10px]">e duhur</span> në Kosovë
+                <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
               </h1>
 
-              <p className="text-[16px] text-[#6B7280] max-w-lg mx-auto leading-relaxed mt-4">
+              <p className="text-[16px] text-white/80 max-w-lg mx-auto leading-relaxed mt-5 [text-shadow:0_1px_16px_rgba(0,40,35,0.6)]">
                 Bli, shit ose jep me qira banesën tënde duke folur direkt me pronarët, pa ndërmjetës.
               </p>
 
@@ -82,7 +89,7 @@ export default async function HomePage() {
                   <Link
                     key={city}
                     href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="relative flex-shrink-0 text-[13px] font-medium text-[#374151] px-4 py-1.5 rounded-full border border-transparent hover:bg-[#F3F4F6] hover:text-[#006459] hover:border-[#006459]/15 hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                    className="relative flex-shrink-0 text-[13px] font-medium text-white/85 px-4 py-1.5 rounded-full border border-white/15 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:text-white hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                   >
                     {city}
                   </Link>
@@ -94,13 +101,13 @@ export default async function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <Link
                   href="/listings"
-                  className="inline-flex items-center justify-center min-h-[44px] bg-[#006459] text-white font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.2)_inset,0_8px_20px_-8px_rgba(0,100,89,0.5)] hover:bg-[#005048] hover:shadow-[0_1px_0_rgba(255,255,255,0.2)_inset,0_14px_28px_-8px_rgba(0,100,89,0.55)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+                  className="inline-flex items-center justify-center min-h-[44px] bg-[#C8B882] text-[#1A1A2E] font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
                 >
                   Shiko banesat
                 </Link>
                 <Link
                   href="/posto-banese"
-                  className="inline-flex items-center justify-center min-h-[44px] bg-white border-2 border-[#006459] text-[#006459] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:shadow-[0_14px_28px_-8px_rgba(0,100,89,0.45)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                  className="inline-flex items-center justify-center min-h-[44px] bg-white/10 backdrop-blur-md border border-white/30 text-white font-semibold px-8 py-3 rounded-full hover:bg-white hover:text-[#005048] hover:shadow-[0_16px_32px_-8px_rgba(0,40,35,0.5)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
                 >
                   Posto banesën tënde
                 </Link>
@@ -130,7 +137,7 @@ export default async function HomePage() {
         <div className="flex items-end justify-between mb-8">
           <div>
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-[#1A1A2E]">Banesa në Shitje dhe me Qira</h2>
+            <h2 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-[#1A1A2E]">Banesa në Shitje dhe me Qira</h2>
             <p className="text-gray-500 text-sm mt-1.5">Të gjitha banesat e disponueshme në platformë</p>
           </div>
           <Link href="/listings" className="inline-flex items-center min-h-[44px] text-sm font-medium text-gray-600 px-5 py-2.5 rounded-full border border-gray-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)] hover:text-[#006459] hover:border-[#006459]/40 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out cursor-pointer">

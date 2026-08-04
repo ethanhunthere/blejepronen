@@ -208,16 +208,22 @@ function ListingsContent() {
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
-      <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#1A1A2E] tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
-          <p className="text-gray-500 text-base">Gjej banesën e përsosur për ty</p>
+      {/* Page header band */}
+      <div className="relative overflow-hidden bg-[linear-gradient(160deg,#006459_0%,#00433C_60%,#003830_100%)] pt-28 pb-20">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_85%_0%,rgba(200,184,130,0.16),transparent_70%)]" />
+          <Image src="/logo-white.png" alt="" width={512} height={512} className="absolute -right-16 -bottom-24 w-[300px] max-w-none opacity-[0.07] -rotate-6" />
         </div>
+        <div className="relative max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4" />
+          <h1 className="font-display text-4xl md:text-5xl font-semibold text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
+          <p className="text-white/70 text-base">Gjej banesën e përsosur për ty</p>
+        </div>
+      </div>
 
-        {/* Search + Filter Toggle */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        {/* Search + Filter Toggle — floating toolbar */}
+        <div className="relative z-10 -mt-10 flex flex-col sm:flex-row gap-3 mb-6 bg-white rounded-2xl ring-1 ring-black/5 shadow-[0_16px_40px_-16px_rgba(0,40,35,0.25)] p-3">
           <div className="relative flex-1 min-w-0 group shadow-sm rounded-xl border border-gray-200 focus-within:border-[#006459]/50 transition-colors duration-300 bg-white">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input

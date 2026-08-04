@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Lock, Globe } from 'lucide-react'
+import AuthShell from '@/components/AuthShell'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -61,7 +62,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
+      <AuthShell>
         <Card className="w-full max-w-md shadow-xl border border-gray-100 rounded-3xl">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
@@ -81,12 +82,12 @@ export default function RegisterPage() {
             </button>
           </CardContent>
         </Card>
-      </div>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
+    <AuthShell>
       <div className="w-full max-w-md">
         <Card className="shadow-xl border border-gray-100 rounded-3xl">
           <CardHeader className="space-y-1">
@@ -174,6 +175,6 @@ export default function RegisterPage() {
           </CardFooter>
         </Card>
       </div>
-    </div>
+    </AuthShell>
   )
 }
