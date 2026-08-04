@@ -63,7 +63,7 @@ export default function RegisterPage() {
   if (success) {
     return (
       <AuthShell>
-        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
+        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
               <Mail className="h-8 w-8 text-green-600" />
@@ -89,7 +89,7 @@ export default function RegisterPage() {
   return (
     <AuthShell>
       <div className="w-full max-w-md">
-        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
+        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Krijo llogari</CardTitle>
             <CardDescription className="text-center text-gray-500">
@@ -118,7 +118,7 @@ export default function RegisterPage() {
                 <span className="w-full border-t border-gray-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#F2F7F7] px-2 text-gray-400">ose</span>
+                <span className="bg-white px-2 text-gray-400">ose</span>
               </div>
             </div>
 

@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, ArrowLeft } from 'lucide-react'
-import { Logo } from '@/components/Logo'
 import AuthShell from '@/components/AuthShell'
 
 export default function ForgotPasswordPage() {
@@ -40,7 +39,7 @@ export default function ForgotPasswordPage() {
   if (success) {
     return (
       <AuthShell>
-        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
+        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
               <Mail className="h-8 w-8 text-green-600" />
@@ -62,11 +61,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell>
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center mb-8">
-          <Logo variant="auth" />
-        </div>
-
-        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
+        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Rivendos fjalëkalimin</CardTitle>
             <CardDescription className="text-center text-gray-500">
