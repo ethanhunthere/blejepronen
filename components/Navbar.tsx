@@ -273,9 +273,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 translate-y-[3px]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- local SVG, next/image blocks SVG optimization by default */}
             <img
-              src="/logo-kryesore.svg"
+              src="/logo-icon.png"
               alt="Bleje Banesën"
               width={100}
               height={100}
