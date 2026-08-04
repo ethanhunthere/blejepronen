@@ -63,7 +63,7 @@ export default function RegisterPage() {
   if (success) {
     return (
       <AuthShell>
-        <Card className="w-full max-w-md shadow-xl border border-gray-100 rounded-3xl">
+        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
               <Mail className="h-8 w-8 text-green-600" />
@@ -89,9 +89,9 @@ export default function RegisterPage() {
   return (
     <AuthShell>
       <div className="w-full max-w-md">
-        <Card className="shadow-xl border border-gray-100 rounded-3xl">
+        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_16px_48px_-16px_rgba(0,40,35,0.12)]">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-[#1A1A2E]">Krijo llogari</CardTitle>
+            <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Krijo llogari</CardTitle>
             <CardDescription className="text-center text-gray-500">
               30 ditë falas, pa kartë krediti
             </CardDescription>
@@ -106,7 +106,7 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              className="w-full h-11 bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
+              className="w-full h-12 bg-white border border-gray-200/80 text-gray-700 font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center cursor-pointer rounded-xl"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -124,14 +124,14 @@ export default function RegisterPage() {
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-600 font-medium">Email</Label>
+                <Label htmlFor="email" className="text-[13px] text-gray-700 font-medium">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Mail className="absolute left-3.5 top-4 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200"
+                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -140,14 +140,14 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-600 font-medium">Fjalëkalimi</Label>
+                <Label htmlFor="password" className="text-[13px] text-gray-700 font-medium">Fjalëkalimi</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Lock className="absolute left-3.5 top-4 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
                     placeholder="Minimum 6 karaktere"
-                    className="pl-10 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200"
+                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -157,7 +157,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                className="w-full h-12 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}

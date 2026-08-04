@@ -224,12 +224,12 @@ function ListingsContent() {
       <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {/* Search + Filter Toggle — floating toolbar */}
         <div className="relative z-10 -mt-10 flex flex-col sm:flex-row gap-3 mb-6 bg-white rounded-2xl ring-1 ring-black/5 shadow-[0_16px_40px_-16px_rgba(0,40,35,0.25)] p-3">
-          <div className="relative flex-1 min-w-0 group shadow-sm rounded-xl border border-gray-200 focus-within:border-[#006459]/50 transition-colors duration-300 bg-white">
+          <div className="relative flex-1 min-w-0 rounded-xl bg-gray-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/25 transition-all duration-200">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Kërko sipas banesës, adresës, qytetit..."
-              className="w-full h-13 py-3.5 pl-11 pr-4 bg-transparent text-[#1A1A2E] placeholder:text-gray-400 outline-none rounded-xl text-sm"
+              className="w-full h-12 pl-11 pr-4 bg-transparent text-[#1A1A2E] placeholder:text-gray-400 outline-none rounded-xl text-sm"
               value={searchInput}
               onChange={(e) => {
                 const value = e.target.value
@@ -244,13 +244,13 @@ function ListingsContent() {
           <div className="flex gap-3">
             <button
               type="button"
-              className="h-13 px-5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 text-gray-700 font-medium rounded-xl transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
+              className="h-12 px-5 bg-gray-100 hover:bg-gray-200/70 active:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
               onClick={() => setShowFilters(!showFilters)}
             >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filtro
             {hasActiveFilters && (
-              <span className="ml-2 bg-[#111827] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="ml-2 bg-[#006459] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {Object.values(filters).filter(v => v !== '').length}
               </span>
             )}
@@ -266,25 +266,25 @@ function ListingsContent() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 mb-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* City */}
             <div>
-              <label className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Qyteti</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Qyteti</label>
               <div className="relative" ref={cityRef}>
                 <button
                   type="button"
                   onClick={() => { setCityOpen(!cityOpen); setNeighborhoodOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
-                  className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-all"
+                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
                 >
                   <span className={filters.city ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.city || 'Të gjitha'}</span>
                   <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {cityOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 max-h-60 overflow-y-auto">
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, city: '', neighborhood: '' })); setCityOpen(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.city ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.city ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
@@ -293,7 +293,7 @@ function ListingsContent() {
                         key={city}
                         type="button"
                         onClick={() => { setFilters(prev => ({ ...prev, city, neighborhood: '' })); setCityOpen(false) }}
-                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.city === city ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.city === city ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {city}
                       </button>
@@ -305,24 +305,24 @@ function ListingsContent() {
 
             {/* Neighborhood */}
             <div>
-              <label className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Lagjja</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Lagjja</label>
               <div className="relative" ref={neighborhoodRef}>
                 {filters.city ? (
                   <>
                     <button
                       type="button"
                       onClick={() => { setNeighborhoodOpen(!neighborhoodOpen); setCityOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
-                      className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-all"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
                     >
                       <span className={filters.neighborhood ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.neighborhood || 'Të gjitha lagjet'}</span>
                       <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {neighborhoodOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 max-h-60 overflow-y-auto">
                         <button
                           type="button"
                           onClick={() => { setFilters(prev => ({ ...prev, neighborhood: '' })); setNeighborhoodOpen(false) }}
-                          className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.neighborhood ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                          className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.neighborhood ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                         >
                           Të gjitha lagjet
                         </button>
@@ -331,7 +331,7 @@ function ListingsContent() {
                             key={neighborhood}
                             type="button"
                             onClick={() => { setFilters(prev => ({ ...prev, neighborhood })); setNeighborhoodOpen(false) }}
-                            className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.neighborhood === neighborhood ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                            className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.neighborhood === neighborhood ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                           >
                             {neighborhood}
                           </button>
@@ -354,36 +354,36 @@ function ListingsContent() {
 
             {/* Type */}
             <div>
-              <label className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Lloji</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Lloji</label>
               <div className="relative" ref={typeRef}>
                 <button
                   type="button"
                   onClick={() => { setTypeOpen(!typeOpen); setCityOpen(false); setNeighborhoodOpen(false); setRoomsOpen(false) }}
-                  className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-all"
+                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
                 >
                   <span className={filters.type ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.type === 'shitje' ? 'Shitje' : filters.type === 'qira' ? 'Me qira' : 'Të gjitha'}</span>
                   <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${typeOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {typeOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1">
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: '' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.type ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.type ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: 'shitje' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.type === 'shitje' ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'shitje' ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Shitje
                     </button>
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: 'qira' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.type === 'qira' ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'qira' ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Me qira
                     </button>
@@ -394,12 +394,12 @@ function ListingsContent() {
 
             {/* Min Price */}
             <div>
-              <label htmlFor="filter-min-price" className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Çmimi min (€)</label>
+              <label htmlFor="filter-min-price" className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Çmimi min (€)</label>
               <input
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#006459]/50 focus:outline-none transition-all"
+                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#006459]/50 focus:outline-none transition-colors"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -407,12 +407,12 @@ function ListingsContent() {
 
             {/* Max Price */}
             <div>
-              <label htmlFor="filter-max-price" className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Çmimi max (€)</label>
+              <label htmlFor="filter-max-price" className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Çmimi max (€)</label>
               <input
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:border-[#006459]/50 focus:outline-none transition-all"
+                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#006459]/50 focus:outline-none transition-colors"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -420,22 +420,22 @@ function ListingsContent() {
 
             {/* Rooms */}
             <div>
-              <label className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2 block">Dhoma</label>
+              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Dhoma</label>
               <div className="relative" ref={roomsRef}>
                 <button
                   type="button"
                   onClick={() => { setRoomsOpen(!roomsOpen); setCityOpen(false); setNeighborhoodOpen(false); setTypeOpen(false) }}
-                  className="w-full h-11 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-all"
+                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
                 >
                   <span className={filters.rooms ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.rooms ? `${filters.rooms}+` : 'Të gjitha'}</span>
                   <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${roomsOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {roomsOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1">
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, rooms: '' })); setRoomsOpen(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${!filters.rooms ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.rooms ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
@@ -444,7 +444,7 @@ function ListingsContent() {
                         key={r}
                         type="button"
                         onClick={() => { setFilters(prev => ({ ...prev, rooms: String(r) })); setRoomsOpen(false) }}
-                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${filters.rooms === String(r) ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.rooms === String(r) ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {r}+
                       </button>
@@ -586,13 +586,13 @@ function ListingsContent() {
                 <button
                   type="button"
                   onClick={() => setSortOpen(!sortOpen)}
-                  className="h-9 px-3 bg-white border border-gray-200 hover:border-gray-300 text-[13px] font-medium text-gray-700 rounded-lg transition-all duration-200 inline-flex items-center gap-1.5 cursor-pointer"
+                  className="h-9 px-3.5 bg-white border border-gray-200/80 hover:border-gray-300 text-[13px] font-medium text-gray-700 rounded-full transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {sortBy === 'newest' ? 'Më të rejat' : sortBy === 'price_asc' ? 'Çmimi rritës' : 'Çmimi zbritës'}
                   <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {sortOpen && (
-                  <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 min-w-[160px] overflow-hidden">
+                  <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 min-w-[160px] overflow-hidden">
                     {([
                       { value: 'newest', label: 'Më të rejat' },
                       { value: 'price_asc', label: 'Çmimi rritës' },
@@ -602,7 +602,7 @@ function ListingsContent() {
                         key={opt.value}
                         type="button"
                         onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
-                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${sortBy === opt.value ? 'text-[#111827] bg-[#111827]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${sortBy === opt.value ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {opt.label}
                       </button>
@@ -631,7 +631,7 @@ function ListingsContent() {
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="min-h-[44px] px-8 py-3 border border-gray-200 bg-white text-gray-700 font-medium rounded-xl hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out mx-auto inline-flex items-center justify-center cursor-pointer"
+                  className="min-h-[44px] px-8 py-3 border border-gray-200/80 bg-white text-gray-700 font-medium rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors mx-auto inline-flex items-center justify-center cursor-pointer"
                 >
                   Ngarko më shumë banesa
                 </button>
