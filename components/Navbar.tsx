@@ -262,15 +262,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }, [])
 
   const positionClasses = {
-    fixed: 'fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[900px] 2xl:max-w-[1100px]',
-    absolute: 'absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[900px] 2xl:max-w-[1100px]',
-    static: 'relative z-50 mx-auto max-w-[900px] 2xl:max-w-[1100px]',
+    fixed: 'fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[1100px] 2xl:max-w-[1300px]',
+    absolute: 'absolute top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[1100px] 2xl:max-w-[1300px]',
+    static: 'relative z-50 mx-auto max-w-[1100px] 2xl:max-w-[1300px] mt-5',
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459] rounded-2xl shadow-lg shadow-black/15 overflow-visible transition-all duration-300 px-5 pt-3 pb-3 ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-lg shadow-black/20 overflow-visible transition-all duration-300 px-5 pt-4 pb-4 ${className || ''}`}>
       <div className="w-full mx-auto">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-12 lg:h-14">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 translate-y-[3px]">
             <img
