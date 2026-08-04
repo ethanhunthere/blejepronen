@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Albert_Sans, Playfair_Display } from "next/font/google";
+import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
 import AnalyticsWrapper from "@/components/AnalyticsWrapper";
@@ -9,13 +9,6 @@ import "./globals.css";
 const albertSans = Albert_Sans({
   subsets: ["latin", "latin-ext"],
   variable: "--font-albert-sans",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin", "latin-ext"],
-  weight: ["500", "600", "700"],
-  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -102,7 +95,7 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       </head>
-      <body suppressHydrationWarning className={`min-h-full flex flex-col bg-[#F2F7F7] text-[#1A1A2E] overflow-x-hidden ${playfair.variable}`} style={{ backgroundColor: "#F2F7F7" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F2F7F7] text-[#1A1A2E] overflow-x-hidden" style={{ backgroundColor: "#F2F7F7" }}>
         <header>
           <Navbar variant="static" />
         </header>

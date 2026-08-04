@@ -216,7 +216,7 @@ function ListingsContent() {
         </div>
         <div className="relative max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4" />
-          <h1 className="font-display text-4xl md:text-5xl font-semibold text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
           <p className="text-white/70 text-base">Gjej banesën e përsosur për ty</p>
         </div>
       </div>

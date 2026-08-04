@@ -43,7 +43,7 @@ export default async function HomePage() {
         <div className="relative z-20 py-16 md:py-24">
           <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="font-display text-[42px] sm:text-[54px] md:text-[68px] font-semibold tracking-tight text-[#1A1A2E] leading-[1.08]">
+              <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08]">
                 Gjej banesën
                 <br />
                 <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
@@ -117,7 +117,7 @@ export default async function HomePage() {
         <div className="flex items-end justify-between mb-8">
           <div>
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
-            <h2 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-[#1A1A2E]">Banesa në Shitje dhe me Qira</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1A1A2E]">Banesa në Shitje dhe me Qira</h2>
             <p className="text-gray-500 text-sm mt-1.5">Të gjitha banesat e disponueshme në platformë</p>
           </div>
           <Link href="/listings" className="inline-flex items-center min-h-[44px] text-sm font-medium text-gray-600 px-5 py-2.5 rounded-full border border-gray-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)] hover:text-[#006459] hover:border-[#006459]/40 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out cursor-pointer">
