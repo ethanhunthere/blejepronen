@@ -268,9 +268,9 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-lg shadow-black/20 overflow-visible transition-all duration-300 px-5 pt-4 pb-4 ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-lg shadow-black/20 overflow-visible transition-all duration-300 px-5 py-2 ${className || ''}`}>
       <div className="w-full mx-auto">
-        <div className="flex items-center justify-between h-12 lg:h-14">
+        <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 translate-y-[3px]">
             <img
@@ -278,7 +278,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               alt="Bleje Banesën"
               width={100}
               height={100}
-              className="h-8 lg:h-9 w-auto object-contain object-left block"
+              className="h-6 lg:h-7 w-auto object-contain object-left block"
             />
           </Link>
 
@@ -288,27 +288,27 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <div className="hidden lg:flex items-center space-x-6">
               <Link
                 href="/listings"
-                className={`relative text-[14px] px-3.5 py-2 transition-all duration-200 ${
+                className={`relative text-[14px] px-3.5 py-1 transition-all duration-200 ${
                   pathname === '/listings'
-                    ? 'text-white font-semibold after:absolute after:bottom-1.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
+                    ? 'text-white font-semibold after:absolute after:bottom-0.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
                     : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'
                 }`}
               >
                 Shiko banesat
               </Link>
               {user === undefined ? (
-                <div className="w-52 h-10" />
+                <div className="w-52 h-8" />
               ) : user === null ? (
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-[14px] font-semibold text-[#006459] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#006459] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -318,7 +318,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
