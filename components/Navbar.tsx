@@ -262,13 +262,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }, [])
 
   const positionClasses = {
-    fixed: 'fixed top-0 left-0 right-0 z-50',
-    absolute: 'absolute top-0 left-0 right-0 z-50',
+    fixed: 'fixed top-3 left-3 right-3 z-50',
+    absolute: 'absolute top-3 left-3 right-3 z-50',
     static: 'relative z-50',
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459] border-b border-[#005048] shadow-[0_1px_0_#005048] overflow-visible ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#006459] rounded-2xl shadow-lg shadow-black/15 overflow-visible transition-all duration-300 ${className || ''}`}>
       <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
