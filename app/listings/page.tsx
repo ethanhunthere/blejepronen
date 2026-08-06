@@ -209,7 +209,7 @@ function ListingsContent() {
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
       {/* Page header band */}
-      <div className="relative overflow-hidden bg-[linear-gradient(160deg,#03C988_0%,#00433C_60%,#003830_100%)] pt-28 pb-20">
+      <div className="relative overflow-hidden bg-[linear-gradient(160deg,#0D9488_0%,#00433C_60%,#003830_100%)] pt-28 pb-20">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_85%_0%,rgba(200,184,130,0.16),transparent_70%)]" />
           <Image src="/logo-white.png" alt="" width={512} height={512} className="absolute -right-16 -bottom-24 w-[300px] max-w-none opacity-[0.07] -rotate-6" />
@@ -224,7 +224,7 @@ function ListingsContent() {
       <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
         {/* Search + Filter Toggle — floating toolbar */}
         <div className="relative z-10 -mt-10 flex flex-col sm:flex-row gap-3 mb-6 bg-white rounded-2xl ring-1 ring-black/5 shadow-[0_16px_40px_-16px_rgba(0,40,35,0.25)] p-3">
-          <div className="relative flex-1 min-w-0 rounded-xl bg-gray-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#03C988]/25 transition-all duration-200">
+          <div className="relative flex-1 min-w-0 rounded-xl bg-gray-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0D9488]/25 transition-all duration-200">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -250,7 +250,7 @@ function ListingsContent() {
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filtro
             {hasActiveFilters && (
-              <span className="ml-2 bg-[#03C988] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="ml-2 bg-[#0D9488] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {Object.values(filters).filter(v => v !== '').length}
               </span>
             )}
@@ -284,7 +284,7 @@ function ListingsContent() {
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, city: '', neighborhood: '' })); setCityOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.city ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.city ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
@@ -293,7 +293,7 @@ function ListingsContent() {
                         key={city}
                         type="button"
                         onClick={() => { setFilters(prev => ({ ...prev, city, neighborhood: '' })); setCityOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.city === city ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.city === city ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {city}
                       </button>
@@ -322,7 +322,7 @@ function ListingsContent() {
                         <button
                           type="button"
                           onClick={() => { setFilters(prev => ({ ...prev, neighborhood: '' })); setNeighborhoodOpen(false) }}
-                          className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.neighborhood ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                          className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.neighborhood ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                         >
                           Të gjitha lagjet
                         </button>
@@ -331,7 +331,7 @@ function ListingsContent() {
                             key={neighborhood}
                             type="button"
                             onClick={() => { setFilters(prev => ({ ...prev, neighborhood })); setNeighborhoodOpen(false) }}
-                            className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.neighborhood === neighborhood ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                            className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.neighborhood === neighborhood ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                           >
                             {neighborhood}
                           </button>
@@ -369,21 +369,21 @@ function ListingsContent() {
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: '' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.type ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.type ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: 'shitje' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'shitje' ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'shitje' ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Shitje
                     </button>
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, type: 'qira' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'qira' ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'qira' ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Me qira
                     </button>
@@ -399,7 +399,7 @@ function ListingsContent() {
                 id="filter-min-price"
                 type="number"
                 placeholder="0"
-                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#03C988]/50 focus:outline-none transition-colors"
+                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#0D9488]/50 focus:outline-none transition-colors"
                 value={filters.minPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
               />
@@ -412,7 +412,7 @@ function ListingsContent() {
                 id="filter-max-price"
                 type="number"
                 placeholder="500,000"
-                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#03C988]/50 focus:outline-none transition-colors"
+                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#0D9488]/50 focus:outline-none transition-colors"
                 value={filters.maxPrice}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
               />
@@ -435,7 +435,7 @@ function ListingsContent() {
                     <button
                       type="button"
                       onClick={() => { setFilters(prev => ({ ...prev, rooms: '' })); setRoomsOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.rooms ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.rooms ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                     >
                       Të gjitha
                     </button>
@@ -444,7 +444,7 @@ function ListingsContent() {
                         key={r}
                         type="button"
                         onClick={() => { setFilters(prev => ({ ...prev, rooms: String(r) })); setRoomsOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.rooms === String(r) ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.rooms === String(r) ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {r}+
                       </button>
@@ -563,7 +563,7 @@ function ListingsContent() {
             </div>
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Shërbimi është i padisponueshëm</h3>
             <p className="text-gray-400 mb-6">Ju lutemi provoni përsëri më vonë.</p>
-            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#03C988] text-white font-semibold rounded-xl hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Provo përsëri</button>
+            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#0D9488] text-white font-semibold rounded-xl hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Provo përsëri</button>
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-20">
@@ -575,7 +575,7 @@ function ListingsContent() {
             <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Nuk u gjetën banesa</h3>
             <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#03C988] text-white font-semibold rounded-xl hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Pastro filtrat</button>
+              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#0D9488] text-white font-semibold rounded-xl hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Pastro filtrat</button>
             )}
           </div>
         ) : (
@@ -602,7 +602,7 @@ function ListingsContent() {
                         key={opt.value}
                         type="button"
                         onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${sortBy === opt.value ? 'text-[#02A670] bg-[#03C988]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
+                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${sortBy === opt.value ? 'text-[#0F766E] bg-[#0D9488]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
                       >
                         {opt.label}
                       </button>

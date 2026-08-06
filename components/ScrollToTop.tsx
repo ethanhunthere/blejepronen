@@ -22,7 +22,7 @@ function ScrollToTop() {
       type="button"
       onClick={scrollToTop}
       aria-label="Kthehu lart"
-      className={`fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full bg-[#03C988] text-white shadow-lg hover:bg-[#02A670] hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center cursor-pointer ${
+      className={`fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full bg-[#0D9488] text-white shadow-lg hover:bg-[#0F766E] hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center cursor-pointer ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
       }`}
     >

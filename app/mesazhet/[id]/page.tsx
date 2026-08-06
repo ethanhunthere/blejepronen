@@ -264,7 +264,7 @@ export default function ChatPage() {
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#03C988] rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#0D9488] rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -418,7 +418,7 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
-                      ? 'bg-[#03C988] text-white rounded-2xl rounded-br-md'
+                      ? 'bg-[#0D9488] text-white rounded-2xl rounded-br-md'
                       : 'bg-white border border-gray-100 shadow-sm text-[#1A1A2E] rounded-2xl rounded-bl-md'
                   }`}
                 >
@@ -476,7 +476,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#03C988]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#0D9488]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -488,7 +488,7 @@ export default function ChatPage() {
               type="button"
               onClick={sendMessage}
               disabled={!newMsg.trim()}
-              className="w-10 h-10 bg-[#03C988] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
+              className="w-10 h-10 bg-[#0D9488] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
             >
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>

@@ -69,7 +69,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         {/* Profile header */}
         <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8 mb-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-[#03C988] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
+            <div className="w-20 h-20 rounded-full bg-[#0D9488] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}

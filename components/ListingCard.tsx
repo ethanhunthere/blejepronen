@@ -138,7 +138,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
               className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
             >
               <Heart
-                className={`h-4 w-4 ${isFavorited ? 'text-[#03C988]' : 'text-gray-400'}`}
+                className={`h-4 w-4 ${isFavorited ? 'text-[#0D9488]' : 'text-gray-400'}`}
                 fill={isFavorited ? 'currentColor' : 'none'}
               />
             </button>
@@ -174,7 +174,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
           </div>
 
           <div className="flex items-baseline gap-1 mt-auto">
-            <span className="text-base font-bold text-[#03C988] tracking-tight whitespace-nowrap">
+            <span className="text-base font-bold text-[#0D9488] tracking-tight whitespace-nowrap">
               {formatPrice(listing.price)}
             </span>
             {listing.type === 'qira' && <span className="text-[13px] text-[#6B7280]">/muaj</span>}

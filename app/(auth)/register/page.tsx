@@ -75,7 +75,7 @@ export default function RegisterPage() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center justify-center min-h-[44px] rounded-xl bg-[#03C988] text-white px-5 py-2 text-sm font-semibold hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+              className="mt-4 inline-flex items-center justify-center min-h-[44px] rounded-xl bg-[#0D9488] text-white px-5 py-2 text-sm font-semibold hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
               onClick={() => router.push('/login')}
             >
               Shko te hyrja
@@ -157,7 +157,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#03C988] text-white rounded-xl font-semibold hover:bg-[#02A670] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#0D9488] text-white rounded-xl font-semibold hover:bg-[#0F766E] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}

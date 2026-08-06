@@ -71,7 +71,13 @@ export default function ScrollVideoHero() {
             <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08]">
               Gjej banesën
               <br />
-              <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
+              <span className="relative inline-block pb-2 lg:pb-3">
+                <span className="relative z-10">e duhur në Kosovë</span>
+                <span 
+                  className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full"
+                  style={{ width: `${35 + progress * 65}%` }}
+                />
+              </span>
             </h1>
 
             <p className="text-[16px] text-gray-500 leading-relaxed mt-5 lg:mx-0 mx-auto max-w-lg">
@@ -93,7 +99,7 @@ export default function ScrollVideoHero() {
                 <Link
                   key={city}
                   href={`/listings?city=${encodeURIComponent(city)}`}
-                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#03C988] hover:text-white hover:border-[#03C988] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#0D9488] hover:text-white hover:border-[#0D9488] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                 >
                   {city}
                 </Link>
@@ -111,7 +117,7 @@ export default function ScrollVideoHero() {
               </Link>
               <Link
                 href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#03C988] hover:text-white hover:border-[#03C988] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#0D9488] hover:text-white hover:border-[#0D9488] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
               >
                 Posto banesën tënde
               </Link>
@@ -134,13 +140,6 @@ export default function ScrollVideoHero() {
                   }
                 }}
               />
-              {/* Progress bar to show the scroll effect */}
-              <div className="absolute bottom-4 left-4 right-4 h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-md z-10">
-                <div 
-                  className="h-full bg-white rounded-full transition-all duration-75 ease-linear"
-                  style={{ width: `${progress * 100}%` }}
-                />
-              </div>
             </div>
           </div>
 
