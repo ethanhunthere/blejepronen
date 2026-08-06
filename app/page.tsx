@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
-import SearchBar from '@/components/SearchBar'
+import ScrollVideoHero from '@/components/ScrollVideoHero'
 import FavoritableListingsGrid from '@/components/FavoritableListingsGrid'
 import ScrollToTop from '@/components/ScrollToTop'
 import { Button } from '@/components/ui/button'
@@ -35,67 +35,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Hero - search-first, clean white */}
-      <section
-        aria-label="Hero section"
-        className="relative overflow-hidden bg-white"
-      >
-        <div className="relative z-20 py-16 md:py-24">
-          <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
-            <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08]">
-                Gjej banesën
-                <br />
-                <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
-              </h1>
-
-              <p className="text-[16px] text-gray-500 max-w-lg mx-auto leading-relaxed mt-5">
-                Bli, shit ose jep me qira banesën tënde duke folur direkt me pronarët, pa ndërmjetës.
-              </p>
-
-              {/* Search Bar */}
-              <div className="relative z-0 mt-10">
-                <SearchBar
-                  placeholder="Kërko banesë, agjent, kompani, adresë..."
-                  buttonText="Kërko Banesë"
-                />
-              </div>
-
-              {/* City strip - horizontal scroll, Airbnb category style */}
-              {/* outer: handles horizontal scroll; pt-2 gives pills room to translate up without clipping */}
-              <div className="relative z-20 mt-10 overflow-x-auto scrollbar-hide px-1 pt-2 pb-1">
-                <div className="flex items-center justify-center gap-2 min-w-max mx-auto">
-                {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
-                  <Link
-                    key={city}
-                    href={`/listings?city=${encodeURIComponent(city)}`}
-                    className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
-                  >
-                    {city}
-                  </Link>
-                ))}
-                </div>
-              </div>
-
-              {/* CTA buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-                <Link
-                  href="/listings"
-                  className="inline-flex items-center justify-center min-h-[44px] bg-[#C8B882] text-[#1A1A2E] font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
-                >
-                  Shiko banesat
-                </Link>
-                <Link
-                  href="/posto-banese"
-                  className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
-                >
-                  Posto banesën tënde
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ScrollVideoHero />
 
       {/* Error state */}
       {error && (
