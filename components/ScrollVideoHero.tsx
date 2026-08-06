@@ -124,37 +124,49 @@ export default function ScrollVideoHero() {
             </div>
           </div>
 
-          {/* Right Video */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center p-2 lg:p-4 mt-8 lg:mt-0 relative group">
+          {/* Right Video / App Composition */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 mt-12 lg:mt-0 relative">
             
-            {/* Ambient Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[85%] bg-gradient-to-tr from-[#0D9488]/40 via-transparent to-[#C8B882]/40 rounded-[3rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-1000 -z-10 pointer-events-none" />
+            {/* Minimalist, borderless video frame with deep elevation */}
+            <div className="relative w-full max-w-2xl aspect-video rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
+              <video 
+                ref={videoRef}
+                src="/hero-video.mp4#t=0.001" 
+                className="absolute inset-0 w-full h-full object-cover"
+                muted 
+                playsInline
+                preload="auto"
+                onLoadedMetadata={() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = 0.001;
+                  }
+                }}
+              />
+            </div>
 
-            {/* Outer Frosted Glass Bezel */}
-            <div className="relative w-full max-w-3xl rounded-[2.2rem] p-2.5 sm:p-3 bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15),_inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-gray-900/5 transition-transform duration-700 ease-out group-hover:scale-[1.01] group-hover:-translate-y-1">
-              
-              {/* Inner Screen Container */}
-              <div className="relative w-full aspect-video rounded-[1.7rem] overflow-hidden bg-gray-900 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]">
-                
-                {/* The Video */}
-                <video 
-                  ref={videoRef}
-                  src="/hero-video.mp4#t=0.001" 
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
-                  muted 
-                  playsInline
-                  preload="auto"
-                  onLoadedMetadata={() => {
-                    if (videoRef.current) {
-                      videoRef.current.currentTime = 0.001;
-                    }
-                  }}
-                />
+            {/* Floating Badge 1: Top Right */}
+            <div className="absolute top-0 right-0 lg:-right-4 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.12)] ring-1 ring-gray-900/5 flex items-center gap-3 z-20 transform -translate-y-1/2 hidden sm:flex">
+              <div className="flex -space-x-2">
+                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="User"/>
+                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80" alt="User"/>
+                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="User"/>
+              </div>
+              <p className="text-xs font-bold text-gray-900 tracking-tight">10k+ Përdorues</p>
+            </div>
 
-                {/* Apple-style Glare/Reflection Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/25 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 mix-blend-overlay" />
+            {/* Floating Badge 2: Bottom Left */}
+            <div className="absolute bottom-4 -left-2 sm:-left-6 lg:-left-10 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-gray-900/5 flex items-center gap-4 z-20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0D9488]/10 text-[#0D9488]">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="pr-4">
+                <p className="text-sm font-extrabold text-gray-900 tracking-tight">Prona të Verifikuara</p>
+                <p className="text-xs font-medium text-gray-500">100% të Sigurta</p>
               </div>
             </div>
+            
           </div>
 
         </div>
