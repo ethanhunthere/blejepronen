@@ -116,7 +116,7 @@ export default function ContactSellerCard({
       {/* Seller info */}
       <p className="text-gray-400 text-xs uppercase tracking-widest mb-3">Shitësi</p>
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-12 h-12 rounded-full bg-[#66C1B4] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
+        <div className="w-12 h-12 rounded-full bg-[#03C988] overflow-hidden flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
           {seller.avatarUrl ? (
             <img
               src={seller.avatarUrl}
@@ -134,13 +134,13 @@ export default function ContactSellerCard({
             </p>
             {seller.emailVerified && (
               <span title="I verifikuar" className="flex-shrink-0">
-                <CheckCircle className="h-4 w-4 text-[#66C1B4]" />
+                <CheckCircle className="h-4 w-4 text-[#03C988]" />
               </span>
             )}
           </div>
           <a
             href={`/profili/${seller.userId}`}
-            className="text-xs text-[#66C1B4] hover:text-[#4CA195] inline-flex items-center gap-1 transition-colors"
+            className="text-xs text-[#03C988] hover:text-[#02A670] inline-flex items-center gap-1 transition-colors"
           >
             Shiko profilin <ExternalLink className="h-3 w-3" />
           </a>
@@ -154,7 +154,7 @@ export default function ContactSellerCard({
           <>
             <a
               href={`tel:${seller.phone}`}
-              className="w-full min-h-[44px] bg-[#66C1B4] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#66C1B4]/25 hover:bg-[#4CA195] hover:shadow-[#66C1B4]/40 hover:-translate-y-[1px] active:translate-y-0 active:shadow-[#66C1B4]/25 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-[#03C988] text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-[#03C988]/25 hover:bg-[#02A670] hover:shadow-[#03C988]/40 hover:-translate-y-[1px] active:translate-y-0 active:shadow-[#03C988]/25 transition-all duration-200 ease-out flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-5 w-5" />
               {seller.phone}

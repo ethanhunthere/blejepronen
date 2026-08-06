@@ -2,7 +2,7 @@ import Image from 'next/image'
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#66C1B4] flex items-center">
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#03C988] flex items-center">
       {/* Ambient light + watermark */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.14),transparent_70%)]" />

@@ -249,14 +249,14 @@ export default function CompletoProfilinPage() {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                   s <= step
-                    ? 'bg-[#66C1B4] text-white shadow-lg shadow-[#66C1B4]/30'
+                    ? 'bg-[#03C988] text-white shadow-lg shadow-[#03C988]/30'
                     : 'bg-gray-100 border border-gray-200 text-gray-400'
                 }`}
               >
                 {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
               </div>
               {s < 2 && (
-                <div className={`w-12 h-0.5 rounded-full transition-colors duration-300 ${s < step ? 'bg-[#66C1B4]' : 'bg-gray-200'}`} />
+                <div className={`w-12 h-0.5 rounded-full transition-colors duration-300 ${s < step ? 'bg-[#03C988]' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
@@ -287,7 +287,7 @@ export default function CompletoProfilinPage() {
                     <Input
                       id="firstName"
                       placeholder="Emri yt"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#66C1B4]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#03C988]/60"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -302,7 +302,7 @@ export default function CompletoProfilinPage() {
                     <Input
                       id="lastName"
                       placeholder="Mbiemri yt"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#66C1B4]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#03C988]/60"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -318,7 +318,7 @@ export default function CompletoProfilinPage() {
                       id="phone"
                       type="tel"
                       placeholder="+383 44 123 456"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#66C1B4]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#03C988]/60"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -327,7 +327,7 @@ export default function CompletoProfilinPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-xl font-semibold text-white bg-[#66C1B4] shadow-lg shadow-[#66C1B4]/25 hover:bg-[#4CA195] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0"
+                  className="w-full h-12 rounded-xl font-semibold text-white bg-[#03C988] shadow-lg shadow-[#03C988]/25 hover:bg-[#02A670] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0"
                   disabled={loading}
                 >
                   {loading ? 'Duke u përpunuar...' : (
@@ -378,7 +378,7 @@ export default function CompletoProfilinPage() {
                       if (error) setError('')
                       if (value.length === 6) verifyOtp(value)
                     }}
-                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white border border-gray-200 rounded-xl text-[#1A1A2E] placeholder:text-gray-300 focus:border-[#66C1B4]/60"
+                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white border border-gray-200 rounded-xl text-[#1A1A2E] placeholder:text-gray-300 focus:border-[#03C988]/60"
                   />
                 </div>
 

@@ -103,7 +103,7 @@ function SearchBar({
 
   return (
     <div
-      className={`bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#66C1B4]/30 transition-all duration-200 px-4 py-2 flex items-center gap-3 max-w-2xl mx-auto ${className}`}
+      className={`bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#03C988]/30 transition-all duration-200 px-4 py-2 flex items-center gap-3 max-w-2xl mx-auto ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -120,7 +120,7 @@ function SearchBar({
       <button
         type="button"
         onClick={handleSearch}
-        className="flex-shrink-0 min-h-[44px] bg-[#66C1B4] text-white px-5 py-2 rounded-full text-[13px] font-semibold hover:bg-[#4CA195] hover:shadow-lg hover:shadow-[#66C1B4]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap"
+        className="flex-shrink-0 min-h-[44px] bg-[#03C988] text-white px-5 py-2 rounded-full text-[13px] font-semibold hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap"
       >
         <span>{displayedButtonText}</span>
         {isHovered && (

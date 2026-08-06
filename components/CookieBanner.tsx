@@ -65,7 +65,7 @@ function CookieBanner() {
           <button
             type="button"
             onClick={accept}
-            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#66C1B4] px-4 text-sm font-medium text-white hover:bg-[#4CA195] hover:shadow-lg hover:shadow-[#66C1B4]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#03C988] px-4 text-sm font-medium text-white hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
           >
             Prano
           </button>

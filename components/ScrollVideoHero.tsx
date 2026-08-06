@@ -61,7 +61,7 @@ export default function ScrollVideoHero() {
   return (
     <section 
       ref={containerRef}
-      className="relative w-full h-[250vh] bg-white"
+      className="relative w-full h-[400vh] bg-white"
     >
       <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden">
         <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-[2000px] mx-auto">
@@ -93,7 +93,7 @@ export default function ScrollVideoHero() {
                 <Link
                   key={city}
                   href={`/listings?city=${encodeURIComponent(city)}`}
-                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#66C1B4] hover:text-white hover:border-[#66C1B4] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#03C988] hover:text-white hover:border-[#03C988] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                 >
                   {city}
                 </Link>
@@ -111,7 +111,7 @@ export default function ScrollVideoHero() {
               </Link>
               <Link
                 href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#66C1B4] hover:text-white hover:border-[#66C1B4] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#03C988] hover:text-white hover:border-[#03C988] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
               >
                 Posto banesën tënde
               </Link>

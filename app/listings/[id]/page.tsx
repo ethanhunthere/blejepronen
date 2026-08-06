@@ -419,7 +419,7 @@ export default async function ListingDetailPage({
                     <>
                       <a
                         href={`tel:${sellerPhone}`}
-                        className="flex-1 inline-flex items-center justify-center min-h-[44px] gap-2 bg-[#66C1B4] text-white font-semibold py-3 px-5 rounded-xl hover:bg-[#4CA195] hover:shadow-lg hover:shadow-[#66C1B4]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+                        className="flex-1 inline-flex items-center justify-center min-h-[44px] gap-2 bg-[#03C988] text-white font-semibold py-3 px-5 rounded-xl hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
                       >
                         <Phone className="h-4 w-4" />
                         {sellerPhone}

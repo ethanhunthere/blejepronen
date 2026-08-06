@@ -147,7 +147,7 @@ export default function PostimetEMiaPage() {
             type="button"
             onClick={() => setActiveTab('mine')}
             className={`pb-3 text-sm cursor-pointer transition-colors duration-150 ${
-              activeTab === 'mine' ? 'border-b-2 border-[#66C1B4] text-[#66C1B4] font-semibold' : 'text-gray-400 hover:text-gray-600'
+              activeTab === 'mine' ? 'border-b-2 border-[#03C988] text-[#03C988] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             Postimet e mia
@@ -156,7 +156,7 @@ export default function PostimetEMiaPage() {
             type="button"
             onClick={() => setActiveTab('favorites')}
             className={`pb-3 text-sm cursor-pointer transition-colors duration-150 ${
-              activeTab === 'favorites' ? 'border-b-2 border-[#66C1B4] text-[#66C1B4] font-semibold' : 'text-gray-400 hover:text-gray-600'
+              activeTab === 'favorites' ? 'border-b-2 border-[#03C988] text-[#03C988] font-semibold' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             Të preferuarat
@@ -206,7 +206,7 @@ export default function PostimetEMiaPage() {
               Postoni banesën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-banese">
-              <Button className="h-11 px-6 bg-[#66C1B4] text-white rounded-xl font-semibold hover:bg-[#4CA195] hover:shadow-lg hover:shadow-[#66C1B4]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
+              <Button className="h-11 px-6 bg-[#03C988] text-white rounded-xl font-semibold hover:bg-[#02A670] hover:shadow-lg hover:shadow-[#03C988]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
                 Posto banesën tënde
               </Button>
             </Link>
