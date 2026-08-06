@@ -125,21 +125,35 @@ export default function ScrollVideoHero() {
           </div>
 
           {/* Right Video */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center p-2 lg:p-4 mt-8 lg:mt-0">
-            <div className="relative w-full max-w-3xl aspect-video rounded-3xl overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] bg-black ring-1 ring-gray-900/5">
-              <video 
-                ref={videoRef}
-                src="/hero-video.mp4#t=0.001" 
-                className="absolute inset-0 w-full h-full object-cover"
-                muted 
-                playsInline
-                preload="auto"
-                onLoadedMetadata={() => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = 0.001;
-                  }
-                }}
-              />
+          <div className="w-full lg:w-1/2 flex items-center justify-center p-2 lg:p-4 mt-8 lg:mt-0 relative group">
+            
+            {/* Ambient Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[85%] bg-gradient-to-tr from-[#0D9488]/40 via-transparent to-[#C8B882]/40 rounded-[3rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-1000 -z-10 pointer-events-none" />
+
+            {/* Outer Frosted Glass Bezel */}
+            <div className="relative w-full max-w-3xl rounded-[2.2rem] p-2.5 sm:p-3 bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15),_inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-gray-900/5 transition-transform duration-700 ease-out group-hover:scale-[1.01] group-hover:-translate-y-1">
+              
+              {/* Inner Screen Container */}
+              <div className="relative w-full aspect-video rounded-[1.7rem] overflow-hidden bg-gray-900 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]">
+                
+                {/* The Video */}
+                <video 
+                  ref={videoRef}
+                  src="/hero-video.mp4#t=0.001" 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
+                  muted 
+                  playsInline
+                  preload="auto"
+                  onLoadedMetadata={() => {
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = 0.001;
+                    }
+                  }}
+                />
+
+                {/* Apple-style Glare/Reflection Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/25 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 mix-blend-overlay" />
+              </div>
             </div>
           </div>
 
