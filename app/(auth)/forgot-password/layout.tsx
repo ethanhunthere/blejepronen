@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Rivendos fjalëkalimin | Bleje Banesën',
-  description: 'Rivendos fjalëkalimin e llogarisë tënde në Bleje Banesën.',
+  title: 'Rivendos fjalëkalimin | Bleje Pronën',
+  description: 'Rivendos fjalëkalimin e llogarisë tënde në Bleje Pronën.',
   robots: { index: false, follow: false },
 }
 

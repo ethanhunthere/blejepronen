@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Regjistrohu falas | Bleje Banesën',
-  description: 'Krijo llogari falas në Bleje Banesën dhe fillo të postosh banesa për shitje ose qira.',
+  title: 'Regjistrohu falas | Bleje Pronën',
+  description: 'Krijo llogari falas në Bleje Pronën dhe fillo të postosh banesa për shitje ose qira.',
   robots: { index: false, follow: false },
 }
 

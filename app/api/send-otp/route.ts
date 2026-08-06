@@ -52,7 +52,7 @@ export async function POST() {
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background-color: #0A0F2E; color: #ffffff; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff;">Bleje Banesën</h1>
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff;">Bleje Pronën</h1>
         </div>
         <p style="font-size: 16px; color: rgba(255,255,255,0.8); margin-bottom: 24px;">
           Për të verifikuar llogarinë tuaj, përdorni kodin e mëposhtëm:
@@ -78,9 +78,9 @@ export async function POST() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Bleje Banesën <noreply@blejepronen.com>',
+        from: 'Bleje Pronën <noreply@blejepronen.com>',
         to: user.email,
-        subject: 'Kodi juaj i verifikimit - Bleje Banesën',
+        subject: 'Kodi juaj i verifikimit - Bleje Pronën',
         html,
       }),
     })

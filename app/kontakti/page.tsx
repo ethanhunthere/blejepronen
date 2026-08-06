@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { Mail, MessageCircle, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Kontakti | Bleje Banesën',
-  description: 'Na kontaktoni për çdo pyetje, sugjerim apo problem me platformën Bleje Banesën.',
+  title: 'Kontakti | Bleje Pronën',
+  description: 'Na kontaktoni për çdo pyetje, sugjerim apo problem me platformën Bleje Pronën.',
 }
 
 export default function ContactPage() {

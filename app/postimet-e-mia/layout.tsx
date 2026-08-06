@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Postimet e Mia | Bleje Banesën',
+  title: 'Postimet e Mia | Bleje Pronën',
   robots: { index: false, follow: false },
 }
 

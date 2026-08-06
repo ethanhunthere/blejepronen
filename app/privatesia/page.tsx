@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Politika e Privatësisë | Bleje Banesën',
-  description: 'Politika e privatësisë dhe mbrojtja e të dhënave personale në platformën Bleje Banesën.',
+  title: 'Politika e Privatësisë | Bleje Pronën',
+  description: 'Politika e privatësisë dhe mbrojtja e të dhënave personale në platformën Bleje Pronën.',
 }
 
 export default function PrivacyPage() {

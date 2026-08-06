@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Kompleto Profilin | Bleje Banesën',
+  title: 'Kompleto Profilin | Bleje Pronën',
   robots: { index: false, follow: false },
 }
 

@@ -19,7 +19,7 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex flex-col items-center px-4 pt-28 pb-16 lg:pt-32">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-[0_16px_32px_-12px_rgba(0,20,17,0.5)] flex items-center justify-center">
-            <Image src="/logo-white.png" alt="Bleje Banesën" width={40} height={40} className="w-10 h-10" />
+            <Image src="/logo-white.png" alt="Bleje Pronën" width={40} height={40} className="w-10 h-10" />
           </div>
           <div className="h-1 w-10 rounded-full bg-[#C8B882] mt-5" />
         </div>

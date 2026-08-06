@@ -11,7 +11,7 @@ export function Logo({ variant = 'navbar', className }: LogoProps) {
       <div className={`${className || 'h-8'}`}>
         <Image
           src="/logo-icon.png"
-          alt="Bleje Banesën"
+          alt="Bleje Pronën"
           width={493}
           height={493}
           className="h-full w-auto object-contain object-left"
@@ -25,7 +25,7 @@ export function Logo({ variant = 'navbar', className }: LogoProps) {
     <div className={`relative h-14 max-w-[240px] w-full ${className || ''}`}>
       <Image
         src="/logo.png"
-        alt="Bleje Banesën"
+        alt="Bleje Pronën"
         fill
         className="object-contain object-left"
         priority

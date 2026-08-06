@@ -262,20 +262,20 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }, [])
 
   const positionClasses = {
-    fixed: 'fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[1100px] 2xl:max-w-[1300px]',
-    absolute: 'absolute top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-[1100px] 2xl:max-w-[1300px]',
-    static: 'relative z-50 mx-auto max-w-[1100px] 2xl:max-w-[1300px] mt-5',
+    fixed: 'fixed top-0 left-0 z-50 w-full',
+    absolute: 'absolute top-0 left-0 z-50 w-full',
+    static: 'relative z-50 w-full',
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459]/85 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-lg shadow-black/20 overflow-visible transition-all duration-300 px-5 py-2 ${className || ''}`}>
-      <div className="w-full mx-auto">
+    <nav className={`${positionClasses} bg-[#006459] border-b border-[#005048] shadow-sm transition-all duration-300 px-5 py-2 ${className || ''}`}>
+      <div className="w-full max-w-[1100px] 2xl:max-w-[1300px] mx-auto">
         <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 -translate-y-[1px]">
             <img
               src="/logo-icon.png"
-              alt="Bleje Banesën"
+              alt="Bleje Pronën"
               width={100}
               height={100}
               className="h-6 lg:h-7 w-auto object-contain object-left block"

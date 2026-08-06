@@ -173,11 +173,11 @@ export async function generateMetadata({
   const listing = await getListingMetadata(id)
 
   if (!listing) {
-    return { title: 'Listim | Bleje Banesën' }
+    return { title: 'Listim | Bleje Pronën' }
   }
 
   return {
-    title: `${listing.title} - ${listing.city} | Bleje Banesën`,
+    title: `${listing.title} - ${listing.city} | Bleje Pronën`,
     description: listing.description?.slice(0, 155),
     openGraph: {
       title: listing.title,

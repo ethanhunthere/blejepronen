@@ -17,21 +17,21 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Bleje Banesën - Banesa në Kosovë",
+  title: "Bleje Pronën - Banesa në Kosovë",
   description:
     "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
   openGraph: {
-    title: "Bleje Banesën - Banesa në Kosovë",
+    title: "Bleje Pronën - Banesa në Kosovë",
     description:
       "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
     url: siteUrl,
-    siteName: "Bleje Banesën",
+    siteName: "Bleje Pronën",
     images: [
       {
         url: "/og-image.png",
         width: 1548,
         height: 666,
-        alt: "Bleje Banesën",
+        alt: "Bleje Pronën",
       },
     ],
     locale: "sq_AL",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bleje Banesën - Banesa në Kosovë",
+    title: "Bleje Pronën - Banesa në Kosovë",
     description:
       "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash në Kosovë, Shqipëri dhe Maqedoni.",
     images: ["/og-image.png"],
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Bleje Banesën",
+  name: "Bleje Pronën",
   url: siteUrl,
   description: "Platforma kryesore shqipfolëse për blerje, shitje dhe qira banesash.",
   areaServed: ["XK", "AL", "MK"],
@@ -110,7 +110,7 @@ export default function RootLayout({
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-6 mx-auto sm:mx-0" />
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
               <p className="text-sm text-white/60 text-center sm:text-left">
-                © {new Date().getFullYear()} Bleje Banesën. Të gjitha të drejtat e rezervuara.
+                © {new Date().getFullYear()} Bleje Pronën. Të gjitha të drejtat e rezervuara.
               </p>
               <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-white/60">
                 <a href="/kushtet" className="hover:text-[#C8B882] transition-colors">
