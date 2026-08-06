@@ -112,11 +112,16 @@ export default function ScrollVideoHero() {
             <div className="relative w-full max-w-3xl aspect-video rounded-3xl overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] bg-black ring-1 ring-gray-900/5">
               <video 
                 ref={videoRef}
-                src="/hero-video.mp4" 
+                src="/hero-video.mp4#t=0.001" 
                 className="absolute inset-0 w-full h-full object-cover"
                 muted 
                 playsInline
                 preload="auto"
+                onLoadedMetadata={() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = 0.001;
+                  }
+                }}
               />
               {/* Progress bar to show the scroll effect */}
               <div className="absolute bottom-4 left-4 right-4 h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-md z-10">
