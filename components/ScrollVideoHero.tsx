@@ -10,41 +10,52 @@ export default function ScrollVideoHero() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    let targetProgress = 0
+    let currentProgress = 0
+    let animationFrameId: number
+
     const handleScroll = () => {
-      if (!containerRef.current || !videoRef.current) return
+      if (!containerRef.current) return
       
       const container = containerRef.current
-      const video = videoRef.current
-      
       const rect = container.getBoundingClientRect()
       
-      // Calculate scroll progress (0 to 1) based on container's position
-      // Top of page
-      const scrollStart = 0 
       const scrollableDistance = container.offsetHeight - window.innerHeight
-      
       let newProgress = -rect.top / scrollableDistance
       
       // Clamp between 0 and 1
-      newProgress = Math.max(0, Math.min(1, newProgress))
-      setProgress(newProgress)
+      targetProgress = Math.max(0, Math.min(1, newProgress))
+    }
 
-      if (video.duration) {
-        // Use requestAnimationFrame for smoother playback scrubbing
-        requestAnimationFrame(() => {
-          video.currentTime = video.duration * newProgress
-        })
+    const renderLoop = () => {
+      // Lerp currentProgress towards targetProgress
+      currentProgress += (targetProgress - currentProgress) * 0.1
+      
+      setProgress(currentProgress)
+
+      const video = videoRef.current
+      if (video && video.duration) {
+        // Clamp the time slightly before the very end to prevent flickering
+        const targetTime = video.duration * currentProgress
+        video.currentTime = Math.min(targetTime, video.duration - 0.05)
       }
+
+      animationFrameId = requestAnimationFrame(renderLoop)
     }
 
     // Attempt to load the metadata immediately to get the duration
     if (videoRef.current) {
-        videoRef.current.load();
+        videoRef.current.load()
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll() // initial call
-    return () => window.removeEventListener('scroll', handleScroll)
+    animationFrameId = requestAnimationFrame(renderLoop)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [])
 
   return (
@@ -82,7 +93,7 @@ export default function ScrollVideoHero() {
                 <Link
                   key={city}
                   href={`/listings?city=${encodeURIComponent(city)}`}
-                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#66C1B4] hover:text-white hover:border-[#66C1B4] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                 >
                   {city}
                 </Link>
@@ -100,7 +111,7 @@ export default function ScrollVideoHero() {
               </Link>
               <Link
                 href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#66C1B4] hover:text-white hover:border-[#66C1B4] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
               >
                 Posto banesën tënde
               </Link>

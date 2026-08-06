@@ -120,7 +120,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#66C1B4] text-white rounded-xl font-semibold hover:bg-[#4CA195] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke hyrë...' : 'Hyr'}
