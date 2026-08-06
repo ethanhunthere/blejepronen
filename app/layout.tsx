@@ -102,7 +102,7 @@ export default function RootLayout({
         <main className="flex-1 relative">{children}</main>
         <Toaster richColors position="top-center" />
         {/* Footer */}
-        <footer className="relative overflow-hidden bg-[linear-gradient(160deg,#005048_0%,#003830_100%)] py-10 mt-16">
+        <footer className="relative overflow-hidden bg-[linear-gradient(160deg,#005048_0%,#003830_100%)] py-10">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute inset-0 bg-[radial-gradient(40%_60%_at_90%_0%,rgba(200,184,130,0.12),transparent_70%)]" />
           </div>
