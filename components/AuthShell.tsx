@@ -2,7 +2,7 @@ import Image from 'next/image'
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(160deg,#006459_0%,#00433C_60%,#003830_100%)]">
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#006459]">
       {/* Ambient light + watermark */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.14),transparent_70%)]" />
@@ -16,12 +16,12 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
         />
       </div>
       {/* Brand mark + card, positioned high */}
-      <div className="relative flex flex-col items-center px-4 pt-28 pb-16 lg:pt-32">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-[0_16px_32px_-12px_rgba(0,20,17,0.5)] flex items-center justify-center">
-            <Image src="/logo-white.png" alt="Bleje Pronën" width={40} height={40} className="w-10 h-10" />
+      <div className="relative flex flex-col items-center px-4 pt-8 pb-8 lg:pt-12">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 shadow-[0_16px_32px_-12px_rgba(0,20,17,0.5)] flex items-center justify-center">
+            <Image src="/logo-white.png" alt="Bleje Pronën" width={32} height={32} className="w-8 h-8" />
           </div>
-          <div className="h-1 w-10 rounded-full bg-[#C8B882] mt-5" />
+          <div className="h-1 w-8 rounded-full bg-[#C8B882] mt-4" />
         </div>
         {children}
       </div>

@@ -60,7 +60,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {error && (
               <Alert variant="destructive" className="bg-red-50 border border-red-200 text-red-600">
                 <AlertDescription>{error}</AlertDescription>
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="w-full h-12 bg-white border border-gray-200/80 text-gray-700 font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center cursor-pointer rounded-xl"
+              className="w-full h-11 bg-white border border-gray-200/80 text-gray-700 font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center cursor-pointer rounded-xl"
               onClick={handleGoogleLogin}
             >
               <Globe className="mr-2 h-4 w-4" />
@@ -85,16 +85,16 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[13px] text-gray-700 font-medium">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-4 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
+                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -105,12 +105,12 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-[13px] text-gray-700 font-medium">Fjalëkalimi</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-4 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
+                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -120,7 +120,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full h-12 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke hyrë...' : 'Hyr'}
