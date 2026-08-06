@@ -391,7 +391,7 @@ export default function PostoBanesePage() {
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
-      <div className="max-w-2xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 py-10">
+      <div className="w-full px-4 sm:px-6 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#1A1A2E]">Posto banesën tënde</h1>
           <p className="text-gray-500 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>

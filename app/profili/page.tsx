@@ -154,7 +154,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F2F7F7] py-10">
-      <div className="max-w-4xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6">
+      <div className="w-full px-4 sm:px-6">
         <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Profili im</h1>
 
         {success && (

@@ -268,8 +268,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#006459] border-b border-[#005048] shadow-sm transition-all duration-300 px-5 py-2 ${className || ''}`}>
-      <div className="w-full max-w-[1100px] 2xl:max-w-[1300px] mx-auto">
+    <nav className={`${positionClasses} bg-[#006459] border-b border-[#005048] shadow-sm transition-all duration-300 px-5 sm:px-8 lg:px-12 py-2 ${className || ''}`}>
+      <div className="w-full">
         <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 transition-transform duration-200 hover:scale-105 -translate-y-[1px]">

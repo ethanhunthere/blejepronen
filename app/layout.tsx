@@ -106,7 +106,7 @@ export default function RootLayout({
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute inset-0 bg-[radial-gradient(40%_60%_at_90%_0%,rgba(200,184,130,0.12),transparent_70%)]" />
           </div>
-          <div className="relative mx-auto max-w-[1800px] 2xl:max-w-[2200px] px-4 sm:px-6 lg:px-8">
+          <div className="relative w-full px-4 sm:px-6 lg:px-8">
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-6 mx-auto sm:mx-0" />
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
               <p className="text-sm text-white/60 text-center sm:text-left">

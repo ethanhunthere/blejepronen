@@ -5,7 +5,7 @@ export default function Loading() {
     <div className="min-h-screen bg-[#F2F7F7]">
       {/* Hero skeleton */}
       <div className="min-h-[80vh] md:min-h-[85vh] flex items-center" style={{ background: 'linear-gradient(135deg, #F2F7F7 0%, #F3F4F6 40%, #F0F4FF 70%, #F2F7F7 100%)' }}>
-        <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-8 w-full">
           <div className="text-center max-w-3xl mx-auto">
             <div className="h-12 max-w-lg w-full bg-gray-200 rounded-xl animate-pulse mx-auto mb-4" />
             <div className="h-6 max-w-md w-full bg-gray-200 rounded-lg animate-pulse mx-auto mb-10" />
@@ -20,9 +20,9 @@ export default function Loading() {
       </div>
 
       {/* Listings skeleton */}
-      <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-8" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <ListingCardSkeleton key={i} />
           ))}

@@ -41,7 +41,7 @@ export default async function HomePage() {
         className="relative overflow-hidden bg-white"
       >
         <div className="relative z-20 py-16 md:py-24">
-          <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
+          <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 w-full">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08]">
                 Gjej banesën
@@ -99,7 +99,7 @@ export default async function HomePage() {
 
       {/* Error state */}
       {error && (
-        <section className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8">
+        <section className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8">
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p className="text-red-600 mb-3">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
             <Link
@@ -113,7 +113,7 @@ export default async function HomePage() {
       )}
 
       {/* Unified Listings */}
-      <section aria-label="Banesat e disponueshme" className="bg-white max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <section aria-label="Banesat e disponueshme" className="bg-white w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         <div className="flex items-end justify-between mb-8">
           <div>
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />

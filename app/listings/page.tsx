@@ -214,14 +214,14 @@ function ListingsContent() {
           <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_85%_0%,rgba(200,184,130,0.16),transparent_70%)]" />
           <Image src="/logo-white.png" alt="" width={512} height={512} className="absolute -right-16 -bottom-24 w-[300px] max-w-none opacity-[0.07] -rotate-6" />
         </div>
-        <div className="relative max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative w-full px-4 sm:px-6 lg:px-8">
           <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4" />
           <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
           <p className="text-white/70 text-base">Gjej banesën e përsosur për ty</p>
         </div>
       </div>
 
-      <div className="max-w-7xl 2xl:max-w-[2000px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
         {/* Search + Filter Toggle — floating toolbar */}
         <div className="relative z-10 -mt-10 flex flex-col sm:flex-row gap-3 mb-6 bg-white rounded-2xl ring-1 ring-black/5 shadow-[0_16px_40px_-16px_rgba(0,40,35,0.25)] p-3">
           <div className="relative flex-1 min-w-0 rounded-xl bg-gray-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/25 transition-all duration-200">
@@ -266,7 +266,7 @@ function ListingsContent() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 min-[2000px]:grid-cols-9 min-[3000px]:grid-cols-12 gap-4">
             {/* City */}
             <div>
               <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Qyteti</label>
@@ -544,7 +544,7 @@ function ListingsContent() {
 
         {/* Results */}
         {fetchState.loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6 items-stretch">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse border border-gray-100">
                 <div className="h-52 bg-gray-100" />
@@ -611,7 +611,7 @@ function ListingsContent() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6 items-stretch">
               {listings.map((listing, index) => (
                 <ListingCard
                   key={listing.id}

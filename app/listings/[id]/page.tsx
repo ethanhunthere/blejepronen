@@ -303,7 +303,7 @@ export default async function ListingDetailPage({
       />
 
       {/* ====== BACK + BREADCRUMB ====== */}
-      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
         <Link
           href="/listings"
           className="inline-flex items-center gap-2 text-gray-500 hover:text-[#1A1A2E] transition-colors duration-200 text-sm font-medium group"
@@ -317,7 +317,7 @@ export default async function ListingDetailPage({
       </div>
 
       {/* ====== PHOTO HERO ====== */}
-      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <ListingImageGallery
           images={listing.images || []}
           title={listing.title}
@@ -327,7 +327,7 @@ export default async function ListingDetailPage({
       </div>
 
       {/* ====== MAIN CONTENT + SIDEBAR ====== */}
-      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-10">
           {/* ---- Left column ---- */}
           <div className="space-y-8 min-w-0">
@@ -534,12 +534,12 @@ export default async function ListingDetailPage({
       </div>
 
       {/* ====== DIVIDER ====== */}
-      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <hr className="border-gray-100" />
       </div>
 
       {/* ====== SIMILAR LISTINGS ====== */}
-      <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-8 pb-12">
         <h2 className="text-xl md:text-2xl font-bold text-[#1A1A2E] border-l-4 border-[#111827] pl-3 mb-2">
           Banesa të ngjashme
         </h2>

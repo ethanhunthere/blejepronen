@@ -134,7 +134,7 @@ export default function PostimetEMiaPage() {
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
-      <div className="max-w-[1800px] 2xl:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
+      <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#1A1A2E]">Postimet e Mia</h1>
@@ -165,7 +165,7 @@ export default function PostimetEMiaPage() {
 
         {activeTab === 'favorites' ? (
           favoritesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <ListingCardSkeleton key={i} />
               ))}
@@ -179,7 +179,7 @@ export default function PostimetEMiaPage() {
               <p className="text-gray-400 max-w-md mb-8">Klikoni zemrën në çdo banesë për ta ruajtur</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
               {favoriteListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
@@ -191,7 +191,7 @@ export default function PostimetEMiaPage() {
             </div>
           )
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <ListingCardSkeleton key={i} />
             ))}
@@ -224,7 +224,7 @@ export default function PostimetEMiaPage() {
             </div>
 
             {/* Listings grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
               {listings.map((listing) => (
                 <div key={listing.id} className="flex flex-col gap-3">
                   <div className="relative">

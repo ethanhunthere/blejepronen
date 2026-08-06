@@ -49,7 +49,7 @@ function CookieBanner() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-lg p-4">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-gray-600 text-center sm:text-left">
           Ne përdorim cookies për të përmirësuar përvojën tuaj.{' '}
           <a href="/privatesia" className="text-[#111827] underline">Mëso më shumë</a>
