@@ -17,12 +17,6 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
       {/* Brand mark + card, positioned high */}
       <div className="relative flex flex-col items-center px-4 pt-8 pb-8 lg:pt-12">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 shadow-[0_16px_32px_-12px_rgba(0,20,17,0.5)] flex items-center justify-center">
-            <Image src="/logo-white.png" alt="Bleje Pronën" width={32} height={32} className="w-8 h-8" />
-          </div>
-          <div className="h-1 w-8 rounded-full bg-[#C8B882] mt-4" />
-        </div>
         {children}
       </div>
     </div>
