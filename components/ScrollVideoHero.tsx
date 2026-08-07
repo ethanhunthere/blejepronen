@@ -61,14 +61,12 @@ export default function ScrollVideoHero() {
         const safeDuration = video.duration - 0.05
         const targetTime = safeDuration * currentProgress
         
-        // CRITICAL FIX: Only update currentTime if the browser is NOT currently seeking.
-        // Spamming currentTime while seeking causes the browser to abort and restart decoding,
-        // resulting in the video completely freezing when scrolling fast.
-        if (!video.seeking) {
-          if (Math.abs(lastSetTime - targetTime) > 0.01) {
-            video.currentTime = Math.max(0.001, targetTime)
-            lastSetTime = targetTime
-          }
+        // Set the current time directly. Because we are preloading as a Blob,
+        // we do not need to worry about network aborts, so we can remove the !video.seeking throttle
+        // and allow perfectly smooth 1:1 hardware decoding.
+        if (Math.abs(lastSetTime - targetTime) > 0.01) {
+          video.currentTime = Math.max(0.001, targetTime)
+          lastSetTime = targetTime
         }
       }
       
