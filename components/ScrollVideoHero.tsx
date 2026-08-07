@@ -29,7 +29,7 @@ export default function ScrollVideoHero() {
 
     const renderLoop = () => {
       // Lerp currentProgress towards targetProgress
-      currentProgress += (targetProgress - currentProgress) * 0.1
+      currentProgress += (targetProgress - currentProgress) * 0.05
       
       setProgress(currentProgress)
 
@@ -61,7 +61,7 @@ export default function ScrollVideoHero() {
   return (
     <section 
       ref={containerRef}
-      className="relative w-full h-[400vh] bg-white"
+      className="relative w-full h-[1000vh] bg-white"
     >
       <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden">
         <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-[2000px] mx-auto">
@@ -71,13 +71,7 @@ export default function ScrollVideoHero() {
             <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08]">
               Gjej banesën
               <br />
-              <span className="relative inline-block pb-2 lg:pb-3">
-                <span className="relative z-10">e duhur në Kosovë</span>
-                <span 
-                  className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full"
-                  style={{ width: `${35 + progress * 65}%` }}
-                />
-              </span>
+              <span className="underline decoration-[#C8B882] decoration-4 underline-offset-[12px]">e duhur</span> në Kosovë
             </h1>
 
             <p className="text-[16px] text-gray-500 leading-relaxed mt-5 lg:mx-0 mx-auto max-w-lg">
@@ -141,6 +135,12 @@ export default function ScrollVideoHero() {
                     videoRef.current.currentTime = 0.001;
                   }
                 }}
+              />
+              
+              {/* Animated Progress Line */}
+              <div 
+                className="absolute left-0 bottom-0 h-2 bg-[#C8B882] transition-all duration-75 ease-linear z-20"
+                style={{ width: `${progress * 100}%` }}
               />
             </div>
 
