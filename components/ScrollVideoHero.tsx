@@ -79,7 +79,7 @@ export default function ScrollVideoHero() {
         <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-4 lg:gap-12 max-w-[2000px] mx-auto h-full lg:h-auto overflow-y-auto lg:overflow-visible no-scrollbar pb-6 lg:pb-0">
           
           {/* Left Text */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-4 lg:mt-0 shrink-0">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-4 lg:-mt-16 shrink-0">
             <h1 className="text-[32px] sm:text-[42px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
               Gjej banesën
               <br />
@@ -120,7 +120,7 @@ export default function ScrollVideoHero() {
             </div>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-6 lg:justify-start justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 lg:justify-start justify-center lg:ml-6">
               <Link
                 href="/listings"
                 className="inline-flex items-center justify-center min-h-[44px] bg-[#C8B882] text-[#1A1A2E] font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
@@ -137,7 +137,10 @@ export default function ScrollVideoHero() {
           </div>
 
           {/* Right Video / App Composition */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:mt-0 relative shrink-0">
+          <div 
+            className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:-mt-12 relative shrink-0"
+            style={{ transform: `translateY(${progress * 80}px)` }}
+          >
             
             {/* Minimalist, borderless video frame with deep elevation */}
             <div className="relative w-full max-w-lg lg:max-w-2xl aspect-video rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] lg:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
