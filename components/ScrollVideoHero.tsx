@@ -97,7 +97,7 @@ export default function ScrollVideoHero() {
             </p>
 
             {/* Search Bar */}
-            <div className="relative z-10 mt-10 w-full max-w-2xl mx-auto lg:mx-0">
+            <div className="relative z-10 mt-10 w-full max-w-2xl mx-auto">
               <SearchBar
                 placeholder="Kërko banesë, agjent, kompani, adresë..."
                 buttonText="Kërko Banesë"
@@ -105,8 +105,8 @@ export default function ScrollVideoHero() {
             </div>
 
             {/* City strip */}
-            <div className="relative z-10 mt-10 overflow-x-auto scrollbar-hide px-1 pt-2 pb-1 w-full max-w-2xl mx-auto lg:mx-0">
-              <div className="flex items-center lg:justify-start justify-center gap-2 min-w-max">
+            <div className="relative z-10 mt-10 overflow-x-auto scrollbar-hide px-1 pt-2 pb-1 w-full max-w-2xl mx-auto">
+              <div className="flex items-center justify-center gap-2 min-w-max">
               {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                 <Link
                   key={city}
@@ -120,7 +120,7 @@ export default function ScrollVideoHero() {
             </div>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-6 lg:justify-start justify-center lg:ml-6">
+            <div className="flex flex-col sm:flex-row gap-3 lg:gap-8 mt-6 justify-center">
               <Link
                 href="/listings"
                 className="inline-flex items-center justify-center min-h-[44px] bg-[#C8B882] text-[#1A1A2E] font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
@@ -138,7 +138,7 @@ export default function ScrollVideoHero() {
 
           {/* Right Video / App Composition */}
           <div 
-            className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:-mt-12 relative shrink-0"
+            className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:-mt-24 relative shrink-0"
             style={{ transform: `translateY(${progress * 80}px)` }}
           >
             
