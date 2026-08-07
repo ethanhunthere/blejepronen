@@ -9,27 +9,6 @@ export default function ScrollVideoHero() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [progress, setProgress] = useState(0)
   const [videoReady, setVideoReady] = useState(false)
-  const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Preload the video fully into memory (RAM) as a Blob.
-    // This entirely eliminates network-based buffering or stalling when the user
-    // scrubs the video rapidly via scroll.
-    let isMounted = true
-    
-    fetch('/hero-video.mp4?v=3')
-      .then(res => res.blob())
-      .then(blob => {
-        if (!isMounted) return
-        const url = URL.createObjectURL(blob)
-        setVideoBlobUrl(url)
-      })
-      .catch(err => console.error('Error preloading video blob:', err))
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   useEffect(() => {
     let targetProgress = 0
@@ -61,12 +40,15 @@ export default function ScrollVideoHero() {
         const safeDuration = video.duration - 0.05
         const targetTime = safeDuration * currentProgress
         
-        // Set the current time directly. Because we are preloading as a Blob,
-        // we do not need to worry about network aborts, so we can remove the !video.seeking throttle
-        // and allow perfectly smooth 1:1 hardware decoding.
-        if (Math.abs(lastSetTime - targetTime) > 0.01) {
-          video.currentTime = Math.max(0.001, targetTime)
-          lastSetTime = targetTime
+        // Snap to nearest 30fps frame (0.0333s). This massively speeds up the browser's hardware 
+        // decoder because it doesn't have to interpolate sub-frames.
+        const fps = 30
+        let snappedTime = Math.round(targetTime * fps) / fps
+        snappedTime = Math.max(0.001, snappedTime)
+        
+        if (Math.abs(lastSetTime - snappedTime) > 0.001) {
+          video.currentTime = snappedTime
+          lastSetTime = snappedTime
         }
       }
       
@@ -173,7 +155,7 @@ export default function ScrollVideoHero() {
               
               <video 
                 ref={videoRef}
-                src={videoBlobUrl || "/hero-video.mp4?v=3#t=0.001"} 
+                src="/hero-video.mp4?v=3#t=0.001" 
                 className="absolute inset-0 w-full h-full object-cover z-10"
                 muted 
                 playsInline
