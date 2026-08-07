@@ -23,24 +23,31 @@ export default function ScrollVideoHero() {
       
       const scrollableDistance = container.offsetHeight - window.innerHeight
       let newProgress = -rect.top / scrollableDistance
-      
       // Clamp between 0 and 1
       targetProgress = Math.max(0, Math.min(1, newProgress))
     }
 
+    let lastSetTime = -1
+
     const renderLoop = () => {
-      // Very fast lerp to almost perfectly match scroll speed without micro-jitters
-      currentProgress += (targetProgress - currentProgress) * 0.8
+      // Instant update, no lerp delay
+      currentProgress = targetProgress
       
       setProgress(currentProgress)
 
       const video = videoRef.current
-      if (video && video.duration) {
-        // Clamp the time slightly before the very end to prevent flickering
-        const targetTime = video.duration * currentProgress
-        video.currentTime = Math.min(targetTime, video.duration - 0.05)
+      if (video && video.duration && !isNaN(video.duration)) {
+        const safeDuration = video.duration - 0.05
+        const targetTime = safeDuration * currentProgress
+        
+        // Update currentTime only if the time difference is significant (e.g. > 0.04s for ~25fps)
+        // This prevents decoder locking/blocking from setting currentTime too frequently
+        if (Math.abs(lastSetTime - targetTime) > 0.04) {
+          video.currentTime = Math.max(0.001, targetTime)
+          lastSetTime = targetTime
+        }
       }
-
+      
       animationFrameId = requestAnimationFrame(renderLoop)
     }
 
@@ -136,12 +143,12 @@ export default function ScrollVideoHero() {
               <img 
                 src="/hero-poster.jpg" 
                 alt="Video thumbnail"
-                className={`absolute inset-0 w-full h-full object-cover z-20 pointer-events-none transition-opacity duration-500 ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
+                className={`absolute inset-0 w-full h-full object-cover z-20 pointer-events-none ${videoReady ? 'hidden' : 'block'}`}
               />
               
               <video 
                 ref={videoRef}
-                src="/hero-video.mp4#t=0.001" 
+                src="/hero-video.mp4?v=3#t=0.001" 
                 className="absolute inset-0 w-full h-full object-cover z-10"
                 muted 
                 playsInline
