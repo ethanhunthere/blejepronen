@@ -55,7 +55,7 @@ export default function MobileContactBar({ price, pricePerSqm, phone, listingId 
         {phone ? (
           <a
             href={`tel:${phone}`}
-            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#0D9488] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
+            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#006459] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
           >
             <Phone className="h-4 w-4" />
             Kontakto
@@ -64,7 +64,7 @@ export default function MobileContactBar({ price, pricePerSqm, phone, listingId 
           <button
             type="button"
             onClick={scrollToContact}
-            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#0D9488] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
+            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#006459] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
           >
             <Phone className="h-4 w-4" />
             Kontakto

@@ -268,7 +268,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   }[variant]
 
   return (
-    <nav className={`${positionClasses} bg-[#0D9488] border-b border-[#0F766E] shadow-sm transition-all duration-300 px-5 sm:px-8 lg:px-12 py-2 ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#006459] border-b border-[#005048] shadow-sm transition-all duration-300 px-5 sm:px-8 lg:px-12 py-2 ${className || ''}`}>
       <div className="w-full">
         <div className="flex items-center justify-between h-9 lg:h-10">
           {/* Logo */}
@@ -291,7 +291,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 className={`relative text-[14px] px-3.5 py-1 transition-all duration-200 ${
                   pathname === '/listings'
                     ? 'text-white font-semibold after:absolute after:bottom-0.5 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
-                    : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#0F766E] rounded-lg'
+                    : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'
                 }`}
               >
                 Shiko banesat
@@ -302,13 +302,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <div className="flex items-center gap-2">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#0F766E] transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
                   >
                     Hyr
                   </a>
                   <a
                     href="/register"
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#0D9488] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 text-[14px] font-semibold text-[#006459] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
                   >
                     Regjistrohu
                   </a>
@@ -318,7 +318,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/posto-banese')}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#0D9488]"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-1 gap-1.5 text-[14px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
                   >
                     <Plus className="h-4 w-4" />
                     Posto banesë
@@ -328,7 +328,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => router.push('/mesazhet')}
-                    className="relative p-2 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#0F766E] transition-all duration-200 cursor-pointer"
+                    className="relative p-2 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
                     aria-label="Mesazhet"
                   >
                     <MessageCircle className="h-5 w-5" />
@@ -344,7 +344,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#0D9488] text-sm font-bold hover:bg-[#C8B882] transition-colors cursor-pointer flex-shrink-0 outline-none"
+                      className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-9 h-9 bg-white text-[#006459] text-sm font-bold hover:bg-[#C8B882] transition-colors cursor-pointer flex-shrink-0 outline-none"
                       aria-label="Menyja e përdoruesit"
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
@@ -464,14 +464,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div id="mobile-menu" className="lg:hidden border-t border-[#0F766E] bg-[#0F766E] py-4 space-y-3">
-            <Link href="/listings" className={`relative block px-4 py-3 text-[14px] transition-all duration-200 ${pathname === '/listings' ? 'text-white font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full' : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#0F766E] rounded-lg'}`}>
+          <div id="mobile-menu" className="lg:hidden border-t border-[#005048] bg-[#005048] py-4 space-y-3">
+            <Link href="/listings" className={`relative block px-4 py-3 text-[14px] transition-all duration-200 ${pathname === '/listings' ? 'text-white font-semibold after:absolute after:bottom-2 after:left-4 after:right-4 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full' : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048] rounded-lg'}`}>
               Shiko banesat
             </Link>
             {user === undefined ? null : user === null ? (
               <div className="space-y-2">
-                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#0F766E] transition-all duration-200 cursor-pointer">Hyr</a>
-                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#0D9488] bg-white hover:bg-[#C8B882] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
+                <a href="/login" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer">Hyr</a>
+                <a href="/register" className="flex items-center justify-center w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-[#006459] bg-white hover:bg-[#C8B882] transition-all duration-200 cursor-pointer shadow-sm">Regjistrohu</a>
               </div>
             ) : (
               <>
@@ -479,13 +479,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full text-left py-3 border-b border-[#0F766E] cursor-pointer hover:bg-[#0F766E] transition-colors"
+                  className="flex items-center gap-3 w-full text-left py-3 border-b border-[#005048] cursor-pointer hover:bg-[#005048] transition-colors"
                 >
                   <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
                     {profile.avatarUrl ? (
                       <Image src={profile.avatarUrl} alt="Foto profili" fill sizes="40px" className="object-cover" />
                     ) : (
-                      <span className="text-[#0D9488] text-sm font-bold">
+                      <span className="text-[#006459] text-sm font-bold">
                         {(profile.firstName || user?.email || '?')[0].toUpperCase()}
                       </span>
                     )}
@@ -510,7 +510,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 {profile.incomplete && (
                   <a
                     href="/completo-profilin"
-                    className="flex items-center gap-3 w-full py-3 border-b border-[#0F766E] text-white text-sm font-medium cursor-pointer hover:bg-[#0F766E] transition-colors"
+                    className="flex items-center gap-3 w-full py-3 border-b border-[#005048] text-white text-sm font-medium cursor-pointer hover:bg-[#005048] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />

@@ -99,7 +99,7 @@ export default function ScrollVideoHero() {
                 <Link
                   key={city}
                   href={`/listings?city=${encodeURIComponent(city)}`}
-                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#0D9488] hover:text-white hover:border-[#0D9488] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                 >
                   {city}
                 </Link>
@@ -117,7 +117,7 @@ export default function ScrollVideoHero() {
               </Link>
               <Link
                 href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#0D9488] hover:text-white hover:border-[#0D9488] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
               >
                 Posto banesën tënde
               </Link>
@@ -156,7 +156,7 @@ export default function ScrollVideoHero() {
 
             {/* Floating Badge 2: Bottom Left */}
             <div className="absolute bottom-4 -left-2 sm:-left-6 lg:-left-10 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-gray-900/5 flex items-center gap-4 z-20">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0D9488]/10 text-[#0D9488]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#006459]/10 text-[#006459]">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>

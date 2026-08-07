@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                className="w-full h-12 bg-[#0D9488] text-white rounded-xl font-semibold hover:bg-[#0F766E] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-12 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 {loading ? 'Duke dërguar...' : 'Dërgo linkun'}

@@ -187,7 +187,7 @@ export default function ProfilePage() {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-[#0D9488]/10 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-[#006459]/10 flex items-center justify-center">
                   <span className="text-4xl font-semibold text-[#111827]">{initials}</span>
                 </div>
               )}
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                 aria-label="Ndrysho foton e profilit"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#0D9488] text-white flex items-center justify-center border-2 border-white hover:bg-[#0F766E] hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer disabled:hover:scale-100"
+                className="absolute bottom-1 right-1 h-8 w-8 rounded-full bg-[#006459] text-white flex items-center justify-center border-2 border-white hover:bg-[#005048] hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer disabled:hover:scale-100"
               >
                 {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               </button>
@@ -252,10 +252,10 @@ export default function ProfilePage() {
           </div>
 
           {!isVerified && (
-            <div className="mt-6 bg-[#0D9488]/10 border border-[#0D9488]/30 rounded-2xl p-5">
+            <div className="mt-6 bg-[#006459]/10 border border-[#006459]/30 rounded-2xl p-5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#0D9488]/20 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-[#006459]/20 flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="h-5 w-5 text-[#111827]" />
                   </div>
                   <p className="text-gray-700 text-sm">
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                 </div>
                 <Link
                   href="/completo-profilin"
-                  className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#0D9488] text-white hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out whitespace-nowrap cursor-pointer"
+                  className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out whitespace-nowrap cursor-pointer"
                 >
                   Verifiko tani →
                 </Link>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
                       <Button
                         type="submit"
                         disabled={saving}
-                        className="flex-1 h-11 bg-[#0D9488] text-white rounded-xl font-semibold hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                        className="flex-1 h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0 disabled:hover:shadow-none"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
                       </Button>

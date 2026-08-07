@@ -24,7 +24,7 @@ export default function PageError({ error, reset }: PageErrorProps) {
         </p>
         <Button
           onClick={reset}
-          className="bg-[#0D9488] text-white hover:bg-[#0F766E] hover:shadow-lg hover:shadow-[#0D9488]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+          className="bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
         >
           Provo përsëri
         </Button>
