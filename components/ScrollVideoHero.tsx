@@ -144,29 +144,7 @@ export default function ScrollVideoHero() {
               />
             </div>
 
-            {/* Floating Badge 1: Top Right */}
-            <div className="absolute top-0 right-0 lg:-right-4 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.12)] ring-1 ring-gray-900/5 flex items-center gap-3 z-20 transform -translate-y-1/2 hidden sm:flex">
-              <div className="flex -space-x-2">
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="User"/>
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80" alt="User"/>
-                <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="User"/>
-              </div>
-              <p className="text-xs font-bold text-gray-900 tracking-tight">10k+ Përdorues</p>
-            </div>
 
-            {/* Floating Badge 2: Bottom Left */}
-            <div className="absolute bottom-4 -left-2 sm:-left-6 lg:-left-10 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-gray-900/5 flex items-center gap-4 z-20">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#006459]/10 text-[#006459]">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="pr-4">
-                <p className="text-sm font-extrabold text-gray-900 tracking-tight">Prona të Verifikuara</p>
-                <p className="text-xs font-medium text-gray-500">100% të Sigurta</p>
-              </div>
-            </div>
-            
           </div>
 
         </div>
