@@ -155,7 +155,7 @@ export default function ScrollVideoHero() {
               
               <video 
                 ref={videoRef}
-                src="/hero-video.mp4?v=3#t=0.001" 
+                src="/hero-video.mp4?v=5#t=0.001" 
                 className="absolute inset-0 w-full h-full object-cover z-10"
                 muted 
                 playsInline
