@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import AuthAnimation from './AuthAnimation'
 
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +25,7 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
         
         {/* Right side: Animation placeholder */}
         <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center h-full min-h-[500px]" id="auth-animation-container">
-          {/* Future animations will be placed here */}
+          <AuthAnimation />
         </div>
       </div>
     </div>

@@ -40,11 +40,14 @@ export default function ScrollVideoHero() {
         const safeDuration = video.duration - 0.05
         const targetTime = safeDuration * currentProgress
         
-        // Update currentTime only if the time difference is significant (e.g. > 0.04s for ~25fps)
-        // This prevents decoder locking/blocking from setting currentTime too frequently
-        if (Math.abs(lastSetTime - targetTime) > 0.04) {
-          video.currentTime = Math.max(0.001, targetTime)
-          lastSetTime = targetTime
+        // CRITICAL FIX: Only update currentTime if the browser is NOT currently seeking.
+        // Spamming currentTime while seeking causes the browser to abort and restart decoding,
+        // resulting in the video completely freezing when scrolling fast.
+        if (!video.seeking) {
+          if (Math.abs(lastSetTime - targetTime) > 0.01) {
+            video.currentTime = Math.max(0.001, targetTime)
+            lastSetTime = targetTime
+          }
         }
       }
       
@@ -72,12 +75,12 @@ export default function ScrollVideoHero() {
       className="relative w-full bg-white"
       style={{ height: '600vh' }}
     >
-      <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden">
-        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-[2000px] mx-auto">
+      <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden pt-16 lg:pt-0">
+        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-4 lg:gap-12 max-w-[2000px] mx-auto h-full lg:h-auto overflow-y-auto lg:overflow-visible no-scrollbar pb-6 lg:pb-0">
           
           {/* Left Text */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-16 lg:mt-0">
-            <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-4 lg:mt-0 shrink-0">
+            <h1 className="text-[32px] sm:text-[42px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
               Gjej banesën
               <br />
               <span className="relative inline-block pb-2 lg:pb-3">
@@ -134,10 +137,10 @@ export default function ScrollVideoHero() {
           </div>
 
           {/* Right Video / App Composition */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 mt-12 lg:mt-0 relative">
+          <div className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:mt-0 relative shrink-0">
             
             {/* Minimalist, borderless video frame with deep elevation */}
-            <div className="relative w-full max-w-2xl aspect-video rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
+            <div className="relative w-full max-w-lg lg:max-w-2xl aspect-video rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] lg:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
               
               {/* Custom Poster Image */}
               <img 

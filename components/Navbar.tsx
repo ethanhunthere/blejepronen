@@ -479,7 +479,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/profili'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full text-left py-3 border-b border-[#005048] cursor-pointer hover:bg-[#005048] transition-colors"
+                  className="flex items-center gap-3 w-full text-left py-3 px-4 border-b border-[#006459] cursor-pointer hover:bg-[#006459] transition-colors"
                 >
                   <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
                     {profile.avatarUrl ? (
@@ -522,7 +522,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/posto-banese'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full py-3 border-b border-[#006459] text-white text-sm font-medium cursor-pointer hover:bg-[#006459] px-4 transition-colors"
                 >
                   <Plus className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Posto banesë
@@ -532,7 +532,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/mesazhet'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full py-3 border-b border-[#006459] text-white text-sm font-medium cursor-pointer hover:bg-[#006459] px-4 transition-colors"
                 >
                   <MessageCircle className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Mesazhet
@@ -547,7 +547,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => { router.push('/postimet-e-mia'); setMenuOpen(false) }}
-                  className="flex items-center gap-3 w-full py-3 border-b border-gray-50 text-[#111827] text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 w-full py-3 border-b border-[#006459] text-white text-sm font-medium cursor-pointer hover:bg-[#006459] px-4 transition-colors"
                 >
                   <Home className="h-5 w-5 text-[#b3d8d4] shrink-0" />
                   Banesat e mia

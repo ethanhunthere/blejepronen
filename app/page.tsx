@@ -54,13 +54,13 @@ export default async function HomePage() {
 
       {/* Unified Listings */}
       <section aria-label="Banesat e disponueshme" className="bg-white w-full px-4 sm:px-6 lg:px-8 2xl:px-12 py-8 sm:py-12 lg:py-16">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8">
           <div>
             <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-3" />
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1A1A2E]">Banesa në Shitje dhe me Qira</h2>
             <p className="text-gray-500 text-sm mt-1.5">Të gjitha banesat e disponueshme në platformë</p>
           </div>
-          <Link href="/listings" className="inline-flex items-center min-h-[44px] text-sm font-medium text-gray-600 px-5 py-2.5 rounded-full border border-gray-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)] hover:text-[#006459] hover:border-[#006459]/40 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out cursor-pointer">
+          <Link href="/listings" className="inline-flex items-center min-h-[44px] text-sm font-medium text-gray-600 px-5 py-2.5 rounded-full border border-gray-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.06)] hover:text-[#006459] hover:border-[#006459]/40 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out cursor-pointer whitespace-nowrap">
             Shiko të gjitha →
           </Link>
         </div>
