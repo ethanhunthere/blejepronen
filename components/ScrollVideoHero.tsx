@@ -27,29 +27,16 @@ export default function ScrollVideoHero() {
       targetProgress = Math.max(0, Math.min(1, newProgress))
     }
 
-    let lastSetTime = -1
-
     const renderLoop = () => {
-      // Instant update, no lerp delay
       currentProgress = targetProgress
       
       setProgress(currentProgress)
 
       const video = videoRef.current
       if (video && video.duration && !isNaN(video.duration)) {
-        const safeDuration = video.duration - 0.05
+        const safeDuration = video.duration - 0.001
         const targetTime = safeDuration * currentProgress
-        
-        // Snap to nearest 30fps frame (0.0333s). This massively speeds up the browser's hardware 
-        // decoder because it doesn't have to interpolate sub-frames.
-        const fps = 30
-        let snappedTime = Math.round(targetTime * fps) / fps
-        snappedTime = Math.max(0.001, snappedTime)
-        
-        if (Math.abs(lastSetTime - snappedTime) > 0.001) {
-          video.currentTime = snappedTime
-          lastSetTime = snappedTime
-        }
+        video.currentTime = Math.max(0.001, targetTime)
       }
       
       animationFrameId = requestAnimationFrame(renderLoop)
