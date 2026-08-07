@@ -72,15 +72,11 @@ export default function ScrollVideoHero() {
             <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
               Gjej banesën
               <br />
-              <span className="relative inline-block pb-2 lg:pb-3 whitespace-nowrap">
+              <span className="relative inline-block pb-2 lg:pb-3">
                 <span className="relative z-10">e duhur në Kosovë</span>
                 <span 
-                  className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] rounded-full z-[100] pointer-events-none"
-                  style={{ 
-                    width: `calc(35% + ${progress * 100}vw)`, 
-                    maxWidth: '100vw',
-                    transition: 'width 0.1s linear'
-                  }}
+                  className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full z-10"
+                  style={{ width: `${30 + progress * 55}%` }}
                 />
               </span>
             </h1>
