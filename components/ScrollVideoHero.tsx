@@ -9,6 +9,27 @@ export default function ScrollVideoHero() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [progress, setProgress] = useState(0)
   const [videoReady, setVideoReady] = useState(false)
+  const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Preload the video fully into memory (RAM) as a Blob.
+    // This entirely eliminates network-based buffering or stalling when the user
+    // scrubs the video rapidly via scroll.
+    let isMounted = true
+    
+    fetch('/hero-video.mp4?v=3')
+      .then(res => res.blob())
+      .then(blob => {
+        if (!isMounted) return
+        const url = URL.createObjectURL(blob)
+        setVideoBlobUrl(url)
+      })
+      .catch(err => console.error('Error preloading video blob:', err))
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     let targetProgress = 0
@@ -154,7 +175,7 @@ export default function ScrollVideoHero() {
               
               <video 
                 ref={videoRef}
-                src="/hero-video.mp4?v=3#t=0.001" 
+                src={videoBlobUrl || "/hero-video.mp4?v=3#t=0.001"} 
                 className="absolute inset-0 w-full h-full object-cover z-10"
                 muted 
                 playsInline
