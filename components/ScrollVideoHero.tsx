@@ -75,29 +75,29 @@ export default function ScrollVideoHero() {
       className="relative w-full bg-white"
       style={{ height: '600vh' }}
     >
-      <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden pt-16 lg:pt-0">
-        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-4 lg:gap-12 max-w-[2000px] mx-auto h-full lg:h-auto overflow-y-auto lg:overflow-visible no-scrollbar pb-6 lg:pb-0">
+      <div className="sticky top-0 h-[100dvh] w-full flex items-center overflow-hidden pt-[72px] lg:pt-0">
+        <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-4 lg:gap-12 max-w-[2000px] mx-auto h-full lg:h-auto overflow-hidden lg:overflow-visible pb-2 sm:pb-6 lg:pb-0">
           
           {/* Left Text */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-4 lg:-mt-16 shrink-0">
-            <h1 className="text-[32px] sm:text-[42px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-center text-center mt-2 sm:mt-4 lg:-mt-16 shrink-0">
+            <h1 className="text-[28px] sm:text-[36px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
               Gjej banesën
               <br />
-              <span className="relative inline-block pb-2 lg:pb-3">
+              <span className="relative inline-block pb-1 lg:pb-3">
                 <span className="relative z-10">e duhur në Kosovë</span>
                 <span 
-                  className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full z-10"
+                  className="absolute left-0 bottom-0 h-[4px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full z-10"
                   style={{ width: `${30 + progress * 55}%` }}
                 />
               </span>
             </h1>
 
-            <p className="text-[16px] text-gray-500 leading-relaxed mt-5 lg:mx-0 mx-auto max-w-lg">
+            <p className="text-[14px] sm:text-[16px] text-gray-500 leading-relaxed mt-3 sm:mt-5 lg:mx-0 mx-auto max-w-lg">
               Bli, shit ose jep me qira banesën tënde duke folur direkt me pronarët, pa ndërmjetës.
             </p>
 
             {/* Search Bar */}
-            <div className="relative z-10 mt-10 w-full max-w-2xl mx-auto">
+            <div className="relative z-10 mt-5 sm:mt-10 w-full max-w-2xl mx-auto">
               <SearchBar
                 placeholder="Kërko banesë, agjent, kompani, adresë..."
                 buttonText="Kërko Banesë"
@@ -105,13 +105,13 @@ export default function ScrollVideoHero() {
             </div>
 
             {/* City strip */}
-            <div className="relative z-10 mt-10 overflow-x-auto scrollbar-hide px-1 pt-2 pb-1 w-full max-w-2xl mx-auto">
-              <div className="flex items-center justify-center gap-2 min-w-max">
+            <div className="relative z-10 mt-4 sm:mt-10 overflow-x-auto scrollbar-hide px-1 pt-1 sm:pt-2 pb-1 w-full max-w-2xl mx-auto">
+              <div className="flex items-center justify-start sm:justify-center gap-2 min-w-max">
               {['Prishtinë', 'Prizren', 'Pejë', 'Gjakovë', 'Gjilan', 'Mitrovicë'].map((city) => (
                 <Link
                   key={city}
                   href={`/listings?city=${encodeURIComponent(city)}`}
-                  className="relative flex-shrink-0 text-[13px] font-medium text-gray-600 px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
+                  className="relative flex-shrink-0 text-[12px] sm:text-[13px] font-medium text-gray-600 px-3 sm:px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:-translate-y-0.5 hover:z-30 transition-all duration-200"
                 >
                   {city}
                 </Link>
@@ -120,16 +120,16 @@ export default function ScrollVideoHero() {
             </div>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 lg:gap-8 mt-6 justify-center">
+            <div className="flex flex-row sm:flex-row flex-wrap gap-2 sm:gap-3 lg:gap-8 mt-5 sm:mt-6 justify-center">
               <Link
                 href="/listings"
-                className="inline-flex items-center justify-center min-h-[44px] bg-[#C8B882] text-[#1A1A2E] font-semibold px-8 py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-[#C8B882] text-[#1A1A2E] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
               >
                 Shiko banesat
               </Link>
               <Link
                 href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] font-semibold px-8 py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
               >
                 Posto banesën tënde
               </Link>
@@ -138,8 +138,8 @@ export default function ScrollVideoHero() {
 
           {/* Right Video / App Composition */}
           <div 
-            className="w-full lg:w-1/2 flex items-center justify-center p-2 sm:p-4 lg:p-8 mt-4 lg:-mt-24 relative shrink-0"
-            style={{ transform: `translateY(${progress * 80}px)` }}
+            className="w-full lg:w-1/2 flex items-center justify-center p-0 sm:p-4 lg:p-8 mt-4 lg:-mt-24 relative shrink-0"
+            style={{ transform: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `translateY(${progress * 80}px)` : 'none' }}
           >
             
             {/* Minimalist, borderless video frame with deep elevation */}
