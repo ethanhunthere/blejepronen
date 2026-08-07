@@ -61,14 +61,15 @@ export default function ScrollVideoHero() {
   return (
     <section 
       ref={containerRef}
-      className="relative w-full h-[600vh] bg-white"
+      className="relative w-full bg-white"
+      style={{ height: '600vh' }}
     >
       <div className="sticky top-0 h-screen w-full flex items-center overflow-hidden">
         <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-[2000px] mx-auto">
           
           {/* Left Text */}
           <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-left text-center mt-16 lg:mt-0">
-            <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative z-20">
+            <h1 className="text-[42px] sm:text-[54px] md:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
               Gjej banesën
               <br />
               <span className="relative inline-block pb-2 lg:pb-3 whitespace-nowrap">
@@ -76,8 +77,8 @@ export default function ScrollVideoHero() {
                 <span 
                   className="absolute left-0 bottom-0 h-[6px] md:h-[8px] bg-[#C8B882] rounded-full z-[100] pointer-events-none"
                   style={{ 
-                    width: `calc(35% + ${progress * 120}vw)`, 
-                    maxWidth: '120vw',
+                    width: `calc(35% + ${progress * 100}vw)`, 
+                    maxWidth: '100vw',
                     transition: 'width 0.1s linear'
                   }}
                 />
