@@ -29,8 +29,8 @@ export default function ScrollVideoHero() {
     }
 
     const renderLoop = () => {
-      // Lerp currentProgress towards targetProgress
-      currentProgress += (targetProgress - currentProgress) * 0.3
+      // Very fast lerp to almost perfectly match scroll speed without micro-jitters
+      currentProgress += (targetProgress - currentProgress) * 0.8
       
       setProgress(currentProgress)
 
