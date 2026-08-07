@@ -8,6 +8,7 @@ export default function ScrollVideoHero() {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [progress, setProgress] = useState(0)
+  const [videoReady, setVideoReady] = useState(false)
 
   useEffect(() => {
     let targetProgress = 0
@@ -130,14 +131,22 @@ export default function ScrollVideoHero() {
             
             {/* Minimalist, borderless video frame with deep elevation */}
             <div className="relative w-full max-w-2xl aspect-video rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
+              
+              {/* Custom Poster Image */}
+              <img 
+                src="/hero-poster.jpg" 
+                alt="Video thumbnail"
+                className={`absolute inset-0 w-full h-full object-cover z-20 pointer-events-none transition-opacity duration-500 ease-in-out ${videoReady ? 'opacity-0' : 'opacity-100'}`}
+              />
+              
               <video 
                 ref={videoRef}
                 src="/hero-video.mp4#t=0.001" 
-                poster="/hero-poster.jpg"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover z-10"
                 muted 
                 playsInline
                 preload="auto"
+                onCanPlay={() => setVideoReady(true)}
                 onLoadedMetadata={() => {
                   if (videoRef.current) {
                     videoRef.current.currentTime = 0.001;
