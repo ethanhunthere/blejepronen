@@ -34,7 +34,8 @@ export default function ScrollVideoHero() {
 
       const video = videoRef.current
       if (video && video.duration && !isNaN(video.duration)) {
-        const safeDuration = video.duration - 0.001
+        // Cut 1 second off the end of the video as requested
+        const safeDuration = video.duration - 1.0
         const targetTime = safeDuration * currentProgress
         video.currentTime = Math.max(0.001, targetTime)
       }
@@ -75,7 +76,7 @@ export default function ScrollVideoHero() {
                 <span className="relative z-10">e duhur në Kosovë</span>
                 <span 
                   className="absolute left-0 bottom-0 h-[4px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full z-10"
-                  style={{ width: `${30 + progress * 55}%` }}
+                  style={{ width: `${20 + progress * 80}%` }}
                 />
               </span>
             </h1>
