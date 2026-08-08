@@ -28,7 +28,14 @@ export default function ScrollVideoHero() {
     }
 
     const renderLoop = () => {
-      currentProgress = targetProgress
+      // Use a fast lerp (linear interpolation) to smooth out discrete mouse wheel jumps.
+      // This prevents the video from looking like it's "moving with frames" when using a standard mouse,
+      // while remaining fast enough to not feel like it's delaying or blocking.
+      currentProgress += (targetProgress - currentProgress) * 0.15
+      
+      if (Math.abs(targetProgress - currentProgress) < 0.0001) {
+        currentProgress = targetProgress
+      }
       
       setProgress(currentProgress)
 
