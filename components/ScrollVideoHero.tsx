@@ -34,10 +34,11 @@ export default function ScrollVideoHero() {
 
       const video = videoRef.current
       if (video && video.duration && !isNaN(video.duration)) {
-        // Cut 1 second off the end of the video as requested
-        const safeDuration = video.duration - 1.0
-        const targetTime = safeDuration * currentProgress
-        video.currentTime = Math.max(0.001, targetTime)
+        // Cut 1 second off the start of the video as requested
+        const startOffset = 1.0
+        const safeDuration = video.duration - startOffset - 0.001
+        const targetTime = startOffset + (safeDuration * currentProgress)
+        video.currentTime = Math.max(startOffset, targetTime)
       }
       
       animationFrameId = requestAnimationFrame(renderLoop)
