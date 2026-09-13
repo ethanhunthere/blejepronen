@@ -964,8 +964,8 @@ export default function PostoPronaPage() {
                   </p>
                 </div>
 
-                {/* 6 Category Selection Cards */}
-                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
+                {/* 6 Category Selection Cards - Sleek, Compact & Fully Responsive */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {(Object.keys(CATEGORIES) as PropertyCategory[]).map((catKey) => {
                     const cat = CATEGORIES[catKey]
                     const IconComp = cat.icon
@@ -976,51 +976,51 @@ export default function PostoPronaPage() {
                         key={catKey}
                         type="button"
                         onClick={() => handleCategorySelect(catKey)}
-                        className={`group relative p-4 sm:p-4.5 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
+                        className={`group relative p-3 sm:p-3.5 rounded-xl sm:rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
                           isSelected
-                            ? 'bg-[#006459]/[0.05] border-[#006459] shadow-sm ring-2 ring-[#006459]/15'
-                            : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 hover:shadow-xs'
+                            ? 'bg-[#006459]/[0.05] border-[#006459] shadow-xs ring-1 sm:ring-2 ring-[#006459]/15'
+                            : 'bg-white border-gray-200/90 hover:border-gray-300 hover:bg-gray-50/70 hover:shadow-2xs'
                         }`}
                       >
                         <div>
-                          <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <div className="flex items-center justify-between gap-1.5 mb-2">
                             <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? 'bg-[#006459] text-white shadow-xs'
-                                  : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900'
+                                  ? 'bg-[#006459] text-white shadow-2xs'
+                                  : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200/80 group-hover:text-gray-900'
                               }`}
                             >
-                              <IconComp className="w-5 h-5" />
+                              <IconComp className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                             </div>
 
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 shrink-0">
                               <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider transition-colors ${
+                                className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider transition-colors ${
                                   isSelected
                                     ? 'bg-[#006459]/10 text-[#006459]'
-                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200/70'
+                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200/60'
                                 }`}
                               >
                                 {cat.badge}
                               </span>
                               {isSelected && (
-                                <div className="w-5 h-5 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                  <Check className="w-3 h-3 stroke-[3]" />
+                                <div className="w-4 h-4 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </div>
                               )}
                             </div>
                           </div>
 
                           <h3
-                            className={`text-sm sm:text-base font-extrabold leading-snug transition-colors ${
+                            className={`text-xs sm:text-sm font-extrabold leading-tight transition-colors ${
                               isSelected ? 'text-[#006459]' : 'text-[#101828]'
                             }`}
                           >
                             {cat.label}
                           </h3>
 
-                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          <p className="text-[11px] sm:text-xs text-gray-500 mt-1 leading-snug line-clamp-2">
                             {cat.description}
                           </p>
                         </div>
