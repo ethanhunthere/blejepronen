@@ -20,14 +20,16 @@ export default function AuthShell({
       {/* Left: white panel with the form (55% — optically reads ~60/40 because
           the white field carries less visual mass than the globe-filled teal) */}
       <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-white px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
-        <div className="w-full max-w-[390px] my-auto py-6 sm:py-8 shrink-0">{children}</div>
+        <div className="w-full max-w-[410px] my-auto py-6 sm:py-10 flex flex-col justify-center shrink-0">
+          {children}
+        </div>
       </div>
 
       {/* Right 45%: teal panel — brand statement floating above the globe */}
       <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#006459]">
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.14),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.06),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.18),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.08),transparent_70%)]" />
           <Image
             src="/logo-white.png"
             alt=""
@@ -42,10 +44,14 @@ export default function AuthShell({
           aria-hidden
           className="relative pointer-events-none select-none px-12 xl:px-14 pt-12 xl:pt-14 shrink-0"
         >
-          <h2 className="max-w-md text-3xl xl:text-[32px] font-extrabold leading-[1.15] tracking-tight text-white/80">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-semibold mb-4">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Platforma #1 e Patundshmërive</span>
+          </div>
+          <h2 className="max-w-md text-3xl xl:text-[34px] font-extrabold leading-[1.15] tracking-tight text-white">
             {headline}
           </h2>
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/45">
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 font-normal">
             {subline}
           </p>
         </div>

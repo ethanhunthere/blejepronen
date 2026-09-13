@@ -253,7 +253,7 @@ export default function CompletoProfilinCompanyPage() {
           <div className="flex flex-col items-center justify-center mb-6">
             <div
               onClick={() => setAvatarModalOpen(true)}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-gray-100 shadow-sm cursor-pointer group hover:border-[#006459]/40 hover:shadow-md transition-all duration-200 bg-gray-50"
+              className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md cursor-pointer group hover:scale-105 transition-all duration-200 bg-gray-50 ring-2 ring-[#006459]/20"
               title="Kliko për të zgjedhur logon / avatarin e kompanisë"
             >
               <Image
@@ -261,19 +261,19 @@ export default function CompletoProfilinCompanyPage() {
                 alt="Avatar"
                 fill
                 sizes="80px"
-                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                className="object-cover transition-transform duration-200"
               />
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                 <Sparkles className="h-5 w-5 drop-shadow" />
               </div>
             </div>
             <button
               type="button"
               onClick={() => setAvatarModalOpen(true)}
-              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs"
+              className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Zgjidh avatar
+              Zgjidh logon / avatarin
             </button>
           </div>
 
@@ -462,7 +462,7 @@ export default function CompletoProfilinCompanyPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="mt-3 w-full h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-3 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
               disabled={loading}
             >
               {loading ? (
@@ -471,7 +471,7 @@ export default function CompletoProfilinCompanyPage() {
                   Duke verifikuar llogarinë...
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-sm sm:text-base">
+                <span className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" />
                   Përfundo dhe verifiko llogarinë
                 </span>

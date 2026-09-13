@@ -15,6 +15,8 @@ interface AuthFieldProps {
   onChange: (value: string) => void
   error?: string
   autoComplete?: string
+  topRight?: React.ReactNode
+  helperText?: React.ReactNode
 }
 
 export default function AuthField({
@@ -27,6 +29,8 @@ export default function AuthField({
   onChange,
   error,
   autoComplete,
+  topRight,
+  helperText,
 }: AuthFieldProps) {
   const [showPassword, setShowPassword] = useState(false)
   const isPasswordField = type === 'password'
@@ -34,14 +38,17 @@ export default function AuthField({
 
   return (
     <div className="space-y-1">
-      <Label
-        htmlFor={id}
-        className={`text-xs sm:text-[13px] font-semibold transition-colors ${
-          error ? 'text-red-600' : 'text-gray-700'
-        }`}
-      >
-        {label}
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label
+          htmlFor={id}
+          className={`text-xs sm:text-[13px] font-semibold transition-colors ${
+            error ? 'text-red-600' : 'text-gray-700'
+          }`}
+        >
+          {label}
+        </Label>
+        {topRight && <div className="text-xs">{topRight}</div>}
+      </div>
       <div className="relative">
         <span
           className={`absolute left-3 top-2.5 sm:top-3 transition-colors [&>svg]:h-4 [&>svg]:w-4 ${
@@ -81,7 +88,7 @@ export default function AuthField({
           </button>
         )}
       </div>
-      {error && (
+      {error ? (
         <p
           id={`${id}-error`}
           role="alert"
@@ -90,7 +97,9 @@ export default function AuthField({
           <AlertCircle className="h-3 w-3 shrink-0" />
           {error}
         </p>
-      )}
+      ) : helperText ? (
+        <div className="text-[11px] text-gray-500">{helperText}</div>
+      ) : null}
     </div>
   )
 }

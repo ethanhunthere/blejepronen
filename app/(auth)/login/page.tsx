@@ -192,31 +192,22 @@ function LoginForm() {
         onGoogle={handleGoogleLogin}
         error={error}
         footer={
-          <>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
+            <span>Nuk keni llogari ende?</span>
             <Link
-              href="/forgot-password"
-              className="font-medium text-[#006459] hover:underline"
+              href="/register"
+              className="font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
             >
-              Keni harruar fjalëkalimin?
+              Regjistrohu falas →
             </Link>
-            <span className="mx-2 text-gray-300">·</span>
-            <span>
-              Nuk ke llogari?{' '}
-              <Link
-                href="/register"
-                className="font-medium text-[#006459] hover:underline"
-              >
-                Regjistrohu falas
-              </Link>
-            </span>
-          </>
+          </div>
         }
       >
         <Suspense fallback={null}>
           <VerifiedMessage />
         </Suspense>
 
-        <form onSubmit={handleLogin} noValidate className="space-y-2.5 sm:space-y-3">
+        <form onSubmit={handleLogin} noValidate className="space-y-3 sm:space-y-3.5">
           <AuthField
             id="email"
             label="Email"
@@ -240,6 +231,14 @@ function LoginForm() {
             placeholder="••••••••"
             autoComplete="current-password"
             icon={<Lock className="h-4 w-4" />}
+            topRight={
+              <Link
+                href="/forgot-password"
+                className="font-medium text-[12px] text-[#006459] hover:underline"
+              >
+                Keni harruar fjalëkalimin?
+              </Link>
+            }
             value={password}
             onChange={(v) => {
               setPassword(v)
@@ -251,7 +250,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            className="mt-1 w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+            className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (
@@ -260,7 +259,7 @@ function LoginForm() {
                 Duke hyrë...
               </span>
             ) : (
-              'Hyr'
+              'Hyr në llogari'
             )}
           </button>
         </form>

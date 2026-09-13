@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Phone, ArrowRight, Loader2, CheckCircle2, Building2, Sparkles } from 'lucide-react'
+import { User, Phone, ArrowRight, Loader2, CheckCircle2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import AvatarPickerModal from '@/components/AvatarPickerModal'
 import { DEFAULT_AVATAR } from '@/lib/avatars'
@@ -181,21 +181,24 @@ export default function CompletoProfilinFastPage() {
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Verification Success Pill */}
-        <div className="mb-4 py-2 px-3 rounded-2xl bg-[#006459]/10 border border-[#006459]/20 text-[#006459] text-xs sm:text-sm font-medium flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[#006459]" />
-          <span>Email-i u konfirmua me sukses</span>
+        <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs sm:text-sm font-medium flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span>Email-i u konfirmua me sukses</span>
+          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+            Individual
+          </span>
         </div>
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-6 sm:p-8 md:p-9">
           <div className="mb-5 text-center">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#101828]">
-              {isCompany ? 'Plotëso profilin e kompanisë' : 'Plotëso profilin tënd'}
+            <h1 className="text-2xl sm:text-[26px] font-black tracking-tight text-[#101828]">
+              Plotëso profilin tënd
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-gray-500">
-              {isCompany
-                ? 'Konfirmo të dhënat e kompanisë dhe numrin e telefonit'
-                : 'Vendos emrin, mbiemrin dhe numrin e telefonit për të vazhduar'}
+            <p className="mt-1.5 text-xs sm:text-sm text-gray-500 max-w-sm mx-auto">
+              Vendos emrin, mbiemrin dhe numrin tënd të telefonit për të filluar menjëherë.
             </p>
           </div>
 
@@ -203,7 +206,7 @@ export default function CompletoProfilinFastPage() {
           <div className="flex flex-col items-center justify-center mb-6">
             <div
               onClick={() => setAvatarModalOpen(true)}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-gray-100 shadow-sm cursor-pointer group hover:border-[#006459]/40 hover:shadow-md transition-all duration-200 bg-gray-50"
+              className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md cursor-pointer group hover:scale-105 transition-all duration-200 bg-gray-50 ring-2 ring-[#006459]/20"
               title="Kliko për të zgjedhur avatarin tënd"
             >
               <Image
@@ -211,112 +214,113 @@ export default function CompletoProfilinFastPage() {
                 alt="Avatar"
                 fill
                 sizes="80px"
-                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                className="object-cover transition-transform duration-200"
               />
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                 <Sparkles className="h-5 w-5 drop-shadow" />
               </div>
             </div>
             <button
               type="button"
               onClick={() => setAvatarModalOpen(true)}
-              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs"
+              className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Zgjidh avatar
+              Zgjidh nga 20 avatarët
             </button>
           </div>
 
           {error && (
             <Alert
               variant="destructive"
-              className="mb-5 bg-red-50 border-red-200 text-red-600 rounded-xl text-xs sm:text-[13px]"
+              className="mb-5 bg-red-50/90 border-red-200 text-red-600 rounded-xl text-xs sm:text-[13px]"
             >
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label
-                htmlFor="firstName"
-                className={`text-xs sm:text-[13px] font-semibold block mb-1.5 ${
-                  fieldErrors.firstName ? 'text-red-600' : 'text-gray-700'
-                }`}
-              >
-                {isCompany ? 'Emri i Kompanisë' : 'Emri'}
-              </Label>
-              <div className="relative">
-                {isCompany ? (
-                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+              <div>
+                <Label
+                  htmlFor="firstName"
+                  className={`text-xs sm:text-[13px] font-semibold block mb-1.5 ${
+                    fieldErrors.firstName ? 'text-red-600' : 'text-gray-700'
+                  }`}
+                >
+                  Emri <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="firstName"
+                    placeholder="Emri yt"
+                    autoFocus
+                    className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
+                      fieldErrors.firstName
+                        ? 'border-red-300 bg-red-50/60 focus:border-red-400'
+                        : 'border-gray-200 focus:border-[#006459]'
+                    }`}
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value)
+                      if (fieldErrors.firstName) setFieldErrors((p) => ({ ...p, firstName: undefined }))
+                      if (error) setError('')
+                    }}
+                    required
+                  />
+                </div>
+                {fieldErrors.firstName && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.firstName}</p>
                 )}
-                <Input
-                  id="firstName"
-                  placeholder={isCompany ? 'psh. Iliria Real Estate' : 'Emri yt'}
-                  autoFocus
-                  className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
-                    fieldErrors.firstName
-                      ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                      : 'border-gray-200 focus:border-[#006459]'
-                  }`}
-                  value={firstName}
-                  onChange={(e) => {
-                    setFirstName(e.target.value)
-                    if (fieldErrors.firstName) setFieldErrors((p) => ({ ...p, firstName: undefined }))
-                    if (error) setError('')
-                  }}
-                  required
-                />
               </div>
-              {fieldErrors.firstName && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.firstName}</p>
-              )}
+
+              <div>
+                <Label
+                  htmlFor="lastName"
+                  className={`text-xs sm:text-[13px] font-semibold block mb-1.5 ${
+                    fieldErrors.lastName ? 'text-red-600' : 'text-gray-700'
+                  }`}
+                >
+                  Mbiemri <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="lastName"
+                    placeholder="Mbiemri yt"
+                    className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
+                      fieldErrors.lastName
+                        ? 'border-red-300 bg-red-50/60 focus:border-red-400'
+                        : 'border-gray-200 focus:border-[#006459]'
+                    }`}
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value)
+                      if (fieldErrors.lastName) setFieldErrors((p) => ({ ...p, lastName: undefined }))
+                      if (error) setError('')
+                    }}
+                    required
+                  />
+                </div>
+                {fieldErrors.lastName && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.lastName}</p>
+                )}
+              </div>
             </div>
 
             <div>
-              <Label
-                htmlFor="lastName"
-                className={`text-xs sm:text-[13px] font-semibold block mb-1.5 ${
-                  fieldErrors.lastName ? 'text-red-600' : 'text-gray-700'
-                }`}
-              >
-                {isCompany ? 'Personi kontaktues (opsionale)' : 'Mbiemri'}
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="lastName"
-                  placeholder={isCompany ? 'psh. Menaxher shitjesh' : 'Mbiemri yt'}
-                  className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
-                    fieldErrors.lastName
-                      ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                      : 'border-gray-200 focus:border-[#006459]'
+              <div className="flex items-center justify-between mb-1.5">
+                <Label
+                  htmlFor="phone"
+                  className={`text-xs sm:text-[13px] font-semibold ${
+                    fieldErrors.phone ? 'text-red-600' : 'text-gray-700'
                   }`}
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value)
-                    if (fieldErrors.lastName) setFieldErrors((p) => ({ ...p, lastName: undefined }))
-                    if (error) setError('')
-                  }}
-                  required={!isCompany}
-                />
+                >
+                  Numri i telefonit
+                </Label>
+                <span className="text-[11px] text-gray-400">Për kontakt direkt</span>
               </div>
-              {fieldErrors.lastName && (
-                <p className="mt-1 text-xs text-red-600">{fieldErrors.lastName}</p>
-              )}
-            </div>
-
-            <div>
-              <Label
-                htmlFor="phone"
-                className={`text-xs sm:text-[13px] font-semibold block mb-1.5 ${
-                  fieldErrors.phone ? 'text-red-600' : 'text-gray-700'
-                }`}
-              >
-                {isCompany ? 'Numri i telefonit të kompanisë' : 'Numri i telefonit'}
-              </Label>
               <div className="relative">
                 <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -343,7 +347,7 @@ export default function CompletoProfilinFastPage() {
 
             <Button
               type="submit"
-              className="mt-2 w-full h-11 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
               disabled={loading}
             >
               {loading ? (
@@ -352,7 +356,7 @@ export default function CompletoProfilinFastPage() {
                   Duke ruajtur...
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   Përfundo dhe vazhdo
                   <ArrowRight className="h-4 w-4" />
                 </span>

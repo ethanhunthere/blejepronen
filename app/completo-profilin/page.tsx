@@ -98,6 +98,12 @@ export default function CompletoProfilinPage() {
         return
       }
 
+      // If email is already confirmed or verified (e.g. from /register OTP or Google), redirect to fast onboarding
+      if (user.email_confirmed_at || profile?.email_verified) {
+        router.replace('/completo-profilin-fast')
+        return
+      }
+
       // Pre-fill from existing profile or Google user_metadata
       let initialFirst = profile?.first_name || ''
       let initialLast = profile?.last_name || ''

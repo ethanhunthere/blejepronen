@@ -235,6 +235,8 @@ export default function RegisterPage() {
     })
   }
 
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
   return (
     <AuthShell
       headline="Regjistrohu dhe fillo sot"
@@ -243,57 +245,77 @@ export default function RegisterPage() {
       {step === 'form' ? (
         <AuthPanel
           title="Krijo llogari"
-          subtitle="Gjej shtëpi ose posto pronën tënde"
+          subtitle="Zgjidh profilin tënd për të vazhduar"
           googleLabel="Regjistrohu me Google"
           onGoogle={handleGoogleLogin}
           error={error}
           footer={
-            <span>
-              Ke llogari?{' '}
-              <Link href="/login" className="font-medium text-[#006459] hover:underline">
-                Hyr këtu
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
+              <span>Keni tashmë një llogari?</span>
+              <Link href="/login" className="font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5">
+                Hyr këtu →
               </Link>
-            </span>
+            </div>
           }
         >
-          <form onSubmit={handleRegister} noValidate className="space-y-2.5 sm:space-y-3">
-            {/* Account Type Selector — Lands on Individual by default */}
-            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80 mb-3">
+          <form onSubmit={handleRegister} noValidate className="space-y-3 sm:space-y-3.5">
+            {/* Account Type Selector — Individual vs Company */}
+            <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-gray-100/90 border border-gray-200/80 mb-3.5">
               <button
                 type="button"
                 onClick={() => {
                   setAccountType('individual')
                   if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }))
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-150 cursor-pointer ${
                   accountType === 'individual'
-                    ? 'bg-white text-[#006459] shadow-xs'
-                    : 'text-gray-500 hover:text-gray-800'
+                    ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
+                    : 'text-gray-500 hover:text-gray-800 font-semibold'
                 }`}
               >
-                <User className="h-3.5 w-3.5" />
-                <span>Individual</span>
+                <div className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                  <User className="h-3.5 w-3.5" />
+                  <span>Individual</span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-normal mt-0.5">
+                  Blerës & Pronarë
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setAccountType('company')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-150 cursor-pointer ${
                   accountType === 'company'
-                    ? 'bg-white text-[#006459] shadow-xs'
-                    : 'text-gray-500 hover:text-gray-800'
+                    ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
+                    : 'text-gray-500 hover:text-gray-800 font-semibold'
                 }`}
               >
-                <Building2 className="h-3.5 w-3.5" />
-                <span>Kompani</span>
+                <div className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                  <Building2 className="h-3.5 w-3.5" />
+                  <span>Kompani</span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-normal mt-0.5">
+                  Agjenci & Ndërtues
+                </span>
               </button>
             </div>
+
+            {/* Extra reassurance hint when Kompani is selected */}
+            {accountType === 'company' && (
+              <div className="p-2.5 rounded-xl bg-[#006459]/5 border border-[#006459]/20 text-[11.5px] text-[#006459] flex items-center gap-2 animate-in fade-in duration-200">
+                <Building2 className="h-4 w-4 shrink-0 text-[#006459]" />
+                <span>
+                  Llogaria e kompanisë pajiset me profil agjencie dhe etiketë zyrtare në të gjitha pronat.
+                </span>
+              </div>
+            )}
 
             {/* Extra field when Kompani is selected */}
             {accountType === 'company' && (
               <AuthField
                 id="companyName"
-                label="Emri i Kompanisë"
+                label="Emri i Kompanisë / Agjencisë"
                 type="text"
                 placeholder="psh. Iliria Real Estate"
                 autoComplete="organization"
@@ -309,7 +331,7 @@ export default function RegisterPage() {
 
             <AuthField
               id="email"
-              label={accountType === 'company' ? 'Email i kompanisë' : 'Email'}
+              label={accountType === 'company' ? 'Email zyrtar i kompanisë' : 'Email'}
               type="email"
               placeholder={accountType === 'company' ? 'info@kompania.com' : 'emri@email.com'}
               autoComplete="email"
@@ -335,11 +357,24 @@ export default function RegisterPage() {
                 if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }))
               }}
               error={fieldErrors.password}
+              helperText={
+                password.length > 0 ? (
+                  password.length >= 6 ? (
+                    <span className="text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                      <CheckCircle2 className="h-3 w-3" /> Fjalëkalimi plotëson kriteret
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 font-medium flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" /> Duhen të paktën 6 karaktere
+                    </span>
+                  )
+                ) : undefined
+              }
             />
 
             <button
               type="submit"
-              className="mt-1 w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -351,6 +386,18 @@ export default function RegisterPage() {
                 'Regjistrohu'
               )}
             </button>
+
+            <p className="text-[11px] text-gray-500 text-center leading-relaxed pt-1">
+              Duke u regjistruar, ju pranoni{' '}
+              <Link href="/kushtet" className="text-gray-700 underline hover:text-[#006459]">
+                Kushtet e Përdorimit
+              </Link>{' '}
+              dhe{' '}
+              <Link href="/privatesia" className="text-gray-700 underline hover:text-[#006459]">
+                Politikën e Privatësisë
+              </Link>
+              .
+            </p>
           </form>
         </AuthPanel>
       ) : (
@@ -366,10 +413,10 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-[26px] font-extrabold leading-tight tracking-tight text-[#101828]">
+          <h1 className="text-2xl sm:text-[27px] font-black leading-tight tracking-tight text-[#101828]">
             Verifiko email-in
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500">
+          <p className="mt-1.5 text-xs sm:text-[13.5px] text-gray-500">
             Vendos kodin 6-shifror për të aktivizuar llogarinë
           </p>
 
@@ -377,46 +424,72 @@ export default function RegisterPage() {
             {error && (
               <Alert
                 variant="destructive"
-                className="mb-3 py-2 px-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[13px] leading-snug"
+                className="mb-3.5 py-2.5 px-3.5 bg-red-50/90 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[13px] leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
               >
                 <AlertDescription className="text-xs sm:text-[13px] font-medium flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  {error}
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                  <span>{error}</span>
                 </AlertDescription>
               </Alert>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label htmlFor="otp-code" className="text-xs sm:text-[13px] font-semibold text-gray-700 block mb-1.5">
+                <label htmlFor="otp-code" className="text-xs sm:text-[13px] font-semibold text-gray-700 block mb-2">
                   Kodi i verifikimit
                 </label>
-                <input
-                  id="otp-code"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={6}
-                  placeholder="••••••"
-                  autoFocus
-                  value={code}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
-                    setCode(val)
-                    if (error) setError('')
-                    if (val.length === 6) {
-                      handleVerify(val)
-                    }
-                  }}
-                  className="w-full h-12 text-center text-2xl sm:text-3xl font-bold font-mono tracking-[0.35em] sm:tracking-[0.5em] rounded-xl border border-gray-200 bg-gray-50/80 focus:bg-white focus:border-[#006459] outline-none text-[#101828] transition-all placeholder:text-gray-300"
-                />
+                <div
+                  className="relative cursor-text"
+                  onClick={() => inputRef.current?.focus()}
+                >
+                  <input
+                    ref={inputRef}
+                    id="otp-code"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    autoFocus
+                    value={code}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                      setCode(val)
+                      if (error) setError('')
+                      if (val.length === 6) {
+                        handleVerify(val)
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-text z-10"
+                    aria-label="Kodi i verifikimit 6-shifror"
+                  />
+                  <div className="grid grid-cols-6 gap-2 sm:gap-2.5">
+                    {[0, 1, 2, 3, 4, 5].map((index) => {
+                      const char = code[index] || ''
+                      const isFocused = code.length === index || (code.length === 6 && index === 5)
+                      return (
+                        <div
+                          key={index}
+                          className={`h-12 sm:h-14 rounded-xl border flex items-center justify-center text-xl sm:text-2xl font-bold font-mono transition-all duration-150 select-none ${
+                            char
+                              ? 'border-[#006459] bg-[#006459]/5 text-[#101828] shadow-xs'
+                              : isFocused
+                              ? 'border-[#006459] bg-white ring-2 ring-[#006459]/20 text-transparent'
+                              : 'border-gray-200 bg-gray-50/80 text-transparent'
+                          }`}
+                        >
+                          {char || (isFocused ? <span className="w-0.5 h-6 bg-[#006459] animate-pulse" /> : '')}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleVerify(code)}
                 disabled={verifying || redirecting || code.length !== 6}
-                className="w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                className="w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {redirecting ? (
                   <span className="flex items-center gap-2">
