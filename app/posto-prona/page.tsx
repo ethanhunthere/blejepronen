@@ -29,6 +29,7 @@ import {
   Wand2,
   ChevronRight,
   Eye,
+  RotateCcw,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -414,6 +415,114 @@ interface FormData {
   features: string[]
 }
 
+function generateOrEnhanceDescription(
+  currentText: string,
+  data: FormData,
+  cat: CategoryConfig
+): string {
+  const isSale = data.type === 'shitje'
+  const transType = isSale ? 'në shitje' : 'me qira'
+  const locationParts = [data.neighborhood, data.city].filter(Boolean)
+  const locationStr = locationParts.length > 0 ? locationParts.join(', ') : data.city || 'Kosovë'
+  const areaStr = data.category === 'toke'
+    ? (data.land_ari ? `${data.land_ari} Ari` : (data.area_m2 ? `${data.area_m2} m²` : ''))
+    : (data.area_m2 ? `${data.area_m2} m²` : '')
+  const priceStr = data.price ? `${Number(data.price).toLocaleString('de-DE')} €` : ''
+  const featuresList = data.features && data.features.length > 0 ? data.features : []
+
+  // Case 1: Përdoruesi nuk ka shkruar asgjë -> Gjenero përshkrim të plotë, të pasur dhe profesional
+  if (!currentText.trim()) {
+    const titleLead = `Ofrohet ${transType} ${cat.label.toLowerCase()} me specifikime komode në ${locationStr}.`
+
+    let specSection = ''
+    if (data.category === 'banese') {
+      specSection = `Kjo banesë ${data.subtype ? `e tipologjisë ${data.subtype}` : ''} shquhet për organizim praktik të hapësirës dhe ndriçim të shkëlqyer natyral gjatë gjithë ditës.
+Organizimi i brendshëm përfshin:
+• Sallon të rehatshëm ndenjeje me kuzhinë dhe ambient ngrënieje
+• ${data.rooms ? `${data.rooms} dhoma të përshtatshme me kubaturë të rregullt` : 'Dhoma gjumi të qeta'}
+• Banjo moderne dhe ballkon funksional
+• Pozicionuar në ${data.floor ? `katin ${data.floor}` : 'kat të favorshëm'}${areaStr ? `, me sipërfaqe të përgjithshme prej ${areaStr}` : ''}.`
+    } else if (data.category === 'shtepi') {
+      specSection = `Kjo shtëpi ${data.subtype ? `(${data.subtype})` : 'familjare'} ofron komoditet maksimal, privatësi dhe ambient të qetë ideal për jetesë të rehatshme.
+Pikat kryesore:
+• Ndërtim cilësor dhe i mirëorganizuar ${data.floor ? `në ${data.floor} kate` : ''}
+• ${data.rooms ? `${data.rooms} dhoma të bollshme me ajrosje dhe dritë natyrale` : 'Dhomë ndenjeje e gjerë dhe dhoma gjumi komode'}
+• ${areaStr ? `Sipërfaqe e përgjithshme banimi prej ${areaStr}` : 'Hapësirë e bollshme banimi'}
+• Oborr i mirëmbajtur me qasje direkte dhe vend për parkim.`
+    } else if (data.category === 'vile') {
+      specSection = `Vilë ekskluzive ${transType} në një prej zonave më prestigjioze dhe të qeta të ${locationStr}.
+Karakteristikat e pronës:
+• Arkitekturë moderne me standarde të larta ndërtimi dhe termoizolimi
+• ${areaStr ? `Sipërfaqe banimi prej ${areaStr}` : 'Hapësirë madhështore'} me organizim elegant të ambienteve ditore dhe të fjetjes
+• Oborr privat, ambient i rrethuar me privatësi maksimale dhe ambient relaksues
+• Zgjedhje e përkryer për ata që vlerësojnë sigurinë, qetësinë dhe komoditetin e nivelit të lartë.`
+    } else if (data.category === 'toke') {
+      specSection = `Ofrohet ${transType} truall me potencial të lartë zhvillimi dhe investimi në ${locationStr}.
+Detajet e parcelës:
+• ${areaStr ? `Sipërfaqe totale prej ${areaStr}` : 'Sipërfaqe e favorshme'}
+• Terren i rregullt me qasje të drejtpërdrejtë në rrugë
+• Infrastrukturë e afërt (rrjeti elektrik, ujësjellësi)
+• Dokumentacion i rregullt kadastral me fletë poseduese, i gatshëm për bartje.`
+    } else if (data.category === 'lokal') {
+      specSection = `Hapësirë moderne afariste ${transType} me pozitë strategjike në ${locationStr}.
+Përparësitë kryesore:
+• ${areaStr ? `Sipërfaqe shfrytëzuese prej ${areaStr}` : 'Hapësirë e hapur dhe funksionale'}
+• Fasada me pamje dhe ekspozim të shkëlqyer nga rruga kryesore
+• Ideale për zyra përfaqësie, klinikë, farmaci, showroom, dyqan apo aktivitete të tjera komerciale
+• Qasje e lehtë dhe mundësi parkingu për stafin dhe klientët.`
+    } else {
+      specSection = `Ofrohet ${transType} garazhë / hapësirë depoje e sigurt dhe lehtësisht e qasshme në ${locationStr}.
+• ${areaStr ? `Sipërfaqe prej ${areaStr}` : 'Hapësirë e bollshme dhe e mbyllur'}
+• Siguri e garantuar dhe mirëmbajtje e vazhdueshme
+• E përshtatshme për parkim automjeti apo magazinim mallrash.`
+    }
+
+    const featuresBlock = featuresList.length > 0
+      ? `\n\nPajisjet dhe përparësitë e pronës:\n${featuresList.map((f) => `• ${f}`).join('\n')}`
+      : ''
+
+    const priceBlock = priceStr ? `\n\nÇmimi: ${priceStr}${isSale ? ' (i negociueshëm)' : ' në muaj'}` : ''
+
+    const footerBlock = `\n\nPër informata shtesë, dokumentacion të plotë apo për të caktuar një vizitë në pronë, ju lutemi të na kontaktoni.`
+
+    return `${titleLead}\n\n${specSection}${featuresBlock}${priceBlock}${footerBlock}`.trim()
+  }
+
+  // Case 2: Përdoruesi ka shkruar disa fjalë / shënime -> Rregullo, pastro dhe ngrije në stil profesional
+  const trimmed = currentText.trim()
+  const cleaned = trimmed
+    .replace(/\s+/g, ' ')
+    .replace(/([.!?])\s*([a-zëç])/g, (_m, p1, p2) => `${p1} ${p2.toUpperCase()}`)
+
+  const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+
+  let enhanced = `Ofrohet ${transType} ${cat.label.toLowerCase()} në ${locationStr}.\n\n`
+  enhanced += `Përshkrimi i pronës:\n${capitalized}\n\n`
+
+  const specs: string[] = []
+  if (areaStr) specs.push(`• Sipërfaqja: ${areaStr}`)
+  if (data.subtype) specs.push(`• Tipologjia: ${data.subtype}`)
+  if (cat.hasRooms && data.rooms) specs.push(`• Dhomat: ${data.rooms}`)
+  if (cat.hasFloors && data.floor) specs.push(`• Kati / Niveli: Kati ${data.floor}`)
+  if (data.condition) {
+    const condLabel = cat.conditions.find((c) => c.value === data.condition)?.label || data.condition
+    specs.push(`• Gjendja: ${condLabel}`)
+  }
+  if (priceStr) specs.push(`• Çmimi: ${priceStr}${isSale ? ' (i negociueshëm)' : ' / muaj'}`)
+
+  if (specs.length > 0) {
+    enhanced += `Të dhënat kryesore:\n${specs.join('\n')}\n\n`
+  }
+
+  if (featuresList.length > 0) {
+    enhanced += `Përparësitë & Veçoritë:\n${featuresList.map((f) => `• ${f}`).join('\n')}\n\n`
+  }
+
+  enhanced += `Prona disponon dokumentacion të rregullt. Për më shumë informata apo për të caktuar një vizitë në pronë, ju mirëpresim të na kontaktoni.`
+
+  return enhanced.trim()
+}
+
 export default function PostoPronaPage() {
   const [formData, setFormData] = useState<FormData>({
     category: 'banese',
@@ -442,11 +551,40 @@ export default function PostoPronaPage() {
   const [unverified, setUnverified] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false)
+  const [undoDescription, setUndoDescription] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
   const isSubmittingRef = useRef(false)
 
   const activeCategory = CATEGORIES[formData.category]
+
+  // Smart Description Generator / Enhancer
+  const handleAutoDescription = () => {
+    setIsGeneratingDesc(true)
+    const current = formData.description || ''
+    setUndoDescription(current)
+
+    setTimeout(() => {
+      const generated = generateOrEnhanceDescription(current, formData, activeCategory)
+      setFormData((prev) => ({ ...prev, description: generated }))
+      setIsGeneratingDesc(false)
+
+      if (current.trim().length > 0) {
+        toast.success('Përshkrimi u rregullua dhe u formatua profesionalisht!')
+      } else {
+        toast.success('Përshkrimi profesional u sugjerua me sukses!')
+      }
+    }, 300)
+  }
+
+  const handleUndoDescription = () => {
+    if (undoDescription !== null) {
+      setFormData((prev) => ({ ...prev, description: undoDescription }))
+      setUndoDescription(null)
+      toast.info('Përshkrimi i mëparshëm u rikthye.')
+    }
+  }
 
   // Update category handler with smart synchronized defaults
   const handleCategorySelect = (catId: PropertyCategory) => {
@@ -2358,9 +2496,51 @@ export default function PostoPronaPage() {
 
                 {/* Description */}
                 <div>
-                  <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5 block">
-                    Përshkrimi i hollësishëm <span className="text-red-500">*</span>
-                  </Label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                      Përshkrimi i hollësishëm <span className="text-red-500">*</span>
+                    </Label>
+
+                    <div className="flex items-center gap-2">
+                      {undoDescription !== null && (
+                        <button
+                          type="button"
+                          onClick={handleUndoDescription}
+                          className="text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Kthe tekstin e mëparshëm</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleAutoDescription}
+                        disabled={isGeneratingDesc}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 ${
+                          formData.description.trim().length > 0
+                            ? 'bg-[#C8B882]/25 text-[#006459] hover:bg-[#C8B882]/40 border border-[#C8B882]/50'
+                            : 'bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white border border-[#006459]/20'
+                        }`}
+                      >
+                        {isGeneratingDesc ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : formData.description.trim().length > 0 ? (
+                          <Wand2 className="w-3.5 h-3.5 text-[#006459]" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5 text-[#006459]" />
+                        )}
+                        <span>
+                          {isGeneratingDesc
+                            ? 'Duke përpunuar...'
+                            : formData.description.trim().length > 0
+                            ? 'Rregullo & përmirëso përshkrimin'
+                            : 'Sugjero përshkrim profesional'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
                   <textarea
                     id="description"
                     name="description"
@@ -2368,15 +2548,17 @@ export default function PostoPronaPage() {
                     onChange={handleChange}
                     placeholder={activeCategory.descriptionPlaceholder}
                     maxLength={MAX_DESCRIPTION_LENGTH}
-                    rows={5}
-                    className="w-full p-4 rounded-xl border border-gray-200 text-sm sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006459]/50 resize-none transition-all"
+                    rows={6}
+                    className="w-full p-4 rounded-xl border border-gray-200 text-sm sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006459]/40 focus:border-[#006459] resize-y transition-all leading-relaxed"
                     required
                   />
-                  <div className="flex items-center justify-between mt-1 text-xs text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mt-1.5 text-xs text-gray-500">
                     <span>
-                      Këshillë: Përmendni avantazhet kryesore, orientimin, gjendjen e dokumentacionit dhe mundësinë e negociimit.
+                      {formData.description.trim().length === 0
+                        ? 'Kliko "Sugjero përshkrim profesional" për ta plotësuar automatikisht bazuar në të dhënat e pronës.'
+                        : 'Kliko "Rregullo & përmirëso përshkrimin" për ta formatuar tekstin tuaj në mënyrë të qartë dhe profesionale.'}
                     </span>
-                    <span>
+                    <span className="font-mono text-[11px] text-gray-400 self-end sm:self-auto shrink-0">
                       {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
                     </span>
                   </div>
