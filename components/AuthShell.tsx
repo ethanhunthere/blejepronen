@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Image from 'next/image'
 import Globe from '@/components/originkit/ui/globe-fast'
 
@@ -6,6 +7,51 @@ interface AuthShellProps {
   headline?: string
   subline?: string
 }
+
+const AuthTealPanel = memo(function AuthTealPanel({
+  headline,
+  subline,
+}: {
+  headline: string
+  subline: string
+}) {
+  return (
+    <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#006459]">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.18),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.08),transparent_70%)]" />
+        <Image
+          src="/logo-white.png"
+          alt=""
+          width={512}
+          height={512}
+          className="absolute -right-24 -bottom-32 w-[420px] max-w-none opacity-[0.06] -rotate-6"
+        />
+      </div>
+
+      {/* Decorative copy: part of the background, not interactive UI */}
+      <div
+        aria-hidden
+        className="relative pointer-events-none select-none px-12 xl:px-14 pt-12 xl:pt-14 shrink-0"
+      >
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-semibold mb-4">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Platforma #1 e Patundshmërive</span>
+        </div>
+        <h2 className="max-w-md text-3xl xl:text-[34px] font-extrabold leading-[1.15] tracking-tight text-white">
+          {headline}
+        </h2>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 font-normal">
+          {subline}
+        </p>
+      </div>
+
+      <div className="relative min-h-0 flex-1 -mt-2 overflow-hidden" id="auth-animation-container">
+        <Globe scale={9} />
+      </div>
+    </div>
+  )
+})
 
 export default function AuthShell({
   children,
@@ -26,40 +72,7 @@ export default function AuthShell({
       </div>
 
       {/* Right 45%: teal panel — brand statement floating above the globe */}
-      <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#006459]">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.18),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.08),transparent_70%)]" />
-          <Image
-            src="/logo-white.png"
-            alt=""
-            width={512}
-            height={512}
-            className="absolute -right-24 -bottom-32 w-[420px] max-w-none opacity-[0.06] -rotate-6"
-          />
-        </div>
-
-        {/* Decorative copy: part of the background, not interactive UI */}
-        <div
-          aria-hidden
-          className="relative pointer-events-none select-none px-12 xl:px-14 pt-12 xl:pt-14 shrink-0"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-semibold mb-4">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Platforma #1 e Patundshmërive</span>
-          </div>
-          <h2 className="max-w-md text-3xl xl:text-[34px] font-extrabold leading-[1.15] tracking-tight text-white">
-            {headline}
-          </h2>
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 font-normal">
-            {subline}
-          </p>
-        </div>
-
-        <div className="relative min-h-0 flex-1 -mt-2 overflow-hidden" id="auth-animation-container">
-          <Globe scale={9} />
-        </div>
-      </div>
+      <AuthTealPanel headline={headline} subline={subline} />
     </div>
   )
 }

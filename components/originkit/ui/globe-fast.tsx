@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, memo, type CSSProperties } from "react";
 import type { GlobeSceneOptions } from "./globe-fast-scene";
 
 interface Marker {
@@ -24,21 +24,25 @@ interface GlobeProps {
     style?: CSSProperties;
 }
 
-export default function Globe({
+const DEFAULT_DOTS = { color: "#77CC7D", size: 10, density: 7 };
+const DEFAULT_MARKERS: Marker[] = [
+    { lat: 41, lng: 13 },
+    { lat: -47, lng: -80 },
+    { lat: 73, lng: -98 },
+];
+const DEFAULT_MARKER_CONFIG = {
+    size: 40,
+    color: "#FB1466",
+    markers: DEFAULT_MARKERS,
+};
+
+function Globe({
     speed = 2,
     smoothing = 8,
-    dots = { color: "#77CC7D", size: 10, density: 7 },
+    dots = DEFAULT_DOTS,
     scale = 8,
     stopOnHover = true,
-    markerConfig = {
-        size: 40,
-        color: "#FB1466",
-        markers: [
-            { lat: 41, lng: 13 },
-            { lat: -47, lng: -80 },
-            { lat: 73, lng: -98 },
-        ],
-    },
+    markerConfig = DEFAULT_MARKER_CONFIG,
     direction = "left",
     initialLatitude = 23,
     initialLongitude = -23,
@@ -103,7 +107,9 @@ export default function Globe({
         dots.size,
         scale,
         stopOnHover,
-        markerConfig,
+        markerConfig.color,
+        markerConfig.size,
+        markerConfig.markers,
         direction,
         initialLatitude,
         initialLongitude,
@@ -159,3 +165,5 @@ export default function Globe({
         </div>
     );
 }
+
+export default memo(Globe);
