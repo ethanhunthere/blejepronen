@@ -34,6 +34,7 @@ import {
   ArrowDown,
   AlertCircle,
   X,
+  Mail,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import { getAvatarUrl } from '@/lib/avatars'
@@ -84,20 +85,28 @@ export default function SettingsPage() {
   // Account Type
   const [isCompany, setIsCompany] = useState(false)
 
-  // Profile Fields
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [city, setCity] = useState('')
-  const [bio, setBio] = useState('')
+  // Individual Specific Fields (Preserved permanently)
+  const [individualFirstName, setIndividualFirstName] = useState('')
+  const [individualLastName, setIndividualLastName] = useState('')
+  const [individualPhone, setIndividualPhone] = useState('')
+  const [individualEmail, setIndividualEmail] = useState('')
+  const [individualBio, setIndividualBio] = useState('')
 
-  // Company Specific Fields
+  // Company Specific Fields (Preserved permanently)
+  const [companyName, setCompanyName] = useState('')
+  const [companyContactPerson, setCompanyContactPerson] = useState('')
+  const [companyPhone, setCompanyPhone] = useState('')
+  const [companyEmail, setCompanyEmail] = useState('')
   const [companyDescription, setCompanyDescription] = useState('')
   const [foundedYear, setFoundedYear] = useState('')
   const [nipt, setNipt] = useState('')
   const [officeAddress, setOfficeAddress] = useState('')
   const [website, setWebsite] = useState('')
+
+  // Common Profile Fields
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [city, setCity] = useState('')
+  const [updatingEmail, setUpdatingEmail] = useState(false)
 
   // Social Links
   const [socials, setSocials] = useState<SocialLinks>({
@@ -192,28 +201,84 @@ export default function SettingsPage() {
       const meta = activeUser.user_metadata || {}
       const isComp =
         meta.account_type === 'company' ||
+        meta.is_company === true ||
         Boolean(meta.company_name) ||
         prof?.last_name === 'Kompani'
 
       setIsCompany(isComp)
-      setIsEmailVerified(Boolean(prof?.email_verified))
 
-      if (prof) {
-        setFirstName(prof.first_name || '')
-        setLastName(isComp && prof.last_name === 'Kompani' ? '' : (prof.last_name || ''))
-        setPhone(prof.phone || '')
-        setAvatarUrl(prof.avatar_url || '/avatars/avatar-1.png')
-      }
+      // Verified status: email is verified permanently if confirmed or google
+      const isGoogle = activeUser.app_metadata?.provider === 'google'
+      const verified =
+        Boolean(prof?.email_verified) ||
+        Boolean(activeUser.email_confirmed_at) ||
+        Boolean(activeUser.confirmed_at) ||
+        isGoogle
+
+      setIsEmailVerified(verified)
+
+      // Populate Individual Fields safely (never overwritten by company exploration)
+      const indFirst =
+        meta.individual_first_name ||
+        (!isComp ? prof?.first_name : '') ||
+        (!isComp && meta.first_name ? meta.first_name : '') ||
+        ''
+      const indLast =
+        meta.individual_last_name ||
+        (!isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
+        (!isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
+        ''
+      const indPhone =
+        meta.individual_phone ||
+        (!isComp ? prof?.phone : '') ||
+        (!isComp && meta.phone ? meta.phone : '') ||
+        ''
+      const indEmail = meta.individual_email || activeUser.email || ''
+      const indBio = meta.individual_bio || (!isComp ? meta.bio : '') || ''
+
+      setIndividualFirstName(indFirst)
+      setIndividualLastName(indLast)
+      setIndividualPhone(indPhone)
+      setIndividualEmail(indEmail)
+      setIndividualBio(indBio)
+
+      // Populate Company Fields safely (never overwritten by individual exploration)
+      const compName =
+        meta.company_name ||
+        (isComp ? prof?.first_name : '') ||
+        (isComp && meta.first_name ? meta.first_name : '') ||
+        ''
+      const compContact =
+        meta.contact_person ||
+        (isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
+        (isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
+        ''
+      const compPhone =
+        meta.company_phone ||
+        (isComp ? prof?.phone : '') ||
+        (isComp && meta.phone ? meta.phone : '') ||
+        ''
+      const compEmail = meta.company_email || ''
+      const compDesc =
+        meta.company_description ||
+        (isComp ? meta.bio : '') ||
+        ''
+
+      setCompanyName(compName)
+      setCompanyContactPerson(compContact)
+      setCompanyPhone(compPhone)
+      setCompanyEmail(compEmail)
+      setCompanyDescription(compDesc)
+      if (meta.founded_year) setFoundedYear(String(meta.founded_year))
+      if (meta.nipt) setNipt(meta.nipt)
+      if (meta.office_address) setOfficeAddress(meta.office_address)
+      if (meta.website) setWebsite(meta.website)
+
+      // Common fields
+      if (meta.city) setCity(meta.city)
+      setAvatarUrl(prof?.avatar_url || meta.avatar_url || '/avatars/avatar-1.png')
 
       if (meta) {
-        if (meta.bio) setBio(meta.bio)
-        if (meta.city) setCity(meta.city)
-        if (meta.company_description) setCompanyDescription(meta.company_description)
-        if (meta.founded_year) setFoundedYear(String(meta.founded_year))
-        if (meta.nipt) setNipt(meta.nipt)
-        if (meta.office_address) setOfficeAddress(meta.office_address)
-        if (meta.website) setWebsite(meta.website)
-
         setSocials({
           instagram: meta.instagram || '',
           facebook: meta.facebook || '',
@@ -238,28 +303,88 @@ export default function SettingsPage() {
     loadUserData()
   }, [router, supabase])
 
+  // Email update handler
+  const handleUpdateAccountEmail = async (targetEmail: string) => {
+    const trimmed = targetEmail.trim()
+    if (!trimmed || !trimmed.includes('@')) {
+      toast.error('Ju lutemi vendosni një adresë email të vlefshme.')
+      return
+    }
+    if (trimmed.toLowerCase() === userEmail.toLowerCase()) {
+      toast.info('Kjo adresë email është tashmë email-i juaj aktiv i llogarisë.')
+      return
+    }
+    setUpdatingEmail(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ email: trimmed })
+      if (error) throw error
+      toast.success(
+        `Një email konfirmimi u dërgua te ${trimmed}. Ju lutemi klikoni linkun në email për të finalizuar ndryshimin.`
+      )
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Dështoi përditësimi i emailit të llogarisë.'
+      toast.error(msg)
+    } finally {
+      setUpdatingEmail(false)
+    }
+  }
+
   // Save changes handler
   const handleSaveSettings = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!currentUserId) return
 
+    // Validation
+    if (isCompany) {
+      if (!companyName.trim()) {
+        toast.error('Ju lutemi shkruani emrin e kompanisë.')
+        return
+      }
+    } else {
+      if (!individualFirstName.trim()) {
+        toast.error('Ju lutemi shkruani emrin tuaj.')
+        return
+      }
+    }
+
     setSaving(true)
 
     try {
+      const activeFirstName = isCompany ? companyName.trim() : individualFirstName.trim()
+      const activeLastName = isCompany ? (companyContactPerson.trim() || 'Kompani') : individualLastName.trim()
+      const activePhone = isCompany ? (companyPhone.trim() || individualPhone.trim()) : (individualPhone.trim() || companyPhone.trim())
+      const activeBio = isCompany ? (companyDescription.trim() || individualBio.trim()) : (individualBio.trim() || companyDescription.trim())
+
       const payload = {
-        firstName: firstName.trim(),
-        lastName: isCompany ? (lastName.trim() || 'Kompani') : lastName.trim(),
-        phone: phone.trim(),
+        firstName: activeFirstName,
+        lastName: activeLastName,
+        phone: activePhone,
         avatarUrl,
         isCompany,
         accountType: isCompany ? 'company' : 'individual',
-        bio: bio.trim(),
+        bio: activeBio,
         city: city.trim(),
+        emailVerified: isEmailVerified,
+
+        // Preserved individual data
+        individualFirstName: individualFirstName.trim(),
+        individualLastName: individualLastName.trim(),
+        individualPhone: individualPhone.trim(),
+        individualEmail: individualEmail.trim(),
+        individualBio: individualBio.trim(),
+
+        // Preserved company data
+        companyName: companyName.trim(),
+        companyContactPerson: companyContactPerson.trim(),
+        companyPhone: companyPhone.trim(),
+        companyEmail: companyEmail.trim(),
         companyDescription: companyDescription.trim(),
         foundedYear: foundedYear.trim(),
         nipt: nipt.trim(),
         officeAddress: officeAddress.trim(),
         website: website.trim(),
+
+        // Socials & settings
         instagram: socials.instagram?.trim() || '',
         facebook: socials.facebook?.trim() || '',
         whatsapp: socials.whatsapp?.trim() || '',
@@ -288,8 +413,8 @@ export default function SettingsPage() {
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = avatarUrl
-          parsed.firstName = firstName.trim()
-          parsed.lastName = isCompany ? (lastName.trim() || 'Kompani') : lastName.trim()
+          parsed.firstName = activeFirstName
+          parsed.lastName = activeLastName
           parsed.isCompany = isCompany
           parsed.incomplete = false
           localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
@@ -318,18 +443,24 @@ export default function SettingsPage() {
     }
   }, [
     currentUserId,
-    firstName,
-    lastName,
-    phone,
-    avatarUrl,
     isCompany,
-    bio,
-    city,
+    individualFirstName,
+    individualLastName,
+    individualPhone,
+    individualEmail,
+    individualBio,
+    companyName,
+    companyContactPerson,
+    companyPhone,
+    companyEmail,
     companyDescription,
     foundedYear,
     nipt,
     officeAddress,
     website,
+    avatarUrl,
+    city,
+    isEmailVerified,
     socials,
     linkedin,
     youtube,
@@ -513,8 +644,8 @@ export default function SettingsPage() {
 
   const isCompanyDataComplete = Boolean(
     isCompany &&
-    firstName.trim().length > 0 &&
-    (companyDescription.trim().length > 0 || nipt.trim().length > 0 || officeAddress.trim().length > 0)
+    companyName.trim().length > 0 &&
+    (companyDescription.trim().length > 0 || nipt.trim().length > 0 || officeAddress.trim().length > 0 || companyContactPerson.trim().length > 0)
   )
 
   return (
@@ -653,9 +784,20 @@ export default function SettingsPage() {
                         <User className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-[#101828]">
-                          Llogari Individuale
-                        </h4>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-extrabold text-[#101828]">
+                            Llogari Individuale
+                          </h4>
+                          {isEmailVerified ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              E VERIFIKUAR
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200">
+                              STANDARDE
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-gray-500">Person fizik / Pronar privat</span>
                       </div>
                     </div>
@@ -740,17 +882,19 @@ export default function SettingsPage() {
 
               {/* Unverified Company Prompt Banner with Scroll Signal */}
               {isCompany && !isCompanyDataComplete && (
-                <div className="mt-4 p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in-50 duration-200">
+                <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 animate-in fade-in-50 duration-200">
                   <div className="flex items-start sm:items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                      <AlertCircle className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                      <AlertCircle className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs sm:text-sm font-bold text-amber-900">
-                        Statusi: E paverifikuar si Kompani
+                      <p className="text-xs sm:text-sm font-bold text-amber-950">
+                        Statusi i Agjencisë: E paverifikuar si Kompani
                       </p>
-                      <p className="text-xs text-amber-700 mt-0.5">
-                        Ju lutemi plotësoni emrin dhe të dhënat e kompanisë poshtë në faqe për t&apos;u shfaqur si biznes i verifikuar.
+                      <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        {isEmailVerified
+                          ? 'Email-i juaj është tashmë i verifikuar. Nuk keni nevojë të verifikoheni përsëri me email. Mjafton të plotësoni të dhënat e biznesit poshtë për t’u pajisur me stemën zyrtare të verifikimit.'
+                          : 'Plotësoni emrin dhe të dhënat e kompanisë poshtë në faqe për t’u shfaqur si biznes i verifikuar.'}
                       </p>
                     </div>
                   </div>
@@ -764,7 +908,7 @@ export default function SettingsPage() {
                         setTimeout(() => el.classList.remove('ring-2', 'ring-[#006459]'), 2000)
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
                   >
                     <span>Plotëso të dhënat poshtë</span>
                     <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
@@ -801,15 +945,17 @@ export default function SettingsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-base sm:text-lg font-black text-[#101828] truncate">
                       {isCompany
-                        ? (firstName || 'Emri i Kompanisë')
-                        : `${firstName || 'Emri'} ${lastName || 'Mbiemri'}`.trim()}
+                        ? (companyName || 'Emri i Kompanisë')
+                        : `${individualFirstName || 'Emri'} ${individualLastName || 'Mbiemri'}`.trim()}
                     </h4>
                     <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
                       isCompany
                         ? isCompanyDataComplete
                           ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
                           : 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                        : isEmailVerified
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
                     }`}>
                       {isCompany ? (
                         isCompanyDataComplete ? (
@@ -824,10 +970,17 @@ export default function SettingsPage() {
                           </>
                         )
                       ) : (
-                        <>
-                          <ShieldCheck className="w-3 h-3" />
-                          <span>Përdorues i Verifikuar</span>
-                        </>
+                        isEmailVerified ? (
+                          <>
+                            <ShieldCheck className="w-3 h-3" />
+                            <span>Përdorues i Verifikuar</span>
+                          </>
+                        ) : (
+                          <>
+                            <User className="w-3 h-3" />
+                            <span>Llogari Individuale</span>
+                          </>
+                        )
                       )}
                     </span>
                   </div>
@@ -839,10 +992,16 @@ export default function SettingsPage() {
                         {city}
                       </span>
                     )}
-                    {phone && (
+                    {(isCompany ? companyPhone : individualPhone) && (
                       <span className="flex items-center gap-1 font-mono">
                         <Phone className="w-3.5 h-3.5 text-[#006459]" />
-                        {phone}
+                        {isCompany ? companyPhone : individualPhone}
+                      </span>
+                    )}
+                    {(isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)) && (
+                      <span className="flex items-center gap-1 font-mono text-[11px]">
+                        <Mail className="w-3.5 h-3.5 text-[#006459]" />
+                        {isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)}
                       </span>
                     )}
                     {isCompany && website && (
@@ -853,9 +1012,9 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  {(isCompany ? companyDescription : bio) && (
+                  {(isCompany ? companyDescription : individualBio) && (
                     <p className="text-xs text-gray-600 line-clamp-2 pt-1">
-                      {isCompany ? companyDescription : bio}
+                      {isCompany ? companyDescription : individualBio}
                     </p>
                   )}
 
@@ -937,161 +1096,300 @@ export default function SettingsPage() {
                 {isCompany ? 'Të dhënat zyrtare të kompanisë' : 'Të dhënat personale'}
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    {isCompany ? 'Emri i Kompanisë / Agjencisë *' : 'Emri *'}
-                  </label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder={isCompany ? 'p.sh. Elite Real Estate' : 'Emri juaj'}
-                    required
-                    className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                  />
-                </div>
+              {isCompany ? (
+                /* COMPANY FORM */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Emri i Kompanisë / Agjencisë *
+                    </label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="p.sh. Elite Real Estate"
+                      required
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    {isCompany ? 'Personi Përgjegjës / Kontaktues' : 'Mbiemri *'}
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder={isCompany ? 'p.sh. Agron Berisha' : 'Mbiemri juaj'}
-                    className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Personi Përgjegjës / Kontaktues
+                    </label>
+                    <input
+                      type="text"
+                      value={companyContactPerson}
+                      onChange={(e) => setCompanyContactPerson(e.target.value)}
+                      placeholder="p.sh. Agron Berisha"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    Numri i Telefonit
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+383 44 123 456"
-                    className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Numri i Telefonit të Kompanisë
+                    </label>
+                    <input
+                      type="tel"
+                      value={companyPhone}
+                      onChange={(e) => setCompanyPhone(e.target.value)}
+                      placeholder="+383 44 123 456"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    Qyteti Kryesor
-                  </label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                  >
-                    <option value="">Zgjidh qytetin...</option>
-                    {CITIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Qyteti Kryesor
+                    </label>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    >
+                      <option value="">Zgjidh qytetin...</option>
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {isCompany ? (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                        Numri Unik Identifikues (NIPT)
-                      </label>
-                      <input
-                        type="text"
-                        value={nipt}
-                        onChange={(e) => setNipt(e.target.value)}
-                        placeholder="p.sh. 810123456"
-                        className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                        Viti i Themelimit
-                      </label>
-                      <input
-                        type="number"
-                        min="1950"
-                        max="2026"
-                        value={foundedYear}
-                        onChange={(e) => setFoundedYear(e.target.value)}
-                        placeholder="p.sh. 2018"
-                        className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                        Website Zyrtar i Kompanisë
-                      </label>
-                      <input
-                        type="url"
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                        placeholder="https://kompania.com"
-                        className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                        Adresa e Zyrës Qendrore
-                      </label>
-                      <input
-                        type="text"
-                        value={officeAddress}
-                        onChange={(e) => setOfficeAddress(e.target.value)}
-                        placeholder="p.sh. Rr. Nëna Terezë, Nr. 45, Prishtinë"
-                        className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Përshkrimi Zyrtar i Kompanisë
+                  {/* Official Company Contact Email */}
+                  <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-[#006459]" />
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                          Email-i Zyrtar i Kompanisë për Kontakt
                         </label>
-                        <span className="text-[11px] text-gray-400">
-                          {companyDescription.length}/1000
-                        </span>
                       </div>
-                      <textarea
-                        rows={3}
-                        maxLength={1000}
-                        value={companyDescription}
-                        onChange={(e) => setCompanyDescription(e.target.value)}
-                        placeholder="Shkruani një përshkrim për historikun, shërbimet dhe misionin e kompanisë suaj..."
-                        className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
-                      />
+                      {userEmail && (
+                        <span className="text-[11px] text-gray-500">
+                          Email-i kryesor i llogarisë: <span className="font-medium text-gray-700">{userEmail}</span>
+                        </span>
+                      )}
                     </div>
-                  </>
-                ) : (
+                    <input
+                      type="email"
+                      value={companyEmail}
+                      onChange={(e) => setCompanyEmail(e.target.value)}
+                      placeholder="p.sh. info@kompania.com ose agjencia@shembull.com"
+                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">
+                      <p className="text-[11px] text-gray-500">
+                        Ky email shfaqet publikisht në shpalljet tuaja për kontakt nga blerësit.
+                      </p>
+                      {companyEmail && companyEmail.trim().toLowerCase() !== userEmail.trim().toLowerCase() && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateAccountEmail(companyEmail)}
+                          disabled={updatingEmail}
+                          className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                        >
+                          {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                          <span>Bëje edhe email kryesor të llogarisë</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Numri Unik Identifikues (NIPT)
+                    </label>
+                    <input
+                      type="text"
+                      value={nipt}
+                      onChange={(e) => setNipt(e.target.value)}
+                      placeholder="p.sh. 810123456"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Viti i Themelimit
+                    </label>
+                    <input
+                      type="number"
+                      min="1950"
+                      max="2026"
+                      value={foundedYear}
+                      onChange={(e) => setFoundedYear(e.target.value)}
+                      placeholder="p.sh. 2018"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Website Zyrtar i Kompanisë
+                    </label>
+                    <input
+                      type="url"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      placeholder="https://kompania.com"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Adresa e Zyrës Qendrore
+                    </label>
+                    <input
+                      type="text"
+                      value={officeAddress}
+                      onChange={(e) => setOfficeAddress(e.target.value)}
+                      placeholder="p.sh. Rr. Nëna Terezë, Nr. 45, Prishtinë"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Përshkrimi Zyrtar i Kompanisë
+                      </label>
+                      <span className="text-[11px] text-gray-400">
+                        {companyDescription.length}/1000
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      maxLength={1000}
+                      value={companyDescription}
+                      onChange={(e) => setCompanyDescription(e.target.value)}
+                      placeholder="Shkruani një përshkrim për historikun, shërbimet dhe misionin e kompanisë suaj..."
+                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* INDIVIDUAL FORM */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Emri *
+                    </label>
+                    <input
+                      type="text"
+                      value={individualFirstName}
+                      onChange={(e) => setIndividualFirstName(e.target.value)}
+                      placeholder="Emri juaj"
+                      required
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Mbiemri *
+                    </label>
+                    <input
+                      type="text"
+                      value={individualLastName}
+                      onChange={(e) => setIndividualLastName(e.target.value)}
+                      placeholder="Mbiemri juaj"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Numri i Telefonit
+                    </label>
+                    <input
+                      type="tel"
+                      value={individualPhone}
+                      onChange={(e) => setIndividualPhone(e.target.value)}
+                      placeholder="+383 44 123 456"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Qyteti Kryesor
+                    </label>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    >
+                      <option value="">Zgjidh qytetin...</option>
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Personal Account Email */}
+                  <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-[#006459]" />
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                          Adresa Email e Llogarisë
+                        </label>
+                        {isEmailVerified && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
+                            E verifikuar
+                          </span>
+                        )}
+                      </div>
+                      {individualEmail.trim().toLowerCase() !== userEmail.trim().toLowerCase() && individualEmail.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateAccountEmail(individualEmail)}
+                          disabled={updatingEmail}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[#006459] text-white hover:bg-[#005048] transition-all cursor-pointer shadow-xs disabled:opacity-50 self-start sm:self-auto"
+                        >
+                          {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                          <span>Dërgo konfirmim në email-in e ri</span>
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="email"
+                      value={individualEmail}
+                      onChange={(e) => setIndividualEmail(e.target.value)}
+                      placeholder="email@shembull.com"
+                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      Ky email përdoret për kyçje dhe njoftime zyrtare. Nëse e ndryshoni, do të merrni një link konfirmimi në adresën e re për siguri maksimale.
+                    </p>
+                  </div>
+
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
                         Bio / Përshkrim i shkurtër
                       </label>
                       <span className="text-[11px] text-gray-400">
-                        {bio.length}/500
+                        {individualBio.length}/500
                       </span>
                     </div>
                     <textarea
                       rows={3}
                       maxLength={500}
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
+                      value={individualBio}
+                      onChange={(e) => setIndividualBio(e.target.value)}
                       placeholder="Një përshkrim i shkurtër për veten, përvojën ose kërkesat tuaja imobiliare..."
                       className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
                     />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="mt-6 flex justify-end">
                 <button
@@ -1858,7 +2156,7 @@ export default function SettingsPage() {
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         userEmail={userEmail}
-        userName={firstName ? `${firstName} ${lastName}`.trim() : 'Përdorues'}
+        userName={isCompany ? (companyName || `${individualFirstName} ${individualLastName}`.trim() || 'Përdorues') : (`${individualFirstName} ${individualLastName}`.trim() || 'Përdorues')}
         avatarUrl={avatarUrl}
         onLogoutConfirmed={async () => {
           try {
@@ -1875,7 +2173,7 @@ export default function SettingsPage() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         userEmail={userEmail}
-        userName={firstName ? `${firstName} ${lastName}`.trim() : 'Përdorues'}
+        userName={isCompany ? (companyName || `${individualFirstName} ${individualLastName}`.trim() || 'Përdorues') : (`${individualFirstName} ${individualLastName}`.trim() || 'Përdorues')}
         isCompany={isCompany}
         avatarUrl={avatarUrl}
         onDeleteConfirmed={handleConfirmDelete}

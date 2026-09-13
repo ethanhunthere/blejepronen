@@ -27,35 +27,65 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => null)
-    const firstName = typeof body?.firstName === 'string' ? body.firstName.trim() : ''
-    const lastName = typeof body?.lastName === 'string' ? body.lastName.trim() : ''
-    const rawPhone = typeof body?.phone === 'string' ? body.phone.trim() : ''
-
     const isCompany = typeof body?.isCompany === 'boolean'
       ? body.isCompany
       : (body?.accountType === 'company' || user.user_metadata?.account_type === 'company')
 
-    if (!firstName) {
-      return NextResponse.json(
-        {
-          error: 'missing_fields',
-          message: isCompany ? 'Emri i kompanisë është i detyrueshëm.' : 'Emri dhe mbiemri janë të detyrueshëm.',
-        },
-        { status: 400 }
-      )
+    const individualFirstName = typeof body?.individualFirstName === 'string'
+      ? body.individualFirstName.trim()
+      : (!isCompany && typeof body?.firstName === 'string' ? body.firstName.trim() : (user.user_metadata?.individual_first_name || ''))
+
+    const individualLastName = typeof body?.individualLastName === 'string'
+      ? body.individualLastName.trim()
+      : (!isCompany && typeof body?.lastName === 'string' ? body.lastName.trim() : (user.user_metadata?.individual_last_name || ''))
+
+    const individualPhone = typeof body?.individualPhone === 'string'
+      ? body.individualPhone.trim()
+      : (!isCompany && typeof body?.phone === 'string' ? body.phone.trim() : (user.user_metadata?.individual_phone || ''))
+
+    const individualEmail = typeof body?.individualEmail === 'string'
+      ? body.individualEmail.trim()
+      : (user.user_metadata?.individual_email || user.email || '')
+
+    const individualBio = typeof body?.individualBio === 'string'
+      ? body.individualBio.trim()
+      : (typeof body?.bio === 'string' ? body.bio.trim() : (user.user_metadata?.individual_bio || user.user_metadata?.bio || ''))
+
+    const companyName = typeof body?.companyName === 'string'
+      ? body.companyName.trim()
+      : (isCompany && typeof body?.firstName === 'string' ? body.firstName.trim() : (user.user_metadata?.company_name || ''))
+
+    const companyContactPerson = typeof body?.companyContactPerson === 'string'
+      ? body.companyContactPerson.trim()
+      : (isCompany && typeof body?.lastName === 'string' && body.lastName !== 'Kompani' ? body.lastName.trim() : (user.user_metadata?.contact_person || ''))
+
+    const companyPhone = typeof body?.companyPhone === 'string'
+      ? body.companyPhone.trim()
+      : (isCompany && typeof body?.phone === 'string' ? body.phone.trim() : (user.user_metadata?.company_phone || ''))
+
+    const companyEmail = typeof body?.companyEmail === 'string'
+      ? body.companyEmail.trim()
+      : (user.user_metadata?.company_email || '')
+
+    if (isCompany) {
+      if (!companyName && !body?.firstName) {
+        return NextResponse.json(
+          { error: 'missing_fields', message: 'Emri i kompanisë është i detyrueshëm.' },
+          { status: 400 }
+        )
+      }
+    } else {
+      if (!individualFirstName && !body?.firstName) {
+        return NextResponse.json(
+          { error: 'missing_fields', message: 'Emri dhe mbiemri janë të detyrueshëm.' },
+          { status: 400 }
+        )
+      }
     }
 
-    if (!isCompany && !lastName) {
-      return NextResponse.json(
-        {
-          error: 'missing_fields',
-          message: 'Emri dhe mbiemri janë të detyrueshëm.',
-        },
-        { status: 400 }
-      )
-    }
-
-    const finalLastName = isCompany && !lastName ? 'Kompani' : lastName
+    const rawPhone = isCompany
+      ? (companyPhone || body?.phone || individualPhone || '')
+      : (individualPhone || body?.phone || '')
 
     let finalPhone = ''
     const supabaseAdmin = getAdminClient()
@@ -90,7 +120,7 @@ export async function POST(request: Request) {
     }
 
     // Determine if email is verified:
-    // Only verify if explicitly requested (markEmailVerified), Google OAuth, or already verified in profile
+    // User remains verified permanently if already verified in profile, Google OAuth, or auth email confirmed
     const isGoogleUser = user.app_metadata?.provider === 'google'
     let emailVerified = false
 
@@ -103,10 +133,18 @@ export async function POST(request: Request) {
     if (typeof body?.emailVerified === 'boolean') {
       emailVerified = body.emailVerified
     } else {
-      emailVerified = Boolean(existingProfile?.email_verified) || isGoogleUser
+      emailVerified =
+        Boolean(existingProfile?.email_verified) ||
+        Boolean(user.email_confirmed_at) ||
+        Boolean(user.confirmed_at) ||
+        isGoogleUser
     }
 
-    const bio = typeof body?.bio === 'string' ? body.bio.trim() : (user.user_metadata?.bio || '')
+    // Never downgrade email verification if user was already verified
+    if (existingProfile?.email_verified || user.email_confirmed_at || user.confirmed_at || isGoogleUser) {
+      emailVerified = true
+    }
+
     const city = typeof body?.city === 'string' ? body.city.trim() : (user.user_metadata?.city || '')
     const nipt = typeof body?.nipt === 'string' ? body.nipt.trim() : (user.user_metadata?.nipt || '')
     const officeAddress = typeof body?.officeAddress === 'string' ? body.officeAddress.trim() : (user.user_metadata?.office_address || '')
@@ -136,19 +174,27 @@ export async function POST(request: Request) {
         user_metadata: {
           ...user.user_metadata,
           account_type: isCompany ? 'company' : 'individual',
-          ...(isCompany
-            ? {
-                company_name: firstName,
-                ...(companyDescription ? { company_description: companyDescription } : {}),
-                ...(foundedYear ? { founded_year: foundedYear } : {}),
-                ...(lastName && lastName !== 'Kompani' ? { contact_person: lastName } : {}),
-                ...(nipt ? { nipt } : {}),
-                ...(officeAddress ? { office_address: officeAddress } : {}),
-                ...(website ? { website } : {}),
-              }
-            : {
-                bio,
-              }),
+          is_company: isCompany,
+
+          // Preserved Individual details
+          individual_first_name: individualFirstName,
+          individual_last_name: individualLastName,
+          individual_phone: individualPhone,
+          individual_email: individualEmail,
+          individual_bio: individualBio,
+
+          // Preserved Company details
+          company_name: companyName,
+          contact_person: companyContactPerson,
+          company_phone: companyPhone,
+          company_email: companyEmail,
+          company_description: companyDescription,
+          founded_year: foundedYear,
+          nipt: nipt,
+          office_address: officeAddress,
+          website: website,
+
+          bio: isCompany ? (companyDescription || user.user_metadata?.bio || '') : (individualBio || user.user_metadata?.bio || ''),
           city,
           onboarding_completed: true,
           ...(finalPhone ? { phone: finalPhone } : {}),
@@ -169,13 +215,20 @@ export async function POST(request: Request) {
 
     const finalAvatar = body?.avatarUrl || existingProfile?.avatar_url || '/avatars/avatar-1.png'
 
+    const activeFirstName = isCompany
+      ? (companyName || user.user_metadata?.company_name || 'Kompani')
+      : (individualFirstName || user.user_metadata?.individual_first_name || 'Përdorues')
+    const activeLastName = isCompany
+      ? (companyContactPerson || user.user_metadata?.contact_person || 'Kompani')
+      : (individualLastName || user.user_metadata?.individual_last_name || '')
+
     const { error: upsertError } = await supabaseAdmin
       .from('profiles')
       .upsert(
         {
           id: user.id,
-          first_name: firstName,
-          last_name: finalLastName,
+          first_name: activeFirstName,
+          last_name: activeLastName,
           phone: finalPhone,
           email_verified: emailVerified,
           avatar_url: finalAvatar,

@@ -964,8 +964,8 @@ export default function PostoPronaPage() {
                   </p>
                 </div>
 
-                {/* 6 Compact Category Buttons */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
+                {/* 6 Category Selection Cards */}
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
                   {(Object.keys(CATEGORIES) as PropertyCategory[]).map((catKey) => {
                     const cat = CATEGORIES[catKey]
                     const IconComp = cat.icon
@@ -976,32 +976,54 @@ export default function PostoPronaPage() {
                         key={catKey}
                         type="button"
                         onClick={() => handleCategorySelect(catKey)}
-                        className={`group relative p-2.5 sm:p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2.5 border ${
+                        className={`group relative p-4 sm:p-4.5 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
                           isSelected
-                            ? 'bg-[#006459]/5 border-[#006459] shadow-xs ring-1 ring-[#006459]'
-                            : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:shadow-2xs'
+                            ? 'bg-[#006459]/[0.05] border-[#006459] shadow-sm ring-2 ring-[#006459]/15'
+                            : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/70 hover:shadow-xs'
                         }`}
                       >
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? 'bg-[#006459] text-white' : 'bg-gray-100 text-gray-600 group-hover:text-gray-900'
-                          }`}
-                        >
-                          <IconComp className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-xs sm:text-sm font-bold truncate leading-snug ${isSelected ? 'text-[#006459]' : 'text-[#101828]'}`}>
-                            {cat.titleShort}
-                          </p>
-                          <span className="text-[10px] text-gray-400 font-medium block truncate">
-                            {cat.badge}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-2.5">
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                                isSelected
+                                  ? 'bg-[#006459] text-white shadow-xs'
+                                  : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-900'
+                              }`}
+                            >
+                              <IconComp className="w-5 h-5" />
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider transition-colors ${
+                                  isSelected
+                                    ? 'bg-[#006459]/10 text-[#006459]'
+                                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200/70'
+                                }`}
+                              >
+                                {cat.badge}
+                              </span>
+                              {isSelected && (
+                                <div className="w-5 h-5 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
+
+                          <h3
+                            className={`text-sm sm:text-base font-extrabold leading-snug transition-colors ${
+                              isSelected ? 'text-[#006459]' : 'text-[#101828]'
+                            }`}
+                          >
+                            {cat.label}
+                          </h3>
+
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                            {cat.description}
+                          </p>
+                        </div>
                       </button>
                     )
                   })}
