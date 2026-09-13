@@ -239,16 +239,6 @@ export default function ContactSellerCard({
             </a>
           </div>
         </div>
-
-        {/* Seller Socials (Instagram, Facebook, WhatsApp, TikTok) */}
-        {hasAnySocial(socials || seller.socials) && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-              Rrjetet Sociale të Shitësit
-            </p>
-            <SocialLinksBar socials={socials || seller.socials} variant="pills" />
-          </div>
-        )}
       </div>
 
       {/* Primary Conversion CTAs */}
@@ -305,6 +295,16 @@ export default function ContactSellerCard({
           </div>
         )}
       </div>
+
+      {/* Seller Socials (Instagram, Facebook, WhatsApp, TikTok) - Positioned below CTAs */}
+      {hasAnySocial(socials || seller.socials) && (
+        <div className="mt-4 pt-3.5 border-t border-gray-100">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+            Rrjetet Sociale të Shitësit
+          </p>
+          <SocialLinksBar socials={socials || seller.socials} variant="pills" />
+        </div>
+      )}
 
       {/* Trust & Transparency Guarantee */}
       <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
