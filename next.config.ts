@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
@@ -15,10 +18,25 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
     ],
   },
   async headers() {
     return [
+      {
+        // Precomputed globe land data: stable between regenerations, so let
+        // the edge/browser cache it instead of refetching on every visit.
+        source: "/globe/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
       {
         source: "/:path*",
         headers: [
@@ -44,7 +62,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+            value: "camera=(), microphone=(), geolocation=()",
           },
           {
             key: "Content-Security-Policy",
@@ -52,9 +70,9 @@ const nextConfig: NextConfig = {
               "default-src 'self'; " +
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app; " +
               "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com; " +
+              "img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com https://*.googleusercontent.com; " +
               "font-src 'self'; " +
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://vitals.vercel-insights.com https://*.vercel.app; " +
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://vitals.vercel-insights.com https://*.vercel.app https://raw.githubusercontent.com; " +
               "frame-ancestors 'none'; " +
               "base-uri 'self'; " +
               "form-action 'self'; " +

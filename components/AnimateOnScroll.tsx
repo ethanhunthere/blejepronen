@@ -18,10 +18,7 @@ function AnimateOnScroll({
   once = true,
 }: AnimateOnScrollProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  })
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     const el = ref.current

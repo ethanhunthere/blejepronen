@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, SendHorizonal, WifiOff, Clock3, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert } from 'lucide-react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 // ---- Types ----
@@ -42,8 +42,6 @@ interface ConvData {
 }
 
 // ---- Helpers ----
-const formatPrice = (n: number) =>
-  new Intl.NumberFormat('sq-AL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 
 const MSG_EXPIRY_MS = 60 * 24 * 60 * 60 * 1000
 
@@ -92,12 +90,43 @@ export default function ChatPage() {
   useEffect(() => {
     const supabase = supabaseRef.current
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
+    const init = async () => {
+      let activeUser = null
+      try {
+        const { data } = await supabase.auth.getUser()
+        activeUser = data?.user || null
+      } catch {}
+
+      if (!activeUser) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession()
+          activeUser = sessData?.session?.user || null
+        } catch {}
+      }
+
+      if (!activeUser) {
+        await new Promise((r) => setTimeout(r, 400))
+        try {
+          const { data } = await supabase.auth.getUser()
+          activeUser = data?.user || null
+        } catch {}
+        if (!activeUser) {
+          try {
+            const { data: sessData } = await supabase.auth.getSession()
+            activeUser = sessData?.session?.user || null
+          } catch {}
+        }
+      }
+
+      if (!activeUser) {
+        if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          return
+        }
         router.push(`/login?next=${encodeURIComponent(`/mesazhet/${conversationId}`)}`)
         return
       }
-      setUserId(session.user.id)
+
+      setUserId(activeUser.id)
 
       supabase
         .from('conversations')
@@ -107,7 +136,7 @@ export default function ChatPage() {
         .then(({ data: c }) => {
           if (!c) { router.push('/mesazhet'); return }
 
-          const otherId = c.buyer_id === session.user.id ? c.seller_id : c.buyer_id
+          const otherId = c.buyer_id === activeUser.id ? c.seller_id : c.buyer_id
           supabase
             .from('profiles')
             .select('id,first_name,last_name,avatar_url')
@@ -134,13 +163,13 @@ export default function ChatPage() {
         .then(({ data: msgs }) => {
           const ms = (msgs || []) as MessageRow[]
           setMessages(ms)
-          const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== session.user.id).length
+          const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== activeUser.id).length
           if (unreadCount > 0) {
             supabase
               .from('messages')
               .update({ is_read: true })
               .eq('conversation_id', conversationId)
-              .neq('sender_id', session.user.id)
+              .neq('sender_id', activeUser.id)
               .eq('is_read', false)
               .then(() => {
                 window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadCount } }))
@@ -149,7 +178,9 @@ export default function ChatPage() {
           // Auto-scroll to bottom after initial load
           setTimeout(() => scrollToBottom(false), 50)
         })
-    })
+    }
+
+    init()
   }, [conversationId, router, scrollToBottom])
 
   // ---- Realtime ----
@@ -304,13 +335,13 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-[#F2F7F7] overflow-hidden">
+    <div className="h-[calc(100dvh-64px)] flex flex-col bg-[#F2F7F7] overflow-hidden">
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button */}
         <Link
           href="/mesazhet"
-          className="text-gray-400 hover:text-[#1A1A2E] p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
+          className="text-gray-500 hover:text-[#101828] p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -321,24 +352,20 @@ export default function ChatPage() {
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
         >
           {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
-            {conv.otherUser?.avatar_url ? (
-              <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              (conv.otherUser?.first_name || '?')[0].toUpperCase()
-            )}
+          <div className="relative w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
+            <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="36px" className="object-cover" />
           </div>
 
           {/* Name + subtitle */}
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-[#1A1A2E] text-sm truncate">
+            <p className="font-semibold text-[#101828] text-sm truncate">
               {conv.otherUser?.first_name} {conv.otherUser?.last_name}
             </p>
             {conv.listing && (
-              <p className="text-gray-500 text-xs truncate">{conv.listing.title}</p>
+              <p className="text-gray-600 text-xs truncate">{conv.listing.title}</p>
             )}
             {isTyping && (
-              <p className="text-[11px] text-[#111827]/70 font-medium animate-fade-in">duke shkruar...</p>
+              <p className="text-[11px] text-[#101828]/70 font-medium animate-fade-in">duke shkruar...</p>
             )}
           </div>
         </Link>
@@ -347,12 +374,14 @@ export default function ChatPage() {
         {conv.listing?.images?.[0] && (
           <Link
             href={`/listings/${conv.listing.id}`}
-            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 hover:border-gray-200 transition-colors"
+            className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 hover:border-gray-200 transition-colors"
           >
-            <img
+            <Image
               src={conv.listing.images[0]}
               alt=""
-              className="w-full h-full object-cover"
+              fill
+              sizes="40px"
+              className="object-cover"
             />
           </Link>
         )}
@@ -372,7 +401,7 @@ export default function ChatPage() {
             if (item.type === 'date') {
               return (
                 <div key={`date-${item.label}-${i}`} className="flex items-center justify-center py-3">
-                  <span className="text-[11px] text-gray-400 font-medium tracking-wide bg-gray-100 rounded-full px-3 py-1">
+                  <span className="text-[11px] text-gray-500 font-medium tracking-wide bg-gray-100 rounded-full px-3 py-1">
                     {item.label}
                   </span>
                 </div>
@@ -403,12 +432,8 @@ export default function ChatPage() {
               >
                 {!isMine && (
                   isLastInGroup ? (
-                    <div className="w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
-                      {conv.otherUser?.avatar_url ? (
-                        <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        (conv.otherUser?.first_name || '?')[0].toUpperCase()
-                      )}
+                    <div className="relative w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+                      <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
                     </div>
                   ) : (
                     <div className="w-7 flex-shrink-0" />
@@ -419,12 +444,12 @@ export default function ChatPage() {
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
                       ? 'bg-[#006459] text-white rounded-2xl rounded-br-md'
-                      : 'bg-white border border-gray-100 shadow-sm text-[#1A1A2E] rounded-2xl rounded-bl-md'
+                      : 'bg-white border border-gray-100 shadow-sm text-[#101828] rounded-2xl rounded-bl-md'
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className={`text-[9px] text-right ${isMine ? 'text-white/50' : 'text-gray-400'}`}>
+                    <span className={`text-[9px] text-right ${isMine ? 'text-white/50' : 'text-gray-500'}`}>
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
@@ -441,12 +466,8 @@ export default function ChatPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2" style={{ animation: 'fadeSlideUp 0.25s ease-out' }}>
-              <div className="w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
-                {conv.otherUser?.avatar_url ? (
-                  <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  (conv.otherUser?.first_name || '?')[0].toUpperCase()
-                )}
+              <div className="relative w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+                <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
               </div>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
                 {[0, 150, 300].map((delay, j) => (
@@ -463,7 +484,7 @@ export default function ChatPage() {
       </div>
 
       {/* ---- INPUT ---- */}
-      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3">
+      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -476,7 +497,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#1A1A2E] text-sm placeholder:text-gray-400 resize-none min-h-[40px] max-h-[100px] focus:border-[#006459]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#101828] text-sm placeholder:text-gray-500 resize-none min-h-[40px] max-h-[100px] focus:border-[#006459]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'

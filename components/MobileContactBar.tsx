@@ -1,75 +1,108 @@
 'use client'
 
-import { Phone, Heart } from 'lucide-react'
+import { Phone, MessageCircle, Heart } from 'lucide-react'
 import { useFavorites } from '@/lib/useFavorites'
+import { normalizePhoneNumber } from '@/lib/phone'
+import { toast } from 'sonner'
 
 interface MobileContactBarProps {
   price: string
   pricePerSqm?: string | null
   phone?: string | null
   listingId: string
+  listingTitle?: string
+  listingCity?: string
 }
 
-export default function MobileContactBar({ price, pricePerSqm, phone, listingId }: MobileContactBarProps) {
+export default function MobileContactBar({
+  price,
+  pricePerSqm,
+  phone,
+  listingId,
+  listingTitle,
+  listingCity,
+}: MobileContactBarProps) {
   const { favoriteIds, toggleFavorite } = useFavorites()
   const isFavorited = favoriteIds.includes(listingId)
 
-  const scrollToContact = () => {
-    if (typeof window === 'undefined') return
-    const el = document.getElementById('contact-card')
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }
-  }
+  const cleanPhone = phone ? normalizePhoneNumber(phone).replace(/\D/g, '') : ''
+  const waGreeting = encodeURIComponent(
+    `Përshëndetje! Po ju kontaktoj nga BlejePronën për pronën tuaj: "${listingTitle || 'Pronë'}"${listingCity ? ` në ${listingCity}` : ''} (https://blejepronen.com/listings/${listingId}). A është ende e lirë?`
+  )
+  const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waGreeting}` : null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 shadow-lg px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/80 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 pt-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-center justify-between gap-3">
+        {/* Left: Heart + Price */}
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
               toggleFavorite(listingId)
+              if (!isFavorited) toast.success('U ruajt te të preferuarat!')
+              else toast.info('U hoq nga të preferuarat.')
             }}
-            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ease-out touch-manipulation cursor-pointer hover:shadow-md active:scale-95 ${
+            className={`w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 transition-all active:scale-95 ${
               isFavorited
-                ? 'border-red-200 bg-red-50 text-red-500'
-                : 'border-gray-200 bg-white text-gray-400 hover:border-red-200 hover:text-red-400'
+                ? 'border-rose-200 bg-rose-50 text-rose-500'
+                : 'border-gray-200 bg-gray-50 text-gray-500'
             }`}
-            aria-label={isFavorited ? 'Hiq nga të ruajturat' : 'Ruaj banesën'}
+            aria-label={isFavorited ? 'Hiq nga të ruajturat' : 'Ruaj pronën'}
           >
             <Heart
-              className="h-5 w-5"
+              className="h-4 w-4"
               fill={isFavorited ? 'currentColor' : 'none'}
             />
           </button>
+
           <div className="min-w-0">
-            <p className="text-xl font-black text-[#1A1A2E] truncate">{price}</p>
+            <p className="text-base sm:text-lg font-black text-[#101828] leading-tight truncate">
+              {price}
+            </p>
             {pricePerSqm && (
-              <p className="text-xs text-gray-400 truncate">{pricePerSqm}</p>
+              <p className="text-[11px] font-semibold text-gray-500 truncate">
+                {pricePerSqm}/m²
+              </p>
             )}
           </div>
         </div>
-        {phone ? (
-          <a
-            href={`tel:${phone}`}
-            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#006459] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
-          >
-            <Phone className="h-4 w-4" />
-            Kontakto
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={scrollToContact}
-            className="shrink-0 inline-flex items-center min-h-[44px] gap-2 bg-[#006459] text-white font-bold px-5 py-3 rounded-2xl text-sm hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
-          >
-            <Phone className="h-4 w-4" />
-            Kontakto
-          </button>
-        )}
+
+        {/* Right: Instant Contact CTAs */}
+        <div className="flex items-center gap-2 shrink-0">
+          {whatsAppUrl && (
+            <a
+              href={whatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 px-3.5 rounded-xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              aria-label="Kontakto në WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4 fill-white" />
+              <span>WhatsApp</span>
+            </a>
+          )}
+
+          {phone ? (
+            <a
+              href={`tel:${phone}`}
+              className="h-10 px-3.5 rounded-xl bg-[#006459] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              aria-label="Telefono shitësin"
+            >
+              <Phone className="h-4 w-4" />
+              <span>Telefono</span>
+            </a>
+          ) : (
+            <a
+              href="#contact-card"
+              className="h-10 px-3.5 rounded-xl bg-[#006459] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+            >
+              <span>Detajet</span>
+            </a>
+          )}
+        </div>
       </div>
     </div>
   )

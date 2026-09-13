@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Image from 'next/image'
 import { CheckCircle2, Star, TrendingUp, Home } from 'lucide-react'
 
 export default function AuthAnimation() {

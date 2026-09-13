@@ -1,148 +1,274 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Lock, Globe } from 'lucide-react'
+import { Mail, Lock, CheckCircle2, Loader2 } from 'lucide-react'
 import AuthShell from '@/components/AuthShell'
+import AuthPanel from '@/components/AuthPanel'
+import AuthField from '@/components/AuthField'
 
-export default function LoginPage() {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function VerifiedMessage() {
+  const searchParams = useSearchParams()
+  const isVerified = searchParams.get('verified') === 'true'
+  if (!isVerified) return null
+
+  return (
+    <div className="mb-3 p-2.5 rounded-xl bg-[#006459]/10 border border-[#006459]/20 text-[#006459] text-xs sm:text-[13px] flex items-center gap-2">
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#006459]" />
+      <span>Email-i u verifikua me sukses! Tani mund të hyni në llogari.</span>
+    </div>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
+  const [error, setError] = useState<React.ReactNode>('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    router.prefetch('/')
+    router.prefetch('/completo-profilin-fast')
+    router.prefetch('/completo-profilin-company')
+    router.prefetch('/postimet-e-mia')
+  }, [router])
+
+  const validate = () => {
+    const next: { email?: string; password?: string } = {}
+    if (!email.trim()) next.email = 'Email-i është i detyrueshëm.'
+    else if (!EMAIL_RE.test(email.trim())) next.email = 'Shkruaj një email të vlefshëm.'
+    if (!password) next.password = 'Fjalëkalimi është i detyrueshëm.'
+    setFieldErrors(next)
+    if (next.email) document.getElementById('email')?.focus()
+    else if (next.password) document.getElementById('password')?.focus()
+    return Object.keys(next).length === 0
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    setFieldErrors({})
+    if (!validate()) return
+    setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const cleanEmail = email.trim().toLowerCase()
 
-    if (error) {
-      setError('Email ose fjalëkalimi është i gabuar.')
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      })
+
+      if (!signInError) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          try {
+            localStorage.setItem('blejepronen_cached_user', JSON.stringify(user))
+            document.documentElement.setAttribute('data-auth', 'logged-in')
+          } catch {}
+
+          const hasCompletedOnboarding = Boolean(user.user_metadata?.onboarding_completed)
+          const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+
+          if (!hasCompletedOnboarding) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, email_verified')
+              .eq('id', user.id)
+              .maybeSingle()
+
+            if (!profile?.first_name || !profile?.email_verified) {
+              router.replace(isComp ? '/completo-profilin-company' : '/completo-profilin-fast')
+              return
+            }
+          }
+        }
+
+        router.replace('/')
+        return
+      }
+
+      const msg = signInError.message?.toLowerCase() || ''
+
+      if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+        setError(
+          <span>
+            Email-i nuk është verifikuar ende.{' '}
+            <Link href="/register" className="font-bold underline hover:opacity-90">
+              Shko te regjistrimi për të futur kodin
+            </Link>
+          </span>
+        )
+        setFieldErrors({ email: 'Email-i nuk është verifikuar ende.' })
+        setLoading(false)
+        return
+      }
+
+      // Check if user exists in the system to provide accurate, specific feedback
+      const checkRes = await fetch('/api/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      })
+
+      if (checkRes.ok) {
+        const checkData = await checkRes.json()
+
+        if (checkData.exists === false) {
+          setError(
+            <span>
+              Kjo llogari nuk ekziston.{' '}
+              <Link href="/register" className="font-bold underline hover:opacity-90">
+                Regjistrohu falas këtu
+              </Link>
+            </span>
+          )
+          setFieldErrors({ email: 'Kjo llogari nuk është e regjistruar.' })
+          setLoading(false)
+          return
+        }
+
+        if (checkData.exists === true && checkData.emailConfirmed === false) {
+          setError(
+            <span>
+              Llogaria juaj nuk është verifikuar ende.{' '}
+              <Link href="/register" className="font-bold underline hover:opacity-90">
+                Verifiko email-in këtu
+              </Link>
+            </span>
+          )
+          setFieldErrors({ email: 'Email-i nuk është verifikuar ende.' })
+          setLoading(false)
+          return
+        }
+
+        if (checkData.exists === true) {
+          setError('Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.')
+          setFieldErrors({ password: 'Fjalëkalimi është i pasaktë.' })
+          setLoading(false)
+          return
+        }
+      }
+
+      setError('Email ose fjalëkalimi është i pasaktë.')
       setLoading(false)
-      return
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Ndodhi një gabim gjatë hyrjes. Provoni përsëri.')
+      setLoading(false)
     }
-
-    router.push('/')
   }
 
   const handleGoogleLogin = async () => {
+    const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
         skipBrowserRedirect: false,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+          prompt: 'select_account',
         },
-      }
+      },
     })
   }
 
   return (
-    <AuthShell>
-      <div className="w-full max-w-md">
-        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Hyr në llogari</CardTitle>
-            <CardDescription className="text-center text-gray-500">
-              Futu me email ose Google
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            {error && (
-              <Alert variant="destructive" className="bg-red-50 border border-red-200 text-red-600">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <button
-              type="button"
-              className="w-full h-11 bg-white border border-gray-200/80 text-gray-700 font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center cursor-pointer rounded-xl"
-              onClick={handleGoogleLogin}
+    <AuthShell
+      headline="Mirë se erdhe prapë"
+      subline="Gjej shtëpinë tënde të re ose posto pronën tënde brenda pak minutave."
+    >
+      <AuthPanel
+        title="Hyr në llogari"
+        subtitle="Futu me email ose Google"
+        googleLabel="Hyr me Google"
+        onGoogle={handleGoogleLogin}
+        error={error}
+        footer={
+          <>
+            <Link
+              href="/forgot-password"
+              className="font-medium text-[#006459] hover:underline"
             >
-              <Globe className="mr-2 h-4 w-4" />
-              Hyr me Google
-            </button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">ose</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[13px] text-gray-700 font-medium">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="emri@email.com"
-                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-[13px] text-gray-700 font-medium">Fjalëkalimi</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                {loading ? 'Duke hyrë...' : 'Hyr'}
-              </button>
-            </form>
-          </CardContent>
-
-          <CardFooter className="flex flex-col space-y-2">
-            <p className="text-sm text-gray-400 text-center">
-              <Link href="/forgot-password" className="text-[#111827] hover:underline font-medium">
-                Keni harruar fjalëkalimin?
-              </Link>
-            </p>
-            <p className="text-sm text-gray-400 text-center">
+              Keni harruar fjalëkalimin?
+            </Link>
+            <span className="mx-2 text-gray-300">·</span>
+            <span>
               Nuk ke llogari?{' '}
-              <Link href="/register" className="text-[#111827] hover:underline font-medium">
+              <Link
+                href="/register"
+                className="font-medium text-[#006459] hover:underline"
+              >
                 Regjistrohu falas
               </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+            </span>
+          </>
+        }
+      >
+        <Suspense fallback={null}>
+          <VerifiedMessage />
+        </Suspense>
+
+        <form onSubmit={handleLogin} noValidate className="space-y-2.5 sm:space-y-3">
+          <AuthField
+            id="email"
+            label="Email"
+            type="email"
+            placeholder="emri@email.com"
+            autoComplete="email"
+            icon={<Mail className="h-4 w-4" />}
+            value={email}
+            onChange={(v) => {
+              setEmail(v)
+              if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }))
+              if (error) setError('')
+            }}
+            error={fieldErrors.email}
+          />
+
+          <AuthField
+            id="password"
+            label="Fjalëkalimi"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            icon={<Lock className="h-4 w-4" />}
+            value={password}
+            onChange={(v) => {
+              setPassword(v)
+              if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }))
+              if (error) setError('')
+            }}
+            error={fieldErrors.password}
+          />
+
+          <button
+            type="submit"
+            className="mt-1 w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Duke hyrë...
+              </span>
+            ) : (
+              'Hyr'
+            )}
+          </button>
+        </form>
+      </AuthPanel>
     </AuthShell>
   )
+}
+
+export default function LoginPage() {
+  return <LoginForm />
 }

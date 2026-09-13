@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import SearchBar from './SearchBar'
 
 export default function ScrollVideoHero() {
@@ -22,7 +23,7 @@ export default function ScrollVideoHero() {
       const rect = container.getBoundingClientRect()
       
       const scrollableDistance = container.offsetHeight - window.innerHeight
-      let newProgress = -rect.top / scrollableDistance
+      const newProgress = -rect.top / scrollableDistance
       // Clamp between 0 and 1
       targetProgress = Math.max(0, Math.min(1, newProgress))
     }
@@ -77,11 +78,11 @@ export default function ScrollVideoHero() {
           
           {/* Left Text */}
           <div className="w-full lg:w-1/2 flex flex-col justify-center lg:text-center text-center mt-2 sm:mt-4 lg:-mt-16 shrink-0">
-            <h1 className="text-[28px] sm:text-[36px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#1A1A2E] leading-[1.08] relative">
-              Gjej banesën
+            <h1 className="text-[28px] sm:text-[36px] md:text-[54px] lg:text-[68px] font-extrabold tracking-tight text-[#101828] leading-[1.08] relative">
+              Prona jote e ardhshme
               <br />
               <span className="relative inline-block pb-1 lg:pb-3">
-                <span className="relative z-10">e duhur në Kosovë</span>
+                <span className="relative z-10">është këtu</span>
                 <span 
                   className="absolute left-0 bottom-0 h-[4px] md:h-[8px] bg-[#C8B882] transition-all duration-75 ease-linear rounded-full z-10"
                   style={{ width: `${20 + progress * 80}%` }}
@@ -89,15 +90,15 @@ export default function ScrollVideoHero() {
               </span>
             </h1>
 
-            <p className="text-[14px] sm:text-[16px] text-gray-500 leading-relaxed mt-3 sm:mt-5 lg:mx-0 mx-auto max-w-lg">
-              Bli, shit ose jep me qira banesën tënde duke folur direkt me pronarët, pa ndërmjetës.
+            <p className="text-[14px] sm:text-[16px] text-gray-600 leading-relaxed mt-3 sm:mt-5 lg:mx-0 mx-auto max-w-lg">
+              Bli, shit ose jep me qira pronën tënde duke folur direkt me pronarët, pa ndërmjetës.
             </p>
 
             {/* Search Bar */}
             <div className="relative z-10 mt-5 sm:mt-10 w-full max-w-2xl mx-auto">
               <SearchBar
-                placeholder="Kërko banesë, agjent, kompani, adresë..."
-                buttonText="Kërko Banesë"
+                placeholder="Kërko pronë, agjent, kompani, adresë..."
+                buttonText="Kërko Pronë"
               />
             </div>
 
@@ -120,15 +121,15 @@ export default function ScrollVideoHero() {
             <div className="flex flex-row sm:flex-row flex-wrap gap-2 sm:gap-3 lg:gap-8 mt-5 sm:mt-6 justify-center">
               <Link
                 href="/listings"
-                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-[#C8B882] text-[#1A1A2E] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
+                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-[#C8B882] text-[#101828] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_10px_24px_-8px_rgba(200,184,130,0.55)] hover:bg-[#D6C494] hover:shadow-[0_1px_0_rgba(255,255,255,0.35)_inset,0_16px_32px_-8px_rgba(200,184,130,0.6)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
               >
-                Shiko banesat
+                Shiko pronat
               </Link>
               <Link
-                href="/posto-banese"
-                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-white border border-gray-200 text-[#1A1A2E] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
+                href="/posto-prona"
+                className="inline-flex items-center justify-center min-h-[40px] sm:min-h-[44px] bg-white border border-gray-200 text-[#101828] text-[13px] sm:text-[15px] font-semibold px-5 sm:px-8 py-2 sm:py-3 rounded-full hover:bg-[#006459] hover:text-white hover:border-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer flex-1 sm:flex-none"
               >
-                Posto banesën tënde
+                Posto pronën tënde
               </Link>
             </div>
           </div>
@@ -143,10 +144,13 @@ export default function ScrollVideoHero() {
             <div className="relative w-full max-w-lg lg:max-w-2xl aspect-video rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden bg-gray-50 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] lg:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] ring-1 ring-gray-900/5 z-10">
               
               {/* Custom Poster Image */}
-              <img 
+              <Image 
                 src="/hero-poster.jpg" 
                 alt="Video thumbnail"
-                className={`absolute inset-0 w-full h-full object-cover z-20 pointer-events-none ${videoReady ? 'hidden' : 'block'}`}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className={`object-cover z-20 pointer-events-none ${videoReady ? 'hidden' : 'block'}`}
               />
               
               <video 

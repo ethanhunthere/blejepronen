@@ -1,8 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 const CONSENT_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password']
 
 function setConsentCookie(value: string) {
   try {
@@ -20,6 +23,10 @@ function notifyConsentChanged() {
 
 function CookieBanner() {
   const [show, setShow] = useState(false)
+  const pathname = usePathname()
+  const isAuth = AUTH_ROUTES.some(
+    (r) => pathname === r || pathname.startsWith(`${r}/`)
+  )
 
   // Reading localStorage here (instead of in the useState initializer) keeps
   // the server and client's first render identical, avoiding a hydration
@@ -48,11 +55,20 @@ function CookieBanner() {
   if (!show) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-lg p-4">
+    <div
+      className={
+        'fixed bottom-0 left-0 right-0 z-50 border-t shadow-lg p-4 ' +
+        (isAuth
+          ? // Continue the auth split-screen behind the consent bar so the
+            // bottom band matches the page (white left / teal right).
+            'border-transparent bg-white lg:bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_55%,#006459_55%,#006459_100%)]'
+          : 'bg-white border-gray-100')
+      }
+    >
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-gray-600 text-center sm:text-left">
           Ne përdorim cookies për të përmirësuar përvojën tuaj.{' '}
-          <a href="/privatesia" className="text-[#111827] underline">Mëso më shumë</a>
+          <a href="/privatesia" className="text-[#101828] underline">Mëso më shumë</a>
         </p>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
@@ -65,7 +81,10 @@ function CookieBanner() {
           <button
             type="button"
             onClick={accept}
-            className="w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#006459] px-4 text-sm font-medium text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
+            className={
+              'w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#006459] px-4 text-sm font-medium text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer' +
+              (isAuth ? ' lg:bg-white lg:text-[#006459] lg:hover:bg-gray-50' : '')
+            }
           >
             Prano
           </button>

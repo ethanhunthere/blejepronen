@@ -1,180 +1,471 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Lock, Globe } from 'lucide-react'
+import { Mail, Lock, CheckCircle2, RotateCcw, ArrowLeft, Loader2, AlertCircle, User, Building2 } from 'lucide-react'
 import AuthShell from '@/components/AuthShell'
+import AuthPanel from '@/components/AuthPanel'
+import AuthField from '@/components/AuthField'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from 'sonner'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function RegisterPage() {
+  const [step, setStep] = useState<'form' | 'verify'>('form')
+  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
+  const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string
+    password?: string
+    companyName?: string
+  }>({})
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [countdown, setCountdown] = useState(60)
+  const [canResend, setCanResend] = useState(false)
+
   const router = useRouter()
   const supabase = createClient()
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    router.prefetch('/completo-profilin-fast')
+    router.prefetch('/completo-profilin-company')
+    router.prefetch('/')
+  }, [router])
+
+  useEffect(() => {
+    if (step === 'verify') {
+      try {
+        if (accountType === 'company') {
+          router.prefetch('/completo-profilin-company')
+        } else {
+          router.prefetch('/completo-profilin-fast')
+        }
+      } catch {}
+      setCountdown(60)
+      setCanResend(false)
+      if (timerRef.current) clearInterval(timerRef.current)
+      timerRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!)
+            setCanResend(true)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [step, accountType, router])
+
+  const validate = () => {
+    const next: { email?: string; password?: string; companyName?: string } = {}
+    if (accountType === 'company') {
+      if (!companyName.trim()) next.companyName = 'Emri i kompanisë është i detyrueshëm.'
+      else if (companyName.trim().length < 2) next.companyName = 'Të paktën 2 karaktere.'
+    }
+    if (!email.trim()) next.email = 'Email-i është i detyrueshëm.'
+    else if (!EMAIL_RE.test(email.trim())) next.email = 'Shkruaj një email të vlefshëm.'
+    if (!password) next.password = 'Fjalëkalimi është i detyrueshëm.'
+    else if (password.length < 6) next.password = 'Të paktën 6 karaktere.'
+    setFieldErrors(next)
+    if (next.companyName) document.getElementById('companyName')?.focus()
+    else if (next.email) document.getElementById('email')?.focus()
+    else if (next.password) document.getElementById('password')?.focus()
+    return Object.keys(next).length === 0
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    if (!validate()) return
+    setLoading(true)
 
-    if (password.length < 6) {
-      setError('Fjalëkalimi duhet të ketë të paktën 6 karaktere.')
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          accountType,
+          companyName: accountType === 'company' ? companyName.trim() : undefined,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Gabim gjatë regjistrimit. Ju lutemi provoni përsëri.')
+        setLoading(false)
+        return
+      }
+
+      setStep('verify')
       setLoading(false)
-      return
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-
-    if (error) {
-      setError('Gabim gjatë regjistrimit. Provo përsëri.')
+    } catch (err) {
+      console.error('Registration submit error:', err)
+      setError('Lidhja me serverin dështoi. Kontrolloni internetin dhe provoni përsëri.')
       setLoading(false)
-      return
     }
+  }
 
-    setSuccess(true)
-    setLoading(false)
+  const handleVerify = async (codeToVerify: string) => {
+    if (codeToVerify.length !== 6 || verifying) return
+    setError('')
+    setVerifying(true)
+
+    try {
+      const res = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          code: codeToVerify,
+          password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Kodi është i gabuar ose ka skaduar.')
+        setVerifying(false)
+        return
+      }
+
+      // Automatically sign in the user now that email is confirmed
+      setRedirecting(true)
+
+      let authed = false
+      if (password) {
+        try {
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          })
+          if (!signInErr && signInData?.session) {
+            authed = true
+          }
+        } catch (signInErr) {
+          console.warn('Auto sign-in notice:', signInErr)
+        }
+      }
+
+      if (!authed && data.session) {
+        try {
+          await supabase.auth.setSession(data.session)
+          authed = true
+        } catch (sessErr) {
+          console.warn('setSession notice:', sessErr)
+        }
+      }
+
+      const targetRoute = accountType === 'company' ? '/completo-profilin-company' : '/completo-profilin-fast'
+      if (typeof window !== 'undefined') {
+        window.location.replace(targetRoute)
+      } else {
+        router.replace(targetRoute)
+      }
+    } catch (err) {
+      console.error('Verification error:', err)
+      setError('Gabim gjatë verifikimit. Provoni përsëri.')
+      setVerifying(false)
+      setRedirecting(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!canResend || resending) return
+    setError('')
+    setResending(true)
+
+    try {
+      const res = await fetch('/api/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Dështoi ridërgimi i kodit. Provoni përsëri.')
+        setResending(false)
+        return
+      }
+
+      toast.success(`Një kod i ri u dërgua me sukses në ${email.trim()}.`)
+      setCode('')
+      setCountdown(60)
+      setCanResend(false)
+      setResending(false)
+    } catch (err) {
+      console.error('Resend error:', err)
+      setError('Lidhja me serverin dështoi. Provoni përsëri.')
+      setResending(false)
+    }
   }
 
   const handleGoogleLogin = async () => {
+    const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
         skipBrowserRedirect: false,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+          prompt: 'select_account',
         },
-      }
+      },
     })
   }
 
-  if (success) {
-    return (
-      <AuthShell>
-        <Card className="w-full max-w-md border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
-          <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-[#1A1A2E]">Kontrollo email-in!</h2>
-            <p className="text-gray-500">
-              Dërguam një link konfirmimi te <strong>{email}</strong>.
-              Kliko linkun për të aktivizuar llogarinë tënde.
-            </p>
-            <button
-              type="button"
-              className="mt-4 inline-flex items-center justify-center min-h-[44px] rounded-xl bg-[#006459] text-white px-5 py-2 text-sm font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
-              onClick={() => router.push('/login')}
-            >
-              Shko te hyrja
-            </button>
-          </CardContent>
-        </Card>
-      </AuthShell>
-    )
-  }
-
   return (
-    <AuthShell>
-      <div className="w-full max-w-md">
-        <Card className="border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Krijo llogari</CardTitle>
-            <CardDescription className="text-center text-gray-500">
-              30 ditë falas, pa kartë krediti
-            </CardDescription>
-          </CardHeader>
+    <AuthShell
+      headline="Regjistrohu dhe fillo sot"
+      subline="Zbulo shtëpinë tënde të ardhshme ose vendos pronën tënde para mijëra vizitorëve."
+    >
+      {step === 'form' ? (
+        <AuthPanel
+          title="Krijo llogari"
+          subtitle="Gjej shtëpi ose posto pronën tënde"
+          googleLabel="Regjistrohu me Google"
+          onGoogle={handleGoogleLogin}
+          error={error}
+          footer={
+            <span>
+              Ke llogari?{' '}
+              <Link href="/login" className="font-medium text-[#006459] hover:underline">
+                Hyr këtu
+              </Link>
+            </span>
+          }
+        >
+          <form onSubmit={handleRegister} noValidate className="space-y-2.5 sm:space-y-3">
+            {/* Account Type Selector — Lands on Individual by default */}
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-gray-100 border border-gray-200/80 mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountType('individual')
+                  if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }))
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                  accountType === 'individual'
+                    ? 'bg-white text-[#006459] shadow-xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>Individual</span>
+              </button>
 
-          <CardContent className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setAccountType('company')}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                  accountType === 'company'
+                    ? 'bg-white text-[#006459] shadow-xs'
+                    : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                <span>Kompani</span>
+              </button>
+            </div>
+
+            {/* Extra field when Kompani is selected */}
+            {accountType === 'company' && (
+              <AuthField
+                id="companyName"
+                label="Emri i Kompanisë"
+                type="text"
+                placeholder="psh. Iliria Real Estate"
+                autoComplete="organization"
+                icon={<Building2 className="h-4 w-4" />}
+                value={companyName}
+                onChange={(v) => {
+                  setCompanyName(v)
+                  if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }))
+                }}
+                error={fieldErrors.companyName}
+              />
+            )}
+
+            <AuthField
+              id="email"
+              label={accountType === 'company' ? 'Email i kompanisë' : 'Email'}
+              type="email"
+              placeholder={accountType === 'company' ? 'info@kompania.com' : 'emri@email.com'}
+              autoComplete="email"
+              icon={<Mail className="h-4 w-4" />}
+              value={email}
+              onChange={(v) => {
+                setEmail(v)
+                if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }))
+              }}
+              error={fieldErrors.email}
+            />
+
+            <AuthField
+              id="password"
+              label="Fjalëkalimi"
+              type="password"
+              placeholder="Minimum 6 karaktere"
+              autoComplete="new-password"
+              icon={<Lock className="h-4 w-4" />}
+              value={password}
+              onChange={(v) => {
+                setPassword(v)
+                if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }))
+              }}
+              error={fieldErrors.password}
+            />
+
+            <button
+              type="submit"
+              className="mt-1 w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Duke u regjistruar...
+                </span>
+              ) : (
+                'Regjistrohu'
+              )}
+            </button>
+          </form>
+        </AuthPanel>
+      ) : (
+        <div className="w-full">
+          {/* Professional Success Banner */}
+          <div className="mb-4 p-3 rounded-2xl bg-[#006459]/10 border border-[#006459]/25 text-[#006459] text-xs sm:text-[13px] flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="h-4 w-4 text-[#006459] shrink-0 mt-0.5" />
+            <div className="leading-snug">
+              <p className="font-bold text-[#006459]">Kodi i verifikimit u dërgua me sukses!</p>
+              <p className="mt-0.5 text-gray-600">
+                Kemi dërguar kodin 6-shifror te <strong className="text-[#101828] font-semibold">{email}</strong>.
+              </p>
+            </div>
+          </div>
+
+          <h1 className="text-2xl sm:text-[26px] font-extrabold leading-tight tracking-tight text-[#101828]">
+            Verifiko email-in
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-gray-500">
+            Vendos kodin 6-shifror për të aktivizuar llogarinë
+          </p>
+
+          <div className="mt-5">
             {error && (
-              <Alert variant="destructive" className="bg-red-50 border border-red-200 text-red-600">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert
+                variant="destructive"
+                className="mb-3 py-2 px-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[13px] leading-snug"
+              >
+                <AlertDescription className="text-xs sm:text-[13px] font-medium flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
-            <button
-              type="button"
-              className="w-full h-11 bg-white border border-gray-200/80 text-gray-700 font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center cursor-pointer rounded-xl"
-              onClick={handleGoogleLogin}
-            >
-              <Globe className="mr-2 h-4 w-4" />
-              Regjistrohu me Google
-            </button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">ose</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleRegister} className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[13px] text-gray-700 font-medium">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="emri@email.com"
-                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-[13px] text-gray-700 font-medium">Fjalëkalimi</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Minimum 6 karaktere"
-                    className="pl-10 h-11 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="otp-code" className="text-xs sm:text-[13px] font-semibold text-gray-700 block mb-1.5">
+                  Kodi i verifikimit
+                </label>
+                <input
+                  id="otp-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="••••••"
+                  autoFocus
+                  value={code}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setCode(val)
+                    if (error) setError('')
+                    if (val.length === 6) {
+                      handleVerify(val)
+                    }
+                  }}
+                  className="w-full h-12 text-center text-2xl sm:text-3xl font-bold font-mono tracking-[0.35em] sm:tracking-[0.5em] rounded-xl border border-gray-200 bg-gray-50/80 focus:bg-white focus:border-[#006459] outline-none text-[#101828] transition-all placeholder:text-gray-300"
+                />
               </div>
 
               <button
-                type="submit"
-                className="w-full h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled={loading}
+                type="button"
+                onClick={() => handleVerify(code)}
+                disabled={verifying || redirecting || code.length !== 6}
+                className="w-full h-10 sm:h-11 bg-[#006459] text-white text-sm font-semibold rounded-xl hover:bg-[#005048] transition-colors inline-flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
               >
-                {loading ? 'Duke u regjistruar...' : 'Regjistrohu'}
+                {redirecting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Po hapet profili...
+                  </span>
+                ) : verifying ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Duke verifikuar...
+                  </span>
+                ) : (
+                  'Verifiko dhe vazhdo'
+                )}
               </button>
-            </form>
-          </CardContent>
 
-          <CardFooter>
-            <p className="text-sm text-gray-400 text-center w-full">
-              Ke llogari?{' '}
-              <Link href="/login" className="text-[#111827] hover:underline font-medium">
-                Hyr këtu
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+              <div className="flex items-center justify-between pt-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('form')
+                    setError('')
+                  }}
+                  className="text-gray-500 hover:text-gray-800 font-medium inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Ndrysho email-in
+                </button>
+
+                {canResend ? (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="text-[#006459] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw className={`h-3 w-3 ${resending ? 'animate-spin' : ''}`} />
+                    {resending ? 'Duke dërguar...' : 'Ridërgo kodin'}
+                  </button>
+                ) : (
+                  <span className="text-gray-400">
+                    Ridërgo pas <strong className="text-gray-600 font-semibold">{countdown}s</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthShell>
   )
 }

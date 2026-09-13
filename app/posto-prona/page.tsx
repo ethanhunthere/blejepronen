@@ -1,7 +1,9 @@
 'use client'
 
+import PageHeader from '@/components/PageHeader'
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
@@ -60,7 +62,7 @@ function compressImage(file: File): Promise<File> {
       return resolve(file)
     }
 
-    const img = new Image()
+    const img = new window.Image()
     const objectUrl = URL.createObjectURL(file)
 
     img.onload = () => {
@@ -123,7 +125,7 @@ interface FormData {
   features: string[]
 }
 
-export default function PostoBanesePage() {
+export default function PostoPronaPage() {
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -202,7 +204,7 @@ export default function PostoBanesePage() {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error('Auth error during posto-banese submit:', JSON.stringify(authError))
+      console.error('Auth error during posto-prona submit:', JSON.stringify(authError))
       setError('Sesioni ka skaduar. Ju lutemi ri-regjistrohuni.')
       setUploading(false)
       isSubmittingRef.current = false
@@ -210,7 +212,7 @@ export default function PostoBanesePage() {
     }
 
     if (!user) {
-      console.error('No user session found during posto-banese submit')
+      console.error('No user session found during posto-prona submit')
       isSubmittingRef.current = false
       router.push('/login')
       return
@@ -274,14 +276,13 @@ export default function PostoBanesePage() {
       return
     }
 
-    // --- Step 2: Compress images ---
-    const compressedImages: File[] = []
+    // --- Step 2: Compress images concurrently ---
+    let compressedImages: File[] = []
     try {
-      for (let i = 0; i < images.length; i++) {
-        const compressed = await compressImage(images[i])
-        compressedImages.push(compressed)
-        setUploadProgress(Math.round(((i + 1) / (images.length * 2)) * 100))
-      }
+      compressedImages = await Promise.all(
+        images.map((img) => compressImage(img))
+      )
+      setUploadProgress(40)
     } catch (compressErr) {
       const message = compressErr instanceof Error ? compressErr.message : 'Gabim i panjohur'
       console.error('Image compression failed:', message)
@@ -292,9 +293,9 @@ export default function PostoBanesePage() {
       return
     }
 
-    // --- Step 3: Upload images (tracking paths so we can roll back on failure) ---
-    const imageUrls: string[] = []
+    // --- Step 3: Upload images concurrently (with rollback on failure) ---
     const uploadedPaths: string[] = []
+    let completedCount = 0
 
     const rollbackUploads = async () => {
       if (uploadedPaths.length === 0) return
@@ -304,14 +305,17 @@ export default function PostoBanesePage() {
       }
     }
 
+    let imageUrls: string[] = []
     try {
-      for (let i = 0; i < compressedImages.length; i++) {
-        const image = compressedImages[i]
+      const uploadPromises = compressedImages.map(async (image, i) => {
         const ext = image.name.split('.').pop() || 'jpg'
         const path = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('listings')
-          .upload(path, image, { contentType: image.type })
+          .upload(path, image, {
+            contentType: image.type,
+            cacheControl: '31536000, immutable',
+          })
 
         if (uploadError) {
           console.error('Image upload error for', image.name, ':', JSON.stringify(uploadError))
@@ -324,9 +328,15 @@ export default function PostoBanesePage() {
           .from('listings')
           .getPublicUrl(path)
 
-        imageUrls.push(publicUrl)
-        setUploadProgress(Math.round(((images.length + i + 1) / (images.length * 2)) * 100))
-      }
+        completedCount++
+        setUploadProgress(40 + Math.round((completedCount / compressedImages.length) * 50))
+        return { index: i, url: publicUrl }
+      })
+
+      const results = await Promise.all(uploadPromises)
+      // Sort back by original index so user photo order is preserved
+      results.sort((a, b) => a.index - b.index)
+      imageUrls = results.map((r) => r.url)
     } catch (uploadErr) {
       const message = uploadErr instanceof Error ? uploadErr.message : 'Gabim i panjohur'
       console.error('Image upload batch failed:', message)
@@ -368,7 +378,7 @@ export default function PostoBanesePage() {
       if (insertError.code === '42501') {
         setError('Nuk keni leje për të postuar. Kontaktoni mbështetjen.')
       } else if (insertError.code === '23503') {
-        setError('Profili juaj nuk është kompletuar. Vizitoni /completo-profilin së pari.')
+        setError('Profili juaj nuk është kompletuar. Vizitoni profilin tuaj së pari.')
       } else if (insertError.code === '23505') {
         setError('Ky listim ekziston tashmë.')
       } else if (insertError.code === '23502') {
@@ -385,22 +395,21 @@ export default function PostoBanesePage() {
     }
 
     // --- Success ---
-    toast.success('Banesa u postua me sukses!')
+    toast.success('Prona u postua me sukses!')
     router.push(`/listings/${listing.id}`)
   }
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <PageHeader title="Posto pronën tënde" subtitle="30 ditë falas, pa nevojë për kartë krediti" />
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Posto banesën tënde</h1>
-          <p className="text-gray-500 text-sm">30 ditë falas, pa nevojë për kartë krediti</p>
 
           <div className="flex items-center gap-2 mt-5" aria-hidden="true">
             {['Lloji', 'Detajet', 'Fotot'].map((label, i) => (
               <div key={label} className="flex items-center gap-2 flex-1 last:flex-none">
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-400 whitespace-nowrap">
-                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-500 whitespace-nowrap">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-semibold">
                     {i + 1}
                   </span>
                   {label}
@@ -414,16 +423,16 @@ export default function PostoBanesePage() {
         {uploading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F2F7F7]/90 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
-              <Loader2 className="h-10 w-10 animate-spin text-[#111827] mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-[#1A1A2E] mb-2">Duke postuar banesën...</h2>
-              <p className="text-sm text-gray-500 mb-4">Ju lutemi mos e mbyllni faqen.</p>
+              <Loader2 className="h-10 w-10 animate-spin text-[#101828] mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-[#101828] mb-2">Duke postuar pronën...</h2>
+              <p className="text-sm text-gray-600 mb-4">Ju lutemi mos e mbyllni faqen.</p>
               <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[#006459] transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-2">{uploadProgress}%</p>
+              <p className="text-xs text-gray-500 mt-2">{uploadProgress}%</p>
             </div>
           </div>
         )}
@@ -436,11 +445,11 @@ export default function PostoBanesePage() {
         {unverified && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>
-              Duhet të verifikoni profilin tuaj para se të postoni banesë. Shkoni te profili juaj dhe klikoni &apos;Verifiko profilin&apos;.
+              Duhet të verifikoni profilin tuaj para se të postoni pronë. Shkoni te profili juaj dhe klikoni &apos;Verifiko profilin&apos;.
             </AlertDescription>
             <div className="mt-3">
               <Link
-                href="/completo-profilin"
+                href="/profili"
                 className="inline-flex items-center justify-center min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer"
               >
                 Verifiko profilin
@@ -475,21 +484,21 @@ export default function PostoBanesePage() {
 
           {/* Basic Info */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[#1A1A2E]">Informacioni bazë</h2>
+            <h2 className="font-semibold text-[#101828]">Informacioni bazë</h2>
 
             <div>
               <Label htmlFor="title">Titulli i listimit<span className="inline-block w-1 h-1 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="title"
                 name="title"
-                placeholder="p.sh. Banesë 3+1 në qendër të Prishtinës"
-                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#006459]/50"
+                placeholder="p.sh. Pronë 3+1 në qendër të Prishtinës"
+                className="mt-1 h-11 bg-white text-[#101828] placeholder:text-gray-500 border-gray-200 focus:border-[#006459]/50"
                 value={formData.title}
                 onChange={handleChange}
                 maxLength={MAX_TITLE_LENGTH}
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">{formData.title.length}/{MAX_TITLE_LENGTH} karaktere</p>
+              <p className="text-xs text-gray-500 mt-1">{formData.title.length}/{MAX_TITLE_LENGTH} karaktere</p>
             </div>
 
             <div>
@@ -497,19 +506,19 @@ export default function PostoBanesePage() {
               <textarea
                 id="description"
                 name="description"
-                placeholder="Përshkruaj banesën, lagjen, kushtet e shitjes..."
-                className="mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006459]/50 resize-none"
+                placeholder="Përshkruaj pronën, lagjen, kushtet e shitjes..."
+                className="mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white text-[#101828] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#006459]/50 resize-none"
                 value={formData.description}
                 onChange={handleChange}
                 maxLength={MAX_DESCRIPTION_LENGTH}
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">{formData.description.length}/{MAX_DESCRIPTION_LENGTH} karaktere</p>
+              <p className="text-xs text-gray-500 mt-1">{formData.description.length}/{MAX_DESCRIPTION_LENGTH} karaktere</p>
             </div>
 
             <div>
-              <Label className="text-base font-semibold mb-3 block">Gjendja e banesës</Label>
-              <div role="radiogroup" aria-label="Gjendja e banesës" className="flex flex-wrap gap-2">
+              <Label className="text-base font-semibold mb-3 block">Gjendja e pronës</Label>
+              <div role="radiogroup" aria-label="Gjendja e pronës" className="flex flex-wrap gap-2">
                 {CONDITIONS.map(c => (
                   <button
                     key={c.value}
@@ -540,7 +549,7 @@ export default function PostoBanesePage() {
                   type="number"
                   step="100"
                   placeholder={formData.type === 'shitje' ? '85000' : '400'}
-                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#006459]/50"
+                  className="mt-1 h-11 bg-white text-[#101828] placeholder:text-gray-500 border-gray-200 focus:border-[#006459]/50"
                   value={formData.price}
                   onChange={handleChange}
                   required
@@ -554,7 +563,7 @@ export default function PostoBanesePage() {
                   type="number"
                   min="1"
                   placeholder="75"
-                  className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#006459]/50"
+                  className="mt-1 h-11 bg-white text-[#101828] placeholder:text-gray-500 border-gray-200 focus:border-[#006459]/50"
                   value={formData.area_m2}
                   onChange={handleChange}
                   required
@@ -585,7 +594,7 @@ export default function PostoBanesePage() {
                   id="city"
                   name="city"
                   style={{ colorScheme: 'light' }}
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#006459]/50"
+                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50"
                   value={formData.city}
                   onChange={handleChange}
                   required
@@ -602,7 +611,7 @@ export default function PostoBanesePage() {
                   id="neighborhood"
                   name="neighborhood"
                   style={{ colorScheme: 'light' }}
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 disabled:opacity-50 disabled:cursor-not-allowed"
                   value={formData.neighborhood}
                   onChange={handleChange}
                   disabled={!formData.city}
@@ -614,7 +623,7 @@ export default function PostoBanesePage() {
                     <option key={neighborhood} value={neighborhood}>{neighborhood}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">Opsionale - por ndihmon blerësit të gjejnë banesën</p>
+                <p className="text-xs text-gray-500 mt-1">Opsionale - por ndihmon blerësit të gjejnë pronën</p>
               </div>
             </div>
 
@@ -624,7 +633,7 @@ export default function PostoBanesePage() {
                 id="rooms"
                 name="rooms"
                 style={{ colorScheme: 'light' }}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#006459]/50"
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-200 text-sm bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50"
                 value={formData.rooms}
                 onChange={handleChange}
                 required
@@ -642,7 +651,7 @@ export default function PostoBanesePage() {
                 id="address"
                 name="address"
                 placeholder="p.sh. Rruga Fehmi Agani"
-                className="mt-1 h-11 bg-white text-[#1A1A2E] placeholder:text-gray-400 border-gray-200 focus:border-[#006459]/50"
+                className="mt-1 h-11 bg-white text-[#101828] placeholder:text-gray-500 border-gray-200 focus:border-[#006459]/50"
                 value={formData.address}
                 onChange={handleChange}
                 required
@@ -652,7 +661,7 @@ export default function PostoBanesePage() {
 
           {/* Extra Details */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-6">
-            <h2 className="font-semibold text-[#1A1A2E]">Detaje shtesë</h2>
+            <h2 className="font-semibold text-[#101828]">Detaje shtesë</h2>
 
             {/* Floor */}
             <div>
@@ -716,7 +725,7 @@ export default function PostoBanesePage() {
                       }
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                         selected
-                          ? 'bg-[#111827]/10 border border-[#111827]/40 text-[#111827]'
+                          ? 'bg-[#111827]/10 border border-[#111827]/40 text-[#101828]'
                           : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                       }`}
                     >
@@ -730,14 +739,14 @@ export default function PostoBanesePage() {
 
           {/* Image Upload */}
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-            <h2 className="font-semibold text-[#1A1A2E] mb-1">Fotot</h2>
-            <p className="text-sm text-gray-500 mb-4">Shto deri në 10 foto. Foto e parë do të jetë kryesorja.</p>
+            <h2 className="font-semibold text-[#101828] mb-1">Fotot</h2>
+            <p className="text-sm text-gray-600 mb-4">Shto deri në 10 foto. Foto e parë do të jetë kryesorja.</p>
 
             {/* Upload Zone */}
             <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#111827] bg-gray-50 hover:bg-[#111827]/5 transition-all">
-              <Upload className="h-8 w-8 text-gray-400 mb-2" />
-              <span className="text-sm text-gray-500">Kliko për të ngarkuar foto</span>
-              <span className="text-xs text-gray-400 mt-1">PNG, JPG deri 10MB</span>
+              <Upload className="h-8 w-8 text-gray-500 mb-2" />
+              <span className="text-sm text-gray-600">Kliko për të ngarkuar foto</span>
+              <span className="text-xs text-gray-500 mt-1">PNG, JPG deri 10MB</span>
               <input
                 type="file"
                 accept="image/*"
@@ -749,12 +758,12 @@ export default function PostoBanesePage() {
 
             {/* Preview Grid */}
             {previews.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
                 {previews.map((preview, i) => (
                   <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
-                    <img src={preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    <Image src={preview} alt={`Foto ${i + 1}`} fill unoptimized className="object-cover" />
                     {i === 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-[#111827] text-white text-xs text-center py-1">
+                      <div className="absolute bottom-0 left-0 right-0 bg-[#111827] text-white text-xs font-semibold text-center py-1">
                         Kryesorja
                       </div>
                     )}
@@ -762,7 +771,7 @@ export default function PostoBanesePage() {
                       type="button"
                       onClick={() => removeImage(i)}
                       aria-label={`Hiq foton ${i + 1}`}
-                      className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center bg-red-500/20 text-red-400 border border-red-500/30 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 ease-out cursor-pointer hover:bg-red-500/30 hover:scale-110 active:scale-95"
+                      className="absolute top-2 right-2 h-10 w-10 min-w-[40px] min-h-[40px] flex items-center justify-center bg-black/60 sm:bg-red-500/20 text-white sm:text-red-400 border border-white/20 sm:border-red-500/30 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 ease-out cursor-pointer hover:bg-red-600 sm:hover:bg-red-500/30 hover:scale-110 active:scale-95 touch-manipulation"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -784,13 +793,13 @@ export default function PostoBanesePage() {
                 Duke ngarkuar...
               </>
             ) : (
-              '✓ Posto banesën falas'
+              '✓ Posto pronën falas'
             )}
           </Button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-600">
             Duke postuar, pranon{' '}
-            <a href="/kushtet" className="underline hover:text-[#111827]">kushtet e shërbimit</a>
+            <a href="/kushtet" className="underline hover:text-[#101828]">kushtet e shërbimit</a>
           </p>
         </form>
       </div>

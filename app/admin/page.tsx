@@ -42,7 +42,7 @@ export default async function AdminPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
       <div className="w-full px-4 sm:px-6 py-10">
-        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-8">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[#101828] mb-8">Admin Dashboard</h1>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -53,8 +53,8 @@ export default async function AdminPage() {
             { label: 'Përdorues', value: typedProfiles.length },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-              <p className="text-3xl font-bold text-[#111827]">{stat.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+              <p className="text-3xl font-bold text-[#101828]">{stat.value}</p>
+              <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -62,38 +62,38 @@ export default async function AdminPage() {
         {/* Listings Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-[#1A1A2E]">Të gjitha listimet</h2>
+            <h2 className="font-semibold text-[#101828]">Të gjitha listimet</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Titulli</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Shitësi</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Qyteti</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Çmimi</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Statusi</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Veprimet</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Titulli</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Shitësi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Qyteti</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Çmimi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Statusi</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Veprimet</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {typedListings.map(listing => (
                   <tr key={listing.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-[#1A1A2E] max-w-xs truncate">
+                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-[#101828] max-w-xs truncate">
                       {listing.title}
                     </td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">
                       {listing.profiles?.first_name} {listing.profiles?.last_name}
                     </td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{listing.city}</td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-[#1A1A2E] font-medium">€{listing.price.toLocaleString()}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">{listing.city}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-[#101828] font-medium">€{listing.price.toLocaleString()}</td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={listing.is_active ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-red-50 text-red-500 border border-red-200'}>
                         {listing.is_active ? 'Aktiv' : 'Joaktiv'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/listings/${listing.id}`} className="text-[#111827] hover:underline text-sm whitespace-nowrap">
+                      <Link href={`/listings/${listing.id}`} className="text-[#101828] hover:underline text-sm whitespace-nowrap">
                         Shiko →
                       </Link>
                     </td>
@@ -107,31 +107,31 @@ export default async function AdminPage() {
         {/* Users Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-[#1A1A2E]">Përdoruesit</h2>
+            <h2 className="font-semibold text-[#101828]">Përdoruesit</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Emri</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Telefoni</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Verifikuar</th>
-                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-400 font-medium">Regjistruar</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Emri</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Telefoni</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Verifikuar</th>
+                  <th className="text-left px-3 py-3 md:px-6 md:py-3 text-gray-500 font-medium">Regjistruar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {typedProfiles.map(profile => (
                   <tr key={profile.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-[#1A1A2E]">
+                    <td className="px-3 py-3 md:px-6 md:py-4 font-medium text-[#101828]">
                       {profile.first_name} {profile.last_name}
                     </td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">{profile.phone || '-'}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">{profile.phone || '-'}</td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={profile.email_verified ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-yellow-50 text-yellow-600 border border-yellow-200'}>
                         {profile.email_verified ? 'Po' : 'Jo'}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-500">
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">
                       {new Date(profile.created_at).toLocaleDateString('sq-AL')}
                     </td>
                   </tr>

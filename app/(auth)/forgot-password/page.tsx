@@ -44,8 +44,8 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto">
               <Mail className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-[#1A1A2E]">Kontrollo email-in!</h2>
-            <p className="text-gray-500">
+            <h2 className="text-2xl font-bold text-[#101828]">Kontrollo email-in!</h2>
+            <p className="text-gray-600">
               Dërguam linkun e rivendosjes te <strong>{email}</strong>.
               Kliko linkun për të vendosur fjalëkalimin e ri.
             </p>
@@ -63,8 +63,8 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <Card className="border border-gray-200/60 rounded-3xl shadow-[0_24px_64px_-24px_rgba(0,20,17,0.55)]">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#1A1A2E]">Rivendos fjalëkalimin</CardTitle>
-            <CardDescription className="text-center text-gray-500">
+            <CardTitle className="text-2xl font-extrabold tracking-tight text-center text-[#101828]">Rivendos fjalëkalimin</CardTitle>
+            <CardDescription className="text-center text-gray-600">
               Vendos email-in dhe do të të dërgojmë një link
             </CardDescription>
           </CardHeader>
@@ -80,12 +80,12 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[13px] text-gray-700 font-medium">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-4 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3.5 top-4 h-4 w-4 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="emri@email.com"
-                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#1A1A2E] placeholder:text-gray-400 border-gray-200/80 focus:bg-white"
+                    className="pl-10 h-12 rounded-xl bg-gray-50 text-[#101828] placeholder:text-gray-500 border-gray-200/80 focus:bg-white"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

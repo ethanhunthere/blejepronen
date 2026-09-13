@@ -1,189 +1,444 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
-
 import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useFavorites } from '@/lib/useFavorites'
-import ListingCard from '@/components/ListingCard'
-import { Search, SlidersHorizontal, X, Loader2, CheckCircle2, ChevronDown } from 'lucide-react'
+import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  Loader2,
+  CheckCircle2,
+  ChevronDown,
+  MapPin,
+  Building2,
+  Check,
+  ArrowUpDown,
+} from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
-const CITIES = Object.keys(KOSOVO_LOCATIONS)
+const ALL_CITIES = Object.keys(KOSOVO_LOCATIONS)
+const POPULAR_CITIES = [
+  'Prishtinë',
+  'Prizren',
+  'Pejë',
+  'Gjakovë',
+  'Gjilan',
+  'Ferizaj',
+  'Mitrovicë',
+  'Fushë Kosovë',
+  'Vushtrri',
+]
+
 const PAGE_SIZE = 12
 
-type AgentResult = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'>
+const CONDITIONS = [
+  { value: 'e-re', label: 'E re' },
+  { value: 'rinovuar', label: 'E rinovuar' },
+  { value: 'e-vjeter', label: 'E vjetër' },
+  { value: 'ka-nevojë-për-rinovim', label: 'Ka nevojë për rinovim' },
+]
+
+const APARTMENT_TYPES = [
+  'Studio',
+  '1+1',
+  '2+1',
+  '3+1',
+  '4+1',
+  '5+1',
+  'Vilë',
+  'Duplex',
+]
+
+const FLOORS = ['Bodrum', 'P/D', '1', '2', '3', '4', '5', '6', '7+']
+
+const FEATURES_LIST = [
+  { id: 'Parking', label: 'Parking' },
+  { id: 'Ashensor', label: 'Ashensor' },
+  { id: 'Ballkon', label: 'Ballkon' },
+  { id: 'Ngrohje qendrore', label: 'Ngrohje qendrore' },
+  { id: 'Klimë', label: 'Klimë' },
+  { id: 'Mobilie', label: 'Mobiluar' },
+  { id: 'Siguri 24h', label: 'Siguri 24h' },
+  { id: 'Panoramë', label: 'Pamje panoramike' },
+  { id: 'Kopësht', label: 'Kopësht' },
+  { id: 'Bodrum', label: 'Bodrum / Depo' },
+]
+
+const PRICE_PRESETS_SALE = [
+  { label: '< 50,000 €', min: '', max: '50000' },
+  { label: '50k – 100k €', min: '50000', max: '100000' },
+  { label: '100k – 150k €', min: '100000', max: '150000' },
+  { label: '150k – 250k €', min: '150000', max: '250000' },
+  { label: '> 250,000 €', min: '250000', max: '' },
+]
+
+const PRICE_PRESETS_RENT = [
+  { label: '< 250 €', min: '', max: '250' },
+  { label: '250 – 400 €', min: '250', max: '400' },
+  { label: '400 – 600 €', min: '400', max: '600' },
+  { label: '600 – 1,000 €', min: '600', max: '1000' },
+  { label: '> 1,000 €', min: '1000', max: '' },
+]
+
+const AREA_PRESETS = [
+  { label: '< 50 m²', min: '', max: '50' },
+  { label: '50 – 80 m²', min: '50', max: '80' },
+  { label: '80 – 120 m²', min: '80', max: '120' },
+  { label: '120 – 200 m²', min: '120', max: '200' },
+  { label: '> 200 m²', min: '200', max: '' },
+]
+
+type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'area_desc' | 'area_asc'
+
+interface FilterState {
+  search: string
+  city: string
+  neighborhood: string
+  type: '' | 'shitje' | 'qira'
+  minPrice: string
+  maxPrice: string
+  rooms: string
+  minArea: string
+  maxArea: string
+  condition: string
+  apartment_type: string
+  floor: string
+  features: string[]
+  agentId: string
+}
+
+type AgentResult = Pick<
+  Profile,
+  'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'
+>
 
 function ListingsContent() {
+  const searchParams = useSearchParams()
+  const supabase = useMemo(() => createClient(), [])
+  const { favoriteIds, toggleFavorite } = useFavorites()
+
+  // ---- Filter State ----
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    city: '',
+    neighborhood: '',
+    type: '',
+    minPrice: '',
+    maxPrice: '',
+    rooms: '',
+    minArea: '',
+    maxArea: '',
+    condition: '',
+    apartment_type: '',
+    floor: '',
+    features: [],
+    agentId: '',
+  })
+
+  const [searchInput, setSearchInput] = useState('')
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+
+  // ---- Data State ----
   const [listings, setListings] = useState<Listing[]>([])
-  const [agentResults, setAgentResults] = useState<AgentResult[]>([])
   const [page, setPage] = useState(0)
   const [fetchState, setFetchState] = useState({ loading: true, hasMore: true })
   const [loadError, setLoadError] = useState(false)
-  const [filters, setFilters] = useState({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
-  const [showFilters, setShowFilters] = useState(false)
-  const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc'>('newest')
-  const [sortOpen, setSortOpen] = useState(false)
-  const sortRef = useRef<HTMLDivElement>(null)
-  // Close all custom dropdowns on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node
-      if (
-        cityRef.current?.contains(target) ||
-        neighborhoodRef.current?.contains(target) ||
-        typeRef.current?.contains(target) ||
-        roomsRef.current?.contains(target) ||
-        sortRef.current?.contains(target)
-      ) return
-      setCityOpen(false)
-      setNeighborhoodOpen(false)
-      setTypeOpen(false)
-      setRoomsOpen(false)
-      setSortOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
 
+  // ---- UI Popovers State ----
   const [cityOpen, setCityOpen] = useState(false)
+  const [citySearchQuery, setCitySearchQuery] = useState('')
   const [neighborhoodOpen, setNeighborhoodOpen] = useState(false)
-  const [typeOpen, setTypeOpen] = useState(false)
-  const [roomsOpen, setRoomsOpen] = useState(false)
+  const [neighborhoodSearchQuery, setNeighborhoodSearchQuery] = useState('')
+  const [priceOpen, setPriceOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
+  const [moreFiltersModalOpen, setMoreFiltersModalOpen] = useState(false)
+
+  // Temp state for modal
+  const [tempModalFilters, setTempModalFilters] = useState({
+    minArea: '',
+    maxArea: '',
+    condition: '',
+    apartment_type: '',
+    floor: '',
+    features: [] as string[],
+  })
+
+  // Refs for click outside
   const cityRef = useRef<HTMLDivElement>(null)
   const neighborhoodRef = useRef<HTMLDivElement>(null)
-  const typeRef = useRef<HTMLDivElement>(null)
-  const roomsRef = useRef<HTMLDivElement>(null)
-  const [searchInput, setSearchInput] = useState(filters.search)
-  const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
-  const selectedAgent = useMemo(() => (filters.agentId ? agentMap[filters.agentId] ?? null : null), [agentMap, filters.agentId])
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialParamsAppliedRef = useRef(false)
+  const priceRef = useRef<HTMLDivElement>(null)
+  const sortRef = useRef<HTMLDivElement>(null)
   const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const supabase = createClient()
-  const { favoriteIds, toggleFavorite } = useFavorites()
+  const lastAppliedSearchRef = useRef<string | null>(null)
 
-  // Pre-populate the search filter from the ?search= URL param once, on initial mount only.
+  // Read URL params whenever URL search params change (e.g. navigation to /listings?type=qira)
   useEffect(() => {
-    if (initialParamsAppliedRef.current) return
-    initialParamsAppliedRef.current = true
+    const currentParamsString = searchParams.toString()
+    if (lastAppliedSearchRef.current === currentParamsString) return
+    lastAppliedSearchRef.current = currentParamsString
 
-    const urlSearch = searchParams.get('search')
-    if (urlSearch) {
-      setSearchInput(urlSearch)
-      setFilters(prev => ({ ...prev, search: urlSearch }))
-    }
+    const pSearch = searchParams.get('search') || ''
+    const pCity = searchParams.get('city') || ''
+    const pNeighborhood = searchParams.get('neighborhood') || ''
+    const pType = (searchParams.get('type') as '' | 'shitje' | 'qira') || ''
+    const pMinPrice = searchParams.get('minPrice') || ''
+    const pMaxPrice = searchParams.get('maxPrice') || ''
+    const pRooms = searchParams.get('rooms') || ''
+    const pMinArea = searchParams.get('minArea') || ''
+    const pMaxArea = searchParams.get('maxArea') || ''
+    const pCondition = searchParams.get('condition') || ''
+    const pApartmentType = searchParams.get('apartment_type') || ''
+    const pFloor = searchParams.get('floor') || ''
+    const pFeaturesParam = searchParams.get('features')
+    const pFeatures = pFeaturesParam ? pFeaturesParam.split(',') : []
+    const pAgentId = searchParams.get('agentId') || ''
+    const pSort = (searchParams.get('sort') as SortOption) || 'newest'
+
+    setSearchInput(pSearch)
+    setSortBy(pSort)
+    setFilters({
+      search: pSearch,
+      city: pCity,
+      neighborhood: pNeighborhood,
+      type: pType,
+      minPrice: pMinPrice,
+      maxPrice: pMaxPrice,
+      rooms: pRooms,
+      minArea: pMinArea,
+      maxArea: pMaxArea,
+      condition: pCondition,
+      apartment_type: pApartmentType,
+      floor: pFloor,
+      features: pFeatures,
+      agentId: pAgentId,
+    })
   }, [searchParams])
 
-  const fetchListings = useCallback(async (pageNum = 0) => {
-    if (pageNum === 0) setPage(0)
-    setFetchState(prev => ({ ...prev, loading: true, hasMore: pageNum === 0 ? true : prev.hasMore }))
-    setLoadError(false)
+  // Sync to URL
+  const updateUrlParams = useCallback(
+    (newFilters: FilterState, newSort: SortOption) => {
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams()
 
-    const searchTerm = filters.search.trim()
+      if (newFilters.search.trim()) params.set('search', newFilters.search.trim())
+      if (newFilters.city) params.set('city', newFilters.city)
+      if (newFilters.neighborhood) params.set('neighborhood', newFilters.neighborhood)
+      if (newFilters.type) params.set('type', newFilters.type)
+      if (newFilters.minPrice) params.set('minPrice', newFilters.minPrice)
+      if (newFilters.maxPrice) params.set('maxPrice', newFilters.maxPrice)
+      if (newFilters.rooms) params.set('rooms', newFilters.rooms)
+      if (newFilters.minArea) params.set('minArea', newFilters.minArea)
+      if (newFilters.maxArea) params.set('maxArea', newFilters.maxArea)
+      if (newFilters.condition) params.set('condition', newFilters.condition)
+      if (newFilters.apartment_type) params.set('apartment_type', newFilters.apartment_type)
+      if (newFilters.floor) params.set('floor', newFilters.floor)
+      if (newFilters.features.length > 0) params.set('features', newFilters.features.join(','))
+      if (newFilters.agentId) params.set('agentId', newFilters.agentId)
+      if (newSort !== 'newest') params.set('sort', newSort)
 
-    let listingQuery = supabase
-      .from('listings')
-      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features')
-      .eq('is_active', true)
+      const qs = params.toString()
+      lastAppliedSearchRef.current = qs
+      const newUrl = qs ? `/listings?${qs}` : '/listings'
+      window.history.replaceState(null, '', newUrl)
+    },
+    []
+  )
 
-    if (filters.city) listingQuery = listingQuery.eq('city', filters.city)
-    if (filters.type) listingQuery = listingQuery.eq('type', filters.type)
-    if (filters.minPrice) listingQuery = listingQuery.gte('price', Number(filters.minPrice))
-    if (filters.maxPrice) listingQuery = listingQuery.lte('price', Number(filters.maxPrice))
-    if (filters.rooms) listingQuery = listingQuery.gte('rooms', Number(filters.rooms))
-    if (filters.agentId) listingQuery = listingQuery.eq('user_id', filters.agentId)
-    if (filters.neighborhood) listingQuery = listingQuery.ilike('neighborhood', `%${filters.neighborhood}%`)
-
-    if (searchTerm) {
-      listingQuery = listingQuery.or(
-        `title.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
-      )
+  // Click outside handling
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (cityRef.current && !cityRef.current.contains(target)) setCityOpen(false)
+      if (neighborhoodRef.current && !neighborhoodRef.current.contains(target)) setNeighborhoodOpen(false)
+      if (priceRef.current && !priceRef.current.contains(target)) setPriceOpen(false)
+      if (sortRef.current && !sortRef.current.contains(target)) setSortOpen(false)
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-    if (sortBy === 'price_asc') {
-      listingQuery = listingQuery.order('price', { ascending: true })
-    } else if (sortBy === 'price_desc') {
-      listingQuery = listingQuery.order('price', { ascending: false })
-    } else {
-      listingQuery = listingQuery.order('created_at', { ascending: false })
+  // Keyboard Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMoreFiltersModalOpen(false)
+        setCityOpen(false)
+        setNeighborhoodOpen(false)
+        setPriceOpen(false)
+        setSortOpen(false)
+      }
     }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
-    listingQuery = listingQuery.range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
+  // Query Supabase
+  const fetchListings = useCallback(
+    async (pageNum = 0) => {
+      if (pageNum === 0) setPage(0)
+      setFetchState(prev => ({
+        ...prev,
+        loading: true,
+        hasMore: pageNum === 0 ? true : prev.hasMore,
+      }))
+      setLoadError(false)
 
-    try {
-      const [{ data: listingData, error: listingError }, { data: profileData, error: profileError }] = await Promise.all([
-        listingQuery,
-        searchTerm && pageNum === 0 && !filters.agentId
-          ? (() => {
-              const words = searchTerm.split(/\s+/).filter(Boolean)
-              let profileQuery = supabase
-                .from('profiles_public')
-                .select('id,first_name,last_name,avatar_url,email_verified,created_at')
+      let listingQuery = supabase
+        .from('listings')
+        .select(
+          'id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features'
+        )
+        .eq('is_active', true)
 
-              if (words.length > 1) {
-                const [first, ...restWords] = words
-                const rest = restWords.join(' ')
-                profileQuery = profileQuery.or(
-                  `first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,and(first_name.ilike.%${first}%,last_name.ilike.%${rest}%),and(first_name.ilike.%${rest}%,last_name.ilike.%${first}%)`
-                )
-              } else {
-                profileQuery = profileQuery.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
-              }
-
-              return profileQuery.limit(20)
-            })()
-          : Promise.resolve({ data: [], error: null })
-      ])
-
-      if (listingError) throw listingError
-
-      const listingResults = (listingData || []) as unknown as Listing[]
-      const agentResultsData = (profileData || []) as unknown as AgentResult[]
-
-      if (profileError) {
-        console.error('Agent search error:', profileError)
+      if (filters.city) {
+        listingQuery = listingQuery.eq('city', filters.city)
+      }
+      if (filters.neighborhood) {
+        listingQuery = listingQuery.ilike('neighborhood', `%${filters.neighborhood}%`)
+      }
+      if (filters.type) {
+        listingQuery = listingQuery.eq('type', filters.type)
+      }
+      if (filters.minPrice && !isNaN(Number(filters.minPrice))) {
+        listingQuery = listingQuery.gte('price', Number(filters.minPrice))
+      }
+      if (filters.maxPrice && !isNaN(Number(filters.maxPrice))) {
+        listingQuery = listingQuery.lte('price', Number(filters.maxPrice))
+      }
+      if (filters.rooms && !isNaN(Number(filters.rooms))) {
+        listingQuery = listingQuery.gte('rooms', Number(filters.rooms))
+      }
+      if (filters.minArea && !isNaN(Number(filters.minArea))) {
+        listingQuery = listingQuery.gte('area_m2', Number(filters.minArea))
+      }
+      if (filters.maxArea && !isNaN(Number(filters.maxArea))) {
+        listingQuery = listingQuery.lte('area_m2', Number(filters.maxArea))
+      }
+      if (filters.condition) {
+        listingQuery = listingQuery.eq('condition', filters.condition)
+      }
+      if (filters.apartment_type) {
+        listingQuery = listingQuery.eq('apartment_type', filters.apartment_type)
+      }
+      if (filters.floor) {
+        listingQuery = listingQuery.eq('floor', filters.floor)
+      }
+      if (filters.features.length > 0) {
+        listingQuery = listingQuery.contains('features', filters.features)
+      }
+      if (filters.agentId) {
+        listingQuery = listingQuery.eq('user_id', filters.agentId)
       }
 
-      if (pageNum === 0) {
-        setListings(listingResults)
-        setAgentResults(agentResultsData)
-        if (agentResultsData.length > 0) {
-          setAgentMap(prev => {
-            const next = { ...prev }
-            agentResultsData.forEach(agent => { next[agent.id] = agent })
-            return next
+      // Keyword Search Sanitization
+      const rawSearch = filters.search.trim()
+      if (rawSearch) {
+        const sanitized = rawSearch
+          .replace(/[,()]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        if (sanitized) {
+          listingQuery = listingQuery.or(
+            `title.ilike.%${sanitized}%,address.ilike.%${sanitized}%,city.ilike.%${sanitized}%,neighborhood.ilike.%${sanitized}%,description.ilike.%${sanitized}%`
+          )
+        }
+      }
+
+      // Sorting
+      if (sortBy === 'price_asc') {
+        listingQuery = listingQuery.order('price', { ascending: true })
+      } else if (sortBy === 'price_desc') {
+        listingQuery = listingQuery.order('price', { ascending: false })
+      } else if (sortBy === 'area_desc') {
+        listingQuery = listingQuery.order('area_m2', { ascending: false, nullsFirst: false })
+      } else if (sortBy === 'area_asc') {
+        listingQuery = listingQuery.order('area_m2', { ascending: true, nullsFirst: false })
+      } else {
+        listingQuery = listingQuery.order('created_at', { ascending: false })
+      }
+
+      listingQuery = listingQuery.range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1)
+
+      try {
+        const [
+          { data: listingData, error: listingError },
+          { data: profileData, error: profileError },
+        ] = await Promise.all([
+          listingQuery,
+          rawSearch && pageNum === 0 && !filters.agentId
+            ? (() => {
+                const words = rawSearch.split(/\s+/).filter(Boolean)
+                let profileQuery = supabase
+                  .from('profiles_public')
+                  .select('id,first_name,last_name,avatar_url,email_verified,created_at')
+
+                if (words.length > 1) {
+                  const [first, ...restWords] = words
+                  const rest = restWords.join(' ')
+                  profileQuery = profileQuery.or(
+                    `first_name.ilike.%${rawSearch}%,last_name.ilike.%${rawSearch}%,and(first_name.ilike.%${first}%,last_name.ilike.%${rest}%),and(first_name.ilike.%${rest}%,last_name.ilike.%${first}%)`
+                  )
+                } else {
+                  profileQuery = profileQuery.or(
+                    `first_name.ilike.%${rawSearch}%,last_name.ilike.%${rawSearch}%`
+                  )
+                }
+                return profileQuery.limit(8)
+              })()
+            : Promise.resolve({ data: [], error: null }),
+        ])
+
+        if (listingError) throw listingError
+
+        const listingResults = (listingData || []) as unknown as Listing[]
+        const agentResultsData = (profileData || []) as unknown as AgentResult[]
+
+        if (profileError) {
+          console.error('Agent search error:', profileError)
+        }
+
+        if (pageNum === 0) {
+          setListings(listingResults)
+          if (agentResultsData.length > 0) {
+            setAgentMap(prev => {
+              const next = { ...prev }
+              agentResultsData.forEach(agent => {
+                next[agent.id] = agent
+              })
+              return next
+            })
+          }
+        } else {
+          setListings(prev => {
+            const seen = new Set(prev.map(l => l.id))
+            const newListings = listingResults.filter(l => !seen.has(l.id))
+            return [...prev, ...newListings]
           })
         }
-      } else {
-        setListings(prev => {
-          const seen = new Set(prev.map(l => l.id))
-          const newListings = listingResults.filter(l => !seen.has(l.id))
-          return [...prev, ...newListings]
-        })
-      }
 
-      setFetchState({ loading: false, hasMore: listingResults.length === PAGE_SIZE })
-    } catch (err) {
-      console.error('Fetch listings error:', err)
-      setLoadError(true)
-      setFetchState({ loading: false, hasMore: false })
-    }
-  }, [filters, sortBy, supabase])
+        setFetchState({
+          loading: false,
+          hasMore: listingResults.length === PAGE_SIZE,
+        })
+      } catch (err) {
+        console.error('Fetch listings error:', err)
+        setLoadError(true)
+        setFetchState({ loading: false, hasMore: false })
+      }
+    },
+    [filters, sortBy, supabase]
+  )
 
   useEffect(() => {
     fetchListings(0)
-  }, [fetchListings])
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(searchDebounceRef.current)
-    }
-  }, [])
+    updateUrlParams(filters, sortBy)
+  }, [fetchListings, filters, sortBy, updateUrlParams])
 
   useEffect(() => {
     if (!filters.agentId || agentMap[filters.agentId]) return
@@ -199,419 +454,720 @@ function ListingsContent() {
       })
   }, [filters.agentId, supabase, agentMap])
 
-  const clearFilters = () => {
-    setSearchInput('')
-    setFilters({ city: '', type: '', minPrice: '', maxPrice: '', rooms: '', search: '', agentId: '', neighborhood: '' })
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val)
+    clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: val }))
+    }, 350)
   }
 
-  const hasActiveFilters = Object.values(filters).some(v => v !== '')
+  const clearSearch = () => {
+    setSearchInput('')
+    setFilters(prev => ({ ...prev, search: '' }))
+  }
+
+  const clearAllFilters = () => {
+    setSearchInput('')
+    setFilters({
+      search: '',
+      city: '',
+      neighborhood: '',
+      type: '',
+      minPrice: '',
+      maxPrice: '',
+      rooms: '',
+      minArea: '',
+      maxArea: '',
+      condition: '',
+      apartment_type: '',
+      floor: '',
+      features: [],
+      agentId: '',
+    })
+    setSortBy('newest')
+  }
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.search) count++
+    if (filters.city) count++
+    if (filters.neighborhood) count++
+    if (filters.type) count++
+    if (filters.minPrice || filters.maxPrice) count++
+    if (filters.rooms) count++
+    if (filters.minArea || filters.maxArea) count++
+    if (filters.condition) count++
+    if (filters.apartment_type) count++
+    if (filters.floor) count++
+    if (filters.features.length > 0) count += filters.features.length
+    if (filters.agentId) count++
+    return count
+  }, [filters])
+
+  const advancedFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.minArea || filters.maxArea) count++
+    if (filters.condition) count++
+    if (filters.apartment_type) count++
+    if (filters.floor) count++
+    if (filters.features.length > 0) count += filters.features.length
+    return count
+  }, [filters])
+
+  const filteredCities = useMemo(() => {
+    if (!citySearchQuery.trim()) return ALL_CITIES
+    const q = citySearchQuery.toLowerCase()
+    return ALL_CITIES.filter(c => c.toLowerCase().includes(q))
+  }, [citySearchQuery])
+
+  const availableNeighborhoods = useMemo(() => {
+    if (!filters.city || !KOSOVO_LOCATIONS[filters.city]) return []
+    const list = KOSOVO_LOCATIONS[filters.city]
+    if (!neighborhoodSearchQuery.trim()) return list
+    const q = neighborhoodSearchQuery.toLowerCase()
+    return list.filter(n => n.toLowerCase().includes(q))
+  }, [filters.city, neighborhoodSearchQuery])
+
+  const selectedAgent = filters.agentId ? agentMap[filters.agentId] ?? null : null
+
+  const openMoreFilters = () => {
+    setTempModalFilters({
+      minArea: filters.minArea,
+      maxArea: filters.maxArea,
+      condition: filters.condition,
+      apartment_type: filters.apartment_type,
+      floor: filters.floor,
+      features: [...filters.features],
+    })
+    setMoreFiltersModalOpen(true)
+  }
+
+  const applyMoreFilters = () => {
+    setFilters(prev => ({
+      ...prev,
+      ...tempModalFilters,
+    }))
+    setMoreFiltersModalOpen(false)
+  }
+
+  const resetMoreFilters = () => {
+    setTempModalFilters({
+      minArea: '',
+      maxArea: '',
+      condition: '',
+      apartment_type: '',
+      floor: '',
+      features: [],
+    })
+  }
 
   return (
-    <div className="min-h-screen bg-[#F2F7F7]">
-      {/* Page header band */}
-      <div className="relative overflow-hidden bg-[linear-gradient(160deg,#006459_0%,#00433C_60%,#003830_100%)] pt-28 pb-20">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_85%_0%,rgba(200,184,130,0.16),transparent_70%)]" />
-          <Image src="/logo-white.png" alt="" width={512} height={512} className="absolute -right-16 -bottom-24 w-[300px] max-w-none opacity-[0.07] -rotate-6" />
-        </div>
-        <div className="relative w-full px-4 sm:px-6 lg:px-8">
-          <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4" />
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">Banesat në Shitje dhe me Qira</h1>
-          <p className="text-white/70 text-base">Gjej banesën e përsosur për ty</p>
-        </div>
-      </div>
-
-      <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
-        {/* Search + Filter Toggle — floating toolbar */}
-        <div className="relative z-10 -mt-10 flex flex-col sm:flex-row gap-3 mb-6 bg-white rounded-2xl ring-1 ring-black/5 shadow-[0_16px_40px_-16px_rgba(0,40,35,0.25)] p-3">
-          <div className="relative flex-1 min-w-0 rounded-xl bg-gray-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/25 transition-all duration-200">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Kërko sipas banesës, adresës, qytetit..."
-              className="w-full h-12 pl-11 pr-4 bg-transparent text-[#1A1A2E] placeholder:text-gray-400 outline-none rounded-xl text-sm"
-              value={searchInput}
-              onChange={(e) => {
-                const value = e.target.value
-                setSearchInput(value)
-                clearTimeout(searchDebounceRef.current)
-                searchDebounceRef.current = setTimeout(() => {
-                  setFilters(prev => ({ ...prev, search: value }))
-                }, 400)
-              }}
-            />
+    <div className="min-h-screen bg-[#F2F7F7] pb-24">
+      <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-20 sm:pt-22">
+        {/* Compact Header Row: Title + count badge on left, Segmented Type pills on right */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#101828]">
+              {filters.city ? `Prona në ${filters.city}` : 'Pronat në Kosovë'}
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white border border-gray-200 text-gray-700 shadow-2xs">
+              {listings.length} {listings.length === 1 ? 'pronë' : 'prona'}
+            </span>
           </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className="h-12 px-5 bg-gray-100 hover:bg-gray-200/70 active:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors inline-flex items-center justify-center cursor-pointer whitespace-nowrap"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            Filtro
-            {hasActiveFilters && (
-              <span className="ml-2 bg-[#006459] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {Object.values(filters).filter(v => v !== '').length}
-              </span>
-            )}
-          </button>
-          {hasActiveFilters && (
-            <button type="button" onClick={clearFilters} className="h-13 px-4 text-gray-400 hover:text-gray-600 transition-colors duration-150 font-medium inline-flex items-center justify-center cursor-pointer whitespace-nowrap">
-              <X className="h-4 w-4 mr-1" />
-              Pastro
-            </button>
-          )}
-        </div>
-        </div>
 
-        {/* Filters Panel */}
-        {showFilters && (
-          <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 min-[2000px]:grid-cols-9 min-[3000px]:grid-cols-12 gap-4">
-            {/* City */}
-            <div>
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Qyteti</label>
-              <div className="relative" ref={cityRef}>
+          {/* Clean Segmented Intent Toggle */}
+          <div className="inline-flex p-0.5 rounded-xl bg-white border border-gray-200/90 shadow-2xs self-start sm:self-auto">
+            {[
+              { key: '', label: 'Të gjitha' },
+              { key: 'shitje', label: 'Shitje' },
+              { key: 'qira', label: 'Me qira' },
+            ].map(tab => {
+              const isActive = filters.type === tab.key
+              return (
                 <button
+                  key={tab.key}
                   type="button"
-                  onClick={() => { setCityOpen(!cityOpen); setNeighborhoodOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
-                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
+                  onClick={() => setFilters(prev => ({ ...prev, type: tab.key as FilterState['type'] }))}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#006459] text-white shadow-2xs'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
                 >
-                  <span className={filters.city ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.city || 'Të gjitha'}</span>
-                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
+                  {tab.label}
                 </button>
-                {cityOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 max-h-60 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => { setFilters(prev => ({ ...prev, city: '', neighborhood: '' })); setCityOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.city ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                    >
-                      Të gjitha
-                    </button>
-                    {CITIES.map(city => (
-                      <button
-                        key={city}
-                        type="button"
-                        onClick={() => { setFilters(prev => ({ ...prev, city, neighborhood: '' })); setCityOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.city === city ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                      >
-                        {city}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+              )
+            })}
+          </div>
+        </div>
 
-            {/* Neighborhood */}
-            <div>
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Lagjja</label>
-              <div className="relative" ref={neighborhoodRef}>
-                {filters.city ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => { setNeighborhoodOpen(!neighborhoodOpen); setCityOpen(false); setTypeOpen(false); setRoomsOpen(false) }}
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
-                    >
-                      <span className={filters.neighborhood ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.neighborhood || 'Të gjitha lagjet'}</span>
-                      <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {neighborhoodOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 max-h-60 overflow-y-auto">
-                        <button
-                          type="button"
-                          onClick={() => { setFilters(prev => ({ ...prev, neighborhood: '' })); setNeighborhoodOpen(false) }}
-                          className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.neighborhood ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                        >
-                          Të gjitha lagjet
-                        </button>
-                        {(KOSOVO_LOCATIONS[filters.city] || []).map(neighborhood => (
-                          <button
-                            key={neighborhood}
-                            type="button"
-                            onClick={() => { setFilters(prev => ({ ...prev, neighborhood })); setNeighborhoodOpen(false) }}
-                            className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.neighborhood === neighborhood ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                          >
-                            {neighborhood}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full h-11 px-3 bg-gray-50 border border-gray-100 text-gray-300 rounded-xl text-sm flex items-center justify-between cursor-not-allowed"
-                  >
-                    <span>Zgjedh qytetin fillimisht</span>
-                    <ChevronDown className="h-4 w-4 text-gray-200" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Type */}
-            <div>
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Lloji</label>
-              <div className="relative" ref={typeRef}>
-                <button
-                  type="button"
-                  onClick={() => { setTypeOpen(!typeOpen); setCityOpen(false); setNeighborhoodOpen(false); setRoomsOpen(false) }}
-                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
-                >
-                  <span className={filters.type ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.type === 'shitje' ? 'Shitje' : filters.type === 'qira' ? 'Me qira' : 'Të gjitha'}</span>
-                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${typeOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {typeOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1">
-                    <button
-                      type="button"
-                      onClick={() => { setFilters(prev => ({ ...prev, type: '' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.type ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                    >
-                      Të gjitha
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setFilters(prev => ({ ...prev, type: 'shitje' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'shitje' ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                    >
-                      Shitje
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setFilters(prev => ({ ...prev, type: 'qira' })); setTypeOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.type === 'qira' ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                    >
-                      Me qira
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Min Price */}
-            <div>
-              <label htmlFor="filter-min-price" className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Çmimi min (€)</label>
+        {/* Clean, Compact Filter Bar */}
+        <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-2 sm:p-2.5 mb-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-center">
+            {/* 1. Search Bar */}
+            <div className="sm:col-span-2 lg:col-span-4 xl:col-span-5 relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#006459] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/15 transition-all">
+              <Search className="h-4 w-4 text-gray-400 ml-3 flex-shrink-0" />
               <input
-                id="filter-min-price"
-                type="number"
-                placeholder="0"
-                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#006459]/50 focus:outline-none transition-colors"
-                value={filters.minPrice}
-                onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                type="text"
+                placeholder="Kërko me lagje, rrugë, qytet..."
+                value={searchInput}
+                onChange={e => handleSearchChange(e.target.value)}
+                className="w-full h-9 pl-2.5 pr-8 text-xs sm:text-sm text-[#101828] placeholder:text-gray-400 bg-transparent outline-none font-medium"
               />
-            </div>
-
-            {/* Max Price */}
-            <div>
-              <label htmlFor="filter-max-price" className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Çmimi max (€)</label>
-              <input
-                id="filter-max-price"
-                type="number"
-                placeholder="500,000"
-                className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] placeholder:text-gray-400 rounded-xl text-sm focus:bg-white focus:border-[#006459]/50 focus:outline-none transition-colors"
-                value={filters.maxPrice}
-                onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
-              />
-            </div>
-
-            {/* Rooms */}
-            <div>
-              <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Dhoma</label>
-              <div className="relative" ref={roomsRef}>
+              {searchInput && (
                 <button
                   type="button"
-                  onClick={() => { setRoomsOpen(!roomsOpen); setCityOpen(false); setNeighborhoodOpen(false); setTypeOpen(false) }}
-                  className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200/80 hover:border-gray-300 text-[#1A1A2E] rounded-xl text-sm flex items-center justify-between transition-colors"
+                  onClick={clearSearch}
+                  aria-label="Pastro kërkimin"
+                  className="absolute right-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  <span className={filters.rooms ? 'text-[#1A1A2E]' : 'text-gray-400'}>{filters.rooms ? `${filters.rooms}+` : 'Të gjitha'}</span>
-                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${roomsOpen ? 'rotate-180' : ''}`} />
+                  <X className="h-3.5 w-3.5" />
                 </button>
-                {roomsOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1">
-                    <button
-                      type="button"
-                      onClick={() => { setFilters(prev => ({ ...prev, rooms: '' })); setRoomsOpen(false) }}
-                      className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${!filters.rooms ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                    >
-                      Të gjitha
-                    </button>
-                    {[1,2,3,4,5].map(r => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => { setFilters(prev => ({ ...prev, rooms: String(r) })); setRoomsOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${filters.rooms === String(r) ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                      >
-                        {r}+
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Agent Results */}
-        {!fetchState.loading && agentResults.length > 0 && !filters.agentId && (
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-              Agjentë &amp; Shitës
-            </h2>
-            <div className="flex flex-row gap-6 flex-wrap mb-8">
-              {agentResults.map(agent => (
-                <Link
-                  key={agent.id}
-                  href={`/profili/${agent.id}`}
-                  className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-32"
-                >
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm flex-shrink-0">
-                    {agent.avatar_url ? (
-                      <Image
-                        src={agent.avatar_url}
-                        alt={`Foto e ${agent.first_name || 'agjentit'}`}
-                        width={96}
-                        height={96}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 text-gray-600 font-semibold text-2xl flex items-center justify-center">
-                        {(agent.first_name?.[0] || '?').toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm font-semibold text-[#111827] text-center truncate w-full">
-                    {agent.first_name} {agent.last_name}
-                  </p>
-                  {agent.email_verified ? (
-                    <p className="text-xs text-emerald-600 text-center">E verifikuar</p>
-                  ) : (
-                    <p className="text-xs text-gray-400 text-center">E pa verifikuar</p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Selected Agent */}
-        {!fetchState.loading && filters.agentId && selectedAgent && (
-          <div className="mb-8">
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                {selectedAgent.avatar_url ? (
-                  <Image
-                    src={selectedAgent.avatar_url}
-                    alt={`Foto e ${selectedAgent.first_name || 'agjentit'}`}
-                    width={64}
-                    height={64}
-                    className="rounded-full object-cover border-2 border-[#111827]/30 w-16 h-16"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#111827] flex items-center justify-center text-white text-xl font-bold border-2 border-[#111827]/30">
-                    {(selectedAgent.first_name?.[0] || '?').toUpperCase()}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <h2 className="text-[#1A1A2E] font-bold text-lg truncate">
-                    {selectedAgent.first_name} {selectedAgent.last_name}
-                  </h2>
-                  {selectedAgent.email_verified && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-0.5 rounded-full mt-1">
-                      <CheckCircle2 className="h-3 w-3" /> E verifikuar
-                    </span>
-                  )}
-                </div>
-              </div>
+            {/* 2. City Dropdown */}
+            <div className="lg:col-span-2 relative" ref={cityRef}>
               <button
                 type="button"
                 onClick={() => {
-                  setFilters(prev => ({ ...prev, agentId: '' }))
-                  router.push('/listings', { scroll: false })
+                  setCityOpen(!cityOpen)
+                  setNeighborhoodOpen(false)
+                  setPriceOpen(false)
                 }}
-                className="h-10 px-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 text-gray-700 font-medium rounded-xl transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
+                className={`w-full h-9 px-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  filters.city
+                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
               >
-                <X className="h-4 w-4 mr-1" />
-                Pastro filtrin e agjentit
+                <div className="flex items-center gap-1.5 truncate">
+                  <MapPin className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
+                  <span className="truncate">{filters.city || 'Qyteti'}</span>
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${cityOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {cityOpen && (
+                <div className="absolute top-full left-0 right-0 sm:w-64 mt-1.5 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 p-2 max-h-72 flex flex-col">
+                  <div className="p-1 border-b border-gray-100 mb-1">
+                    <input
+                      type="text"
+                      placeholder="Filtro qytetin..."
+                      value={citySearchQuery}
+                      onChange={e => setCitySearchQuery(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 outline-none text-[#101828]"
+                    />
+                  </div>
+                  <div className="overflow-y-auto flex-1 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilters(p => ({ ...p, city: '', neighborhood: '' }))
+                        setCityOpen(false)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors ${
+                        !filters.city ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      Të gjitha qytetet
+                    </button>
+                    {filteredCities.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          setFilters(p => ({ ...p, city: c, neighborhood: '' }))
+                          setCityOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                          filters.city === c ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <span>{c}</span>
+                        {filters.city === c && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Neighborhood Dropdown */}
+            <div className="lg:col-span-2 relative" ref={neighborhoodRef}>
+              <button
+                type="button"
+                disabled={!filters.city}
+                onClick={() => {
+                  setNeighborhoodOpen(!neighborhoodOpen)
+                  setCityOpen(false)
+                  setPriceOpen(false)
+                }}
+                className={`w-full h-9 px-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  !filters.city
+                    ? 'border-gray-200 bg-gray-100/50 text-gray-400 cursor-not-allowed'
+                    : filters.neighborhood
+                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <Building2 className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
+                  <span className="truncate">
+                    {filters.neighborhood || (filters.city ? 'Lagjja' : 'Zgjidh qytet')}
+                  </span>
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${neighborhoodOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {neighborhoodOpen && filters.city && (
+                <div className="absolute top-full left-0 right-0 sm:w-64 mt-1.5 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 p-2 max-h-72 flex flex-col">
+                  <div className="p-1 border-b border-gray-100 mb-1">
+                    <input
+                      type="text"
+                      placeholder="Kërko lagjen..."
+                      value={neighborhoodSearchQuery}
+                      onChange={e => setNeighborhoodSearchQuery(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 outline-none text-[#101828]"
+                    />
+                  </div>
+                  <div className="overflow-y-auto flex-1 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilters(p => ({ ...p, neighborhood: '' }))
+                        setNeighborhoodOpen(false)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors ${
+                        !filters.neighborhood ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      Të gjitha lagjet
+                    </button>
+                    {availableNeighborhoods.map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => {
+                          setFilters(p => ({ ...p, neighborhood: n }))
+                          setNeighborhoodOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                          filters.neighborhood === n ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <span>{n}</span>
+                        {filters.neighborhood === n && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Price Popover */}
+            <div className="lg:col-span-2 relative" ref={priceRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setPriceOpen(!priceOpen)
+                  setCityOpen(false)
+                  setNeighborhoodOpen(false)
+                }}
+                className={`w-full h-9 px-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  filters.minPrice || filters.maxPrice
+                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="text-gray-500 font-semibold">€</span>
+                  <span className="truncate">
+                    {filters.minPrice && filters.maxPrice
+                      ? `${filters.minPrice} - ${filters.maxPrice} €`
+                      : filters.minPrice
+                      ? `Nga ${filters.minPrice} €`
+                      : filters.maxPrice
+                      ? `Deri ${filters.maxPrice} €`
+                      : 'Çmimi'}
+                  </span>
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${priceOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {priceOpen && (
+                <div className="absolute top-full right-0 sm:right-auto sm:left-0 w-80 mt-1.5 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2.5">
+                    Gama e Çmimit (€)
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-1.5 mb-3.5">
+                    {(filters.type === 'qira' ? PRICE_PRESETS_RENT : PRICE_PRESETS_SALE).map(p => {
+                      const isMatching = filters.minPrice === p.min && filters.maxPrice === p.max
+                      return (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => setFilters(prev => ({ ...prev, minPrice: p.min, maxPrice: p.max }))}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${
+                            isMatching
+                              ? 'bg-[#006459] text-white border-[#006459]'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Min (€)</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={filters.minPrice}
+                        onChange={e => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#006459]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-gray-500 block mb-1">Max (€)</label>
+                      <input
+                        type="number"
+                        placeholder="200,000"
+                        value={filters.maxPrice}
+                        onChange={e => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#006459]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setFilters(prev => ({ ...prev, minPrice: '', maxPrice: '' }))}
+                      className="text-xs text-gray-500 hover:text-red-600 font-semibold cursor-pointer"
+                    >
+                      Pastro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPriceOpen(false)}
+                      className="px-3.5 py-1 rounded-lg bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+                    >
+                      Mbyll
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. More Filters Button */}
+            <div className="lg:col-span-2 xl:col-span-1">
+              <button
+                type="button"
+                onClick={openMoreFilters}
+                className={`w-full h-9 px-2.5 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  advancedFiltersCount > 0
+                    ? 'bg-[#006459] text-white border-[#006459]'
+                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>Filtra</span>
+                {advancedFiltersCount > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#C8B882] text-[#101828] text-[10px] font-bold flex items-center justify-center">
+                    {advancedFiltersCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
+        </div>
+
+        {/* City Pills Track + Sort */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide flex-1">
+            <button
+              type="button"
+              onClick={() => setFilters(prev => ({ ...prev, city: '', neighborhood: '' }))}
+              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                !filters.city
+                  ? 'bg-[#006459] text-white border-[#006459]'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              Të gjitha qytetet
+            </button>
+
+            {POPULAR_CITIES.map(city => {
+              const isSelected = filters.city === city
+              return (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() =>
+                    setFilters(prev => ({
+                      ...prev,
+                      city: isSelected ? '' : city,
+                      neighborhood: '',
+                    }))
+                  }
+                  className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                    isSelected
+                      ? 'bg-[#006459] text-white border-[#006459]'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {city}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative shrink-0" ref={sortRef}>
+            <button
+              type="button"
+              onClick={() => setSortOpen(!sortOpen)}
+              className="h-8 px-2.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <ArrowUpDown className="h-3 w-3 text-gray-400" />
+              <span className="hidden sm:inline">
+                {sortBy === 'newest'
+                  ? 'Më të rejat'
+                  : sortBy === 'price_asc'
+                  ? 'Çmimi më i ulët'
+                  : sortBy === 'price_desc'
+                  ? 'Çmimi më i lartë'
+                  : sortBy === 'area_desc'
+                  ? 'Sipërfaqja më e madhe'
+                  : 'Sipërfaqja më e vogël'}
+              </span>
+              <span className="sm:hidden">Radhit</span>
+              <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {sortOpen && (
+              <div className="absolute top-full right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 p-1 min-w-[180px]">
+                {[
+                  { key: 'newest', label: 'Më të rejat' },
+                  { key: 'price_asc', label: 'Çmimi: më i ulët' },
+                  { key: 'price_desc', label: 'Çmimi: më i lartë' },
+                  { key: 'area_desc', label: 'Sipërfaqja: më e madhe' },
+                  { key: 'area_asc', label: 'Sipërfaqja: më e vogël' },
+                ].map(opt => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => {
+                      setSortBy(opt.key as SortOption)
+                      setSortOpen(false)
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                      sortBy === opt.key ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {sortBy === opt.key && <Check className="h-3.5 w-3.5" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Filter Chips */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <span className="text-xs font-semibold text-gray-500 mr-1">Filtrat:</span>
+
+            {filters.search && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                &ldquo;{filters.search}&rdquo;
+                <button type="button" onClick={clearSearch} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.city && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.city}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, city: '', neighborhood: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.neighborhood && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.neighborhood}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, neighborhood: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.type && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.type === 'shitje' ? 'Shitje' : 'Me qira'}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, type: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {(filters.minPrice || filters.maxPrice) && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.minPrice ? `nga ${filters.minPrice} €` : ''} {filters.maxPrice ? `deri ${filters.maxPrice} €` : ''}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, minPrice: '', maxPrice: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.rooms && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.rooms}+ dhoma
+                <button type="button" onClick={() => setFilters(p => ({ ...p, rooms: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.apartment_type && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.apartment_type}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, apartment_type: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.condition && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {CONDITIONS.find(c => c.value === filters.condition)?.label || filters.condition}
+                <button type="button" onClick={() => setFilters(p => ({ ...p, condition: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {(filters.minArea || filters.maxArea) && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {filters.minArea ? `${filters.minArea}` : '0'} - {filters.maxArea ? `${filters.maxArea}` : '∞'} m²
+                <button type="button" onClick={() => setFilters(p => ({ ...p, minArea: '', maxArea: '' }))} className="text-gray-400 hover:text-gray-700 cursor-pointer">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            )}
+
+            {filters.features.map(f => (
+              <span key={f} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 font-medium">
+                {f}
+                <button
+                  type="button"
+                  onClick={() => setFilters(p => ({ ...p, features: p.features.filter(feat => feat !== f) }))}
+                  className="text-gray-400 hover:text-gray-700 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-xs font-semibold text-[#006459] hover:underline cursor-pointer ml-1.5"
+            >
+              Pastro të gjitha
+            </button>
+          </div>
         )}
 
-        {/* Results */}
-        {fetchState.loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6 items-stretch">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse border border-gray-100">
-                <div className="h-52 bg-gray-100" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 rounded w-full" />
-                </div>
+        {/* Selected Agent Banner */}
+        {!fetchState.loading && filters.agentId && selectedAgent && (
+          <div className="mb-3 bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center font-bold text-sm text-[#006459]">
+                {selectedAgent.avatar_url ? (
+                  <Image src={selectedAgent.avatar_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
+                ) : (
+                  (selectedAgent.first_name?.[0] || '?').toUpperCase()
+                )}
               </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#101828]">
+                  Pronat nga {selectedAgent.first_name} {selectedAgent.last_name}
+                </h3>
+                {selectedAgent.email_verified && (
+                  <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-0.5">
+                    <CheckCircle2 className="h-3 w-3" /> E verifikuar
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFilters(p => ({ ...p, agentId: '' }))}
+              className="text-xs text-gray-500 hover:text-gray-800 font-semibold cursor-pointer"
+            >
+              Hiq filtrin
+            </button>
+          </div>
+        )}
+
+        {/* =========================================================================
+            LISTINGS GRID
+            ========================================================================= */}
+        {fetchState.loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ListingCardSkeleton key={i} />
             ))}
           </div>
         ) : loadError ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center">
-              <span className="text-3xl">⚠️</span>
-            </div>
-            <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Shërbimi është i padisponueshëm</h3>
-            <p className="text-gray-400 mb-6">Ju lutemi provoni përsëri më vonë.</p>
-            <button type="button" onClick={() => fetchListings(0)} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#006459] text-white font-semibold rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Provo përsëri</button>
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="text-base font-bold text-[#101828] mb-1">
+              Shërbimi është përkohësisht i padisponueshëm
+            </h3>
+            <p className="text-gray-500 text-xs mb-4">
+              Ndodhi një gabim gjatë ngarkimit të pronave. Ju lutemi provoni përsëri.
+            </p>
+            <button
+              type="button"
+              onClick={() => fetchListings(0)}
+              className="px-4 py-2 rounded-xl bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+            >
+              Provo përsëri
+            </button>
           </div>
         ) : listings.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="relative w-20 h-20 mx-auto mb-6">
-              <div className="absolute inset-0 bg-gray-100 rounded-2xl" />
-              <div className="absolute inset-x-4 top-2 h-8 bg-white border-2 border-gray-200 rounded-t-lg" />
-              <div className="absolute left-1/2 -translate-x-1/2 top-0 w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-b-[14px] border-b-gray-200" />
-            </div>
-            <h3 className="text-xl font-bold text-[#1A1A2E] mb-2">Nuk u gjetën banesa</h3>
-            <p className="text-gray-400 mb-6">Provo të ndryshosh filtrat e kërkimit</p>
-            {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center justify-center min-h-[44px] px-6 py-3 bg-[#006459] text-white font-semibold rounded-xl hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">Pastro filtrat</button>
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 p-8 max-w-lg mx-auto">
+            <h3 className="text-lg font-bold text-[#101828] mb-1">
+              Nuk u gjet asnjë pronë
+            </h3>
+            <p className="text-gray-500 text-xs mb-5">
+              Provoni të ndryshoni filtrat ose kërkoni në një qytet tjetër.
+            </p>
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="px-4 py-2 rounded-xl bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+              >
+                Pastro filtrat
+              </button>
             )}
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p aria-live="polite" className="text-[13px] text-[#6B7280] font-medium">Gjenden {listings.length} banesa</p>
-              <div className="relative flex-shrink-0" ref={sortRef}>
-                <button
-                  type="button"
-                  onClick={() => setSortOpen(!sortOpen)}
-                  className="h-9 px-3.5 bg-white border border-gray-200/80 hover:border-gray-300 text-[13px] font-medium text-gray-700 rounded-full transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  {sortBy === 'newest' ? 'Më të rejat' : sortBy === 'price_asc' ? 'Çmimi rritës' : 'Çmimi zbritës'}
-                  <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {sortOpen && (
-                  <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200/80 rounded-xl shadow-[0_12px_32px_-8px_rgba(0,40,35,0.18)] z-50 p-1 min-w-[160px] overflow-hidden">
-                    {([
-                      { value: 'newest', label: 'Më të rejat' },
-                      { value: 'price_asc', label: 'Çmimi rritës' },
-                      { value: 'price_desc', label: 'Çmimi zbritës' },
-                    ] as const).map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors rounded-lg ${sortBy === opt.value ? 'text-[#005048] bg-[#006459]/10' : 'text-[#1A1A2E] hover:bg-gray-50'}`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
               {listings.map((listing, index) => (
                 <ListingCard
                   key={listing.id}
@@ -622,8 +1178,9 @@ function ListingsContent() {
                 />
               ))}
             </div>
+
             {fetchState.hasMore && !fetchState.loading && listings.length > 0 && (
-              <div className="text-center mt-12">
+              <div className="text-center mt-10">
                 <button
                   type="button"
                   onClick={() => {
@@ -631,26 +1188,243 @@ function ListingsContent() {
                     setPage(nextPage)
                     fetchListings(nextPage)
                   }}
-                  className="min-h-[44px] px-8 py-3 border border-gray-200/80 bg-white text-gray-700 font-medium rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors mx-auto inline-flex items-center justify-center cursor-pointer"
+                  className="px-6 py-2.5 rounded-full bg-white border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  Ngarko më shumë banesa
+                  Ngarko më shumë
                 </button>
               </div>
             )}
           </>
         )}
-      </div>
+      </main>
+
+      {/* =========================================================================
+          MORE FILTERS MODAL (Clean & functional)
+          ========================================================================= */}
+      {moreFiltersModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[#101828]">Filtra të tjerë</h3>
+              <button
+                type="button"
+                onClick={() => setMoreFiltersModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-5 flex-1 text-xs">
+              {/* Tipologjia */}
+              <div>
+                <label className="font-semibold text-gray-700 block mb-2">Tipologjia</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {APARTMENT_TYPES.map(type => {
+                    const isSelected = tempModalFilters.apartment_type === type
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() =>
+                          setTempModalFilters(p => ({
+                            ...p,
+                            apartment_type: isSelected ? '' : type,
+                          }))
+                        }
+                        className={`px-3 py-1.5 rounded-lg border cursor-pointer font-medium ${
+                          isSelected
+                            ? 'bg-[#006459] text-white border-[#006459]'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Gjendja */}
+              <div>
+                <label className="font-semibold text-gray-700 block mb-2">Gjendja</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {CONDITIONS.map(c => {
+                    const isSelected = tempModalFilters.condition === c.value
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() =>
+                          setTempModalFilters(p => ({
+                            ...p,
+                            condition: isSelected ? '' : c.value,
+                          }))
+                        }
+                        className={`px-3 py-1.5 rounded-lg border cursor-pointer font-medium ${
+                          isSelected
+                            ? 'bg-[#006459] text-white border-[#006459]'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Sipërfaqja */}
+              <div>
+                <label className="font-semibold text-gray-700 block mb-2">Sipërfaqja (m²)</label>
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {AREA_PRESETS.map(preset => {
+                    const isMatch =
+                      tempModalFilters.minArea === preset.min &&
+                      tempModalFilters.maxArea === preset.max
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() =>
+                          setTempModalFilters(p => ({
+                            ...p,
+                            minArea: preset.min,
+                            maxArea: preset.max,
+                          }))
+                        }
+                        className={`px-2.5 py-1 rounded-lg border cursor-pointer ${
+                          isMatch
+                            ? 'bg-[#006459] text-white border-[#006459]'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min m²"
+                    value={tempModalFilters.minArea}
+                    onChange={e => setTempModalFilters(p => ({ ...p, minArea: e.target.value }))}
+                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#006459]"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max m²"
+                    value={tempModalFilters.maxArea}
+                    onChange={e => setTempModalFilters(p => ({ ...p, maxArea: e.target.value }))}
+                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#006459]"
+                  />
+                </div>
+              </div>
+
+              {/* Kati */}
+              <div>
+                <label className="font-semibold text-gray-700 block mb-2">Kati</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {FLOORS.map(fl => {
+                    const isSelected = tempModalFilters.floor === fl
+                    return (
+                      <button
+                        key={fl}
+                        type="button"
+                        onClick={() =>
+                          setTempModalFilters(p => ({
+                            ...p,
+                            floor: isSelected ? '' : fl,
+                          }))
+                        }
+                        className={`w-8 h-8 rounded-lg border cursor-pointer font-semibold flex items-center justify-center ${
+                          isSelected
+                            ? 'bg-[#006459] text-white border-[#006459]'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {fl}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Karakteristikat */}
+              <div>
+                <label className="font-semibold text-gray-700 block mb-2">Karakteristikat</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {FEATURES_LIST.map(f => {
+                    const isSelected = tempModalFilters.features.includes(f.id)
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() =>
+                          setTempModalFilters(p => ({
+                            ...p,
+                            features: isSelected
+                              ? p.features.filter(feat => feat !== f.id)
+                              : [...p.features, f.id],
+                          }))
+                        }
+                        className={`px-3 py-2 rounded-lg border text-left cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#006459]/5 border-[#006459] text-[#006459] font-semibold'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span>{f.label}</span>
+                        {isSelected && <Check className="h-3 w-3 text-[#006459]" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <button
+                type="button"
+                onClick={resetMoreFilters}
+                className="text-xs text-gray-500 hover:text-red-600 font-semibold cursor-pointer"
+              >
+                Pastro
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMoreFiltersModalOpen(false)}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                >
+                  Anulo
+                </button>
+                <button
+                  type="button"
+                  onClick={applyMoreFilters}
+                  className="px-4 py-1.5 rounded-lg bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+                >
+                  Zbato filtrat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export default function ListingsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#006459]" />
+        </div>
+      }
+    >
       <ListingsContent />
     </Suspense>
   )

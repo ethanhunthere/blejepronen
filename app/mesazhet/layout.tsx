@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { MessageCircle, Search, Sparkles } from 'lucide-react'
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface ConversationItem {
   id: string
@@ -53,12 +51,11 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const [search, setSearch] = useState('')
   const pathname = usePathname()
   const router = useRouter()
-  const supabaseRef = { current: createClient() }
+  const supabase = useMemo(() => createClient(), [])
   const userIdRef = useRef<string | null>(null)
   const isChatOpen = pathname !== '/mesazhet'
 
   const fetchConversations = useCallback(async (uid: string) => {
-    const supabase = supabaseRef.current
     const { data } = await supabase
       .from('conversations')
       .select(
@@ -106,17 +103,62 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
     })
 
     setConversations(result)
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
-    const supabase = supabaseRef.current
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) { setLoading(false); return }
-      const uid = session.user.id
+    conversations.slice(0, 5).forEach((c) => {
+      try {
+        router.prefetch(`/mesazhet/${c.id}`)
+      } catch {}
+    })
+  }, [conversations, router])
+
+  useEffect(() => {
+    const init = async () => {
+      let activeUser = null
+      try {
+        const { data } = await supabase.auth.getUser()
+        activeUser = data?.user || null
+      } catch {}
+
+      if (!activeUser) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession()
+          activeUser = sessData?.session?.user || null
+        } catch {}
+      }
+
+      if (!activeUser) {
+        await new Promise((r) => setTimeout(r, 400))
+        try {
+          const { data } = await supabase.auth.getUser()
+          activeUser = data?.user || null
+        } catch {}
+        if (!activeUser) {
+          try {
+            const { data: sessData } = await supabase.auth.getSession()
+            activeUser = sessData?.session?.user || null
+          } catch {}
+        }
+      }
+
+      if (!activeUser) {
+        setLoading(false)
+        if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          return
+        }
+        router.push('/login?next=/mesazhet')
+        return
+      }
+
+      const uid = activeUser.id
       setUserId(uid)
       userIdRef.current = uid
-      fetchConversations(uid).then(() => setLoading(false))
-    })
+      await fetchConversations(uid)
+      setLoading(false)
+    }
+
+    init()
 
     // Realtime: listen for new messages across all conversations to keep list fresh
     const channel = supabase
@@ -140,7 +182,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       .subscribe()
 
     return () => { channel.unsubscribe() }
-  }, [fetchConversations])
+  }, [fetchConversations, router, supabase])
 
   const filteredConvs = search.trim()
     ? conversations.filter(
@@ -154,7 +196,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F2F7F7] flex">
+    <div className="min-h-[calc(100dvh-4rem)] bg-[#F2F7F7] flex">
       {/* ---- SIDEBAR ---- */}
       <aside
         className={`${
@@ -168,7 +210,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111827] to-[#4D3CFF] flex items-center justify-center shadow-lg shadow-[#111827]/20">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <h1 className="text-lg font-bold text-[#1A1A2E] tracking-tight">Mesazhet</h1>
+              <h1 className="text-lg font-bold text-[#101828] tracking-tight">Mesazhet</h1>
             </div>
             {totalUnread > 0 && (
               <span className="bg-[#006459] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#006459]/30 animate-pulse"
@@ -179,13 +221,13 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           </div>
           {/* Search */}
           <div className="relative group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#111827]/60 transition-colors duration-300" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-[#101828]/60 transition-colors duration-300" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Kërko bisedë..."
-              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder:text-gray-400 focus:outline-none focus:border-[#006459]/30 transition-all duration-300"
+              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#101828] placeholder:text-gray-500 focus:outline-none focus:border-[#006459]/30 transition-all duration-300"
             />
           </div>
         </div>
@@ -213,7 +255,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                   </div>
                 </div>
               </div>
-              <p className="text-gray-400 text-sm font-medium">
+              <p className="text-gray-500 text-sm font-medium">
                 {search ? 'Asnjë bisedë nuk përputhet' : 'Nuk keni mesazhe ende'}
               </p>
               <p className="text-gray-200 text-xs mt-1.5">
@@ -228,6 +270,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                   <button
                     key={conv.id}
                     type="button"
+                    onMouseEnter={() => router.prefetch(`/mesazhet/${conv.id}`)}
                     onClick={() => router.push(`/mesazhet/${conv.id}`)}
                     className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 ease-out group border-b border-gray-50 cursor-pointer ${
                       isActive
@@ -237,20 +280,14 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                   >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className={`w-11 h-11 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-sm transition-all duration-300 ${
-                        conv.otherUser?.avatar_url
-                          ? 'ring-2 ring-gray-100 group-hover:ring-[#111827]/30'
-                          : 'bg-gradient-to-br from-[#111827] to-[#4D3CFF] ring-2 ring-[#111827]/20 group-hover:ring-[#111827]/40'
-                      }`}>
-                        {conv.otherUser?.avatar_url ? (
-                          <img
-                            src={conv.otherUser.avatar_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          (conv.otherUser?.first_name || '?')[0].toUpperCase()
-                        )}
+                      <div className="relative w-11 h-11 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-gray-100 group-hover:ring-[#111827]/30">
+                        <Image
+                          src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'}
+                          alt=""
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
                       </div>
                       {/* Online indicator */}
                       <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white" />
@@ -260,21 +297,21 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <p className={`font-semibold text-sm truncate transition-colors duration-200 ${
-                          isActive ? 'text-[#1A1A2E]' : 'text-gray-700 group-hover:text-[#1A1A2E]'
+                          isActive ? 'text-[#101828]' : 'text-gray-700 group-hover:text-[#101828]'
                         }`}>
                           {conv.otherUser?.first_name} {conv.otherUser?.last_name}
                         </p>
-                        <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2 font-medium tracking-tight">
+                        <span className="text-[10px] text-gray-500 flex-shrink-0 ml-2 font-medium tracking-tight">
                           {formatListTime(conv.updated_at)}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 truncate mb-1 font-medium">
-                        {conv.listing?.title || 'Banesa'}
+                      <p className="text-[11px] text-gray-500 truncate mb-1 font-medium">
+                        {conv.listing?.title || 'Prona'}
                       </p>
                       <div className="flex items-center gap-2">
                         {conv.lastMessage && (
                           <p className={`text-xs truncate flex-1 transition-colors duration-200 ${
-                            conv.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'
+                            conv.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-600'
                           }`}>
                             {conv.lastMessage.sender_id === userId ? 'Ti: ' : ''}
                             {conv.lastMessage.content.slice(0, 45)}

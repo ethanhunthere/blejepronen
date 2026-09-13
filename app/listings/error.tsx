@@ -24,9 +24,9 @@ export default function ListingsError({
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="h-8 w-8 text-red-500" />
         </div>
-        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-3">Ndodhi një gabim</h1>
-        <p className="text-gray-500 mb-8">
-          Nuk mundëm të ngarkonim banesat. Ju lutemi provoni përsëri.
+        <h1 className="text-2xl font-bold text-[#101828] mb-3">Ndodhi një gabim</h1>
+        <p className="text-gray-600 mb-8">
+          Nuk mundëm të ngarkonim pronat. Ju lutemi provoni përsëri.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button onClick={reset} className="bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">

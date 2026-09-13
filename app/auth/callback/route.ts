@@ -8,9 +8,10 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') ?? '/'
-  const origin = requestUrl.origin
+  const origin = requestUrl.origin.replace('www.', '')
   const hostname = requestUrl.hostname
-  const cookieDomain = getCookieDomain(hostname)
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || hostname
+  const cookieDomain = getCookieDomain(host)
   const oauthError = requestUrl.searchParams.get('error')
   const oauthErrorDescription = requestUrl.searchParams.get('error_description')
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            const opts = { ...options, domain: cookieDomain }
+            const opts = cookieDomain ? { ...options, domain: cookieDomain } : options
             try {
               cookieStore.set(name, value, opts)
             } catch {
@@ -69,6 +70,27 @@ export async function GET(request: NextRequest) {
         cookieDomain,
       })
       return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`)
+    }
+
+    // Check if user has completed profile and verified email
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, email_verified')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (!profile?.first_name || !profile?.email_verified) {
+        const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+        const targetRoute = isComp ? '/completo-profilin-company' : '/completo-profilin-fast'
+        const redirectRes = NextResponse.redirect(`${origin}${targetRoute}`)
+        response.cookies.getAll().forEach(cookie => {
+          redirectRes.cookies.set(cookie)
+        })
+        return redirectRes
+      }
     }
 
     return response

@@ -39,48 +39,92 @@ export default function CompletoProfilinPage() {
   useEffect(() => {
     const init = async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      let activeUser = null
+      try {
+        const { data } = await supabase.auth.getUser()
+        activeUser = data?.user || null
+      } catch {}
 
-      if (!user) {
+      if (!activeUser) {
+        try {
+          const { data: sessData } = await supabase.auth.getSession()
+          activeUser = sessData?.session?.user || null
+        } catch {}
+      }
+
+      if (!activeUser) {
+        // Wait 400ms retry in case auth tokens are synchronizing
+        await new Promise((r) => setTimeout(r, 400))
+        try {
+          const { data } = await supabase.auth.getUser()
+          activeUser = data?.user || null
+        } catch {}
+        if (!activeUser) {
+          try {
+            const { data: sessData } = await supabase.auth.getSession()
+            activeUser = sessData?.session?.user || null
+          } catch {}
+        }
+      }
+
+      if (!activeUser) {
+        if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          return
+        }
         router.push('/login')
         return
       }
 
+      const user = activeUser
+
       // Store email for OTP
       setUserEmail(user.email ?? '')
 
-      // Pre-fill from Google user_metadata if available
-      const meta = user.user_metadata
-      if (meta) {
-        const googleFirst = meta.given_name || meta.first_name || ''
-        const googleLast = meta.family_name || meta.last_name || ''
-
-        if (!googleFirst && !googleLast && meta.full_name) {
-          const parts = meta.full_name.split(' ')
-          if (parts.length >= 2) {
-            setFirstName(parts[0])
-            setLastName(parts.slice(1).join(' '))
-          } else {
-            setFirstName(meta.full_name)
-          }
-        } else {
-          setFirstName(googleFirst || '')
-          setLastName(googleLast || '')
-        }
-      }
-
-      // Check if profile is already complete - redirect home
+      // Check if profile is already complete and verified - redirect home
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, email_verified')
+        .select('first_name, last_name, phone, email_verified')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (profile?.first_name && profile?.email_verified) {
         router.push('/')
         return
       }
 
+      const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+      if (isComp) {
+        router.replace('/completo-profilin-company')
+        return
+      }
+
+      // Pre-fill from existing profile or Google user_metadata
+      let initialFirst = profile?.first_name || ''
+      let initialLast = profile?.last_name || ''
+      const initialPhone = profile?.phone || ''
+
+      const meta = user.user_metadata
+      if (meta) {
+        const googleFirst = meta.given_name || meta.first_name || ''
+        const googleLast = meta.family_name || meta.last_name || ''
+
+        if (!initialFirst && !initialLast && meta.full_name) {
+          const parts = meta.full_name.split(' ')
+          if (parts.length >= 2) {
+            initialFirst = parts[0]
+            initialLast = parts.slice(1).join(' ')
+          } else {
+            initialFirst = meta.full_name
+          }
+        } else {
+          if (!initialFirst) initialFirst = googleFirst || ''
+          if (!initialLast) initialLast = googleLast || ''
+        }
+      }
+
+      setFirstName(initialFirst)
+      setLastName(initialLast)
+      setPhone(initialPhone)
       setChecking(false)
     }
 
@@ -113,7 +157,7 @@ export default function CompletoProfilinPage() {
       const res = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, email: userEmail }),
       })
       const data = await res.json()
 
@@ -122,7 +166,7 @@ export default function CompletoProfilinPage() {
         if (data.error === 'expired') {
           setError("Kodi ka skaduar. Klikoni 'Ridërgo kodin' për të marrë një kod të ri.")
         } else if (data.error === 'invalid') {
-          setError('Kodi është i gabuar.')
+          setError(data.message || 'Kodi është i gabuar.')
         } else if (data.error === 'too_many_attempts') {
           setError('Shumë përpjekje. Prisni pak.')
         } else {
@@ -133,17 +177,24 @@ export default function CompletoProfilinPage() {
       }
 
       toast.success('Profili u verifikua me sukses!')
-      router.push('/')
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('profile-updated'))
+        window.location.href = '/'
+      }
     } catch (err) {
       console.error('Verify OTP fetch error:', err)
       setError('Gabim gjatë verifikimit. Provo përsëri.')
       setLoading(false)
     }
-  }, [router])
+  }, [userEmail])
 
   const sendOtp = async () => {
     try {
-      const res = await fetch('/api/send-otp', { method: 'POST' })
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail }),
+      })
       const data = await res.json()
 
       if (!res.ok || !data.success) {
@@ -160,7 +211,7 @@ export default function CompletoProfilinPage() {
     }
   }
 
-  const handleStep1Submit = useCallback(async (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitted(true)
@@ -186,24 +237,42 @@ export default function CompletoProfilinPage() {
       return
     }
 
-    // Save profile data
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        phone: phone.trim(),
+    try {
+      const saveRes = await fetch('/api/profile/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+        }),
       })
 
-    if (profileError) {
-      console.error('Profile update error:', profileError)
+      const saveData = await saveRes.json()
+
+      if (!saveRes.ok || !saveData.success) {
+        setError(saveData.message || 'Gabim gjatë ruajtjes së profilit. Provo përsëri.')
+        setLoading(false)
+        return
+      }
+
+      // If email is already verified (e.g. Google user), finish immediately
+      if (saveData.emailVerified) {
+        toast.success('Profili u plotësua me sukses!')
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('profile-updated'))
+          window.location.href = '/'
+        }
+        return
+      }
+    } catch (err) {
+      console.error('Save profile error:', err)
       setError('Gabim gjatë ruajtjes së profilit. Provo përsëri.')
       setLoading(false)
       return
     }
 
-    // Send 6-digit OTP code to email
+    // Send 6-digit OTP code to email only if unverified
     const sent = await sendOtp()
     if (!sent) {
       setLoading(false)
@@ -216,7 +285,7 @@ export default function CompletoProfilinPage() {
     setCountdown(60)
     setCanResend(false)
     setLoading(false)
-  }, [firstName, lastName, phone, userEmail])
+  }
 
   const handleResendOtp = async () => {
     if (!userEmail || !canResend) return
@@ -234,7 +303,7 @@ export default function CompletoProfilinPage() {
   if (checking) {
     return (
       <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#111827]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#101828]" />
       </div>
     )
   }
@@ -250,7 +319,7 @@ export default function CompletoProfilinPage() {
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                   s <= step
                     ? 'bg-[#006459] text-white shadow-lg shadow-[#006459]/30'
-                    : 'bg-gray-100 border border-gray-200 text-gray-400'
+                    : 'bg-gray-100 border border-gray-200 text-gray-500'
                 }`}
               >
                 {s < step ? <CheckCircle2 className="h-5 w-5" /> : s}
@@ -269,8 +338,8 @@ export default function CompletoProfilinPage() {
           {step === 1 && (
             <>
               <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-[#1A1A2E] mb-2">Kompleto profilin</h2>
-                <p className="text-gray-500 text-sm">Plotëso të dhënat për të vazhduar</p>
+                <h2 className="text-2xl font-bold text-[#101828] mb-2">Kompleto profilin</h2>
+                <p className="text-gray-600 text-sm">Plotëso të dhënat për të vazhduar</p>
               </div>
 
               {submitted && error && (
@@ -283,11 +352,11 @@ export default function CompletoProfilinPage() {
                 <div>
                   <Label htmlFor="firstName" className="text-gray-600 text-sm font-medium mb-1.5">Emri</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <Input
                       id="firstName"
                       placeholder="Emri yt"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#006459]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 focus:border-[#006459]/60"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -298,11 +367,11 @@ export default function CompletoProfilinPage() {
                 <div>
                   <Label htmlFor="lastName" className="text-gray-600 text-sm font-medium mb-1.5">Mbiemri</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <Input
                       id="lastName"
                       placeholder="Mbiemri yt"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#006459]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 focus:border-[#006459]/60"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -313,12 +382,12 @@ export default function CompletoProfilinPage() {
                 <div>
                   <Label htmlFor="phone" className="text-gray-600 text-sm font-medium mb-1.5">Numri i telefonit</Label>
                   <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <Input
                       id="phone"
                       type="tel"
                       placeholder="+383 44 123 456"
-                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#1A1A2E] placeholder:text-gray-400 focus:border-[#006459]/60"
+                      className="pl-11 h-12 rounded-xl bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 focus:border-[#006459]/60"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -345,8 +414,8 @@ export default function CompletoProfilinPage() {
           {step === 2 && (
             <>
               <div className="mb-8 text-center">
-                <h2 className="text-2xl font-bold text-[#1A1A2E] mb-2">Verifiko email-in</h2>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-2xl font-bold text-[#101828] mb-2">Verifiko email-in</h2>
+                <p className="text-gray-600 text-sm">
                   Shkruani kodin 6-shifror që dërguam në {userEmail}
                 </p>
               </div>
@@ -359,8 +428,8 @@ export default function CompletoProfilinPage() {
 
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <div className="w-20 h-20 bg-[#111827]/15 rounded-2xl flex items-center justify-center">
-                    <Mail className="h-10 w-10 text-[#111827]" />
+                  <div className="w-20 h-20 bg-[#006459]/10 rounded-2xl flex items-center justify-center">
+                    <Mail className="h-10 w-10 text-[#006459]" />
                   </div>
                 </div>
 
@@ -378,17 +447,17 @@ export default function CompletoProfilinPage() {
                       if (error) setError('')
                       if (value.length === 6) verifyOtp(value)
                     }}
-                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white border border-gray-200 rounded-xl text-[#1A1A2E] placeholder:text-gray-300 focus:border-[#006459]/60"
+                    className="w-48 h-16 text-center text-4xl font-bold tracking-[0.5em] bg-white border border-gray-200 rounded-xl text-[#101828] placeholder:text-gray-300 focus:border-[#006459]/60"
                   />
                 </div>
 
-                <p className="text-sm text-center text-gray-400">
+                <p className="text-sm text-center text-gray-500">
                   {canResend ? (
                     <button
                       type="button"
                       onClick={handleResendOtp}
                       disabled={resending}
-                      className="text-[#111827] hover:text-[#1F2937] hover:underline font-medium transition-colors duration-150 cursor-pointer disabled:opacity-50"
+                      className="text-[#006459] hover:underline font-medium transition-colors duration-150 cursor-pointer disabled:opacity-50"
                     >
                       {resending ? 'Duke u ridërguar...' : 'Ridërgo kodin'}
                     </button>
@@ -397,14 +466,24 @@ export default function CompletoProfilinPage() {
                   )}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={() => { router.push('/'); router.refresh() }}
-                  className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-medium hover:bg-gray-100 hover:text-[#1A1A2E] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
-                >
-                  Vazhdo pa verifikim
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </button>
+                <div className="flex flex-col gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setStep(1); setError('') }}
+                    className="text-xs text-gray-500 hover:text-[#006459] hover:underline cursor-pointer text-center"
+                  >
+                    ← Ndrysho të dhënat e profilit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { window.location.href = '/' }}
+                    className="w-full h-12 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-medium hover:bg-gray-100 hover:text-[#101828] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out inline-flex items-center justify-center cursor-pointer"
+                  >
+                    Vazhdo pa verifikim
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </button>
+                </div>
               </div>
             </>
           )}

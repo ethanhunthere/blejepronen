@@ -3,20 +3,10 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export function getCookieDomain(hostname: string): string | undefined {
-  if (!hostname || hostname === 'localhost') return undefined
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (siteUrl) {
-    try {
-      const configuredHostname = new URL(siteUrl).hostname
-      if (configuredHostname && hostname.endsWith(configuredHostname)) {
-        // Strip a leading www. and always prefix with a dot so the cookie
-        // is valid for both the apex domain and any subdomains.
-        const rootDomain = configuredHostname.replace(/^www\./, '')
-        return `.${rootDomain}`
-      }
-    } catch {
-      // fall through
-    }
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') return undefined
+  const cleanHost = hostname.replace(/^www\./, '').split(':')[0]
+  if (cleanHost.includes('.')) {
+    return `.${cleanHost}`
   }
   return undefined
 }
@@ -230,6 +220,11 @@ export async function createServerSupabaseClient() {
   const { createServerClient } = await import('@supabase/ssr')
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
+  const siteHostname = process.env.NEXT_PUBLIC_SITE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SITE_URL).hostname
+    : ''
+  const cookieDomain = getCookieDomain(siteHostname)
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -240,9 +235,10 @@ export async function createServerSupabaseClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const opts = cookieDomain ? { ...options, domain: cookieDomain } : options
+              cookieStore.set(name, value, opts)
+            })
           } catch {}
         },
       },

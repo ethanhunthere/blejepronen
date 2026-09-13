@@ -16,6 +16,7 @@ interface ListingCardProps {
   priority?: boolean
   isFavorited?: boolean
   onToggleFavorite?: (id: string) => void
+  showFavorite?: boolean
 }
 
 const formatPrice = (price: number) =>
@@ -28,7 +29,13 @@ const formatPrice = (price: number) =>
 const MAX_CYCLE_IMAGES = 6
 const CYCLE_INTERVAL_MS = 1100
 
-const ListingCard = React.memo(function ListingCard({ listing, priority = false, isFavorited = false, onToggleFavorite }: ListingCardProps) {
+const ListingCard = React.memo(function ListingCard({
+  listing,
+  priority = false,
+  isFavorited = false,
+  onToggleFavorite,
+  showFavorite = true,
+}: ListingCardProps) {
   const cycleImages = (listing.images || []).filter(Boolean).slice(0, MAX_CYCLE_IMAGES)
   const hasMultiple = cycleImages.length > 1
 
@@ -58,7 +65,7 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
   }, [])
 
   return (
-    <Link href={`/listings/${listing.id}`}>
+    <Link href={`/listings/${listing.id}`} prefetch={true}>
       <div
         className="group cursor-pointer h-full flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-black/5 shadow-[0_1px_3px_rgba(16,24,40,0.08)] card-hover"
         onMouseEnter={startCycle}
@@ -115,35 +122,37 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
 
           {/* Type badge - quiet, uncolored (Airbnb style) */}
           <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center bg-white/90 backdrop-blur-sm text-[#111827] text-[11px] font-semibold px-2.5 py-1 rounded-full">
+            <span className="inline-flex items-center bg-white/90 backdrop-blur-sm text-[#101828] text-[12px] font-semibold px-2.5 py-1 rounded-full">
               {listing.type === 'shitje' ? 'Shitje' : 'Me qira'}
             </span>
           </div>
 
           {/* Save + Featured stack */}
           <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
-            <button
-              type="button"
-              aria-label={isFavorited ? 'Hiq nga të preferuarat' : 'Ruaj listimin'}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onToggleFavorite?.(listing.id)
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onToggleFavorite?.(listing.id)
-              }}
-              className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
-            >
-              <Heart
-                className={`h-4 w-4 ${isFavorited ? 'text-[#006459]' : 'text-gray-400'}`}
-                fill={isFavorited ? 'currentColor' : 'none'}
-              />
-            </button>
+            {showFavorite && (
+              <button
+                type="button"
+                aria-label={isFavorited ? 'Hiq nga të preferuarat' : 'Ruaj listimin'}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onToggleFavorite?.(listing.id)
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onToggleFavorite?.(listing.id)
+                }}
+                className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
+              >
+                <Heart
+                  className={`h-4 w-4 ${isFavorited ? 'text-[#006459]' : 'text-gray-500'}`}
+                  fill={isFavorited ? 'currentColor' : 'none'}
+                />
+              </button>
+            )}
             {listing.is_featured && (
-              <span className="inline-flex items-center bg-[#C8B882] text-[#111827] text-[11px] font-semibold px-2.5 py-1 rounded-full">
+              <span className="inline-flex items-center bg-[#C8B882] text-[#101828] text-[12px] font-semibold px-2.5 py-1 rounded-full">
                 <Tag className="h-3 w-3 mr-1" />
                 Featured
               </span>
@@ -153,16 +162,16 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
 
         {/* Content */}
         <div className="flex-1 flex flex-col gap-2 p-4">
-          <h3 className="font-semibold text-[#111827] text-sm leading-snug line-clamp-2 min-h-[40px]">
+          <h3 className="font-semibold text-[#101828] text-[16px] leading-snug line-clamp-2 min-h-[48px]">
             {listing.title}
           </h3>
 
-          <div className="flex items-center text-[#6B7280] text-[13px] truncate mt-1">
+          <div className="flex items-center text-[#4B5563] text-[15px] truncate mt-1">
             <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
             <span className="truncate">{listing.city} · {listing.address}</span>
           </div>
 
-          <div className="flex items-center gap-3 text-[13px] text-[#6B7280]">
+          <div className="flex items-center gap-3 text-[15px] text-[#4B5563]">
             <div className="flex items-center gap-1 flex-shrink-0">
               <BedDouble className="h-3.5 w-3.5" />
               <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
@@ -174,10 +183,10 @@ const ListingCard = React.memo(function ListingCard({ listing, priority = false,
           </div>
 
           <div className="flex items-baseline gap-1 mt-auto">
-            <span className="text-base font-bold text-[#006459] tracking-tight whitespace-nowrap">
+            <span suppressHydrationWarning className="text-[18px] font-bold text-[#006459] tracking-tight whitespace-nowrap">
               {formatPrice(listing.price)}
             </span>
-            {listing.type === 'qira' && <span className="text-[13px] text-[#6B7280]">/muaj</span>}
+            {listing.type === 'qira' && <span className="text-[15px] text-[#4B5563]">/muaj</span>}
           </div>
         </div>
       </div>

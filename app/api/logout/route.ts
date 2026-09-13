@@ -43,10 +43,30 @@ export async function POST() {
 
   const { error } = await supabase.auth.signOut()
 
+  // Explicitly delete any cookies that start with 'sb-' to ensure zero leftover chunks
+  allCookies.forEach(c => {
+    if (c.name.startsWith('sb-')) {
+      cookieStore.set(c.name, '', { path: '/', maxAge: 0 })
+      response.cookies.set(c.name, '', { path: '/', maxAge: 0 })
+      if (cookieDomain) {
+        cookieStore.set(c.name, '', { path: '/', domain: cookieDomain, maxAge: 0 })
+        response.cookies.set(c.name, '', { path: '/', domain: cookieDomain, maxAge: 0 })
+      }
+    }
+  })
+
   if (error) {
     console.error('Server-side logout error:', JSON.stringify(error))
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+
+  // Set short-lived logging out indicator cookie to redirect any concurrent requests to /
+  response.cookies.set('blejepronen_logging_out', '1', {
+    path: '/',
+    maxAge: 10,
+    httpOnly: false,
+    sameSite: 'lax',
+  })
 
   return response
 }
