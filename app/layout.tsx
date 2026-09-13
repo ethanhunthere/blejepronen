@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
-import AnalyticsWrapper from "@/components/AnalyticsWrapper";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -164,7 +164,7 @@ export default function RootLayout({
           </div>
         </footer>
         <CookieBanner />
-        <AnalyticsWrapper />
+        <Analytics />
       </body>
     </html>
   );
