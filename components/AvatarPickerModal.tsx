@@ -127,9 +127,9 @@ export default function AvatarPickerModal({
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/70 flex flex-col sm:flex-row items-center justify-between gap-3">
-          {onTriggerFileUpload && (
+        {/* Footer Actions — rendered only if custom file upload is enabled */}
+        {onTriggerFileUpload && (
+          <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => {
@@ -137,25 +137,24 @@ export default function AvatarPickerModal({
                 onClose()
               }}
               disabled={isUploadingCustom}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
               {isUploadingCustom ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#006459]" />
               ) : (
                 <Upload className="w-4 h-4 text-gray-500" />
               )}
-              <span>Ose ngarko foton tënde</span>
+              <span>Ose ngarko foton tënde nga pajisja</span>
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#006459] text-white text-xs font-bold hover:bg-[#005048] transition-colors shadow-sm ml-auto cursor-pointer"
-          >
-            Përfundo
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="hidden sm:inline-flex text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
+            >
+              Mbyll
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
