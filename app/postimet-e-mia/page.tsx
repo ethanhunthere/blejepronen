@@ -196,10 +196,17 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
         </div>
 
         <div className="flex items-center gap-3 text-[14px] text-[#4B5563]">
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <BedDouble className="h-3.5 w-3.5 text-gray-400" />
-            <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
-          </div>
+          {listing.rooms > 0 ? (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <BedDouble className="h-3.5 w-3.5 text-gray-400" />
+              <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 flex-shrink-0 text-[#006459] font-medium">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="whitespace-nowrap truncate max-w-[120px]">{listing.apartment_type || 'Prona'}</span>
+            </div>
+          )}
           <span className="text-gray-300">·</span>
           <div className="flex items-center gap-1 flex-shrink-0">
             <Maximize2 className="h-3.5 w-3.5 text-gray-400" />

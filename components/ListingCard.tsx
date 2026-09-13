@@ -3,13 +3,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, BedDouble, Maximize2, Heart, Sparkles } from 'lucide-react'
+import { MapPin, BedDouble, Maximize2, Heart, Sparkles, Building2 } from 'lucide-react'
 import type { Listing } from '@/lib/supabase'
 
 export type ListingCardData = Pick<
   Listing,
   'id' | 'title' | 'price' | 'city' | 'address' | 'rooms' | 'area_m2' | 'type' | 'images' | 'is_featured'
->
+> & {
+  apartment_type?: string | null
+}
 
 interface ListingCardProps {
   listing: ListingCardData
@@ -172,10 +174,17 @@ const ListingCard = React.memo(function ListingCard({
           </div>
 
           <div className="flex items-center gap-3 text-[15px] text-[#4B5563]">
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <BedDouble className="h-3.5 w-3.5" />
-              <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
-            </div>
+            {listing.rooms > 0 ? (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <BedDouble className="h-3.5 w-3.5" />
+                <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
+              </div>
+            ) : listing.apartment_type ? (
+              <div className="flex items-center gap-1 flex-shrink-0 text-[#006459] font-medium">
+                <Building2 className="h-3.5 w-3.5" />
+                <span className="whitespace-nowrap truncate max-w-[120px]">{listing.apartment_type}</span>
+              </div>
+            ) : null}
             <div className="flex items-center gap-1 flex-shrink-0">
               <Maximize2 className="h-3.5 w-3.5" />
               <span className="whitespace-nowrap">{listing.area_m2} m²</span>

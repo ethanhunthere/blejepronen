@@ -458,18 +458,32 @@ export default async function ListingDetailPage({
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* Rooms */}
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                  <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
-                    <BedDouble className="h-5 w-5" />
+                {/* Rooms or Category */}
+                {listing.rooms > 0 ? (
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
+                    <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                      <BedDouble className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-gray-600 uppercase tracking-wide">Dhoma</p>
+                      <p className="text-sm sm:text-base font-bold text-[#101828] truncate">
+                        {listing.rooms} {listing.rooms === 1 ? 'dhomë' : 'dhoma'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-gray-600 uppercase tracking-wide">Dhoma</p>
-                    <p className="text-sm sm:text-base font-bold text-[#101828] truncate">
-                      {listing.rooms} {listing.rooms === 1 ? 'dhomë' : 'dhoma'}
-                    </p>
+                ) : (
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
+                    <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                      <Home className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-gray-600 uppercase tracking-wide">Lloji</p>
+                      <p className="text-sm sm:text-base font-bold text-[#101828] truncate">
+                        {listing.apartment_type || 'Prona'}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Area m² */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">

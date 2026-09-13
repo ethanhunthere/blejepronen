@@ -44,14 +44,19 @@ const CONDITIONS = [
 ]
 
 const APARTMENT_TYPES = [
+  'Banesë',
+  'Shtëpi',
+  'Vilë',
+  'Tokë / Truall',
+  'Lokal / Zyrë',
+  'Garazhë / Depo',
   'Studio',
   '1+1',
   '2+1',
   '3+1',
   '4+1',
-  '5+1',
-  'Vilë',
   'Duplex',
+  'Penthouse',
 ]
 
 const FLOORS = ['Bodrum', 'P/D', '1', '2', '3', '4', '5', '6', '7+']
@@ -1258,9 +1263,9 @@ function ListingsContent() {
             </div>
 
             <div className="p-5 overflow-y-auto space-y-5 flex-1 text-xs">
-              {/* Tipologjia */}
+              {/* Kategoria & Tipologjia */}
               <div>
-                <label className="font-semibold text-gray-700 block mb-2">Tipologjia</label>
+                <label className="font-semibold text-gray-700 block mb-2">Kategoria / Tipologjia</label>
                 <div className="flex flex-wrap gap-1.5">
                   {APARTMENT_TYPES.map(type => {
                     const isSelected = tempModalFilters.apartment_type === type
