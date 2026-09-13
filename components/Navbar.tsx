@@ -506,10 +506,16 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   useEffect(() => {
     if (!menuOpen) return
 
-    const prevOverflow = document.body.style.overflow
+    const prevBodyOverflow = document.body.style.overflow
+    const prevHtmlOverflow = document.documentElement.style.overflow
+    const prevBodyOverscroll = document.body.style.overscrollBehavior
+    const prevHtmlOverscroll = document.documentElement.style.overscrollBehavior
     const prevTouchAction = document.body.style.touchAction
 
+    document.documentElement.style.overflow = 'hidden'
+    document.documentElement.style.overscrollBehavior = 'none'
     document.body.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
     document.body.style.touchAction = 'none'
     document.documentElement.style.backgroundColor = '#006459'
     document.body.style.backgroundColor = '#006459'
@@ -519,19 +525,37 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       metaTheme.setAttribute('content', '#006459')
     }
 
+    // Block any touchmove or wheel event that originates outside the scrollable menu container
+    const preventOutsideScroll = (e: TouchEvent | WheelEvent) => {
+      const scrollable = document.getElementById('mobile-menu-scrollable')
+      if (!scrollable || !scrollable.contains(e.target as Node)) {
+        if (e.cancelable) {
+          e.preventDefault()
+        }
+      }
+    }
+
+    window.addEventListener('touchmove', preventOutsideScroll, { passive: false })
+    window.addEventListener('wheel', preventOutsideScroll, { passive: false })
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false)
     }
     window.addEventListener('keydown', onKey)
 
     return () => {
-      document.body.style.overflow = prevOverflow
+      document.documentElement.style.overflow = prevHtmlOverflow
+      document.documentElement.style.overscrollBehavior = prevHtmlOverscroll
+      document.body.style.overflow = prevBodyOverflow
+      document.body.style.overscrollBehavior = prevBodyOverscroll
       document.body.style.touchAction = prevTouchAction
       document.documentElement.style.backgroundColor = '#006459'
       document.body.style.backgroundColor = '#006459'
       if (metaTheme) {
         metaTheme.setAttribute('content', '#006459')
       }
+      window.removeEventListener('touchmove', preventOutsideScroll)
+      window.removeEventListener('wheel', preventOutsideScroll)
       window.removeEventListener('keydown', onKey)
     }
   }, [menuOpen])
@@ -1017,7 +1041,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       <div
         id="mobile-menu"
         inert={!menuOpen ? true : undefined}
-        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#006459] flex flex-col overflow-hidden pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out ${
+        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#006459] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out ${
           menuOpen
             ? 'visible opacity-100 pointer-events-auto'
             : 'invisible opacity-0 pointer-events-none'
@@ -1026,7 +1050,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         {/* Full-screen content: Section 1, 2, 3 high up near each other; footer at bottom */}
         <div
           id="mobile-menu-scrollable"
-          className="flex-1 flex flex-col justify-between overflow-y-auto overscroll-contain pt-3 sm:pt-4 pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.25rem))] px-4 sm:px-6"
+          className="flex-1 flex flex-col justify-between overflow-y-auto overscroll-contain touch-pan-y pt-3 sm:pt-4 pb-[max(1rem,calc(env(safe-area-inset-bottom)+0.25rem))] px-4 sm:px-6"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div className="w-full max-w-md mx-auto flex-1 flex flex-col justify-between box-border">

@@ -33,6 +33,7 @@ import {
   ArrowLeft,
   ArrowDown,
   AlertCircle,
+  X,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import { getAvatarUrl } from '@/lib/avatars'
@@ -139,10 +140,18 @@ export default function SettingsPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [saveSuccessBanner, setSaveSuccessBanner] = useState(false)
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current)
+    }
+  }, [])
 
   // Load user data on mount
   useEffect(() => {
@@ -294,8 +303,13 @@ export default function SettingsPage() {
         await revalidateSellerListings(currentUserId)
       } catch {}
 
+      setSaveSuccessBanner(true)
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current)
+      bannerTimerRef.current = setTimeout(() => {
+        setSaveSuccessBanner(false)
+      }, 5000)
+
       toast.success('Cilësimet u ruajtën me sukses!')
-      router.refresh()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Ndodhi një gabim gjatë ruajtjes.'
       toast.error(message)
@@ -322,7 +336,6 @@ export default function SettingsPage() {
     twitter,
     notifications,
     privacy,
-    router,
   ])
 
   // Keyboard shortcut Ctrl+S / Cmd+S listener
@@ -555,6 +568,33 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Save Success Banner */}
+        {saveSuccessBanner && (
+          <div className="mb-6 flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 shadow-sm animate-in fade-in slide-in-from-top-3 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Check className="w-5 h-5 stroke-[3]" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-bold text-emerald-950">
+                  Cilësimet u ruajtën me sukses!
+                </p>
+                <p className="text-xs text-emerald-800/80 mt-0.5">
+                  Të gjitha ndryshimet tuaja u ruajtën dhe janë aktive menjëherë pa rifreskuar faqen.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSaveSuccessBanner(false)}
+              className="text-emerald-700 hover:text-emerald-950 p-1.5 rounded-lg hover:bg-emerald-100/70 transition-colors cursor-pointer"
+              aria-label="Mbyll njoftimin"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Tab Bar Navigation */}
         <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-6 flex overflow-x-auto no-scrollbar gap-1">
