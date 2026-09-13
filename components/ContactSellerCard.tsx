@@ -20,6 +20,7 @@ import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import { toast } from 'sonner'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
+import FollowButton from '@/components/FollowButton'
 
 interface SellerInfo {
   firstName: string
@@ -217,26 +218,35 @@ export default function ContactSellerCard({
         </div>
 
         {/* Seller Info Row */}
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/70 border border-gray-100">
-          <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
-            <Image
-              src={seller.avatarUrl || '/avatars/avatar-1.png'}
-              alt={seller.firstName || 'Shitësi'}
-              fill
-              sizes="48px"
-              className="object-cover"
-            />
+        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50/70 border border-gray-100">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
+              <Image
+                src={seller.avatarUrl || '/avatars/avatar-1.png'}
+                alt={seller.firstName || 'Shitësi'}
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-[#101828] text-sm truncate">
+                {seller.firstName} {seller.lastName}
+              </p>
+              <a
+                href={`/profili/${seller.userId}`}
+                className="text-[11px] font-medium text-[#006459] hover:underline inline-flex items-center gap-1 mt-0.5"
+              >
+                Shiko profilin publik <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-bold text-[#101828] text-sm truncate">
-              {seller.firstName} {seller.lastName}
-            </p>
-            <a
-              href={`/profili/${seller.userId}`}
-              className="text-[11px] font-medium text-[#006459] hover:underline inline-flex items-center gap-1 mt-0.5"
-            >
-              Shiko profilin publik <ExternalLink className="h-2.5 w-2.5" />
-            </a>
+          <div className="shrink-0">
+            <FollowButton
+              targetUserId={seller.userId}
+              targetUserName={seller.firstName}
+              size="sm"
+            />
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Camera, CheckCircle2, Mail, Phone, Calendar, Loader2, AlertTriangle, Trash2, LogOut, Building2, Sparkles, ExternalLink, Share2 } from 'lucide-react'
+import { Camera, CheckCircle2, Mail, Phone, Calendar, Loader2, AlertTriangle, Trash2, LogOut, Building2, Sparkles, ExternalLink, Share2, Settings } from 'lucide-react'
 import type { Profile } from '@/lib/supabase'
 import { revalidateSellerListings } from '@/app/actions'
 import LogoutModal from '@/components/LogoutModal'
@@ -20,6 +20,7 @@ import { getAvatarUrl } from '@/lib/avatars'
 import { toast } from 'sonner'
 import SocialLinksBar, { InstagramIcon, FacebookIcon, WhatsAppIcon, TikTokIcon } from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
+import ProfileSocialStats from '@/components/ProfileSocialStats'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -36,6 +37,7 @@ export default function ProfilePage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [listingsCount, setListingsCount] = useState(0)
   const [formData, setFormData] = useState({ first_name: '', last_name: '', phone: '' })
   const [userEmail, setUserEmail] = useState('')
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -82,11 +84,20 @@ export default function ProfilePage() {
 
       const user = activeUser
 
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
-        .eq('id', user.id)
-        .single()
+      const [{ data: prof }, { count: lCount }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('listings')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_active', true),
+      ])
+
+      setListingsCount(lCount || 0)
 
       const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name) || prof?.last_name === 'Kompani'
       setIsCompany(isComp)
@@ -480,6 +491,16 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
+
+                  {profile && (
+                    <ProfileSocialStats
+                      userId={profile.id}
+                      userName={isCompany ? (formData.first_name || 'Kompania') : `${formData.first_name} ${formData.last_name}`.trim()}
+                      listingsCount={listingsCount}
+                      className="justify-center sm:justify-start my-1"
+                    />
+                  )}
+
                   <div className="space-y-2 mt-3">
                     <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm">
                       <Mail className="h-4 w-4" />
@@ -523,6 +544,16 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
+
+                  {profile && (
+                    <ProfileSocialStats
+                      userId={profile.id}
+                      userName={isCompany ? (formData.first_name || 'Kompania') : `${formData.first_name} ${formData.last_name}`.trim()}
+                      listingsCount={listingsCount}
+                      className="justify-center sm:justify-start my-1"
+                    />
+                  )}
+
                   <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm mb-1">
                     <Mail className="h-4 w-4" />
                     <span className="text-[#101828] font-medium">{userEmail}</span>
@@ -539,13 +570,22 @@ export default function ProfilePage() {
                 <Sparkles className="h-3.5 w-3.5 text-[#006459]" />
                 <span>Profili juaj është i dukshëm për blerësit dhe vizitorët</span>
               </div>
-              <Link
-                href={`/profili/${profile.id}`}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006459] hover:underline bg-[#006459]/5 hover:bg-[#006459]/10 px-3 py-1.5 rounded-full transition-colors"
-              >
-                <span>Shiko profilin publik si vizitor</span>
-                <ExternalLink className="h-3 w-3" />
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/profili/${profile.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006459] hover:underline bg-[#006459]/5 hover:bg-[#006459]/10 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Shiko si vizitor</span>
+                </Link>
+                <Link
+                  href="/settings"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-[#006459] bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <Settings className="h-3 w-3" />
+                  <span>Cilësimet</span>
+                </Link>
+              </div>
             </div>
           )}
 

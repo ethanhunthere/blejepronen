@@ -19,6 +19,7 @@ import {
   MapPin,
   X,
   Menu,
+  Settings,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -822,6 +823,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             Pronat e mia
                           </button>
 
+                          <button
+                            type="button"
+                            onClick={() => { closeDropdown(); router.push('/settings') }}
+                            className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                          >
+                            <Settings className="h-4 w-4 mr-3 text-gray-500" />
+                            Cilësimet
+                          </button>
+
                           <div className="border-t border-gray-100 my-1" />
 
                           <button
@@ -962,36 +972,40 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     </Link>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                  <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-3 gap-1.5">
                     <Link
                       href="/postimet-e-mia"
                       prefetch={true}
                       onClick={() => handleNavClick('/postimet-e-mia')}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer"
+                      className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <Home className="h-4 w-4 text-white/80 shrink-0" />
-                        <span className="truncate">Pronat e mia</span>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-white/40 shrink-0" />
+                      <Home className="h-4 w-4 text-white/80 mb-1 shrink-0" />
+                      <span className="truncate w-full text-[11px]">Pronat</span>
                     </Link>
                     <Link
                       href="/mesazhet"
                       prefetch={true}
                       onClick={() => handleNavClick('/mesazhet')}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer"
+                      className="relative flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <MessageCircle className="h-4 w-4 text-white/80 shrink-0" />
-                        <span className="truncate">Mesazhet</span>
+                      <div className="relative">
+                        <MessageCircle className="h-4 w-4 text-white/80 mb-1 shrink-0" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1.5 -right-2 h-3.5 min-w-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
                       </div>
-                      {unreadCount > 0 ? (
-                        <span className="h-4 min-w-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-white/40 shrink-0" />
-                      )}
+                      <span className="truncate w-full text-[11px]">Mesazhet</span>
+                    </Link>
+                    <Link
+                      href="/settings"
+                      prefetch={true}
+                      onClick={() => handleNavClick('/settings')}
+                      className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
+                    >
+                      <Settings className="h-4 w-4 text-white/80 mb-1 shrink-0" />
+                      <span className="truncate w-full text-[11px]">Cilësimet</span>
                     </Link>
                   </div>
 

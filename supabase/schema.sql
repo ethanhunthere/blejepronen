@@ -336,3 +336,14 @@ create index if not exists idx_listings_description_gin on public.listings using
 create index if not exists idx_listings_address_gin on public.listings using gin(to_tsvector('simple', coalesce(address, '')));
 create index if not exists idx_profiles_name_gin on public.profiles using gin(to_tsvector('simple', coalesce(first_name, '') || ' ' || coalesce(last_name, '')));
 create index if not exists idx_listings_active_city_type on public.listings(is_active, city, type) where is_active = true;
+
+-- Follows table (Instagram-style follow/unfollow system)
+create table if not exists public.follows (
+  follower_id uuid references public.profiles(id) on delete cascade not null,
+  following_id uuid references public.profiles(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  primary key (follower_id, following_id)
+);
+
+create index if not exists follows_follower_id_idx on public.follows(follower_id);
+create index if not exists follows_following_id_idx on public.follows(following_id);

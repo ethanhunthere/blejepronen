@@ -31,7 +31,9 @@ export async function POST(request: Request) {
     const lastName = typeof body?.lastName === 'string' ? body.lastName.trim() : ''
     const rawPhone = typeof body?.phone === 'string' ? body.phone.trim() : ''
 
-    const isCompany = Boolean(body?.isCompany) || user.user_metadata?.account_type === 'company'
+    const isCompany = typeof body?.isCompany === 'boolean'
+      ? body.isCompany
+      : (body?.accountType === 'company' || user.user_metadata?.account_type === 'company')
 
     if (!firstName) {
       return NextResponse.json(
@@ -104,33 +106,61 @@ export async function POST(request: Request) {
       emailVerified = Boolean(existingProfile?.email_verified) || isGoogleUser
     }
 
-    const companyDescription = typeof body?.companyDescription === 'string' ? body.companyDescription.trim() : (typeof body?.description === 'string' ? body.description.trim() : '')
-    const foundedYear = typeof body?.foundedYear === 'string' || typeof body?.foundedYear === 'number' ? String(body.foundedYear).trim() : ''
+    const bio = typeof body?.bio === 'string' ? body.bio.trim() : (user.user_metadata?.bio || '')
+    const city = typeof body?.city === 'string' ? body.city.trim() : (user.user_metadata?.city || '')
+    const nipt = typeof body?.nipt === 'string' ? body.nipt.trim() : (user.user_metadata?.nipt || '')
+    const officeAddress = typeof body?.officeAddress === 'string' ? body.officeAddress.trim() : (user.user_metadata?.office_address || '')
+    const website = typeof body?.website === 'string' ? body.website.trim() : (user.user_metadata?.website || '')
+    const linkedin = typeof body?.linkedin === 'string' ? body.linkedin.trim() : (user.user_metadata?.linkedin || '')
+    const youtube = typeof body?.youtube === 'string' ? body.youtube.trim() : (user.user_metadata?.youtube || '')
+    const twitter = typeof body?.twitter === 'string' ? body.twitter.trim() : (user.user_metadata?.twitter || '')
 
-    const instagram = typeof body?.instagram === 'string' ? body.instagram.trim() : (typeof body?.socials?.instagram === 'string' ? body.socials.instagram.trim() : '')
-    const facebook = typeof body?.facebook === 'string' ? body.facebook.trim() : (typeof body?.socials?.facebook === 'string' ? body.socials.facebook.trim() : '')
-    const whatsapp = typeof body?.whatsapp === 'string' ? body.whatsapp.trim() : (typeof body?.socials?.whatsapp === 'string' ? body.socials.whatsapp.trim() : '')
-    const tiktok = typeof body?.tiktok === 'string' ? body.tiktok.trim() : (typeof body?.socials?.tiktok === 'string' ? body.socials.tiktok.trim() : '')
+    const notifications = body?.notifications && typeof body.notifications === 'object'
+      ? body.notifications
+      : (user.user_metadata?.notifications || {})
+
+    const privacy = body?.privacy && typeof body.privacy === 'object'
+      ? body.privacy
+      : (user.user_metadata?.privacy || {})
+
+    const companyDescription = typeof body?.companyDescription === 'string' ? body.companyDescription.trim() : (typeof body?.description === 'string' ? body.description.trim() : (user.user_metadata?.company_description || ''))
+    const foundedYear = typeof body?.foundedYear === 'string' || typeof body?.foundedYear === 'number' ? String(body.foundedYear).trim() : (user.user_metadata?.founded_year || '')
+
+    const instagram = typeof body?.instagram === 'string' ? body.instagram.trim() : (typeof body?.socials?.instagram === 'string' ? body.socials.instagram.trim() : (user.user_metadata?.instagram || ''))
+    const facebook = typeof body?.facebook === 'string' ? body.facebook.trim() : (typeof body?.socials?.facebook === 'string' ? body.socials.facebook.trim() : (user.user_metadata?.facebook || ''))
+    const whatsapp = typeof body?.whatsapp === 'string' ? body.whatsapp.trim() : (typeof body?.socials?.whatsapp === 'string' ? body.socials.whatsapp.trim() : (user.user_metadata?.whatsapp || ''))
+    const tiktok = typeof body?.tiktok === 'string' ? body.tiktok.trim() : (typeof body?.socials?.tiktok === 'string' ? body.socials.tiktok.trim() : (user.user_metadata?.tiktok || ''))
 
     try {
       await supabaseAdmin.auth.admin.updateUserById(user.id, {
         user_metadata: {
           ...user.user_metadata,
+          account_type: isCompany ? 'company' : 'individual',
           ...(isCompany
             ? {
-                account_type: 'company',
                 company_name: firstName,
                 ...(companyDescription ? { company_description: companyDescription } : {}),
                 ...(foundedYear ? { founded_year: foundedYear } : {}),
                 ...(lastName && lastName !== 'Kompani' ? { contact_person: lastName } : {}),
+                ...(nipt ? { nipt } : {}),
+                ...(officeAddress ? { office_address: officeAddress } : {}),
+                ...(website ? { website } : {}),
               }
-            : {}),
+            : {
+                bio,
+              }),
+          city,
           onboarding_completed: true,
           ...(finalPhone ? { phone: finalPhone } : {}),
           instagram,
           facebook,
           whatsapp,
           tiktok,
+          linkedin,
+          youtube,
+          twitter,
+          notifications,
+          privacy,
         },
       })
     } catch (e) {

@@ -12,13 +12,14 @@ import {
   MessageCircle,
   Sparkles,
   ChevronLeft,
-  Home,
 } from 'lucide-react'
 import ListingCard from '@/components/ListingCard'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import ProfileShareButton from '@/components/ProfileShareButton'
+import FollowButton from '@/components/FollowButton'
+import ProfileSocialStats from '@/components/ProfileSocialStats'
 
 export const revalidate = 300
 
@@ -59,6 +60,24 @@ async function getPublicProfile(id: string) {
     tiktok: meta.tiktok || null,
   }
 
+  let followersCount = 0
+  let followingCount = 0
+  try {
+    const [{ count: fCount }, { count: ingCount }] = await Promise.all([
+      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', id),
+      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', id),
+    ])
+    if (typeof fCount === 'number') followersCount = fCount
+    if (typeof ingCount === 'number') followingCount = ingCount
+  } catch {}
+
+  if (followersCount === 0 && Array.isArray(meta.followers)) {
+    followersCount = meta.followers.length
+  }
+  if (followingCount === 0 && Array.isArray(meta.following)) {
+    followingCount = meta.following.length
+  }
+
   return {
     profile,
     meta,
@@ -67,6 +86,8 @@ async function getPublicProfile(id: string) {
     companyDescription,
     foundedYear,
     socials,
+    followersCount,
+    followingCount,
   }
 }
 
@@ -100,7 +121,16 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
 
   if (!data) notFound()
 
-  const { profile, isCompany, displayName, companyDescription, foundedYear, socials } = data
+  const {
+    profile,
+    isCompany,
+    displayName,
+    companyDescription,
+    foundedYear,
+    socials,
+    followersCount,
+    followingCount,
+  } = data
   const listings = await getProfileListings(profile.id)
 
   const memberSince = new Date(profile.created_at).toLocaleDateString('sq-AL', {
@@ -170,7 +200,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs sm:text-sm text-gray-500 mt-2">
+                <div className="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-xs sm:text-sm text-gray-500 mt-1">
                   <span className="flex items-center gap-1.5">
                     <CalendarDays className="h-4 w-4 text-gray-400" />
                     Anëtar që nga {memberSince}
@@ -181,16 +211,29 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                       Operon nga viti {foundedYear}
                     </span>
                   )}
-                  <span className="flex items-center gap-1.5 font-semibold text-gray-700">
-                    <Home className="h-4 w-4 text-[#006459]" />
-                    {listings.length} {listings.length === 1 ? 'pronë e listuar' : 'prona të listuara'}
-                  </span>
                 </div>
+
+                {/* Instagram-style Followers / Following stats */}
+                <ProfileSocialStats
+                  userId={profile.id}
+                  userName={displayName}
+                  listingsCount={listings.length}
+                  initialFollowersCount={followersCount}
+                  initialFollowingCount={followingCount}
+                  className="mt-2.5"
+                />
               </div>
             </div>
 
-            {/* Right: Fast Contact & Share Actions */}
+            {/* Right: Fast Contact, Follow & Share Actions */}
             <div className="flex flex-wrap items-center gap-2.5 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-100">
+              <FollowButton
+                targetUserId={profile.id}
+                targetUserName={displayName}
+                initialFollowersCount={followersCount}
+                size="md"
+              />
+
               {whatsAppUrl && (
                 <a
                   href={whatsAppUrl}
