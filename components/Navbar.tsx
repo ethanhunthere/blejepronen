@@ -20,6 +20,7 @@ import {
   X,
   Menu,
   Settings,
+  ShieldCheck,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -728,120 +729,220 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             loadProfile(userIdRef.current)
                           }
                         }}
-                        className="inline-flex items-center justify-center relative overflow-hidden rounded-full w-10 h-10 bg-white text-[#006459] text-sm font-bold hover:bg-[#C8B882] transition-colors cursor-pointer flex-shrink-0 outline-none navbar-avatar-display"
+                        className={`inline-flex items-center justify-center relative rounded-full w-10 h-10 transition-all duration-200 cursor-pointer flex-shrink-0 outline-none navbar-avatar-display ${
+                          dropdownOpen
+                            ? 'ring-2 ring-[#C8B882] ring-offset-2 ring-offset-[#006459] shadow-md scale-105'
+                            : 'ring-2 ring-white/30 hover:ring-[#C8B882] hover:scale-105'
+                        }`}
                         aria-label="Menyja e përdoruesit"
                         aria-expanded={dropdownOpen}
                         aria-haspopup="true"
                       >
-                        <Image
-                          src={getAvatarUrl(profile.avatarUrl)}
-                          alt="Foto profili"
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                          <Image
+                            src={getAvatarUrl(profile.avatarUrl)}
+                            alt="Foto profili"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        </div>
+                        {unreadCount > 0 ? (
+                          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 border-2 border-[#006459] rounded-full animate-pulse" />
+                        ) : (
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#006459] rounded-full" />
+                        )}
                       </button>
 
                       {dropdownOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 text-[#101828]">
-                          {/* User info header */}
+                        <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-84 bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,100,89,0.22),0_10px_25px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,100,89,0.08)] border border-gray-100/90 p-2.5 z-50 text-[#101828] animate-in fade-in-0 zoom-in-95 duration-150 ease-out origin-top-right">
+                          {/* User info header card */}
                           <div
-                            className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors group"
+                            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#006459]/[0.06] via-[#F2F7F7] to-[#C8B882]/[0.10] border border-[#006459]/10 cursor-pointer hover:border-[#006459]/30 hover:shadow-xs transition-all group"
                             onClick={() => {
                               closeDropdown()
                               router.push('/profili')
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center text-sm font-semibold text-[#101828] navbar-avatar-display">
+                              <div className="relative w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-white shadow-sm ring-2 ring-[#006459]/15 group-hover:ring-[#006459]/40 transition-all navbar-avatar-display">
                                 <Image
                                   src={getAvatarUrl(profile.avatarUrl)}
                                   alt="Foto profili"
                                   fill
-                                  sizes="40px"
+                                  sizes="48px"
                                   className="object-cover"
                                 />
+                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-xs text-gray-500 group-hover:text-gray-600 font-medium mb-1">
-                                  {profile.incomplete ? (profile.isCompany ? 'Verifiko kompaninë →' : 'Verifiko profilin →') : 'Profili im →'}
-                                </p>
-                                {!profile.incomplete && (
-                                  <p className="text-sm font-medium text-[#101828] truncate">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-extrabold text-[#101828] group-hover:text-[#006459] transition-colors truncate">
                                     {displayName}
                                   </p>
-                                )}
-                                <p className="text-xs text-gray-600 truncate">{activeUser?.email}</p>
-                                {profile.incomplete && (
-                                  <span className="inline-flex items-center mt-1 text-xs font-semibold text-amber-600">
-                                    ⚠️ {profile.isCompany ? 'Verifiko kompaninë' : 'Verifiko profilin'}
+                                  {profile.isCompany ? (
+                                    <Building2 className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                                  ) : (
+                                    <ShieldCheck className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                                  {activeUser?.email || ''}
+                                </p>
+                                <div className="flex items-center justify-between gap-1.5 mt-1.5">
+                                  <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                                    profile.isCompany
+                                      ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
+                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                  }`}>
+                                    {profile.isCompany ? <Building2 className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                                    {profile.isCompany ? 'Kompani' : 'Individual'}
                                   </span>
-                                )}
+                                  <span className="text-[10px] text-[#006459] font-bold group-hover:underline flex items-center gap-0.5">
+                                    Profili <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
 
+                          {/* Profile Incomplete Alert */}
                           {profile.incomplete && (
-                            <>
-                              <div className="border-t border-gray-100 my-1" />
+                            <div className="mt-2">
                               <button
                                 type="button"
                                 onClick={() => {
                                   closeDropdown()
                                   router.push(profile.isCompany ? '/completo-profilin-company' : '/completo-profilin-fast')
                                 }}
-                                className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+                                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-300/60 hover:bg-amber-500/15 transition-all text-left group cursor-pointer"
                               >
-                                <AlertTriangle className="h-4 w-4 mr-3 text-amber-600" />
-                                {profile.isCompany ? 'Verifiko kompaninë' : 'Verifiko profilin'}
+                                <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-amber-900 leading-tight">
+                                    {profile.isCompany ? 'Verifiko kompaninë' : 'Plotëso profilin'}
+                                  </p>
+                                  <p className="text-[10px] text-amber-700 truncate">
+                                    Shto të dhënat e plota për besueshmëri
+                                  </p>
+                                </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 transition-transform shrink-0" />
                               </button>
-                            </>
+                            </div>
                           )}
 
-                          <div className="border-t border-gray-100 my-1" />
-
-                          <button
-                            type="button"
-                            onClick={() => { closeDropdown(); router.push('/mesazhet') }}
-                            className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                          >
-                            <MessageCircle className="h-4 w-4 mr-3 text-gray-500" />
-                            Mesazhet
-                            {unreadCount > 0 && (
-                              <span className="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
-                                {unreadCount > 9 ? '9+' : unreadCount}
+                          {/* Grouped Actions */}
+                          <div className="py-1.5 space-y-0.5">
+                            {/* Posto Pronë */}
+                            <button
+                              type="button"
+                              onClick={() => { closeDropdown(); router.push('/posto-prona') }}
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-[#006459]/5 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                                <Plus className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                  Posto Pronë të Re
+                                </p>
+                                <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
+                                  Publikoni shpallje me foto & video
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-[#C8B882]/20 text-[#006459] border border-[#C8B882]/40 shrink-0">
+                                Falas
                               </span>
-                            )}
-                          </button>
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
-                            className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                          >
-                            <User className="h-4 w-4 mr-3 text-gray-500" />
-                            Pronat e mia
-                          </button>
+                            {/* Pronat e Mia */}
+                            <button
+                              type="button"
+                              onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                                <Home className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                  Pronat e Mia
+                                </p>
+                                <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
+                                  Menaxhoni dhe modifikoni shpalljet
+                                </p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => { closeDropdown(); router.push('/settings') }}
-                            className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                          >
-                            <Settings className="h-4 w-4 mr-3 text-gray-500" />
-                            Cilësimet
-                          </button>
+                            {/* Mesazhet */}
+                            <button
+                              type="button"
+                              onClick={() => { closeDropdown(); router.push('/mesazhet') }}
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 relative">
+                                <MessageCircle className="w-4 h-4" />
+                                {unreadCount > 0 && (
+                                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                  Mesazhet
+                                </p>
+                                <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
+                                  Bisedat me blerësit & pyetjet
+                                </p>
+                              </div>
+                              {unreadCount > 0 ? (
+                                <span className="bg-red-500 text-white text-[10px] font-black min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5 shadow-xs">
+                                  {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                              )}
+                            </button>
 
-                          <div className="border-t border-gray-100 my-1" />
+                            {/* Cilësimet */}
+                            <button
+                              type="button"
+                              onClick={() => { closeDropdown(); router.push('/settings') }}
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                                <Settings className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                  Cilësimet
+                                </p>
+                                <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
+                                  Profili, rrjetet, njoftimet & siguria
+                                </p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </button>
+                          </div>
 
-                          <button
-                            type="button"
-                            onClick={openLogoutModal}
-                            className="flex items-center w-full px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <LogOut className="h-4 w-4 mr-3 text-red-500" />
-                            Dil
-                          </button>
+                          {/* Footer: Logout */}
+                          <div className="border-t border-gray-100/90 pt-1.5 mt-1">
+                            <button
+                              type="button"
+                              onClick={openLogoutModal}
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl text-xs font-bold text-red-600 hover:bg-red-50/80 transition-all text-left group cursor-pointer"
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                                <LogOut className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold leading-tight">Dil nga llogaria</p>
+                                <p className="text-[10px] text-red-400/80">Mbyll sesionin në mënyrë të sigurt</p>
+                              </div>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -935,27 +1036,35 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <div id="section-1-account" suppressHydrationWarning>
                 {/* 1. Mobile Logged-in Card (synchronously displayed if html[data-auth="logged-in"]) */}
                 <div
-                  className={`rounded-2xl bg-white/10 border border-white/20 p-3.5 sm:p-4 shadow-sm text-white ${
+                  className={`rounded-3xl bg-gradient-to-br from-white/[0.18] via-white/[0.10] to-white/[0.05] backdrop-blur-2xl p-4 border border-white/25 shadow-2xl text-white ${
                     activeUser ? 'block' : activeUser === null ? 'hidden' : 'hidden mobile-auth-logged-in'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-11 w-11 shrink-0 rounded-2xl overflow-hidden bg-white/20 border border-white/25 flex items-center justify-center text-base font-bold text-white shadow-inner navbar-avatar-display">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative h-12 w-12 shrink-0 rounded-2xl overflow-hidden bg-white/20 border-2 border-white/40 flex items-center justify-center text-base font-bold text-white shadow-inner navbar-avatar-display">
                         <Image
                           src={getAvatarUrl(profile.avatarUrl)}
                           alt="Foto profili"
                           fill
-                          sizes="44px"
+                          sizes="48px"
                           className="object-cover"
                         />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-[#006459]" />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm sm:text-base font-bold text-white leading-tight">
-                          {displayName}
-                        </p>
-                        <p className="truncate text-xs text-white/70 mt-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-sm sm:text-base font-extrabold text-white leading-tight">
+                            {displayName}
+                          </p>
+                          {profile.isCompany && (
+                            <span className="shrink-0 inline-flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#006459]">
+                              PRO
+                            </span>
+                          )}
+                        </div>
+                        <p className="truncate text-xs text-white/75 mt-0.5">
                           {activeUser?.email || ''}
                         </p>
                       </div>
@@ -965,47 +1074,60 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/profili"
                       prefetch={true}
                       onClick={() => handleNavClick('/profili')}
-                      className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors cursor-pointer"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95 shadow-xs border border-white/20 cursor-pointer"
                     >
                       <span>Profili</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-white/70" />
+                      <ChevronRight className="h-3.5 w-3.5 text-white/80" />
                     </Link>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-3 gap-1.5">
+                  {/* 4-Item Quick Action Grid */}
+                  <div className="mt-3.5 pt-3.5 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <Link
                       href="/postimet-e-mia"
                       prefetch={true}
                       onClick={() => handleNavClick('/postimet-e-mia')}
-                      className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
+                      className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
-                      <Home className="h-4 w-4 text-white/80 mb-1 shrink-0" />
-                      <span className="truncate w-full text-[11px]">Pronat</span>
+                      <Home className="h-4 w-4 text-white/90 shrink-0" />
+                      <span className="truncate text-[11px] sm:text-center">Pronat e Mia</span>
                     </Link>
+
                     <Link
                       href="/mesazhet"
                       prefetch={true}
                       onClick={() => handleNavClick('/mesazhet')}
-                      className="relative flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
+                      className="relative flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
                       <div className="relative">
-                        <MessageCircle className="h-4 w-4 text-white/80 mb-1 shrink-0" />
+                        <MessageCircle className="h-4 w-4 text-white/90 shrink-0" />
                         {unreadCount > 0 && (
-                          <span className="absolute -top-1.5 -right-2 h-3.5 min-w-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                          <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#006459]">
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </span>
                         )}
                       </div>
-                      <span className="truncate w-full text-[11px]">Mesazhet</span>
+                      <span className="truncate text-[11px] sm:text-center">Mesazhet</span>
                     </Link>
+
                     <Link
                       href="/settings"
                       prefetch={true}
                       onClick={() => handleNavClick('/settings')}
-                      className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-xs font-semibold text-white transition-colors cursor-pointer text-center"
+                      className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
-                      <Settings className="h-4 w-4 text-white/80 mb-1 shrink-0" />
-                      <span className="truncate w-full text-[11px]">Cilësimet</span>
+                      <Settings className="h-4 w-4 text-white/90 shrink-0" />
+                      <span className="truncate text-[11px] sm:text-center">Cilësimet</span>
+                    </Link>
+
+                    <Link
+                      href="/posto-prona"
+                      prefetch={true}
+                      onClick={() => handleNavClick('/posto-prona')}
+                      className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-[#C8B882]/30 hover:bg-[#C8B882]/40 active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-[#C8B882]/40"
+                    >
+                      <Plus className="h-4 w-4 text-[#C8B882] shrink-0" />
+                      <span className="truncate text-[11px] sm:text-center">Posto Pronë</span>
                     </Link>
                   </div>
 
@@ -1014,13 +1136,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href={profile.isCompany ? '/completo-profilin-company' : '/completo-profilin-fast'}
                       prefetch={true}
                       onClick={() => handleNavClick(profile.isCompany ? '/completo-profilin-company' : '/completo-profilin-fast')}
-                      className="mt-2.5 flex items-center justify-between px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-400/30 text-xs font-medium text-amber-200 hover:bg-amber-500/30 transition-colors cursor-pointer"
+                      className="mt-3 flex items-center justify-between p-2.5 rounded-2xl bg-amber-500/25 border border-amber-400/40 text-xs font-medium text-amber-100 hover:bg-amber-500/35 transition-all cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-                        <span>{profile.isCompany ? 'Verifiko kompaninë' : 'Plotëso profilin tënd'}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0" />
+                        <span className="truncate">{profile.isCompany ? 'Verifiko kompaninë zyrtarisht' : 'Plotëso të dhënat e profilit'}</span>
                       </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-amber-400/60 shrink-0" />
+                      <ChevronRight className="h-3.5 w-3.5 text-amber-300/80 shrink-0" />
                     </Link>
                   )}
                 </div>
