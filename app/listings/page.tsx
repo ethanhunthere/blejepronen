@@ -980,6 +980,48 @@ function ListingsContent() {
           </div>
         </div>
 
+        {/* Neighborhood Quick Pills (If City Selected) */}
+        {filters.city && availableNeighborhoods.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-hide">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider shrink-0 mr-1">
+              Lagjet:
+            </span>
+            <button
+              type="button"
+              onClick={() => setFilters(prev => ({ ...prev, neighborhood: '' }))}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                !filters.neighborhood
+                  ? 'bg-gray-800 text-white border-gray-800'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              Të gjitha
+            </button>
+            {availableNeighborhoods.slice(0, 14).map(n => {
+              const isSelected = filters.neighborhood === n
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() =>
+                    setFilters(prev => ({
+                      ...prev,
+                      neighborhood: isSelected ? '' : n,
+                    }))
+                  }
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                    isSelected
+                      ? 'bg-[#006459] text-white border-[#006459]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900'
+                  }`}
+                >
+                  {n}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* Active Filter Chips */}
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 mb-3">

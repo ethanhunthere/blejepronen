@@ -44,6 +44,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Failed to generate dynamic listing sitemap entries:', err)
   }
 
+  let profileUrls: MetadataRoute.Sitemap = []
+  try {
+    const supabase = createPublicSupabaseClient()
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id,updated_at')
+      .limit(500)
+
+    if (profiles) {
+      profileUrls = profiles.map(p => {
+        const prof = p as { id: string; updated_at?: string }
+        return {
+          url: `${siteUrl}/profili/${prof.id}`,
+          lastModified: new Date(prof.updated_at || now),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }
+      })
+    }
+  } catch (err) {
+    console.error('Failed to generate dynamic profile sitemap entries:', err)
+  }
+
   const cityUrls: MetadataRoute.Sitemap = POPULAR_CITIES.map(city => ({
     url: `${siteUrl}/listings?city=${encodeURIComponent(city)}`,
     lastModified: now,
@@ -96,6 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
     ...listingUrls,
+    ...profileUrls,
   ]
 }
 

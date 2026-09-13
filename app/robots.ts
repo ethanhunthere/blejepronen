@@ -21,6 +21,8 @@ export default function robots(): MetadataRoute.Robots {
           '/completo-profilin-company',
           '/api/',
           '/mesazhet',
+          '/settings',
+          '/cilesimet',
         ],
       },
       // AI Crawlers & LLM Search Agents (OpenAI, Anthropic, Google, Perplexity, Apple)
@@ -49,6 +51,8 @@ export default function robots(): MetadataRoute.Robots {
           '/completo-profilin-company',
           '/api/',
           '/mesazhet',
+          '/settings',
+          '/cilesimet',
         ],
       },
     ],

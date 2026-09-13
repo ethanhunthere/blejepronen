@@ -30,6 +30,7 @@ interface SellerInfo {
   emailVerified: boolean
   userId: string
   socials?: SocialLinks | null
+  followersCount?: number
 }
 
 interface ContactSellerCardProps {
@@ -233,18 +234,29 @@ export default function ContactSellerCard({
               <p className="font-bold text-[#101828] text-sm truncate">
                 {seller.firstName} {seller.lastName}
               </p>
-              <a
-                href={`/profili/${seller.userId}`}
-                className="text-[11px] font-medium text-[#006459] hover:underline inline-flex items-center gap-1 mt-0.5"
-              >
-                Shiko profilin publik <ExternalLink className="h-2.5 w-2.5" />
-              </a>
+              <div className="flex items-center gap-2 mt-0.5">
+                <a
+                  href={`/profili/${seller.userId}`}
+                  className="text-[11px] font-medium text-[#006459] hover:underline inline-flex items-center gap-1"
+                >
+                  Shiko profilin <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+                {typeof seller.followersCount === 'number' && seller.followersCount > 0 && (
+                  <>
+                    <span className="text-gray-300 text-[10px]">•</span>
+                    <span className="text-[11px] font-semibold text-gray-500">
+                      {seller.followersCount} {seller.followersCount === 1 ? 'ndiqës' : 'ndiqës'}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="shrink-0">
             <FollowButton
               targetUserId={seller.userId}
               targetUserName={seller.firstName}
+              initialFollowersCount={seller.followersCount}
               size="sm"
             />
           </div>

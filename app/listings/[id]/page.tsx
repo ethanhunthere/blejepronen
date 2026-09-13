@@ -31,6 +31,8 @@ import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
 import { normalizePhoneNumber } from '@/lib/phone'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
+import MortgageCalculator from '@/components/MortgageCalculator'
+import FollowButton from '@/components/FollowButton'
 
 export const revalidate = 300
 
@@ -124,7 +126,10 @@ const getListing = cache(async (id: string) => {
 const getSellerData = cache(async (userId: string) => {
   try {
     const supabase = await createAdminSupabaseClient()
-    const { data: userData } = await supabase.auth.admin.getUserById(userId)
+    const [{ data: userData }, { count: fCount }] = await Promise.all([
+      supabase.auth.admin.getUserById(userId).catch(() => ({ data: { user: null } })),
+      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+    ])
     const meta = userData?.user?.user_metadata || {}
     const socials: SocialLinks = {
       instagram: meta.instagram || null,
@@ -132,14 +137,19 @@ const getSellerData = cache(async (userId: string) => {
       whatsapp: meta.whatsapp || null,
       tiktok: meta.tiktok || null,
     }
+    let followersCount = typeof fCount === 'number' ? fCount : 0
+    if (followersCount === 0 && Array.isArray(meta.followers)) {
+      followersCount = meta.followers.length
+    }
     return {
       socials,
       isCompany: meta.account_type === 'company' || Boolean(meta.company_name),
       companyDescription: meta.company_description || null,
+      followersCount,
     }
   } catch (err) {
     console.error('Failed to get seller data:', err)
-    return { socials: {}, isCompany: false, companyDescription: null }
+    return { socials: {}, isCompany: false, companyDescription: null, followersCount: 0 }
   }
 })
 
@@ -657,6 +667,14 @@ export default async function ListingDetailPage({
               </div>
             </div>
 
+            {/* 6.5. MORTGAGE CALCULATOR (For Sale Properties) */}
+            {listing.type === 'shitje' && (
+              <MortgageCalculator
+                propertyPrice={listing.price}
+                city={listing.city}
+              />
+            )}
+
             {/* 7. TRUST & SAFETY NOTICE (Apple/Airbnb high-trust banner) */}
             <div className="bg-gradient-to-br from-[#006459]/5 via-white to-gray-50 border border-[#006459]/15 shadow-2xs rounded-3xl p-5 sm:p-6">
               <div className="flex items-start gap-3.5">
@@ -698,26 +716,46 @@ export default async function ListingDetailPage({
                 )}
               </div>
 
-              <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 mb-3.5">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
-                  <Image
-                    src={listing.profiles?.avatar_url || '/avatars/avatar-1.png'}
-                    alt={listing.profiles?.first_name || 'Shitësi'}
-                    fill
-                    sizes="48px"
-                    className="object-cover"
-                  />
+              <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 mb-3.5">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
+                    <Image
+                      src={listing.profiles?.avatar_url || '/avatars/avatar-1.png'}
+                      alt={listing.profiles?.first_name || 'Shitësi'}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-[#101828] text-sm truncate">
+                      {listing.profiles?.first_name} {listing.profiles?.last_name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Link
+                        href={`/profili/${listing.user_id}`}
+                        className="text-xs font-semibold text-[#006459] hover:underline inline-flex items-center gap-1"
+                      >
+                        Shiko profilin <ExternalLink className="h-2.5 w-2.5" />
+                      </Link>
+                      {sellerData.followersCount > 0 && (
+                        <>
+                          <span className="text-gray-300 text-[10px]">•</span>
+                          <span className="text-[11px] font-semibold text-gray-500">
+                            {sellerData.followersCount} ndiqës
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-[#101828] text-sm truncate">
-                    {listing.profiles?.first_name} {listing.profiles?.last_name}
-                  </p>
-                  <Link
-                    href={`/profili/${listing.user_id}`}
-                    className="text-xs font-semibold text-[#006459] hover:underline inline-flex items-center gap-1 mt-0.5"
-                  >
-                    Shiko profilin publik <ExternalLink className="h-3 w-3" />
-                  </Link>
+                <div className="shrink-0">
+                  <FollowButton
+                    targetUserId={listing.user_id}
+                    targetUserName={listing.profiles?.first_name || 'Shitësi'}
+                    initialFollowersCount={sellerData.followersCount}
+                    size="sm"
+                  />
                 </div>
               </div>
 
@@ -751,6 +789,7 @@ export default async function ListingDetailPage({
                 emailVerified: listing.profiles?.email_verified || false,
                 userId: listing.user_id,
                 socials: effectiveSocials,
+                followersCount: sellerData.followersCount,
               }}
             />
           </aside>

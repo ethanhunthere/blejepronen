@@ -82,6 +82,35 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/posto-banese',
+        destination: '/posto-prona',
+        permanent: true,
+      },
+      {
+        source: '/banesa',
+        destination: '/listings?type=shitje',
+        permanent: true,
+      },
+      {
+        source: '/qira',
+        destination: '/listings?type=qira',
+        permanent: true,
+      },
+      {
+        source: '/shitje',
+        destination: '/listings?type=shitje',
+        permanent: true,
+      },
+      {
+        source: '/cilesimet',
+        destination: '/settings',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
