@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import { Albert_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CookieBanner from "@/components/CookieBanner";
@@ -150,15 +151,15 @@ export default function RootLayout({
                 © {new Date().getFullYear()} Bleje Pronën. Të gjitha të drejtat e rezervuara.
               </p>
               <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-white/60">
-                <a href="/kushtet" className="hover:text-[#C8B882] transition-colors">
+                <Link href="/kushtet" className="hover:text-[#C8B882] transition-colors">
                   Kushtet e përdorimit
-                </a>
-                <a href="/privatesia" className="hover:text-[#C8B882] transition-colors">
+                </Link>
+                <Link href="/privatesia" className="hover:text-[#C8B882] transition-colors">
                   Privatësia
-                </a>
-                <a href="/kontakti" className="hover:text-[#C8B882] transition-colors">
+                </Link>
+                <Link href="/kontakti" className="hover:text-[#C8B882] transition-colors">
                   Kontakti
-                </a>
+                </Link>
               </div>
             </div>
           </div>

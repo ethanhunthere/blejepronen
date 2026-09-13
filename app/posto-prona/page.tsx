@@ -528,7 +528,7 @@ export default function PostoPronaPage() {
                     onClick={() => setFormData(prev => ({ ...prev, condition: c.value }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.condition === c.value
-                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
+                        ? 'bg-[#006459] border border-[#006459] text-white shadow-sm'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
@@ -576,7 +576,7 @@ export default function PostoPronaPage() {
                       onClick={() => setFormData(prev => ({ ...prev, area_m2: preset.value.toString() }))}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
                         formData.area_m2 === preset.value.toString()
-                          ? 'bg-[#111827] border border-[#111827] text-white'
+                          ? 'bg-[#006459] border border-[#006459] text-white shadow-xs'
                           : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                       }`}
                     >
@@ -674,7 +674,7 @@ export default function PostoPronaPage() {
                     onClick={() => setFormData(prev => ({ ...prev, floor: prev.floor === floor ? '' : floor }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.floor === floor
-                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
+                        ? 'bg-[#006459] border border-[#006459] text-white shadow-sm'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
@@ -695,7 +695,7 @@ export default function PostoPronaPage() {
                     onClick={() => setFormData(prev => ({ ...prev, apartment_type: prev.apartment_type === type ? '' : type }))}
                     className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                       formData.apartment_type === type
-                        ? 'bg-[#111827] border border-[#111827] text-white shadow-lg shadow-[#111827]/20'
+                        ? 'bg-[#006459] border border-[#006459] text-white shadow-sm'
                         : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                     }`}
                   >
@@ -725,7 +725,7 @@ export default function PostoPronaPage() {
                       }
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                         selected
-                          ? 'bg-[#111827]/10 border border-[#111827]/40 text-[#101828]'
+                          ? 'bg-[#006459]/10 border border-[#006459]/40 text-[#006459] font-semibold'
                           : 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0'
                       }`}
                     >
@@ -743,7 +743,7 @@ export default function PostoPronaPage() {
             <p className="text-sm text-gray-600 mb-4">Shto deri në 10 foto. Foto e parë do të jetë kryesorja.</p>
 
             {/* Upload Zone */}
-            <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#111827] bg-gray-50 hover:bg-[#111827]/5 transition-all">
+            <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#006459] bg-gray-50 hover:bg-[#006459]/5 transition-all">
               <Upload className="h-8 w-8 text-gray-500 mb-2" />
               <span className="text-sm text-gray-600">Kliko për të ngarkuar foto</span>
               <span className="text-xs text-gray-500 mt-1">PNG, JPG deri 10MB</span>
@@ -763,7 +763,7 @@ export default function PostoPronaPage() {
                   <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
                     <Image src={preview} alt={`Foto ${i + 1}`} fill unoptimized className="object-cover" />
                     {i === 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-[#111827] text-white text-xs font-semibold text-center py-1">
+                      <div className="absolute bottom-0 left-0 right-0 bg-[#006459] text-white text-xs font-semibold text-center py-1">
                         Kryesorja
                       </div>
                     )}

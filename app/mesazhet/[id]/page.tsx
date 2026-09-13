@@ -363,7 +363,7 @@ export default function ChatPage() {
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
         >
           {/* Avatar */}
-          <div className="relative w-9 h-9 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-sm flex-shrink-0 overflow-hidden">
+          <div className="relative w-9 h-9 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-sm flex-shrink-0 overflow-hidden">
             <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="36px" className="object-cover" />
           </div>
 
@@ -376,7 +376,7 @@ export default function ChatPage() {
               <p className="text-gray-600 text-xs truncate">{conv.listing.title}</p>
             )}
             {isTyping && (
-              <p className="text-[11px] text-[#101828]/70 font-medium animate-fade-in">duke shkruar...</p>
+              <p className="text-[11px] text-[#006459] font-medium animate-fade-in">duke shkruar...</p>
             )}
           </div>
         </Link>
@@ -472,7 +472,7 @@ export default function ChatPage() {
               >
                 {!isMine && (
                   isLastInGroup ? (
-                    <div className="relative w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+                    <div className="relative w-7 h-7 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                       <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
                     </div>
                   ) : (
@@ -506,7 +506,7 @@ export default function ChatPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2" style={{ animation: 'fadeSlideUp 0.25s ease-out' }}>
-              <div className="relative w-7 h-7 rounded-full bg-[#111827]/20 border border-[#111827]/30 flex items-center justify-center text-[#374151] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+              <div className="relative w-7 h-7 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                 <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
               </div>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">

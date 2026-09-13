@@ -207,7 +207,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
         <div className="flex-shrink-0 px-5 py-5 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#111827] to-[#4D3CFF] flex items-center justify-center shadow-lg shadow-[#111827]/20">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#006459] to-[#004d44] flex items-center justify-center shadow-md shadow-[#006459]/20">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <h1 className="text-lg font-bold text-[#101828] tracking-tight">Mesazhet</h1>
@@ -221,13 +221,13 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           </div>
           {/* Search */}
           <div className="relative group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-[#101828]/60 transition-colors duration-300" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-[#006459] transition-colors duration-300" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Kërko bisedë..."
-              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#101828] placeholder:text-gray-500 focus:outline-none focus:border-[#006459]/30 transition-all duration-300"
+              className="relative w-full bg-gray-50 border border-gray-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-[#101828] placeholder:text-gray-500 focus:outline-none focus:border-[#006459] focus:ring-1 focus:ring-[#006459] transition-all duration-300"
             />
           </div>
         </div>
@@ -249,17 +249,17 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           ) : filteredConvs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full px-6 py-16 text-center">
               <div className="relative mb-5">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#111827]/10 to-transparent flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#111827]/20 to-transparent flex items-center justify-center">
-                    <MessageCircle className="h-6 w-6 text-gray-200" />
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#006459]/10 to-transparent flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-[#006459]/15 flex items-center justify-center">
+                    <MessageCircle className="h-7 w-7 text-[#006459]" />
                   </div>
                 </div>
               </div>
-              <p className="text-gray-500 text-sm font-medium">
+              <p className="text-gray-800 text-sm font-semibold">
                 {search ? 'Asnjë bisedë nuk përputhet' : 'Nuk keni mesazhe ende'}
               </p>
-              <p className="text-gray-200 text-xs mt-1.5">
-                {search ? 'Provo një kërkim tjetër' : 'Kur të kontaktoni një shitës, biseda shfaqet këtu'}
+              <p className="text-gray-500 text-xs mt-1.5 max-w-[240px]">
+                {search ? 'Provo një kërkim tjetër' : 'Kur të kontaktoni një shitës ose blerës, bisedat tuaja shfaqen këtu.'}
               </p>
             </div>
           ) : (
@@ -280,7 +280,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                   >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className="relative w-11 h-11 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-gray-100 group-hover:ring-[#111827]/30">
+                      <div className="relative w-11 h-11 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-gray-100 group-hover:ring-[#006459]/30 transition-all">
                         <Image
                           src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'}
                           alt=""

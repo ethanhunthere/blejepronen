@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { AlertTriangle } from 'lucide-react'
+import { AlertCircle, RotateCcw, Home } from 'lucide-react'
 
 export default function Error({
   error,
@@ -19,23 +18,38 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertTriangle className="h-8 w-8 text-red-500" />
+    <div className="min-h-[calc(100vh-4rem)] bg-[#F2F7F7] flex items-center justify-center px-4 py-16">
+      <div className="text-center max-w-lg mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.06)]">
+        {/* Luxury Error Badge */}
+        <div className="relative mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mb-6 shadow-2xs">
+          <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rose-500" />
         </div>
-        <h1 className="text-2xl font-bold text-[#101828] mb-3">Ndodhi një gabim</h1>
-        <p className="text-gray-600 mb-8">
-          Diçka shkoi keq. Ju lutemi provoni përsëri ose kthehuni në faqen kryesore.
+
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-black text-[#101828] tracking-tight mb-2.5">
+          Ndodhi një gabim i papritur
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 mb-8 leading-relaxed max-w-md mx-auto">
+          Sistemi hasi në një problem të përkohshëm gjatë procesimit të kërkesës. Ju lutemi provoni sërish ose kthehuni në ballinë.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">
-            Provo përsëri
-          </Button>
-          <Link href="/">
-            <Button variant="outline" className="bg-white border-gray-200 text-gray-600 hover:border-[#006459] hover:text-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
-              Kthehu në ballinë
-            </Button>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={reset}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-[#006459] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#006459]/20 hover:bg-[#005048] active:scale-95 transition-all cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Provo përsëri</span>
+          </button>
+
+          <Link
+            href="/"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-gray-50 hover:bg-gray-100 text-[#101828] text-xs sm:text-sm font-bold border border-gray-200 active:scale-95 transition-all cursor-pointer"
+          >
+            <Home className="w-4 h-4 text-gray-500" />
+            <span>Kthehu në ballinë</span>
           </Link>
         </div>
       </div>
