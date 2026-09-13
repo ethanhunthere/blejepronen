@@ -424,7 +424,7 @@ export default function PostoPronaPage() {
     city: 'Prishtinë',
     neighborhood: '',
     address: '',
-    rooms: '2',
+    rooms: '3',
     area_m2: '',
     land_ari: '',
     areaUnit: 'm2',
@@ -448,18 +448,47 @@ export default function PostoPronaPage() {
 
   const activeCategory = CATEGORIES[formData.category]
 
-  // Update category handler with smart defaults
+  // Update category handler with smart synchronized defaults
   const handleCategorySelect = (catId: PropertyCategory) => {
     const nextCat = CATEGORIES[catId]
+    let defaultRooms = '0'
+    let defaultFloor = ''
+    let defaultSubtype = nextCat.subtypes[0] || ''
+
+    if (catId === 'banese') {
+      defaultSubtype = '2+1'
+      defaultRooms = '3'
+      defaultFloor = '2'
+    } else if (catId === 'shtepi') {
+      defaultSubtype = 'Shtëpi private'
+      defaultRooms = '4'
+      defaultFloor = '2'
+    } else if (catId === 'vile') {
+      defaultSubtype = 'Vilë luksoze'
+      defaultRooms = '5'
+      defaultFloor = '2'
+    } else if (catId === 'toke') {
+      defaultSubtype = 'Truall ndërtimi'
+      defaultRooms = '0'
+      defaultFloor = ''
+    } else if (catId === 'lokal') {
+      defaultSubtype = 'Lokal afarist rrugor'
+      defaultRooms = '1'
+      defaultFloor = 'P/D'
+    } else if (catId === 'garazh') {
+      defaultSubtype = 'Garazhë e mbyllur'
+      defaultRooms = '0'
+      defaultFloor = 'Bodrum'
+    }
+
     setFormData((prev) => ({
       ...prev,
       category: catId,
-      subtype: nextCat.subtypes[0] || '',
-      rooms: nextCat.hasRooms ? String(nextCat.roomOptions?.[0] || '2') : '0',
-      floor: nextCat.hasFloors ? (nextCat.floors?.[1] || '1') : '',
+      subtype: defaultSubtype,
+      rooms: defaultRooms,
+      floor: defaultFloor,
       areaUnit: nextCat.areaUnitDefault,
       condition: nextCat.conditions[0]?.value || 'e-re',
-      // keep only features applicable or use clean defaults
       features: nextCat.features.slice(0, 3),
     }))
   }
@@ -496,15 +525,35 @@ export default function PostoPronaPage() {
     }
   }
 
-  // Smart Title Suggester
+  // Smart Title Suggester with synchronized category specifications
   const handleSuggestTitle = () => {
     const typeText = formData.type === 'shitje' ? 'në shitje' : 'me qira'
     const locationPart = [formData.neighborhood, formData.city].filter(Boolean).join(', ')
-    const specPart = formData.category === 'toke'
-      ? `${formData.land_ari ? `${formData.land_ari} Ari` : `${formData.area_m2 || '10'} m²`}`
-      : `${formData.subtype || activeCategory.titleShort}${formData.area_m2 ? ` ${formData.area_m2} m²` : ''}`
 
-    let suggested = `${activeCategory.titleShort} ${specPart} në ${locationPart} ${typeText}`.trim()
+    let specPart = ''
+    if (formData.category === 'toke') {
+      const areaStr = formData.land_ari ? `${formData.land_ari} Ari` : `${formData.area_m2 || '1000'} m²`
+      specPart = `${formData.subtype || 'Truall'} ${areaStr}`
+    } else if (formData.category === 'banese') {
+      const floorStr = formData.floor ? `(Kati ${formData.floor === 'P/D' ? '0' : formData.floor})` : ''
+      const areaStr = formData.area_m2 ? `${formData.area_m2} m²` : ''
+      specPart = `${formData.subtype || 'Banesë'} ${areaStr} ${floorStr}`.trim()
+    } else if (formData.category === 'shtepi') {
+      const floorStr = formData.floor ? `${formData.floor}-katëshe` : ''
+      const areaStr = formData.area_m2 ? `${formData.area_m2} m²` : ''
+      specPart = `${formData.subtype || 'Shtëpi'} ${floorStr} ${areaStr}`.trim()
+    } else if (formData.category === 'vile') {
+      const areaStr = formData.area_m2 ? `${formData.area_m2} m²` : ''
+      specPart = `${formData.subtype || 'Vilë luksoze'} ${areaStr}`.trim()
+    } else if (formData.category === 'lokal') {
+      const areaStr = formData.area_m2 ? `${formData.area_m2} m²` : ''
+      specPart = `${formData.subtype || 'Lokal afarist'} ${areaStr}`.trim()
+    } else if (formData.category === 'garazh') {
+      const areaStr = formData.area_m2 ? `${formData.area_m2} m²` : ''
+      specPart = `${formData.subtype || 'Garazhë'} ${areaStr}`.trim()
+    }
+
+    let suggested = `${activeCategory.titleShort} ${specPart} në ${locationPart} ${typeText}`.replace(/\s+/g, ' ').trim()
     if (suggested.length > MAX_TITLE_LENGTH) {
       suggested = suggested.slice(0, MAX_TITLE_LENGTH)
     }
@@ -591,6 +640,22 @@ export default function PostoPronaPage() {
         ? prev.features.filter((f) => f !== feature)
         : [...prev.features, feature],
     }))
+  }
+
+  // Helper: single-choice feature within a pattern (replaces any previous matching feature)
+  const syncSingleChoiceFeature = (pattern: RegExp, value: string) => {
+    setFormData((prev) => {
+      const filtered = prev.features.filter((f) => !pattern.test(f))
+      return {
+        ...prev,
+        features: value ? [...filtered, value] : filtered,
+      }
+    })
+  }
+
+  // Helper: check if any active feature matches a regex pattern
+  const hasFeatureMatching = (pattern: RegExp) => {
+    return formData.features.some((f) => pattern.test(f))
   }
 
   // Price per m2 helper
@@ -899,8 +964,8 @@ export default function PostoPronaPage() {
                   </p>
                 </div>
 
-                {/* 6 Rich Category Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                {/* 6 Compact Category Buttons */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
                   {(Object.keys(CATEGORIES) as PropertyCategory[]).map((catKey) => {
                     const cat = CATEGORIES[catKey]
                     const IconComp = cat.icon
@@ -911,30 +976,32 @@ export default function PostoPronaPage() {
                         key={catKey}
                         type="button"
                         onClick={() => handleCategorySelect(catKey)}
-                        className={`relative p-4 sm:p-5 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
+                        className={`group relative p-2.5 sm:p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2.5 border ${
                           isSelected
-                            ? 'bg-[#006459]/5 border-[#006459] shadow-sm ring-1 ring-[#006459]'
-                            : 'bg-white border-gray-200/90 hover:border-gray-300 hover:bg-gray-50/70 hover:shadow-xs'
+                            ? 'bg-[#006459]/5 border-[#006459] shadow-xs ring-1 ring-[#006459]'
+                            : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 hover:shadow-2xs'
                         }`}
                       >
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#006459] text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
                         <div
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-colors ${
-                            isSelected ? 'bg-[#006459] text-white' : 'bg-gray-100 text-gray-700'
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? 'bg-[#006459] text-white' : 'bg-gray-100 text-gray-600 group-hover:text-gray-900'
                           }`}
                         >
-                          <IconComp className="w-5 h-5" />
+                          <IconComp className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                         </div>
-                        <div>
-                          <p className="text-sm sm:text-base font-bold text-[#101828]">{cat.label}</p>
-                          <p className="text-[11px] sm:text-xs text-gray-500 line-clamp-2 mt-0.5 leading-snug">
-                            {cat.description}
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs sm:text-sm font-bold truncate leading-snug ${isSelected ? 'text-[#006459]' : 'text-[#101828]'}`}>
+                            {cat.titleShort}
                           </p>
+                          <span className="text-[10px] text-gray-400 font-medium block truncate">
+                            {cat.badge}
+                          </span>
                         </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
                       </button>
                     )
                   })}
@@ -953,10 +1020,10 @@ export default function PostoPronaPage() {
                           key={t}
                           type="button"
                           onClick={() => setFormData((prev) => ({ ...prev, type: t }))}
-                          className={`min-h-[48px] py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 border ${
+                          className={`min-h-[46px] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 border ${
                             isActive
                               ? 'bg-[#006459] text-white border-[#006459] shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                           }`}
                         >
                           <span>{t === 'shitje' ? '🏠 Në Shitje' : '🔑 Me Qira'}</span>
@@ -966,36 +1033,875 @@ export default function PostoPronaPage() {
                   </div>
                 </div>
 
-                {/* Sub-type Selection */}
-                {activeCategory.subtypes.length > 0 && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-sm font-semibold text-[#101828]">
-                        Struktura / Nënkategoria për {activeCategory.titleShort}
-                      </Label>
-                      <span className="text-xs text-gray-500">Zgjidhni një opsion</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {activeCategory.subtypes.map((st) => {
-                        const isSubSelected = formData.subtype === st
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
-                            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
-                              isSubSelected
-                                ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
-                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                            }`}
-                          >
-                            {st}
-                          </button>
-                        )
-                      })}
-                    </div>
+                {/* DEDICATED SYNCHRONIZED OPTIONS PANEL FOR SELECTED CATEGORY */}
+                <div className="pt-5 border-t border-gray-100/90 space-y-5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#006459] bg-[#006459]/10 px-2.5 py-1 rounded-lg">
+                      Opsionet e Detajuara · {activeCategory.label}
+                    </span>
+                    <span className="text-xs text-gray-500 hidden sm:inline-block">
+                      Sinkronizohen automatikisht me të dhënat e pronës
+                    </span>
                   </div>
-                )}
+
+                  {/* 1. BANESE / APARTAMENT OPTIONS */}
+                  {formData.category === 'banese' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Tipologjia */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                            Tipologjia e banesës
+                          </span>
+                          <span className="text-[11px] text-gray-400">Përcakton dhomat automatikisht</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['Studio', '1+1', '2+1', '3+1', '4+1', 'Duplex', 'Penthouse'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => {
+                                  let r = formData.rooms
+                                  if (st === 'Studio') r = '1'
+                                  else if (st === '1+1') r = '2'
+                                  else if (st === '2+1') r = '3'
+                                  else if (st === '3+1') r = '4'
+                                  else if (st === '4+1') r = '5'
+                                  setFormData((prev) => ({ ...prev, subtype: st, rooms: r }))
+                                }}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Kati */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                            Kati
+                          </span>
+                          <span className="text-[11px] text-gray-400">Zgjidhni katin e ndërtesës</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {['Bodrum', 'P/D', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'].map((fl) => {
+                            const isSel = formData.floor === fl
+                            const label = fl === 'P/D' ? 'Përdhesë (0)' : fl === 'Bodrum' ? 'Bodrum' : `Kati ${fl}`
+                            return (
+                              <button
+                                key={fl}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Dhoma & Banjot & Ballkoni Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                        {/* Numri i dhomave */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Dhomat e gjumit / Dhoma
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['1', '2', '3', '4', '5', '6'].map((r) => {
+                              const isSel = formData.rooms === r
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
+                                  className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Banjot */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Banjot
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['1 Banjo', '2 Banjo', '3+ Banjo'].map((b) => {
+                              const isSel = formData.features.includes(b)
+                              return (
+                                <button
+                                  key={b}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {b}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Ballkoni */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Ballkoni / Tarraca
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Pa ballkon', '1 Ballkon', '2 Ballkone', 'Tarracë'].map((b) => {
+                              const isSel = b === 'Pa ballkon' ? !hasFeatureMatching(/Ballkon|Tarracë/i) : formData.features.includes(b)
+                              return (
+                                <button
+                                  key={b}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Ballkon|Tarracë/i, b === 'Pa ballkon' ? '' : b)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {b}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Orientimi */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Orientimi ndaj diellit
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {['Lindje', 'Perëndim', 'Jug', 'Veri', 'Jug-Lindje', 'Jug-Perëndim'].map((o) => {
+                            const featStr = `Orientimi ${o}`
+                            const isSel = formData.features.includes(featStr)
+                            return (
+                              <button
+                                key={o}
+                                type="button"
+                                onClick={() => syncSingleChoiceFeature(/Orientimi/i, featStr)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {o}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. SHTEPI OPTIONS */}
+                  {formData.category === 'shtepi' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Lloji i shtëpisë */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Lloji i shtëpisë
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {['Shtëpi private', 'Shtëpi me oborr', 'Townhouse (në varg)', 'Shtëpi 2-familjare'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Numri i kateve & Dhomat */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Numri i kateve
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {['1', '2', '3', '4'].map((fl) => {
+                              const isSel = formData.floor === fl
+                              return (
+                                <button
+                                  key={fl}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {fl}-katëshe
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Dhomat totale
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['2', '3', '4', '5', '6', '7', '8'].map((r) => {
+                              const isSel = formData.rooms === r
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
+                                  className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Oborri & Parkimi & Banjot */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                        {/* Oborri */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Hapësira e oborrit
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Pa oborr', '1-2 Ari oborr', '3-5 Ari oborr', '5-10 Ari oborr', '10+ Ari oborr'].map((o) => {
+                              const isSel = o === 'Pa oborr' ? !hasFeatureMatching(/oborr/i) : formData.features.includes(o)
+                              return (
+                                <button
+                                  key={o}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/oborr/i, o === 'Pa oborr' ? '' : o)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {o}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Parkimi */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Parkimi & Garazha
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Vendparkim në oborr', 'Garazhë private', 'Garazhë për 2+ vetura'].map((p) => {
+                              const isSel = formData.features.includes(p)
+                              return (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Garazhë|Vendparkim/i, p)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Banjot */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Banjot
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['1 Banjo', '2 Banjo', '3 Banjo', '4+ Banjo'].map((b) => {
+                              const isSel = formData.features.includes(b)
+                              return (
+                                <button
+                                  key={b}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {b}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. VILE OPTIONS */}
+                  {formData.category === 'vile' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Koncepti i vilës */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Koncepti & Lloji i vilës
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {['Vilë luksoze', 'Vilë pushimi / malore', 'Vilë rezidenciale (Gated)', 'Vilë duplex'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Katet & Dhomat */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Numri i kateve
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {['1', '2', '3'].map((fl) => {
+                              const isSel = formData.floor === fl
+                              return (
+                                <button
+                                  key={fl}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {fl}-katëshe
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Dhomat
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['3', '4', '5', '6', '7', '8'].map((r) => {
+                              const isSel = formData.rooms === r
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
+                                  className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pishina & Banjot & Komoditetet */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        {/* Pishina */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Pishina & Relaksi
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Pishinë private', 'Jacuzzi / Spa', 'Sauna', 'Pa pishinë'].map((p) => {
+                              const isSel = p === 'Pa pishinë' ? !hasFeatureMatching(/Pishinë|Jacuzzi|Sauna|Spa/i) : formData.features.includes(p)
+                              return (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Pishinë|Jacuzzi|Sauna|Spa/i, p === 'Pa pishinë' ? '' : p)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Banjot */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Banjot
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['2 Banjo', '3 Banjo', '4 Banjo', '5+ Banjo'].map((b) => {
+                              const isSel = formData.features.includes(b)
+                              return (
+                                <button
+                                  key={b}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {b}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Komoditete Premium */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Komoditete Ekskluzive
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {['Kopësht', 'Smart Home', 'Siguri 24h', 'Oxhak', 'Garazhë private', 'Panoramë'].map((feat) => {
+                            const isSel = formData.features.includes(feat)
+                            return (
+                              <button
+                                key={feat}
+                                type="button"
+                                onClick={() => toggleFeature(feat)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                  isSel
+                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                <span>{feat}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. TOKE / TRUALL OPTIONS */}
+                  {formData.category === 'toke' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Destinimi */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Destinimi i truallit
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {['Truall ndërtimi', 'Tokë bujqësore', 'Tokë komerciale / Industriale', 'Parcelë për vilë'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Dokumentacioni & Rruga */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Dokumentacioni */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Dokumentacioni ligjor
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Me Fletë Poseduese (1/1)', 'Leje ndërtimi', 'Në Plan Urbanistik', 'Me Projekt të gatshëm'].map((doc) => {
+                              const isSel = formData.features.includes(doc)
+                              return (
+                                <button
+                                  key={doc}
+                                  type="button"
+                                  onClick={() => {
+                                    toggleFeature(doc)
+                                    if (doc.includes('Fletë Poseduese')) {
+                                      setFormData((prev) => ({ ...prev, condition: 'e-re' }))
+                                    }
+                                  }}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                    isSel
+                                      ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                  <span>{doc}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Rruga & Qasja */}
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Rruga & Qasja
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Rrugë e asfaltuar', 'Rrugë me zhavorr', 'Qasje në magjistrale'].map((r) => {
+                              const isSel = formData.features.includes(r)
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Rrugë|magjistrale/i, r)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Komunaliet & Relievi */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Komunaliet & Infrastruktura
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Rrymë elektrike', 'Ujësjellës', 'Kanalizim', 'Ndriçim publik', 'E rrethuar'].map((util) => {
+                              const isSel = formData.features.includes(util)
+                              return (
+                                <button
+                                  key={util}
+                                  type="button"
+                                  onClick={() => toggleFeature(util)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                    isSel
+                                      ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                  <span>{util}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Relievi & Pozita
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Terren i rrafshët', 'Pjerrësi e lehtë', 'Kodrinor me panoramë'].map((rel) => {
+                              const isSel = formData.features.includes(rel)
+                              return (
+                                <button
+                                  key={rel}
+                                  type="button"
+                                  onClick={() => syncSingleChoiceFeature(/Terren|Pjerrësi|Kodrinor/i, rel)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {rel}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. LOKAL / ZYRE OPTIONS */}
+                  {formData.category === 'lokal' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Lloji */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Lloji i ambientit afarist
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {['Lokal afarist rrugor', 'Zyrë biznesi', 'Showroom / Dyqan', 'Hapësirë multifunksionale'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Organizimi & Kati */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Organizimi i hapësirës
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {['Open Space', '2 Hapësira', '3 Hapësira', '4+ Hapësira'].map((o) => {
+                              const targetRoom = o === 'Open Space' ? '1' : o.charAt(0)
+                              const isSel = formData.rooms === targetRoom
+                              return (
+                                <button
+                                  key={o}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, rooms: targetRoom }))}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {o}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                            Pozicioni / Kati
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Bodrum', 'P/D', '1', '2', '3', '4', '5+'].map((fl) => {
+                              const isSel = formData.floor === fl
+                              const label = fl === 'P/D' ? 'Përdhesë (0)' : fl === 'Bodrum' ? 'Bodrum' : `Kati ${fl}`
+                              return (
+                                <button
+                                  key={fl}
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                                    isSel
+                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Përparësitë për biznes */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Përparësitë për biznes
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {['Vitrinë xhami', 'Parking', 'Rrymë 3-fazore', 'Nyje sanitare', 'Klimë', 'Qasje nga rruga kryesore', 'Siguri 24h'].map((feat) => {
+                            const isSel = formData.features.includes(feat)
+                            return (
+                              <button
+                                key={feat}
+                                type="button"
+                                onClick={() => toggleFeature(feat)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                  isSel
+                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                <span>{feat}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 6. GARAZHE / DEPO OPTIONS */}
+                  {formData.category === 'garazh' && (
+                    <div className="space-y-4 pt-1">
+                      {/* Lloji */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Lloji i vendparkimit / depos
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {['Garazhë e mbyllur', 'Vendparkim nëntokësor', 'Depo / Magazinë', 'Vendparkim i hapur'].map((st) => {
+                            const isSel = formData.subtype === st
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
+                                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Niveli / Lokacioni */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Niveli / Lokacioni
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { val: 'Bodrum', label: 'Kati -1 (Nëntokë)' },
+                            { val: 'P/D', label: 'Përdhesë (Niveli 0)' },
+                            { val: '1', label: 'Kati 1' },
+                          ].map((item) => {
+                            const isSel = formData.floor === item.val
+                            return (
+                              <button
+                                key={item.val}
+                                type="button"
+                                onClick={() => setFormData((prev) => ({ ...prev, floor: item.val }))}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {item.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Pajisja & Siguria */}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Pajisja & Siguria
+                        </span>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {['Qepen me telekomandë', 'Kamera sigurie', 'Prizë për EV', 'Rampë e lehtë hyrëse', 'Ndriçim 24h', 'Ventilacion', 'Siguri 24h'].map((feat) => {
+                            const isSel = formData.features.includes(feat)
+                            return (
+                              <button
+                                key={feat}
+                                type="button"
+                                onClick={() => toggleFeature(feat)}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                  isSel
+                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                }`}
+                              >
+                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                <span>{feat}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* SECTION 2: Vendndodhja (Location) */}
