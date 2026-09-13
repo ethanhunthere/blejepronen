@@ -5,8 +5,16 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert, Sparkles } from 'lucide-react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+
+const QUICK_REPLIES = [
+  'A është prona ende e lirë?',
+  'A mund ta vizitoj sot?',
+  'A ka fleksibilitet çmimi?',
+  'A janë dokumentet në rregull?',
+  'A mund të më dërgoni më shumë foto?',
+]
 
 // ---- Types ----
 interface MessageRow {
@@ -248,11 +256,14 @@ export default function ChatPage() {
   }, [userId])
 
   // ---- Send message (optimistic) ----
-  const sendMessage = async () => {
-    const text = newMsg.trim()
+  const sendMessage = useCallback(async (overrideContent?: string) => {
+    const text = (typeof overrideContent === 'string' ? overrideContent : newMsg).trim()
     if (!text || !userId || text.length > 1000) return
 
     setNewMsg('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
 
     const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     const optimisticMsg: MessageRow = {
@@ -280,7 +291,7 @@ export default function ChatPage() {
       supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId).then(() => {})
     }
     textareaRef.current?.focus()
-  }
+  }, [newMsg, userId, conversationId, scrollToBottom])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -397,6 +408,35 @@ export default function ChatPage() {
             </div>
           )}
 
+          {messages.length === 0 && (
+            <div className="py-10 px-4 text-center animate-fade-in">
+              <div className="max-w-md mx-auto bg-white border border-gray-100/90 shadow-2xs rounded-3xl p-6 sm:p-7">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#006459] mx-auto mb-3.5 shadow-2xs">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-[#101828] mb-1">
+                  Filloni bisedën me {conv?.otherUser?.first_name || 'shitësin'}
+                </h3>
+                <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                  Zgjidhni një nga pyetjet e shpejta më poshtë për të dërguar mesazh me 1 prekje të vetme:
+                </p>
+                <div className="flex flex-col gap-2">
+                  {QUICK_REPLIES.slice(0, 3).map((reply) => (
+                    <button
+                      key={reply}
+                      type="button"
+                      onClick={() => sendMessage(reply)}
+                      className="w-full text-left p-3 px-4 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-[#006459]/40 text-xs font-semibold text-gray-700 hover:text-[#006459] flex items-center justify-between transition-all cursor-pointer group active:scale-[0.99]"
+                    >
+                      <span>{reply}</span>
+                      <SendHorizonal className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {renderItems.map((item, i) => {
             if (item.type === 'date') {
               return (
@@ -484,9 +524,29 @@ export default function ChatPage() {
       </div>
 
       {/* ---- INPUT ---- */}
-      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-3xl mx-auto flex items-end gap-2">
-          <textarea
+      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Quick Replies Strip */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider shrink-0 mr-0.5 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#006459]" />
+              Shpejt:
+            </span>
+            {QUICK_REPLIES.map((reply) => (
+              <button
+                key={reply}
+                type="button"
+                onClick={() => sendMessage(reply)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 hover:bg-[#006459] text-gray-700 hover:text-white border border-gray-200 hover:border-[#006459] shadow-2xs whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer group"
+              >
+                <span>{reply}</span>
+                <SendHorizonal className="w-3 h-3 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-end gap-2">
+            <textarea
             ref={textareaRef}
             value={newMsg}
             onChange={e => {
@@ -507,7 +567,7 @@ export default function ChatPage() {
           <div className="flex flex-col items-center gap-0.5">
             <button
               type="button"
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!newMsg.trim()}
               className="w-10 h-10 bg-[#006459] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
             >
@@ -520,7 +580,8 @@ export default function ChatPage() {
             )}
           </div>
         </div>
-      </footer>
+      </div>
+    </footer>
 
       <style jsx global>{`
         @keyframes msgSlideIn {
