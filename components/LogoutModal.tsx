@@ -148,7 +148,6 @@ export default function LogoutModal({
                   )}
                   <p className="text-xs text-gray-500 truncate">{userEmail}</p>
                 </div>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Aktive" />
               </div>
             )}
 

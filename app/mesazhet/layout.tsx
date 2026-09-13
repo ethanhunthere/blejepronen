@@ -289,8 +289,6 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                           className="object-cover"
                         />
                       </div>
-                      {/* Online indicator */}
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white" />
                     </div>
 
                     {/* Info */}

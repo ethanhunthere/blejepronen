@@ -731,8 +731,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         }}
                         className={`inline-flex items-center justify-center relative rounded-full w-10 h-10 transition-all duration-200 cursor-pointer flex-shrink-0 outline-none navbar-avatar-display ${
                           dropdownOpen
-                            ? 'ring-2 ring-[#C8B882] ring-offset-2 ring-offset-[#006459] shadow-md scale-105'
-                            : 'ring-2 ring-white/30 hover:ring-[#C8B882] hover:scale-105'
+                            ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-[#006459] shadow-md scale-105'
+                            : 'ring-2 ring-white/30 hover:ring-white/80 hover:scale-105'
                         }`}
                         aria-label="Menyja e përdoruesit"
                         aria-expanded={dropdownOpen}
@@ -747,10 +747,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             className="object-cover"
                           />
                         </div>
-                        {unreadCount > 0 ? (
-                          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 border-2 border-[#006459] rounded-full animate-pulse" />
-                        ) : (
-                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#006459] rounded-full" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold border-2 border-[#006459] rounded-full flex items-center justify-center shadow-xs">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
                         )}
                       </button>
 
@@ -1050,7 +1050,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           sizes="48px"
                           className="object-cover"
                         />
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-[#006459]" />
                       </div>
 
                       <div className="min-w-0">

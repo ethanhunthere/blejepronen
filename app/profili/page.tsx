@@ -1,46 +1,64 @@
 'use client'
 
-import PageHeader from '@/components/PageHeader'
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Camera, CheckCircle2, Mail, Phone, Calendar, Loader2, AlertTriangle, Trash2, LogOut, Building2, Sparkles, ExternalLink, Share2, Settings } from 'lucide-react'
+import {
+  Building2,
+  Sparkles,
+  ExternalLink,
+  Share2,
+  Settings,
+  ShieldCheck,
+  CalendarDays,
+  Mail,
+  Phone,
+  MapPin,
+  Plus,
+  Home,
+  MessageCircle,
+  Camera,
+  Check,
+  ArrowRight,
+  LogOut,
+  Loader2,
+  Globe,
+} from 'lucide-react'
 import type { Profile } from '@/lib/supabase'
-import { revalidateSellerListings } from '@/app/actions'
 import LogoutModal from '@/components/LogoutModal'
-import DeleteAccountModal from '@/components/DeleteAccountModal'
 import AvatarPickerModal from '@/components/AvatarPickerModal'
 import { getAvatarUrl } from '@/lib/avatars'
 import { toast } from 'sonner'
-import SocialLinksBar, { InstagramIcon, FacebookIcon, WhatsAppIcon, TikTokIcon } from '@/components/SocialIcons'
+import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import ProfileSocialStats from '@/components/ProfileSocialStats'
+import { revalidateSellerListings } from '@/app/actions'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState('')
   const [isCompany, setIsCompany] = useState(false)
   const [companyDescription, setCompanyDescription] = useState('')
   const [foundedYear, setFoundedYear] = useState('')
-  const [socials, setSocials] = useState<SocialLinks>({ instagram: '', facebook: '', whatsapp: '', tiktok: '' })
-  const [savedSocials, setSavedSocials] = useState<SocialLinks>({ instagram: '', facebook: '', whatsapp: '', tiktok: '' })
+  const [nipt, setNipt] = useState('')
+  const [officeAddress, setOfficeAddress] = useState('')
+  const [website, setWebsite] = useState('')
+  const [city, setCity] = useState('')
+  const [socials, setSocials] = useState<SocialLinks>({
+    instagram: '',
+    facebook: '',
+    whatsapp: '',
+    tiktok: '',
+  })
+  const [listingsCount, setListingsCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
-  const [editMode, setEditMode] = useState(false)
-  const [listingsCount, setListingsCount] = useState(0)
-  const [formData, setFormData] = useState({ first_name: '', last_name: '', phone: '' })
-  const [userEmail, setUserEmail] = useState('')
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -82,176 +100,78 @@ export default function ProfilePage() {
         return
       }
 
-      const user = activeUser
+      setUserId(activeUser.id)
+      setUserEmail(activeUser.email || '')
 
       const [{ data: prof }, { count: lCount }] = await Promise.all([
         supabase
           .from('profiles')
           .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
-          .eq('id', user.id)
+          .eq('id', activeUser.id)
           .single(),
         supabase
           .from('listings')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', activeUser.id)
           .eq('is_active', true),
       ])
 
       setListingsCount(lCount || 0)
 
-      const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name) || prof?.last_name === 'Kompani'
+      const meta = activeUser.user_metadata || {}
+      const isComp =
+        meta.account_type === 'company' ||
+        Boolean(meta.company_name) ||
+        prof?.last_name === 'Kompani'
+
       setIsCompany(isComp)
 
-      if (user.user_metadata) {
-        if (user.user_metadata.company_description) setCompanyDescription(user.user_metadata.company_description)
-        if (user.user_metadata.founded_year) setFoundedYear(String(user.user_metadata.founded_year))
-        const loadedSocials: SocialLinks = {
-          instagram: user.user_metadata.instagram || '',
-          facebook: user.user_metadata.facebook || '',
-          whatsapp: user.user_metadata.whatsapp || '',
-          tiktok: user.user_metadata.tiktok || '',
-        }
-        setSocials(loadedSocials)
-        setSavedSocials(loadedSocials)
+      if (meta) {
+        if (meta.company_description) setCompanyDescription(meta.company_description)
+        if (meta.founded_year) setFoundedYear(String(meta.founded_year))
+        if (meta.nipt) setNipt(meta.nipt)
+        if (meta.office_address) setOfficeAddress(meta.office_address)
+        if (meta.website) setWebsite(meta.website)
+        if (meta.city) setCity(meta.city)
+
+        setSocials({
+          instagram: meta.instagram || '',
+          facebook: meta.facebook || '',
+          whatsapp: meta.whatsapp || prof?.phone || '',
+          tiktok: meta.tiktok || '',
+        })
       }
 
       if (prof) {
         setProfile(prof as Profile)
-        setFormData({
-          first_name: prof.first_name || '',
-          last_name: isComp && prof.last_name === 'Kompani' ? '' : (prof.last_name || ''),
-          phone: prof.phone || '',
-        })
       }
-      setUserEmail(user?.email || '')
+
       setLoading(false)
     }
+
     load()
   }, [router, supabase])
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setError('')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    let phoneToSave = formData.phone?.trim() || ''
-    if (phoneToSave) {
-      try {
-        const checkRes = await fetch('/api/check-phone', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: phoneToSave, userId: user.id }),
-        })
-        const checkData = await checkRes.json()
-        if (!checkRes.ok || !checkData.available) {
-          setError(checkData.error || 'Ky numër telefoni është i regjistruar tashmë në një llogari tjetër.')
-          setSaving(false)
-          return
-        }
-        if (checkData.normalized) phoneToSave = checkData.normalized
-      } catch (err) {
-        console.error('Check phone error in profile:', err)
-      }
-    }
-
-    const payload = {
-      first_name: formData.first_name.trim(),
-      last_name: isCompany ? (formData.last_name.trim() || 'Kompani') : formData.last_name.trim(),
-      phone: phoneToSave,
-    }
-
-    const { error: err } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', user.id)
-
-    if (err) { setError('Gabim gjatë ruajtjes.'); setSaving(false); return }
-
-    const socialsPayload = {
-      instagram: socials.instagram?.trim() || '',
-      facebook: socials.facebook?.trim() || '',
-      whatsapp: socials.whatsapp?.trim() || '',
-      tiktok: socials.tiktok?.trim() || '',
-    }
-
-    try {
-      await supabase.auth.updateUser({
-        data: {
-          ...(isCompany
-            ? {
-                company_description: companyDescription.trim(),
-                founded_year: foundedYear.trim(),
-                contact_person: formData.last_name.trim(),
-              }
-            : {}),
-          ...socialsPayload,
-        },
-      })
-    } catch (metaErr) {
-      console.error('Update user_metadata in profile page:', metaErr)
-    }
-
-    try {
-      await fetch('/api/profile/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: payload.first_name,
-          lastName: payload.last_name,
-          phone: payload.phone,
-          isCompany,
-          companyDescription: companyDescription.trim(),
-          foundedYear: foundedYear.trim(),
-          ...socialsPayload,
-        }),
-      })
-    } catch (apiErr) {
-      console.error('API profile save sync error in profile page:', apiErr)
-    }
-
-    setSavedSocials(socialsPayload)
-
-    setProfile(prev => prev ? { ...prev, ...payload } : prev)
-    // Bust ISR cache + client router cache so listing pages reflect the new
-    // phone / name immediately - even on client-side navigation.
-    try {
-      await revalidateSellerListings(user.id)
-    } catch (e) {
-      console.error('Failed to revalidate listing pages after profile update:', e)
-    }
-    router.refresh()
-    setSuccess(true)
-    setEditMode(false)
-    setTimeout(() => setSuccess(false), 3000)
-    setSaving(false)
-  }
-
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !userId) return
 
     setUploadingAvatar(true)
-    setError('')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        setError('Vetëm foto JPEG, PNG ose WebP lejohen.')
+        toast.error('Vetëm foto JPEG, PNG ose WebP lejohen.')
         setUploadingAvatar(false)
         return
       }
       if (file.size > 5 * 1024 * 1024) {
-        setError('Fotoja duhet të jetë më e vogël se 5MB.')
+        toast.error('Fotoja duhet të jetë më e vogël se 5MB.')
         setUploadingAvatar(false)
         return
       }
 
       const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${user.id}/${Date.now()}-avatar.${ext}`
+      const path = `${userId}/${Date.now()}-avatar.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -259,18 +179,20 @@ export default function ProfilePage() {
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(path)
 
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id)
+        .eq('id', userId)
 
       if (updateError) throw updateError
 
-      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev)
+      setProfile((prev) => (prev ? { ...prev, avatar_url: publicUrl } : prev))
 
-      // Update cached profile for instant navbar update
+      // Update cached profile for instant navbar reactivity
       try {
         const cached = localStorage.getItem('bp_profile_cache')
         if (cached) {
@@ -280,17 +202,17 @@ export default function ProfilePage() {
           document.documentElement.style.setProperty('--nav-avatar', `url("${publicUrl}")`)
         }
       } catch {}
+
       window.dispatchEvent(new CustomEvent('profile-updated'))
       toast.success('Fotoja e profilit u përditësua me sukses!')
 
       try {
-        await revalidateSellerListings(user.id)
-      } catch (e) {
-        console.error('Failed to revalidate after avatar upload:', e)
+        await revalidateSellerListings(userId)
+      } catch (err) {
+        console.error('Revalidation notice:', err)
       }
-      router.refresh()
     } catch {
-      setError('Ngarkimi i fotos dështoi. Provo përsëri.')
+      toast.error('Ngarkimi i fotos dështoi. Provoni përsëri.')
     } finally {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -298,20 +220,18 @@ export default function ProfilePage() {
   }
 
   const handleSelectAvatar = async (selectedAvatarUrl: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    if (!userId) return
 
+    try {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: selectedAvatarUrl })
-        .eq('id', user.id)
+        .eq('id', userId)
 
       if (updateError) throw updateError
 
-      setProfile(prev => (prev ? { ...prev, avatar_url: selectedAvatarUrl } : prev))
+      setProfile((prev) => (prev ? { ...prev, avatar_url: selectedAvatarUrl } : prev))
 
-      // Update cached profile for instant navbar update
       try {
         const cached = localStorage.getItem('bp_profile_cache')
         if (cached) {
@@ -321,68 +241,78 @@ export default function ProfilePage() {
           document.documentElement.style.setProperty('--nav-avatar', `url("${selectedAvatarUrl}")`)
         }
       } catch {}
+
       window.dispatchEvent(new CustomEvent('profile-updated'))
       toast.success('Fotoja e profilit u përditësua me sukses!')
 
       try {
-        await revalidateSellerListings(user.id)
-      } catch (e) {
-        console.error('Failed to revalidate after avatar change:', e)
+        await revalidateSellerListings(userId)
+      } catch (err) {
+        console.error('Revalidation notice:', err)
       }
-      router.refresh()
     } catch {
-      setError('Përditësimi i fotos dështoi. Provo përsëri.')
+      toast.error('Përditësimi i fotos dështoi. Provoni përsëri.')
     }
   }
 
-  const handleConfirmDelete = async (): Promise<boolean> => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+  const handleShareProfile = async () => {
+    if (!userId) return
+    const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://blejepronen.com'}/profili/${userId}`
 
-      const res = await fetch('/api/account/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      })
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        setError(errData?.message || 'Ndodhi një gabim gjatë fshirjes së llogarisë.')
-        return false
-      }
-
+    if (typeof navigator !== 'undefined' && navigator.share) {
       try {
-        sessionStorage.setItem('blejepronen_logging_out', '1')
-        document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
-      } catch {}
-      try {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('sb-')) localStorage.removeItem(key)
+        await navigator.share({
+          title: `${displayName} — Bleje Pronën`,
+          text: `Shiko profilin dhe pronat e ${displayName} në Bleje Pronën`,
+          url: publicUrl,
         })
+        return
       } catch {}
+    }
 
-      await supabase.auth.signOut({ scope: 'local' })
-      try {
-        await fetch('/api/logout', { method: 'POST', keepalive: true })
-      } catch {}
-
-      return true
-    } catch (err) {
-      console.error('Delete account error:', err)
-      return false
+    try {
+      await navigator.clipboard.writeText(publicUrl)
+      setCopiedLink(true)
+      toast.success('Linku i profilit u kopjua me sukses!')
+      setTimeout(() => setCopiedLink(false), 2000)
+    } catch {
+      toast.error('Nuk u arrit kopjimi i linkut.')
     }
   }
 
-  const handleDirectLogout = async () => {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-9 w-9 animate-spin text-[#006459] mx-auto mb-3" />
+          <p className="text-xs text-gray-500 font-semibold">Po hapim profilin tuaj...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const displayName = isCompany
+    ? profile?.first_name || 'Kompania'
+    : `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Përdorues'
+
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('sq-AL', {
+        month: 'long',
+        year: 'numeric',
+      })
+    : ''
+
+  const isVerified = profile?.email_verified === true
+
+  const handleLogoutConfirmed = async () => {
     try {
       sessionStorage.setItem('blejepronen_logging_out', '1')
       document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
     } catch {}
     try {
-      Object.keys(localStorage).forEach(key => {
+      localStorage.removeItem('bp_user_cache')
+      localStorage.removeItem('bp_profile_cache')
+      Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('sb-')) localStorage.removeItem(key)
       })
     } catch {}
@@ -392,519 +322,435 @@ export default function ProfilePage() {
     try {
       await supabase.auth.signOut({ scope: 'local' })
     } catch {}
+    window.location.href = '/'
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#101828]" />
-    </div>
-  )
-
-  const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('sq-AL', { day: 'numeric', month: 'long', year: 'numeric' })
-    : ''
-
-  const isVerified = profile?.email_verified === true
-
   return (
-    <div className="min-h-screen bg-[#F2F7F7] py-10">
-      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6">
-        <PageHeader title="Profili im" />
+    <div className="min-h-screen bg-[#F2F7F7] py-6 sm:py-10 pb-20 sm:pb-16">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Top Breadcrumb & Quick Actions Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+            <Link href="/" className="hover:text-[#006459] transition-colors">
+              Ballina
+            </Link>
+            <span>/</span>
+            <span className="text-[#101828] font-bold">Profili Im</span>
+          </div>
 
-        {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-700">Profili u ruajt!</AlertDescription>
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/posto-prona"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Posto Pronë</span>
+            </Link>
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:text-[#006459] hover:border-[#006459]/30 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Cilësimet</span>
+            </Link>
+          </div>
+        </div>
 
-        {/* Profile Card */}
-        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            {/* Avatar */}
-            <div className="flex flex-col items-center gap-2.5 flex-shrink-0">
-              <div
-                onClick={() => setShowAvatarModal(true)}
-                className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-sm bg-gray-100 cursor-pointer group hover:border-[#006459]/40 hover:shadow-md transition-all duration-200"
-                title="Kliko për të zgjedhur një avatar"
-              >
-                <Image
-                  src={getAvatarUrl(profile?.avatar_url)}
-                  alt="Avatar"
-                  fill
-                  sizes="96px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-200"
-                />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                  <Sparkles className="h-6 w-6 drop-shadow" />
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
+        {/* ====== MASTER PROFILE SHOWCASE HERO ====== */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.05)]">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Avatar + Main Identity Info */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 text-center sm:text-left">
+              {/* Avatar with luxury click-to-change options */}
+              <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                <div
                   onClick={() => setShowAvatarModal(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs"
+                  className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-gray-100 cursor-pointer group hover:scale-[1.02] transition-all duration-200 ring-2 ring-[#006459]/15"
+                  title="Kliko për të ndryshuar avatarin"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  Zgjidh avatar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingAvatar}
-                  title="Ngarko foton tënde nga kompjuteri"
-                  className="p-1.5 text-gray-500 hover:text-[#006459] rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-                </button>
+                  <Image
+                    src={getAvatarUrl(profile?.avatar_url)}
+                    alt="Foto Profili"
+                    fill
+                    sizes="112px"
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+                    <Camera className="h-6 w-6 mb-1 drop-shadow" />
+                    <span className="text-[10px] font-bold tracking-wide">Ndrysho</span>
+                  </div>
+                </div>
+
+                {/* Micro Action Pills for Avatar */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarModal(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>20 Avatarë</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    title="Ngarko foton nga kompjuteri"
+                    className="p-1 text-gray-500 hover:text-[#006459] rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    {uploadingAvatar ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
               </div>
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
+              {/* Name, Badges, Details */}
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#101828] tracking-tight">
+                    {displayName}
+                  </h1>
+
+                  {isVerified && (
+                    <span
+                      title="Llogari e Verifikuar"
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                      E verifikuar
+                    </span>
+                  )}
+
+                  {isCompany ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#006459]/10 text-[#006459] border border-[#006459]/20">
+                      <Building2 className="h-3 w-3" />
+                      Kompani
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                      Individual
+                    </span>
+                  )}
+                </div>
+
+                {/* Subtitle Details Row */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-y-1.5 gap-x-4 text-xs sm:text-sm text-gray-500 pt-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="font-medium text-gray-700">{userEmail}</span>
+                  </span>
+
+                  {profile?.phone && (
+                    <span className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-gray-400" />
+                      <span className="font-medium text-gray-700">{profile.phone}</span>
+                    </span>
+                  )}
+
+                  {city && (
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                      <span>{city}</span>
+                    </span>
+                  )}
+
+                  {memberSince && (
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                      <span>Anëtar nga {memberSince}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Instagram-style Social Stats (Listings, Followers, Following) */}
+                {userId && (
+                  <ProfileSocialStats
+                    userId={userId}
+                    userName={displayName}
+                    listingsCount={listingsCount}
+                    className="justify-center sm:justify-start pt-1.5"
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Info */}
-            <div className="flex-1 text-center sm:text-left">
-              {isVerified ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                    <h2 className="text-xl font-semibold text-[#101828]">
-                      {profile?.first_name} {isCompany ? (profile?.last_name && profile?.last_name !== 'Kompani' ? `(${profile.last_name})` : '') : profile?.last_name}
-                    </h2>
-                    <span className="inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-600 border border-green-200 rounded-full px-2 py-0.5">
-                      <CheckCircle2 className="h-3 w-3" /> E verifikuar
-                    </span>
-                    {isCompany && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold bg-[#006459]/10 text-[#006459] border border-[#006459]/20 rounded-full px-2.5 py-0.5">
-                        <Building2 className="h-3 w-3" /> Kompani
-                      </span>
-                    )}
-                  </div>
-
-                  {profile && (
-                    <ProfileSocialStats
-                      userId={profile.id}
-                      userName={isCompany ? (formData.first_name || 'Kompania') : `${formData.first_name} ${formData.last_name}`.trim()}
-                      listingsCount={listingsCount}
-                      className="justify-center sm:justify-start my-1"
-                    />
-                  )}
-
-                  <div className="space-y-2 mt-3">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm">
-                      <Mail className="h-4 w-4" />
-                      <span className="text-[#101828] font-medium">{userEmail}</span>
-                    </div>
-                    {profile?.phone && (
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm">
-                        <Phone className="h-4 w-4" />
-                        <span className="text-[#101828] font-medium">{profile.phone}</span>
-                      </div>
-                    )}
-                    {isCompany && foundedYear && (
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm">
-                        <Calendar className="h-4 w-4" />
-                        <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Operon që nga viti</span>
-                        <span className="text-[#101828] font-medium">{foundedYear}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm">
-                      <Calendar className="h-4 w-4" />
-                      <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Anëtar që nga</span>
-                      <span className="text-[#101828] font-medium">{memberSince}</span>
-                    </div>
-                  </div>
-                  {isCompany && companyDescription && (
-                    <div className="mt-3.5 p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs sm:text-sm text-gray-700 leading-relaxed text-left">
-                      <p className="font-semibold text-gray-900 text-xs mb-1">Rreth kompanisë:</p>
-                      <p>{companyDescription}</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                    <h2 className="text-xl font-semibold text-[#101828]">
-                      {profile?.first_name || 'Profili im'} {isCompany ? (profile?.last_name && profile?.last_name !== 'Kompani' ? `(${profile.last_name})` : '') : (profile?.last_name || '')}
-                    </h2>
-                    {isCompany && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold bg-[#006459]/10 text-[#006459] border border-[#006459]/20 rounded-full px-2.5 py-0.5">
-                        <Building2 className="h-3 w-3" /> Kompani
-                      </span>
-                    )}
-                  </div>
-
-                  {profile && (
-                    <ProfileSocialStats
-                      userId={profile.id}
-                      userName={isCompany ? (formData.first_name || 'Kompania') : `${formData.first_name} ${formData.last_name}`.trim()}
-                      listingsCount={listingsCount}
-                      className="justify-center sm:justify-start my-1"
-                    />
-                  )}
-
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-600 text-sm mb-1">
-                    <Mail className="h-4 w-4" />
-                    <span className="text-[#101828] font-medium">{userEmail}</span>
-                  </div>
-                  <p className="text-sm font-medium text-amber-600 mt-1">Llogaria juaj nuk është e verifikuar</p>
-                </>
+            {/* Fast Actions Column */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2.5 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-100 shrink-0">
+              {userId && (
+                <Link
+                  href={`/profili/${userId}`}
+                  className="h-10 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#006459]/40 hover:text-[#006459] text-gray-700 font-bold text-xs flex items-center gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Profili Publik</span>
+                </Link>
               )}
+
+              <button
+                type="button"
+                onClick={handleShareProfile}
+                className="h-10 px-4 rounded-xl bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold text-xs flex items-center gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700">U kopjua</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Ndaj</span>
+                  </>
+                )}
+              </button>
+
+              <Link
+                href="/settings"
+                className="h-10 px-4 rounded-xl bg-[#006459] hover:bg-[#005048] text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-[#006459]/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Ndrysho të Dhënat</span>
+              </Link>
             </div>
           </div>
 
-          {profile && (
-            <div className="mt-5 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Sparkles className="h-3.5 w-3.5 text-[#006459]" />
-                <span>Profili juaj është i dukshëm për blerësit dhe vizitorët</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/profili/${profile.id}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006459] hover:underline bg-[#006459]/5 hover:bg-[#006459]/10 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <span>Shiko si vizitor</span>
-                </Link>
-                <Link
-                  href="/settings"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-[#006459] bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  <Settings className="h-3 w-3" />
-                  <span>Cilësimet</span>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {!isVerified && (
-            <div className="mt-6 bg-[#006459]/10 border border-[#006459]/30 rounded-2xl p-5">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#006459]/20 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="h-5 w-5 text-[#101828]" />
-                  </div>
-                  <p className="text-gray-700 text-sm">
-                    Verifikoni llogarinë tuaj për të pasur qasje të plotë në platformë
-                  </p>
+          {/* Description Section */}
+          {(companyDescription || isCompany) && (
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                {isCompany ? 'Rreth Kompanisë' : 'Përshkrim'}
+              </h3>
+              {companyDescription ? (
+                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed max-w-3xl">
+                  {companyDescription}
+                </p>
+              ) : (
+                <div className="flex items-center justify-between gap-3 text-xs text-gray-500 py-1">
+                  <span>Nuk keni vendosur ende një përshkrim për profilin tuaj.</span>
+                  <Link
+                    href="/settings"
+                    className="text-[#006459] font-bold hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>+ Shto në Cilësime</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
                 </div>
-                <Link
-                  href={isCompany ? '/completo-profilin-company' : '/completo-profilin-fast'}
-                  className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out whitespace-nowrap cursor-pointer"
-                >
-                  Verifiko tani →
-                </Link>
-              </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Socials Card in View Mode */}
-        {isVerified && !editMode && (
-          <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-[#101828] font-bold text-base flex items-center gap-2">
-                  <Share2 className="h-4 w-4 text-[#006459]" />
-                  Rrjetet Sociale & Kontakti
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Shfaqen në njoftimet e pronave tuaja dhe te profili publik.
-                </p>
+        {/* ====== 2-COLUMN DASHBOARD BENTO ====== */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Col 1 & 2: Quick Property Management & Digital Presence */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Properties Overview Banner */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                    <Home className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-[#101828]">Pronat e Mia Aktive</h2>
+                    <p className="text-xs text-gray-500">
+                      Shpalljet tuaja të publikuara në tregun e Kosovës
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
+                  {listingsCount} {listingsCount === 1 ? 'pronë' : 'prona'}
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditMode(true)}
-                className="text-xs font-bold text-[#006459] hover:underline cursor-pointer"
-              >
-                {hasAnySocial(socials) ? 'Modifiko' : '+ Shto'}
-              </button>
+
+              <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-[#101828]">
+                    {listingsCount > 0
+                      ? `Keni ${listingsCount} pronë të publikuar aktualisht.`
+                      : 'Nuk keni asnjë pronë të publikuar ende.'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Mund të shtoni foto, të ndryshoni çmimin ose të fshini shpalljet tuaja në çdo çast.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                  <Link
+                    href="/postimet-e-mia"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#006459] hover:border-[#006459]/30 transition-all shadow-2xs"
+                  >
+                    <span>Menaxho</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    href="/posto-prona"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs font-bold transition-all shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Shto pronë</span>
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            {hasAnySocial(socials) ? (
-              <SocialLinksBar socials={socials} variant="large" />
-            ) : (
-              <div className="p-5 rounded-xl bg-gray-50/80 border border-dashed border-gray-200 text-center">
-                <p className="text-xs sm:text-sm text-gray-600 mb-3">
-                  Nuk keni lidhur ende llogaritë tuaja të Instagram, Facebook, WhatsApp ose TikTok.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setEditMode(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#006459] text-white hover:bg-[#005048] shadow-sm transition-all cursor-pointer"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                  Shto rrjetet sociale tani
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            {/* Social Media & Digital Presence Card */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                    <Share2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-[#101828]">
+                      Rrjetet Sociale & Lidhja me Blerësit
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      Shfaqen në kartën e kontaktit në çdo njoftim tuajin
+                    </p>
+                  </div>
+                </div>
 
-        {/* Edit Form - verified only */}
-        {isVerified && (
-          <>
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6">
-              {!editMode ? (
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[#101828] font-semibold text-lg">Të dhënat e profilit</h3>
-                  <button
-                    type="button"
-                    onClick={() => setEditMode(true)}
-                    className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold bg-gray-100 text-[#101828] hover:bg-gray-200 hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
-                  >
-                    Ndrysho profilin
-                  </button>
+                <Link
+                  href="/settings?tab=socials"
+                  className="text-xs font-bold text-[#006459] hover:underline cursor-pointer"
+                >
+                  Ndrysho
+                </Link>
+              </div>
+
+              {hasAnySocial(socials) ? (
+                <div className="space-y-3">
+                  <SocialLinksBar socials={socials} variant="large" />
                 </div>
               ) : (
-                <>
-                  <h3 className="text-[#101828] font-semibold text-lg mb-5">Ndrysho të dhënat</h3>
-                  <form onSubmit={handleSave} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="first_name" className="text-gray-500 text-xs uppercase tracking-wider">
-                          {isCompany ? 'Emri i Kompanisë' : 'Emri'}
-                        </Label>
-                        <Input
-                          id="first_name"
-                          className="mt-1 h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 rounded-xl"
-                          value={formData.first_name}
-                          onChange={e => setFormData(p => ({ ...p, first_name: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="last_name" className="text-gray-500 text-xs uppercase tracking-wider">
-                          {isCompany ? 'Personi kontaktues (opsionale)' : 'Mbiemri'}
-                        </Label>
-                        <Input
-                          id="last_name"
-                          className="mt-1 h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 rounded-xl"
-                          value={formData.last_name}
-                          onChange={e => setFormData(p => ({ ...p, last_name: e.target.value }))}
-                          required={!isCompany}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="phone" className="text-gray-500 text-xs uppercase tracking-wider">
-                        <Phone className="h-3 w-3 inline mr-1" />
-                        Numri i telefonit
-                      </Label>
-                      <Input
-                        id="phone"
-                        className="mt-1 h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 rounded-xl"
-                        placeholder="+383 44 123 456"
-                        value={formData.phone}
-                        onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                      />
-                    </div>
-                    {isCompany && (
-                      <>
-                        <div>
-                          <Label htmlFor="founded_year" className="text-gray-500 text-xs uppercase tracking-wider">
-                            Nga cili vit operoni?
-                          </Label>
-                          <Input
-                            id="founded_year"
-                            type="number"
-                            min="1900"
-                            max={new Date().getFullYear()}
-                            placeholder="psh. 2018"
-                            className="mt-1 h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-500 rounded-xl"
-                            value={foundedYear}
-                            onChange={e => setFoundedYear(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="company_description" className="text-gray-500 text-xs uppercase tracking-wider">
-                            Përshkrimi i kompanisë (Kush jeni ju?)
-                          </Label>
-                          <textarea
-                            id="company_description"
-                            rows={3}
-                            placeholder="Shkruani përvojën, specializimin dhe shërbimet e kompanisë suaj..."
-                            className="mt-1 w-full p-3 text-sm rounded-xl border border-gray-200 bg-white text-[#101828] placeholder:text-gray-500 focus:border-[#006459] outline-none transition-colors resize-none leading-relaxed"
-                            value={companyDescription}
-                            onChange={e => setCompanyDescription(e.target.value)}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {/* Socials Input Section */}
-                    <div className="pt-4 border-t border-gray-100">
-                      <div className="mb-3">
-                        <Label className="text-[#101828] text-sm font-bold flex items-center gap-1.5">
-                          <Share2 className="h-4 w-4 text-[#006459]" />
-                          Rrjetet Sociale & Kontakti
-                        </Label>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Lidhni llogaritë tuaja për t&apos;u shfaqur automatikisht në njoftimet e pronave tuaja dhe te profili publik.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        {/* Instagram */}
-                        <div>
-                          <Label htmlFor="instagram" className="text-gray-600 text-xs font-semibold flex items-center gap-1.5 mb-1">
-                            <InstagramIcon className="h-3.5 w-3.5 text-pink-600" />
-                            Instagram
-                          </Label>
-                          <Input
-                            id="instagram"
-                            placeholder="@perdoruesi ose linku"
-                            className="h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-400 rounded-xl"
-                            value={socials.instagram || ''}
-                            onChange={e => setSocials(p => ({ ...p, instagram: e.target.value }))}
-                          />
-                        </div>
-
-                        {/* Facebook */}
-                        <div>
-                          <Label htmlFor="facebook" className="text-gray-600 text-xs font-semibold flex items-center gap-1.5 mb-1">
-                            <FacebookIcon className="h-3.5 w-3.5 text-[#1877F2]" />
-                            Facebook
-                          </Label>
-                          <Input
-                            id="facebook"
-                            placeholder="facebook.com/... ose emri"
-                            className="h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-400 rounded-xl"
-                            value={socials.facebook || ''}
-                            onChange={e => setSocials(p => ({ ...p, facebook: e.target.value }))}
-                          />
-                        </div>
-
-                        {/* WhatsApp */}
-                        <div>
-                          <Label htmlFor="whatsapp" className="text-gray-600 text-xs font-semibold flex items-center gap-1.5 mb-1">
-                            <WhatsAppIcon className="h-3.5 w-3.5 text-[#25D366]" />
-                            WhatsApp
-                          </Label>
-                          <Input
-                            id="whatsapp"
-                            placeholder="+383 44 123 456"
-                            className="h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-400 rounded-xl"
-                            value={socials.whatsapp || ''}
-                            onChange={e => setSocials(p => ({ ...p, whatsapp: e.target.value }))}
-                          />
-                        </div>
-
-                        {/* TikTok */}
-                        <div>
-                          <Label htmlFor="tiktok" className="text-gray-600 text-xs font-semibold flex items-center gap-1.5 mb-1">
-                            <TikTokIcon className="h-3.5 w-3.5 text-gray-900" />
-                            TikTok
-                          </Label>
-                          <Input
-                            id="tiktok"
-                            placeholder="@perdoruesi ose linku"
-                            className="h-11 bg-white border-gray-200 text-[#101828] placeholder:text-gray-400 rounded-xl"
-                            value={socials.tiktok || ''}
-                            onChange={e => setSocials(p => ({ ...p, tiktok: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button
-                        type="submit"
-                        disabled={saving}
-                        className="flex-1 h-11 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                      >
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ruaj ndryshimet'}
-                      </Button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditMode(false)
-                          if (profile) {
-                            setFormData({
-                              first_name: profile.first_name,
-                              last_name: profile.last_name,
-                              phone: profile.phone || '',
-                            })
-                          }
-                          setSocials(savedSocials)
-                        }}
-                        className="flex-1 h-11 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-semibold hover:bg-gray-100 hover:text-[#101828] hover:shadow-sm hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer"
-                      >
-                        Anulo
-                      </button>
-                    </div>
-                  </form>
-                </>
+                <div className="p-5 rounded-2xl bg-gray-50 border border-dashed border-gray-200 text-center">
+                  <p className="text-xs text-gray-600 mb-3">
+                    Nuk keni lidhur ende rrjetet tuaja (Instagram, Facebook, WhatsApp, TikTok).
+                  </p>
+                  <Link
+                    href="/settings?tab=socials"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#006459] text-white hover:bg-[#005048] shadow-xs transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Lidh rrjetet sociale tani</span>
+                  </Link>
+                </div>
               )}
             </div>
+          </div>
 
-            {/* Danger Zone */}
-            <div className="border border-red-200 bg-red-50/70 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-red-900">Zona e rrezikut</h3>
-                <p className="text-xs sm:text-sm text-red-700/80 mt-0.5">
-                  Fshirja e llogarisë do të largojë përgjithmonë profilin dhe të gjitha pronat tuaja.
-                </p>
+          {/* Col 3: Side Card (Account Summary, Fast Links, Logout) */}
+          <div className="space-y-6">
+            {/* Quick Status Info */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-[#101828] uppercase tracking-wider text-gray-500">
+                Detajet e Llogarisë
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-500">Statusi</span>
+                  <span className="font-bold text-emerald-700 inline-flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    Aktiv & Verifikuar
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-500">Lloji i Llogarisë</span>
+                  <span className="font-bold text-gray-900">
+                    {isCompany ? 'Kompani / Biznes' : 'Individual'}
+                  </span>
+                </div>
+
+                {isCompany && foundedYear && (
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-500">Themeluar</span>
+                    <span className="font-bold text-gray-900">{foundedYear}</span>
+                  </div>
+                )}
+
+                {isCompany && nipt && (
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-500">NIPT</span>
+                    <span className="font-bold text-gray-900">{nipt}</span>
+                  </div>
+                )}
+
+                {isCompany && website && (
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-500">Website</span>
+                    <a
+                      href={website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-[#006459] hover:underline inline-flex items-center gap-1 truncate max-w-[140px]"
+                    >
+                      <Globe className="w-3 h-3" />
+                      <span>{website.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  </div>
+                )}
+
+                {isCompany && officeAddress && (
+                  <div className="py-2 border-b border-gray-100">
+                    <span className="text-gray-500 block mb-0.5">Adresa e Zyrës</span>
+                    <span className="font-medium text-gray-900">{officeAddress}</span>
+                  </div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-white border border-red-300 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 hover:shadow-lg hover:shadow-red-600/25 transition-all duration-200 ease-out cursor-pointer shrink-0"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Fshij llogarinë
-              </button>
+
+              <div className="pt-2">
+                <Link
+                  href="/mesazhet"
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-50 hover:bg-[#006459]/5 border border-gray-200/70 hover:border-[#006459]/30 text-xs font-bold text-gray-800 hover:text-[#006459] transition-all group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MessageCircle className="w-4 h-4 text-[#006459]" />
+                    <span>Bisedat e Mia</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
             </div>
 
-            {/* Logout Card */}
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-[#101828]">Shkyçja nga llogaria</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Dil nga llogaria në këtë pajisje me siguri të plotë.</p>
-              </div>
+            {/* Account Settings & Sign Out Actions */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-2">
+              <Link
+                href="/settings"
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-700 transition-colors"
+              >
+                <Settings className="w-4 h-4 text-gray-500" />
+                <span>Hap të Gjitha Cilësimet</span>
+              </Link>
+
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(true)}
-                className="inline-flex items-center justify-center min-h-[44px] rounded-xl px-5 py-2.5 text-sm font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 cursor-pointer"
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-rose-50/60 hover:bg-rose-50 text-xs font-bold text-rose-600 transition-colors cursor-pointer"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Dil nga llogaria
+                <LogOut className="w-4 h-4 text-rose-500" />
+                <span>Dil nga Llogaria</span>
               </button>
             </div>
-          </>
-        )}
+          </div>
+        </div>
 
-        <DeleteAccountModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          userEmail={userEmail}
-          userName={profile ? (isCompany ? profile.first_name : `${profile.first_name} ${profile.last_name}`.trim()) : null}
-          isCompany={isCompany}
-          avatarUrl={profile?.avatar_url}
-          onDeleteConfirmed={handleConfirmDelete}
-        />
-
-        <LogoutModal
-          isOpen={showLogoutModal}
-          onClose={() => setShowLogoutModal(false)}
-          userEmail={userEmail}
-          userName={profile ? (isCompany ? profile.first_name : `${profile.first_name} ${profile.last_name}`.trim()) : null}
-          avatarUrl={profile?.avatar_url}
-          onLogoutConfirmed={handleDirectLogout}
-        />
-
+        {/* Avatar Picker Modal */}
         <AvatarPickerModal
           isOpen={showAvatarModal}
           onClose={() => setShowAvatarModal(false)}
@@ -912,6 +758,16 @@ export default function ProfilePage() {
           onSelectAvatar={handleSelectAvatar}
           onTriggerFileUpload={() => fileInputRef.current?.click()}
           isUploadingCustom={uploadingAvatar}
+        />
+
+        {/* Logout Modal */}
+        <LogoutModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          userName={displayName}
+          userEmail={userEmail}
+          avatarUrl={getAvatarUrl(profile?.avatar_url)}
+          onLogoutConfirmed={handleLogoutConfirmed}
         />
       </div>
     </div>

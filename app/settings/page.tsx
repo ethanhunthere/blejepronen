@@ -30,6 +30,9 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
+  ArrowLeft,
+  ArrowDown,
+  AlertCircle,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import { getAvatarUrl } from '@/lib/avatars'
@@ -495,9 +498,26 @@ export default function SettingsPage() {
     { id: 'security', label: 'Siguria', icon: Lock },
   ]
 
+  const isCompanyDataComplete = Boolean(
+    isCompany &&
+    firstName.trim().length > 0 &&
+    (companyDescription.trim().length > 0 || nipt.trim().length > 0 || officeAddress.trim().length > 0)
+  )
+
   return (
     <div className="min-h-screen bg-[#F2F7F7] py-6 sm:py-10 pb-24 sm:pb-12">
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back navigation to profile */}
+        <div className="mb-4">
+          <Link
+            href="/profili"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-500 hover:text-[#006459] transition-colors group cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Kthehu te profili</span>
+          </Link>
+        </div>
+
         {/* Header with Quick Profile View Link and Save CTA */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -642,9 +662,15 @@ export default function SettingsPage() {
                           <h4 className="text-sm font-extrabold text-[#101828]">
                             Kompani / Agjenci
                           </h4>
-                          <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-[#C8B882] text-[#006459]">
-                            BIZNES
-                          </span>
+                          {isCompany && !isCompanyDataComplete ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                              E PAVERIFIKUAR
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#006459]">
+                              BIZNES
+                            </span>
+                          )}
                         </div>
                         <span className="text-[11px] text-gray-500">Agjenci imobiliare / Ndërtues</span>
                       </div>
@@ -671,13 +697,46 @@ export default function SettingsPage() {
                   </ul>
                 </div>
               </div>
+
+              {/* Unverified Company Prompt Banner with Scroll Signal */}
+              {isCompany && !isCompanyDataComplete && (
+                <div className="mt-4 p-4 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in-50 duration-200">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                      <AlertCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-amber-900">
+                        Statusi: E paverifikuar si Kompani
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5">
+                        Ju lutemi plotësoni emrin dhe të dhënat e kompanisë poshtë në faqe për t&apos;u shfaqur si biznes i verifikuar.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById('company-details-section')
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        el.classList.add('ring-2', 'ring-[#006459]', 'transition-all')
+                        setTimeout(() => el.classList.remove('ring-2', 'ring-[#006459]'), 2000)
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <span>Plotëso të dhënat poshtë</span>
+                    <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Live Profile Card Preview */}
             <div className="bg-gradient-to-br from-[#006459]/[0.05] via-[#F2F7F7] to-[#C8B882]/[0.08] border border-[#006459]/15 rounded-3xl p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[#006459]">
                     Pamja Live e Profilit Tuaj Publik
                   </span>
@@ -696,7 +755,6 @@ export default function SettingsPage() {
                     sizes="80px"
                     className="object-cover"
                   />
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white" />
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-1">
@@ -708,11 +766,29 @@ export default function SettingsPage() {
                     </h4>
                     <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
                       isCompany
-                        ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
+                        ? isCompanyDataComplete
+                          ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
+                          : 'bg-amber-50 text-amber-800 border border-amber-200'
                         : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                     }`}>
-                      {isCompany ? <Building2 className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
-                      {isCompany ? 'Kompani e Verifikuar' : 'Përdorues i Verifikuar'}
+                      {isCompany ? (
+                        isCompanyDataComplete ? (
+                          <>
+                            <Building2 className="w-3 h-3" />
+                            <span>Kompani e Verifikuar</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3" />
+                            <span>E paverifikuar — Kërkohen të dhënat</span>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>Përdorues i Verifikuar</span>
+                        </>
+                      )}
                     </span>
                   </div>
 
@@ -816,7 +892,7 @@ export default function SettingsPage() {
             </div>
 
             {/* General Info Card */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <div id="company-details-section" className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm transition-all duration-300">
               <h3 className="text-base font-bold text-[#101828] mb-5">
                 {isCompany ? 'Të dhënat zyrtare të kompanisë' : 'Të dhënat personale'}
               </h3>
@@ -1669,7 +1745,6 @@ export default function SettingsPage() {
                     <p className="text-sm font-bold text-[#101828]">Sesioni Aktiv</p>
                     <p className="text-xs text-gray-500 mt-0.5">Shfletuesi aktual në përdorim</p>
                     <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-bold text-emerald-700">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       Aktiv Tani
                     </span>
                   </div>
