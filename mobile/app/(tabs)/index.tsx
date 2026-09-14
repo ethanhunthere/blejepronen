@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Search, SlidersHorizontal, Building2, Home, Trees, Briefcase, Warehouse, Sparkles } from 'lucide-react-native'
+import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, Sparkles } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
@@ -241,7 +241,7 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Search & Filter Bar */}
+        {/* Full-Width Luxury Search Bar */}
         <View style={styles.searchBarContainer}>
           <View
             style={[
@@ -256,18 +256,18 @@ export default function HomeScreen() {
               placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              returnKeyType="search"
             />
+            {searchQuery.length > 0 && (
+              <Pressable
+                onPress={() => setSearchQuery('')}
+                hitSlop={8}
+                style={styles.searchClearBtn}
+              >
+                <X size={16} color={colors.textMuted} />
+              </Pressable>
+            )}
           </View>
-          <Pressable
-            style={[styles.filterButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/listings' as any)}
-          >
-            <SlidersHorizontal
-              size={18}
-              color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-              strokeWidth={2.2}
-            />
-          </Pressable>
         </View>
 
         {/* Transaction Type Selector (Shitje / Qira) */}
@@ -457,6 +457,11 @@ const styles = StyleSheet.create({
     height: '100%',
     fontSize: 14,
     fontFamily: Fonts.medium,
+  },
+  searchClearBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterButton: {
     width: 48,
