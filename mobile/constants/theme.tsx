@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Haptics from 'expo-haptics'
 import { Platform } from 'react-native'
+import type { BlurTint } from 'expo-blur'
 
 export type ThemeMode = 'white' | 'green' | 'black'
 
@@ -36,6 +37,10 @@ export interface ThemeColors {
   searchBorder: string
   badgeBg: string
   badgeText: string
+  glassSurface: string
+  glassBorder: string
+  glassBorderSubtle: string
+  blurTint: BlurTint
 }
 
 export const THEMES: Record<ThemeMode, ThemeColors> = {
@@ -70,6 +75,10 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: '#E5E7EB',
     badgeBg: 'rgba(0, 100, 89, 0.1)',
     badgeText: '#006459',
+    glassSurface: 'rgba(255, 255, 255, 0.82)',
+    glassBorder: 'rgba(255, 255, 255, 0.75)',
+    glassBorderSubtle: 'rgba(0, 0, 0, 0.06)',
+    blurTint: 'systemUltraThinMaterialLight',
   },
   green: {
     mode: 'green',
@@ -102,6 +111,10 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: 'rgba(255, 255, 255, 0.2)',
     badgeBg: 'rgba(200, 184, 130, 0.2)',
     badgeText: '#C8B882',
+    glassSurface: 'rgba(0, 75, 68, 0.72)',
+    glassBorder: 'rgba(255, 255, 255, 0.20)',
+    glassBorderSubtle: 'rgba(255, 255, 255, 0.08)',
+    blurTint: 'systemMaterialDark',
   },
   black: {
     mode: 'black',
@@ -134,6 +147,10 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: '#232D2B',
     badgeBg: 'rgba(52, 211, 153, 0.15)',
     badgeText: '#34D399',
+    glassSurface: 'rgba(20, 26, 25, 0.76)',
+    glassBorder: 'rgba(255, 255, 255, 0.14)',
+    glassBorderSubtle: 'rgba(255, 255, 255, 0.06)',
+    blurTint: 'systemUltraThinMaterialDark',
   },
 }
 

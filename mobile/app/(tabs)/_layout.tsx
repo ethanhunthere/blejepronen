@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { Platform, View, Text, StyleSheet } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -183,17 +184,46 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        tabBarBackground: () => (
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 88 : 100}
+              tint={colors.blurTint}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor:
+                    theme === 'white'
+                      ? 'rgba(255, 255, 255, 0.45)'
+                      : theme === 'green'
+                      ? 'rgba(0, 60, 54, 0.65)'
+                      : 'rgba(12, 17, 16, 0.68)',
+                },
+              ]}
+            />
+          </View>
+        ),
         tabBarStyle: {
-          backgroundColor: colors.tabBarBg,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'transparent',
+          borderTopColor:
+            theme === 'white'
+              ? 'rgba(0, 0, 0, 0.08)'
+              : 'rgba(255, 255, 255, 0.12)',
+          borderTopWidth: 0.5,
           height: tabHeight,
           paddingTop: 6,
           paddingBottom: bottomInset,
-          elevation: 12,
+          elevation: 0,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: theme === 'black' ? 0.45 : 0.08,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: theme === 'black' ? 0.35 : 0.06,
           shadowRadius: 10,
         },
         tabBarItemStyle: {

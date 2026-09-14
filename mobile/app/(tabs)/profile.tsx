@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 120,
     gap: 16,
   },
   profileCard: {

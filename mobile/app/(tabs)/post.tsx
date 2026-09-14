@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
     gap: 16,
-    paddingBottom: 48,
+    paddingBottom: 120,
   },
   sectionCard: {
     borderRadius: 20,

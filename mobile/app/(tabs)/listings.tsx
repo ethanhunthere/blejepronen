@@ -11,6 +11,7 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   Search,
@@ -453,13 +454,22 @@ export default function ListingsScreen() {
           style={[
             styles.searchBar,
             {
-              backgroundColor: colors.searchBg,
+              backgroundColor:
+                Platform.OS === 'ios'
+                  ? theme === 'white'
+                    ? 'rgba(255, 255, 255, 0.88)'
+                    : theme === 'green'
+                    ? 'rgba(0, 75, 68, 0.75)'
+                    : 'rgba(20, 26, 25, 0.82)'
+                  : colors.searchBg,
               borderColor: isSearchFocused
                 ? theme === 'green'
                   ? colors.gold
                   : colors.primary
-                : colors.searchBorder,
-              borderWidth: isSearchFocused ? 1.5 : 1,
+                : theme === 'white'
+                ? 'rgba(0, 0, 0, 0.08)'
+                : 'rgba(255, 255, 255, 0.12)',
+              borderWidth: isSearchFocused ? 1.5 : 0.5,
             },
           ]}
         >
@@ -762,6 +772,11 @@ export default function ListingsScreen() {
         onRequestClose={() => setShowSortModal(false)}
       >
         <View style={styles.sortModalOverlay}>
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 45 : 100}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setShowSortModal(false)}
@@ -1839,7 +1854,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 115,
   },
   centerContainer: {
     paddingVertical: 80,
@@ -2206,7 +2221,7 @@ const styles = StyleSheet.create({
   /* Ultra-Luxury Sort Bottom Sheet */
   sortModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.55)',
     justifyContent: 'flex-end',
   },
   sortModalSheet: {

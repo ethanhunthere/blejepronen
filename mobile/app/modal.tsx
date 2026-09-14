@@ -169,7 +169,17 @@ export default function AuthModalScreen() {
         <View
           style={[
             styles.tabSwitcher,
-            { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+            {
+              backgroundColor:
+                theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.05)'
+                  : 'rgba(255, 255, 255, 0.07)',
+              borderColor:
+                theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.04)'
+                  : 'rgba(255, 255, 255, 0.10)',
+              borderWidth: 0.5,
+            },
           ]}
         >
           <Pressable
@@ -179,9 +189,15 @@ export default function AuthModalScreen() {
                 styles.tabBtnActive,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  borderWidth: 0.5,
+                  borderColor:
+                    theme === 'white'
+                      ? 'rgba(0, 0, 0, 0.04)'
+                      : 'rgba(255, 255, 255, 0.14)',
                   shadowColor: '#000',
                   shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                  shadowRadius: 5,
+                  elevation: 2,
                 },
               ],
             ]}
@@ -212,9 +228,15 @@ export default function AuthModalScreen() {
                 styles.tabBtnActive,
                 {
                   backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  borderWidth: 0.5,
+                  borderColor:
+                    theme === 'white'
+                      ? 'rgba(0, 0, 0, 0.04)'
+                      : 'rgba(255, 255, 255, 0.14)',
                   shadowColor: '#000',
                   shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                  shadowRadius: 5,
+                  elevation: 2,
                 },
               ],
             ]}
@@ -487,7 +509,7 @@ const styles = StyleSheet.create({
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 13,
+    borderRadius: 16,
     paddingHorizontal: 14,
     height: 52,
     gap: 10,
@@ -499,7 +521,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     height: 52,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,

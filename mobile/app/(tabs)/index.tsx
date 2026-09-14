@@ -242,19 +242,28 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Full-Width Luxury Search Bar */}
+        {/* Full-Width Luxury Glassy Search Bar */}
         <View style={styles.searchBarContainer}>
           <View
             style={[
               styles.searchBar,
               {
-                backgroundColor: colors.searchBg,
+                backgroundColor:
+                  Platform.OS === 'ios'
+                    ? theme === 'white'
+                      ? 'rgba(255, 255, 255, 0.88)'
+                      : theme === 'green'
+                      ? 'rgba(0, 75, 68, 0.75)'
+                      : 'rgba(20, 26, 25, 0.82)'
+                    : colors.searchBg,
                 borderColor: isSearchFocused
                   ? theme === 'green'
                     ? colors.gold
                     : colors.primary
-                  : colors.searchBorder,
-                borderWidth: isSearchFocused ? 1.5 : 1,
+                  : theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.08)'
+                  : 'rgba(255, 255, 255, 0.12)',
+                borderWidth: isSearchFocused ? 1.5 : 0.5,
               },
             ]}
           >
@@ -291,14 +300,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Transaction Type Selector (Shitje / Qira) */}
+        {/* Apple UISegmentedControl Style Transaction Type Selector (Shitje / Qira) */}
         <View
           style={[
             styles.transactionTabs,
             {
-              backgroundColor: colors.surfaceSubtle,
-              borderWidth: 1,
-              borderColor: colors.border,
+              backgroundColor:
+                theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.05)'
+                  : 'rgba(255, 255, 255, 0.07)',
+              borderWidth: 0.5,
+              borderColor:
+                theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.04)'
+                  : 'rgba(255, 255, 255, 0.10)',
             },
           ]}
         >
@@ -312,8 +327,15 @@ export default function HomeScreen() {
                   styles.transactionTab,
                   isActive && {
                     backgroundColor: colors.surface,
+                    borderWidth: 0.5,
+                    borderColor:
+                      theme === 'white'
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.14)',
                     shadowColor: '#000',
-                    shadowOpacity: theme === 'black' ? 0.3 : 0.08,
+                    shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                    shadowRadius: 4,
+                    elevation: 2,
                   },
                 ]}
                 onPress={() => handleTransactionChange(type)}
@@ -464,7 +486,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 6,
-    paddingBottom: 36,
+    paddingBottom: 115,
   },
   header: {
     paddingHorizontal: 16,
@@ -482,13 +504,17 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flex: 1,
-    height: 48,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
@@ -515,14 +541,14 @@ const styles = StyleSheet.create({
   transactionTabs: {
     flexDirection: 'row',
     padding: 3,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 14,
   },
   transactionTab: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 11,
   },
   transactionTabText: {
     fontSize: 12,
@@ -538,8 +564,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0.5,
   },
   categoryPillText: {
     fontSize: 12,

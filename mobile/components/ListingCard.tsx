@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { MapPin, BedDouble, Maximize2, Layers, Heart, Star, Camera } from 'lucide-react-native'
@@ -66,8 +67,13 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
         {/* Top Floating Glass Badges */}
         <View style={styles.topOverlayRow}>
-          {/* Status Badge: Clean Frosted Glass Capsule (No glowing dots) */}
+          {/* Status Badge: Genuine Frosted Glass Capsule */}
           <View style={styles.statusCapsule}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 70 : 100}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
             <Text style={styles.statusCapsuleText}>
               {isSale ? 'Në Shitje' : 'Me Qira'}
             </Text>
@@ -83,7 +89,7 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
           <View style={{ flex: 1 }} />
 
-          {/* Luxury Circular Frosted Favorite Button */}
+          {/* Luxury Circular Frosted Glass Favorite Button */}
           <Pressable
             style={[
               styles.favoriteBtn,
@@ -92,6 +98,11 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
             onPress={handleFavoritePress}
             hitSlop={10}
           >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? (isFavorite ? 85 : 70) : 100}
+              tint={isFavorite ? 'light' : 'dark'}
+              style={StyleSheet.absoluteFill}
+            />
             <Heart
               size={18}
               color={isFavorite ? '#EF4444' : '#FFFFFF'}
@@ -104,6 +115,11 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         {/* Bottom Image Photo Counter Badge */}
         {photosCount > 1 && (
           <View style={styles.photoCountBadge}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 65 : 100}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
             <Camera size={11} color="#FFFFFF" strokeWidth={2} />
             <Text style={styles.photoCountText}>{photosCount}</Text>
           </View>
@@ -339,12 +355,13 @@ const styles = StyleSheet.create({
   statusCapsule: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    paddingHorizontal: 11,
-    paddingVertical: 5,
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(15, 23, 42, 0.72)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
+    paddingHorizontal: 12,
+    paddingVertical: 5.5,
     borderRadius: 20,
+    overflow: 'hidden',
   },
   statusCapsuleText: {
     color: '#FFFFFF',
@@ -356,9 +373,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5.5,
     borderRadius: 20,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   featuredCapsuleText: {
     color: '#003E37',
@@ -369,15 +392,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
+    overflow: 'hidden',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(15, 23, 42, 0.55)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   favoriteBtnActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255, 255, 255, 0.92)',
+    borderColor: 'rgba(239, 68, 68, 0.5)',
   },
   photoCountBadge: {
     position: 'absolute',
@@ -385,13 +409,14 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(15, 23, 42, 0.68)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    gap: 4.5,
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(15, 23, 42, 0.68)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 4.5,
     borderRadius: 12,
+    overflow: 'hidden',
   },
   photoCountText: {
     color: '#FFFFFF',

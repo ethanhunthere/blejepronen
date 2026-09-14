@@ -11,6 +11,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
@@ -213,12 +214,22 @@ export default function ListingDetailScreen() {
       {/* Floating Top Nav Bar */}
       <SafeAreaView style={styles.floatingNavSafeArea} edges={['top']}>
         <View style={styles.floatingNav}>
-          <Pressable style={styles.navIconBtn} onPress={() => router.back()}>
+          <Pressable style={styles.navIconBtn} onPress={() => router.back()} hitSlop={8}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 70 : 100}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
             <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.4} />
           </Pressable>
 
           <View style={styles.navRight}>
-            <Pressable style={styles.navIconBtn} onPress={handleFavoriteToggle}>
+            <Pressable style={styles.navIconBtn} onPress={handleFavoriteToggle} hitSlop={8}>
+              <BlurView
+                intensity={Platform.OS === 'ios' ? (isFavorite ? 85 : 70) : 100}
+                tint={isFavorite ? 'light' : 'dark'}
+                style={StyleSheet.absoluteFill}
+              />
               <Heart
                 size={20}
                 color={isFavorite ? '#EF4444' : '#FFFFFF'}
@@ -249,12 +260,17 @@ export default function ListingDetailScreen() {
           </ScrollView>
 
           <View style={styles.imageCounter}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 65 : 100}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
             <Text style={styles.imageCounterText}>
               {activeImageIdx + 1} / {imagesList.length}
             </Text>
           </View>
 
-          <View style={[styles.heroTypeBadge, { backgroundColor: theme === 'green' ? colors.gold : '#006459' }]}>
+          <View style={[styles.heroTypeBadge, { backgroundColor: theme === 'green' ? colors.gold : colors.primary }]}>
             <Text
               style={[
                 styles.heroTypeBadgeText,
@@ -455,76 +471,113 @@ export default function ListingDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Action Bar */}
-      <SafeAreaView
-        style={[styles.bottomBarSafeArea, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
-        edges={['bottom']}
-      >
-        {currentUser?.id === listing.user_id ? (
-          <View style={styles.ownerNoticeBar}>
-            <ShieldCheck size={18} color={colors.primary} strokeWidth={2.2} />
-            <Text style={[styles.ownerNoticeText, { color: colors.textPrimary }]}>
-              Kjo është prona juaj e publikuar në Bleje Pronën
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.bottomBar}>
-            {/* 1. In-App Direct Chat */}
-            <Pressable
-              style={[
-                styles.chatActionBtn,
-                {
-                  backgroundColor: theme === 'green' ? colors.gold : colors.primary,
-                },
-              ]}
-              onPress={handleChat}
-              disabled={startingChat}
-              hitSlop={8}
-            >
-              {startingChat ? (
-                <ActivityIndicator size="small" color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
-              ) : (
-                <>
-                  <MessageSquare
-                    size={17}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                    strokeWidth={2.4}
-                  />
-                  <Text
-                    style={[
-                      styles.chatActionBtnText,
-                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
-                    ]}
-                  >
-                    Bisedo
-                  </Text>
-                </>
-              )}
-            </Pressable>
-
-            {/* 2. WhatsApp Button */}
-            <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp} hitSlop={8}>
-              <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
-              <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
-            </Pressable>
-
-            {/* 3. Phone Call Button */}
-            <Pressable
-              style={[
-                styles.callBtn,
-                { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
-              ]}
-              onPress={handleCall}
-              hitSlop={8}
-            >
-              <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
-              <Text style={[styles.callBtnText, { color: colors.textPrimary }]}>
-                Telefono
+      {/* Sticky Bottom Action Bar with Native iOS Frosted Glass */}
+      <View style={styles.bottomBarWrapper}>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 88 : 100}
+          tint={colors.blurTint}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor:
+                theme === 'white'
+                  ? 'rgba(255, 255, 255, 0.65)'
+                  : theme === 'green'
+                  ? 'rgba(0, 60, 54, 0.70)'
+                  : 'rgba(12, 17, 16, 0.75)',
+            },
+          ]}
+        />
+        <SafeAreaView
+          style={[
+            styles.bottomBarSafeArea,
+            {
+              borderTopColor:
+                theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.08)'
+                  : 'rgba(255, 255, 255, 0.12)',
+            },
+          ]}
+          edges={['bottom']}
+        >
+          {currentUser?.id === listing.user_id ? (
+            <View style={styles.ownerNoticeBar}>
+              <ShieldCheck size={18} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.ownerNoticeText, { color: colors.textPrimary }]}>
+                Kjo është prona juaj e publikuar në Bleje Pronën
               </Text>
-            </Pressable>
-          </View>
-        )}
-      </SafeAreaView>
+            </View>
+          ) : (
+            <View style={styles.bottomBar}>
+              {/* 1. In-App Direct Chat */}
+              <Pressable
+                style={[
+                  styles.chatActionBtn,
+                  {
+                    backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                  },
+                ]}
+                onPress={handleChat}
+                disabled={startingChat}
+                hitSlop={8}
+              >
+                {startingChat ? (
+                  <ActivityIndicator size="small" color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
+                ) : (
+                  <>
+                    <MessageSquare
+                      size={17}
+                      color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                      strokeWidth={2.4}
+                    />
+                    <Text
+                      style={[
+                        styles.chatActionBtnText,
+                        { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                      ]}
+                    >
+                      Bisedo
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              {/* 2. WhatsApp Button */}
+              <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp} hitSlop={8}>
+                <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
+                <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
+              </Pressable>
+
+              {/* 3. Phone Call Button */}
+              <Pressable
+                style={[
+                  styles.callBtn,
+                  {
+                    backgroundColor:
+                      theme === 'white'
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.08)',
+                    borderColor:
+                      theme === 'white'
+                        ? 'rgba(0, 0, 0, 0.08)'
+                        : 'rgba(255, 255, 255, 0.12)',
+                  },
+                ]}
+                onPress={handleCall}
+                hitSlop={8}
+              >
+                <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
+                <Text style={[styles.callBtnText, { color: colors.textPrimary }]}>
+                  Telefono
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </SafeAreaView>
+      </View>
     </View>
   )
 }
@@ -571,10 +624,13 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 10 : 0,
   },
   navIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.48)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    overflow: 'hidden',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.48)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -599,10 +655,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 16,
     right: 16,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0,0,0,0.65)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 4.5,
     borderRadius: 12,
+    overflow: 'hidden',
   },
   imageCounterText: {
     color: '#FFFFFF',
@@ -811,12 +870,16 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     marginTop: 2,
   },
-  bottomBarSafeArea: {
+  bottomBarWrapper: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  bottomBarSafeArea: {
+    backgroundColor: 'transparent',
   },
   ownerNoticeBar: {
     flexDirection: 'row',
