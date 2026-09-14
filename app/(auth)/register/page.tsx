@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
   const router = useRouter()
   const supabase = createClient()
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     router.prefetch('/completo-profilin-fast')

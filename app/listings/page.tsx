@@ -179,7 +179,7 @@ function ListingsContent() {
   const neighborhoodRef = useRef<HTMLDivElement>(null)
   const priceRef = useRef<HTMLDivElement>(null)
   const sortRef = useRef<HTMLDivElement>(null)
-  const searchDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const lastAppliedSearchRef = useRef<string | null>(null)
 
   // Read URL params whenever URL search params change (e.g. navigation to /listings?type=qira)
