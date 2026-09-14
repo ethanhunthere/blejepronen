@@ -239,7 +239,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Listings Feed */}
-        {loading ? (
+        {loading && listings.length === 0 ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loaderText, { color: colors.textMuted }]}>

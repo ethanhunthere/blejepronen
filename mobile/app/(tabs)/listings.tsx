@@ -42,9 +42,11 @@ export default function ListingsScreen() {
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
-  const fetchListings = useCallback(async () => {
+  const fetchListings = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true)
+      if (!isRefresh) {
+        setLoading(true)
+      }
       let query = supabase.from('listings').select('*')
 
       if (selectedType !== 'all') {
@@ -78,6 +80,7 @@ export default function ListingsScreen() {
       console.warn('Listings catch notice:', err?.message || err)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [selectedType, selectedCity, selectedNeighborhood, sortBy])
 
@@ -90,8 +93,7 @@ export default function ListingsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     }
     setRefreshing(true)
-    await fetchListings()
-    setRefreshing(false)
+    await fetchListings(true)
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
@@ -271,7 +273,7 @@ export default function ListingsScreen() {
           />
         }
       >
-        {loading ? (
+        {loading && listings.length === 0 ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.textMuted }]}>

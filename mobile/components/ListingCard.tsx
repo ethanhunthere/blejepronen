@@ -51,12 +51,11 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
       onPress={() => router.push(`/listings/${listing.id}` as any)}
     >
       {/* Image Container */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { backgroundColor: colors.surfaceSubtle }]}>
         <Image
           source={{ uri: mainImage }}
           style={styles.image}
           contentFit="cover"
-          transition={250}
         />
 
         {/* Badge: Shitje / Qira */}
@@ -146,8 +145,8 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     height: 195,
-    backgroundColor: '#1F2937',
     position: 'relative',
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
