@@ -1,16 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Phone, ArrowRight, Loader2, CheckCircle2, Camera } from 'lucide-react'
+import { User, Phone, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
-import AvatarPickerModal from '@/components/AvatarPickerModal'
 import { DEFAULT_AVATAR } from '@/lib/avatars'
 
 export default function CompletoProfilinFastPage() {
@@ -23,7 +21,6 @@ export default function CompletoProfilinFastPage() {
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR)
-  const [avatarModalOpen, setAvatarModalOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ firstName?: string; lastName?: string; phone?: string }>({})
 
   useEffect(() => {
@@ -202,34 +199,6 @@ export default function CompletoProfilinFastPage() {
             </p>
           </div>
 
-          {/* Avatar Preview & Selection */}
-          <div className="flex flex-col items-center justify-center mb-6">
-            <div
-              onClick={() => setAvatarModalOpen(true)}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md cursor-pointer group hover:scale-105 transition-all duration-200 bg-gray-50 ring-2 ring-[#006459]/20"
-              title="Kliko për të zgjedhur avatarin tënd"
-            >
-              <Image
-                src={avatar}
-                alt="Avatar"
-                fill
-                sizes="80px"
-                className="object-cover transition-transform duration-200"
-              />
-              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                <Camera className="h-5 w-5 drop-shadow" />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAvatarModalOpen(true)}
-              className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              Zgjidh nga 20 avatarët
-            </button>
-          </div>
-
           {error && (
             <Alert
               variant="destructive"
@@ -364,16 +333,6 @@ export default function CompletoProfilinFastPage() {
             </Button>
           </form>
         </div>
-
-        <AvatarPickerModal
-          isOpen={avatarModalOpen}
-          onClose={() => setAvatarModalOpen(false)}
-          currentAvatarUrl={avatar}
-          onSelectAvatar={async (url) => {
-            setAvatar(url)
-            setAvatarModalOpen(false)
-          }}
-        />
       </div>
     </div>
   )

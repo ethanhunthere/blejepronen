@@ -13,7 +13,6 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
 import {
   User,
@@ -28,14 +27,13 @@ import {
   ChevronLeft,
   ShieldCheck,
   ArrowRight,
-  Camera,
   AlertCircle,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
-import { BLEJE_AVATARS, DEFAULT_AVATAR, getAvatarUri } from '@/lib/avatars'
+import { DEFAULT_AVATAR } from '@/lib/avatars'
 import { apiSaveProfileSettings, ProfileSettingsPayload } from '@/lib/api'
 
 const { width } = Dimensions.get('window')
@@ -173,13 +171,6 @@ export default function CompletoProfilinScreen() {
     }
     setAccountType(type)
     setErrors({})
-  }
-
-  const handleSelectAvatar = (avatarUrl: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    }
-    setSelectedAvatar(avatarUrl)
   }
 
   const validate = () => {
@@ -502,109 +493,6 @@ export default function CompletoProfilinScreen() {
                 Kompani / Agjenci
               </Text>
             </Pressable>
-          </View>
-
-          {/* Avatar Section */}
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
-                <Camera size={18} color={colors.primary} strokeWidth={2.2} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                  Zgjidhni Avataron
-                </Text>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  20 avatarë modernë të përzgjedhur nga Bleje Pronën
-                </Text>
-              </View>
-            </View>
-
-            {/* Current Large Avatar Showcase */}
-            <View style={styles.avatarShowcaseRow}>
-              <View
-                style={[
-                  styles.largeAvatarWrap,
-                  {
-                    borderColor: theme === 'green' ? colors.gold : colors.primary,
-                    backgroundColor: colors.surfaceSubtle,
-                  },
-                ]}
-              >
-                <Image
-                  source={{ uri: getAvatarUri(selectedAvatar) }}
-                  style={styles.largeAvatarImg}
-                  contentFit="cover"
-                  transition={200}
-                />
-                <View style={[styles.avatarBadgeCheck, { backgroundColor: colors.primary }]}>
-                  <Check size={12} color="#FFFFFF" strokeWidth={3} />
-                </View>
-              </View>
-
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[styles.avatarTipTitle, { color: colors.textPrimary }]}>
-                  {accountType === 'company' ? 'Logo ose Avatar Agjencie' : 'Avatari Juaj Publik'}
-                </Text>
-                <Text style={[styles.avatarTipDesc, { color: colors.textMuted }]}>
-                  Ky imazh do të shfaqet në të gjitha shpalljet, mesazhet dhe profilin tuaj publik.
-                </Text>
-              </View>
-            </View>
-
-            {/* Horizontal 20 Avatars Picker Bar */}
-            <Text style={[styles.subLabel, { color: colors.textSecondary }]}>
-              Zgjidhni një nga koleksioni:
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.avatarScrollRow}
-            >
-              {BLEJE_AVATARS.map((item) => {
-                const isSelected = selectedAvatar === item.url
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => handleSelectAvatar(item.url)}
-                    style={[
-                      styles.avatarThumbWrap,
-                      {
-                        borderColor: isSelected
-                          ? theme === 'green' ? colors.gold : colors.primary
-                          : specularBorder,
-                        backgroundColor: colors.surfaceSubtle,
-                      },
-                      isSelected && styles.avatarThumbActive,
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: getAvatarUri(item.url) }}
-                      style={styles.avatarThumbImg}
-                      contentFit="cover"
-                      transition={150}
-                    />
-                    {isSelected && (
-                      <View
-                        style={[
-                          styles.avatarThumbCheck,
-                          {
-                            backgroundColor:
-                              theme === 'green' ? colors.gold : colors.primary,
-                          },
-                        ]}
-                      >
-                        <Check
-                          size={10}
-                          color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                          strokeWidth={3}
-                        />
-                      </View>
-                    )}
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
           </View>
 
           {/* Form Fields: Individual */}
@@ -1254,81 +1142,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.regular,
     marginTop: 1,
-  },
-  avatarShowcaseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 6,
-  },
-  largeAvatarWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 2.5,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  largeAvatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarBadgeCheck: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  avatarTipTitle: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-  },
-  avatarTipDesc: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    lineHeight: 16,
-  },
-  subLabel: {
-    fontSize: 12.5,
-    fontFamily: Fonts.semiBold,
-    marginTop: 4,
-  },
-  avatarScrollRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingVertical: 4,
-  },
-  avatarThumbWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1.5,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  avatarThumbActive: {
-    borderWidth: 2.5,
-    transform: [{ scale: 1.05 }],
-  },
-  avatarThumbImg: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarThumbCheck: {
-    position: 'absolute',
-    bottom: 1,
-    right: 1,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rowTwo: {
     flexDirection: 'row',
