@@ -1,5 +1,12 @@
-import { Audio } from 'expo-av'
 import { Platform } from 'react-native'
+
+let AudioModule: any = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  AudioModule = require('expo-av')?.Audio
+} catch {
+  // ExponentAV native module not linked or unavailable in this runtime
+}
 
 // Generated high-fidelity acoustic PCM WAVs
 const SFX_DATA = {
@@ -14,28 +21,29 @@ const SFX_DATA = {
 let isAudioConfigured = false
 
 async function configureAudioAsync(): Promise<void> {
-  if (isAudioConfigured || Platform.OS === 'web') return
+  if (isAudioConfigured || Platform.OS === 'web' || !AudioModule) return
   try {
-    await Audio.setAudioModeAsync({
+    await AudioModule.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: false,
       shouldDuckAndroid: true,
     })
     isAudioConfigured = true
   } catch (e) {
-    console.warn('Audio setup notice:', e)
+    // Non-blocking
   }
 }
 
 async function playRawSound(base64Wav: string, volume = 0.75): Promise<void> {
+  if (!AudioModule) return
   try {
     await configureAudioAsync()
-    const { sound } = await Audio.Sound.createAsync(
+    const { sound } = await AudioModule.Sound.createAsync(
       { uri: `data:audio/wav;base64,${base64Wav}` },
       { shouldPlay: true, volume }
     )
 
-    sound.setOnPlaybackStatusUpdate((status) => {
+    sound.setOnPlaybackStatusUpdate((status: any) => {
       if (status.isLoaded && status.didJustFinish) {
         sound.unloadAsync().catch(() => {})
       }
