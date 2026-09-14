@@ -185,9 +185,12 @@ export default function AuthModalScreen() {
           return
         }
 
+        const meta = data.user?.user_metadata || {}
+        const hasCompletedOnboarding = Boolean(meta.onboarding_completed)
+
         const displayName =
-          data.user?.user_metadata?.first_name ||
-          data.user?.user_metadata?.company_name ||
+          meta.first_name ||
+          meta.company_name ||
           data.user?.email?.split('@')[0] ||
           'Përdorues'
 
@@ -197,7 +200,11 @@ export default function AuthModalScreen() {
           message: `Jeni kyçur me sukses si ${displayName}.`,
         })
 
-        router.back()
+        if (!hasCompletedOnboarding) {
+          router.replace('/completo-profilin' as any)
+        } else {
+          router.back()
+        }
       } else {
         // Register flow using the verified backend email OTP route
         const res = await apiSignUp({
@@ -283,10 +290,10 @@ export default function AuthModalScreen() {
       showBanner({
         type: 'success',
         title: 'Llogaria u Aktivizua!',
-        message: 'Email-i juaj u konfirmua me sukses. Mirësevini në Bleje Pronën!',
+        message: 'Email-i juaj u konfirmua me sukses. Ju lutem plotësoni profilin tuaj.',
       })
 
-      router.back()
+      router.replace('/completo-profilin' as any)
     } catch (err: any) {
       setErrorMessage(err?.message || 'Gabim gjatë verifikimit të kodit.')
       setVerifying(false)

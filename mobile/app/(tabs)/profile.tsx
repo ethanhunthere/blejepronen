@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { Image } from 'expo-image'
 import {
   User,
   ShieldCheck,
@@ -28,20 +29,47 @@ import {
   Leaf,
   Moon,
   Trash2,
+  Sparkles,
+  PlusCircle,
+  MessageSquare,
+  Bookmark,
+  Edit3,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
 import { apiDeleteAccount } from '@/lib/api'
+import { getAvatarUri } from '@/lib/avatars'
 
 export default function ProfileScreen() {
   const router = useRouter()
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
+
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [dbProfile, setDbProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+
+  const fetchUserProfile = async (user: any) => {
+    if (!user) {
+      setDbProfile(null)
+      return
+    }
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (data) {
+        setDbProfile(data)
+      }
+    } catch (e) {
+      console.warn('Fetch user profile record notice:', e)
+    }
+  }
 
   useEffect(() => {
     async function checkSession() {
@@ -50,6 +78,9 @@ export default function ProfileScreen() {
           data: { user },
         } = await supabase.auth.getUser()
         setCurrentUser(user || null)
+        if (user) {
+          await fetchUserProfile(user)
+        }
       } catch (err) {
         console.warn('Session check notice:', err)
       } finally {
@@ -60,8 +91,14 @@ export default function ProfileScreen() {
     checkSession()
 
     // Real-time auth listener for instant synchronization
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user || null
+      setCurrentUser(u)
+      if (u) {
+        await fetchUserProfile(u)
+      } else {
+        setDbProfile(null)
+      }
     })
 
     return () => {
@@ -81,6 +118,7 @@ export default function ProfileScreen() {
           }
           await supabase.auth.signOut()
           setCurrentUser(null)
+          setDbProfile(null)
           showBanner({
             type: 'logout',
             title: 'Mirupafshim!',
@@ -124,6 +162,7 @@ export default function ProfileScreen() {
 
               await supabase.auth.signOut()
               setCurrentUser(null)
+              setDbProfile(null)
               showBanner({
                 type: 'delete',
                 title: 'Llogaria u Fshi',
@@ -152,8 +191,12 @@ export default function ProfileScreen() {
 
   const isCompany =
     currentUser?.user_metadata?.account_type === 'company' ||
-    currentUser?.user_metadata?.is_company === true
-  const companyName = currentUser?.user_metadata?.company_name
+    currentUser?.user_metadata?.is_company === true ||
+    Boolean(currentUser?.user_metadata?.company_name)
+
+  const companyName =
+    currentUser?.user_metadata?.company_name ||
+    (isCompany ? dbProfile?.first_name : '')
 
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
@@ -162,12 +205,33 @@ export default function ProfileScreen() {
     theme === 'white'
       ? 'rgba(0, 0, 0, 0.08)'
       : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.12)'
+      ? 'rgba(255, 255, 255, 0.14)'
       : 'rgba(255, 255, 255, 0.10)'
+
+  // Determine avatar URI accurately
+  const rawAvatar =
+    dbProfile?.avatar_url ||
+    currentUser?.user_metadata?.avatar_url ||
+    currentUser?.user_metadata?.avatarUrl ||
+    null
+  const avatarUri = getAvatarUri(rawAvatar)
+
+  // Has completed onboarding check
+  const isOnboardingDone =
+    currentUser?.user_metadata?.onboarding_completed === true ||
+    (dbProfile?.first_name && dbProfile?.email_verified)
+
+  const displayName = isCompany
+    ? (companyName || currentUser?.user_metadata?.first_name || 'Agjenci Imobiliare')
+    : (dbProfile?.first_name
+        ? `${dbProfile.first_name} ${dbProfile.last_name || ''}`.trim()
+        : currentUser?.user_metadata?.first_name
+        ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
+        : 'Përdorues i regjistruar')
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Header */}
+      {/* Top Header */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
@@ -204,26 +268,55 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Card: Authenticated vs Guest */}
+        {/* Top Profile Card: Logged In vs Guest */}
         {currentUser ? (
           <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-            <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
-              {isCompany ? (
-                <Building2 size={32} color={colors.primary} strokeWidth={2.2} />
-              ) : (
-                <User size={34} color={colors.primary} strokeWidth={2.2} />
-              )}
-            </View>
+            {/* Real Avatar Image with Fallback and Edit Action */}
+            <Pressable
+              style={[
+                styles.avatarWrap,
+                {
+                  borderColor: isCompany
+                    ? theme === 'green' ? colors.gold : colors.primary
+                    : specularBorder,
+                  backgroundColor: colors.surfaceSubtle,
+                },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/completo-profilin' as any)
+              }}
+            >
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImg}
+                contentFit="cover"
+                transition={200}
+              />
+              <View
+                style={[
+                  styles.avatarEditPill,
+                  {
+                    backgroundColor:
+                      theme === 'green' ? colors.gold : colors.primary,
+                  },
+                ]}
+              >
+                <Edit3
+                  size={10}
+                  color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                  strokeWidth={2.6}
+                />
+              </View>
+            </Pressable>
 
+            {/* Profile Meta Information */}
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
                 <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {isCompany
-                    ? (companyName || currentUser.user_metadata?.first_name || 'Agjenci Imobiliare')
-                    : (currentUser.user_metadata?.first_name
-                        ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
-                        : 'Përdorues i regjistruar')}
+                  {displayName}
                 </Text>
+
                 <View
                   style={[
                     styles.verifiedBadge,
@@ -231,15 +324,24 @@ export default function ProfileScreen() {
                       backgroundColor: isCompany
                         ? theme === 'white'
                           ? '#FEF3C7'
-                          : 'rgba(245, 158, 11, 0.18)'
+                          : 'rgba(245, 158, 11, 0.20)'
                         : colors.badgeBg,
                     },
                   ]}
                 >
                   {isCompany ? (
                     <>
-                      <Building2 size={11} color={theme === 'white' ? '#B45309' : '#FBBF24'} strokeWidth={2.4} />
-                      <Text style={[styles.verifiedBadgeText, { color: theme === 'white' ? '#B45309' : '#FBBF24' }]}>
+                      <Building2
+                        size={11}
+                        color={theme === 'white' ? '#B45309' : '#FBBF24'}
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        style={[
+                          styles.verifiedBadgeText,
+                          { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                        ]}
+                      >
                         Agjenci
                       </Text>
                     </>
@@ -254,7 +356,7 @@ export default function ProfileScreen() {
 
               {isCompany && currentUser.user_metadata?.first_name ? (
                 <Text style={[styles.contactPersonText, { color: colors.textSecondary }]}>
-                  Kontakt: {currentUser.user_metadata.first_name} {currentUser.user_metadata.last_name || ''}
+                  Përfaqësuesi: {currentUser.user_metadata.first_name} {currentUser.user_metadata.last_name || ''}
                 </Text>
               ) : null}
 
@@ -270,7 +372,7 @@ export default function ProfileScreen() {
               Llogaria Juaj
             </Text>
             <Text style={[styles.guestSubtitle, { color: colors.textMuted }]}>
-              Kyçuni për të menaxhuar shpalljet dhe preferencat tuaja.
+              Kyçuni për të menaxhuar shpalljet, mesazhet dhe preferencat tuaja.
             </Text>
 
             <View style={styles.authButtonsRow}>
@@ -301,7 +403,335 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* SETTINGS: Theme Selector (E Bardhë / E Gjelbër / E Zezë) */}
+        {/* Incomplete Profile Callout Banner (Apple Frosted Glass) */}
+        {currentUser && !isOnboardingDone && (
+          <Pressable
+            style={[
+              styles.onboardingBanner,
+              {
+                backgroundColor: colors.surface,
+                borderColor: theme === 'green' ? colors.gold : colors.primary,
+              },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/completo-profilin' as any)
+            }}
+          >
+            <View
+              style={[
+                styles.onboardingIconBox,
+                {
+                  backgroundColor:
+                    theme === 'green' ? 'rgba(200, 184, 130, 0.2)' : colors.primaryLight,
+                },
+              ]}
+            >
+              <Sparkles
+                size={20}
+                color={theme === 'green' ? colors.gold : colors.primary}
+                strokeWidth={2.4}
+              />
+            </View>
+
+            <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.onboardingTitle, { color: colors.textPrimary }]}>
+                  Plotësoni Profilin Tuaj
+                </Text>
+                <View style={[styles.urgentDot, { backgroundColor: '#EF4444' }]} />
+              </View>
+              <Text style={[styles.onboardingSubtitle, { color: colors.textMuted }]}>
+                Zgjidhni avataron, telefonin dhe qytetin për të verifikuar llogarinë tuaj.
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.onboardingActionPill,
+                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.onboardingActionPillText,
+                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                ]}
+              >
+                Plotëso
+              </Text>
+              <ChevronRight
+                size={14}
+                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                strokeWidth={2.6}
+              />
+            </View>
+          </Pressable>
+        )}
+
+        {/* Quick Shortcut Tiles */}
+        <View style={styles.quickTilesGrid}>
+          <Pressable
+            style={[
+              styles.quickTile,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/post' as any)
+            }}
+          >
+            <View style={[styles.quickTileIcon, { backgroundColor: colors.primaryLight }]}>
+              <PlusCircle size={20} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+              Posto Pronë
+            </Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Falas</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickTile,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              if (!currentUser) openAuthModal('login')
+              else router.push('/listings' as any)
+            }}
+          >
+            <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
+              <Building2 size={20} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+              Shpalljet e Mia
+            </Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Menaxho</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickTile,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              if (!currentUser) openAuthModal('login')
+              else router.push('/messages' as any)
+            }}
+          >
+            <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
+              <MessageSquare size={20} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+              Mesazhet
+            </Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Bisedat</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.quickTile,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/listings' as any)
+            }}
+          >
+            <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
+              <Heart size={20} color="#EF4444" strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+              Të Ruajturat
+            </Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Favoritet</Text>
+          </Pressable>
+        </View>
+
+        {/* Section 1: Llogaria & Cilësimet (Settings Group) */}
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>
+            Llogaria & Preferencat
+          </Text>
+
+          {/* Cilësimet e Llogarisë */}
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              if (!currentUser) {
+                openAuthModal('login')
+              } else {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/settings' as any)
+              }
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.primaryLight }]}>
+              <Settings size={18} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                  Cilësimet e Llogarisë
+                </Text>
+                {isCompany && (
+                  <View
+                    style={[
+                      styles.miniCompanyBadge,
+                      {
+                        backgroundColor:
+                          theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.miniCompanyBadgeText,
+                        { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                      ]}
+                    >
+                      Agjenci
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Njoftimet push, privatësia, siguria biometrike & kalimi në kompani
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+
+          {/* Plotëso / Ndrysho Profilin */}
+          {currentUser && (
+            <Pressable
+              style={[styles.menuItem, styles.menuItemBorderTop, { borderTopColor: specularBorder }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/completo-profilin' as any)
+              }}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  {
+                    backgroundColor:
+                      theme === 'green' ? 'rgba(200, 184, 130, 0.2)' : colors.primaryLight,
+                  },
+                ]}
+              >
+                <Sparkles
+                  size={18}
+                  color={theme === 'green' ? colors.gold : colors.primary}
+                  strokeWidth={2.2}
+                />
+              </View>
+              <View style={styles.menuTextContainer}>
+                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                  Plotëso & Ndrysho Profilin
+                </Text>
+                <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                  Zgjidh avataron, të dhënat e kontaktit dhe informacionin e biznesit
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textLight} />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Section 2: Aktiviteti Imobiliar */}
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Aktiviteti</Text>
+
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              if (!currentUser) {
+                openAuthModal('login')
+              } else {
+                router.push('/listings' as any)
+              }
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
+              <Building2 size={18} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Shpalljet e mia</Text>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                {currentUser ? 'Shiko dhe menaxho pronat që ke postuar' : 'Kyçu për të parë shpalljet e tua'}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, styles.menuItemBorderTop, { borderTopColor: specularBorder }]}
+            onPress={() => router.push('/listings' as any)}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
+              <Heart size={18} color="#EF4444" strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Pronat e ruajtura</Text>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Pronat që keni shënuar si të preferuara
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+        </View>
+
+        {/* Section 3: Ndihmë & Ligjore */}
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Ndihmë & Ligjore</Text>
+
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              Alert.alert(
+                'Mbështetja Teknike',
+                'Për çdo pyetje apo ndihmë kontaktoni ekipin: support@blejepronen.com ose në WhatsApp.'
+              )
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
+              <HelpCircle size={18} color={colors.textSecondary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Ndihmë & Mbështetje</Text>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Pyetje të shpeshta dhe kontakt me ekipin
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+
+          <Pressable
+            style={[styles.menuItem, styles.menuItemBorderTop, { borderTopColor: specularBorder }]}
+            onPress={() => {
+              Alert.alert(
+                'Kushtet e Përdorimit',
+                'Bleje Pronën është platformë imobiliare e licencuar në Republikën e Kosovës. Të gjitha të drejtat të rezervuara.'
+              )
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
+              <ShieldCheck size={18} color={colors.textSecondary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Kushtet & Privatësia</Text>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Rregullat dhe politikat e sigurisë
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+        </View>
+
+        {/* Section 4: Tema e Aplikacionit (PLACED DOWN HERE AS REQUESTED BY USER) */}
         <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <View style={styles.groupHeaderRow}>
             <View style={styles.groupHeaderLeft}>
@@ -402,143 +832,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Settings Section (Cilësimet) */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Cilësimet e Llogarisë</Text>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              if (!currentUser) {
-                openAuthModal('login')
-              } else {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
-                router.push('/settings' as any)
-              }
-            }}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.primaryLight }]}>
-              <Settings size={18} color={colors.primary} strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
-                  Cilësimet e Llogarisë
-                </Text>
-                {isCompany && (
-                  <View
-                    style={[
-                      styles.miniCompanyBadge,
-                      {
-                        backgroundColor:
-                          theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.miniCompanyBadgeText,
-                        { color: theme === 'white' ? '#B45309' : '#FBBF24' },
-                      ]}
-                    >
-                      Agjenci
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                Ndrysho profilin, njoftimet push, sigurinë & kalimin në kompani
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-        </View>
-
-        {/* Activity Section */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Aktiviteti</Text>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              if (!currentUser) {
-                openAuthModal('login')
-              } else {
-                router.push('/listings' as any)
-              }
-            }}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
-              <Building2 size={18} color={colors.primary} strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Shpalljet e mia</Text>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                {currentUser ? 'Shiko dhe menaxho pronat që ke postuar' : 'Kyçu për të parë shpalljet e tua'}
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => router.push('/listings' as any)}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
-              <Heart size={18} color="#EF4444" strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Pronat e ruajtura</Text>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                Pronat që keni shënuar si të preferuara
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-        </View>
-
-        {/* Support & Legal */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Ndihmë & Ligjore</Text>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              Alert.alert('Mbështetja Teknike', 'Për çdo pyetje apo ndihmë kontaktoni ekipin: support@blejepronen.com ose në WhatsApp.')
-            }}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
-              <HelpCircle size={18} color={colors.textSecondary} strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Ndihmë & Mbështetje</Text>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                Pyetje të shpeshta dhe kontakt me ekipin
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              Alert.alert('Kushtet e Përdorimit', 'Bleje Pronën është platformë imobiliare e licencuar në Republikën e Kosovës. Të gjitha të drejtat të rezervuara.')
-            }}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
-              <Settings size={18} color={colors.textSecondary} strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>Kushtet & Privatësia</Text>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                Rregullat dhe politikat e sigurisë
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-        </View>
-
-        {/* Logout & Delete Account (Shown only if logged in) */}
+        {/* Section 5: Logout & Delete Account (Apple App Store Guideline Compliant) */}
         {currentUser && (
           <View style={styles.accountActionButtons}>
             <Pressable
@@ -576,7 +870,6 @@ export default function ProfileScreen() {
               </Text>
             </Pressable>
 
-            {/* Delete Account (Apple App Store Guideline 5.1.1 compliant) */}
             <Pressable
               style={[
                 styles.deleteAccountButton,
@@ -605,6 +898,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Section 6: App Version Footer */}
         <Text style={[styles.appVersion, { color: colors.textLight }]}>
           Bleje Pronën Mobile v1.0.0 • Kosovë
         </Text>
@@ -663,7 +957,7 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
+    padding: 16,
     borderRadius: 22,
     borderWidth: 0.5,
     gap: 14,
@@ -672,12 +966,32 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 2,
   },
-  avatar: {
+  avatarWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  avatarImg: {
     width: 60,
     height: 60,
     borderRadius: 30,
+  },
+  avatarEditPill: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,
@@ -699,36 +1013,26 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   verifiedBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: Fonts.bold,
+  },
+  contactPersonText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
   },
   userEmail: {
     fontSize: 13,
     fontFamily: Fonts.regular,
-  },
-  accountTypePill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 2,
-  },
-  accountTypePillText: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
   },
   guestCard: {
     alignItems: 'center',
     padding: 24,
     borderRadius: 22,
     borderWidth: 0.5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    gap: 10,
   },
   guestIconWrap: {
     width: 64,
@@ -736,30 +1040,29 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   guestTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontFamily: Fonts.bold,
-    marginBottom: 6,
-    textAlign: 'center',
   },
   guestSubtitle: {
     fontSize: 13,
     fontFamily: Fonts.regular,
     textAlign: 'center',
+    maxWidth: 260,
     lineHeight: 18,
-    marginBottom: 18,
   },
   authButtonsRow: {
     flexDirection: 'row',
     gap: 12,
     width: '100%',
+    marginTop: 8,
   },
   loginBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -771,8 +1074,8 @@ const styles = StyleSheet.create({
   },
   registerBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -781,22 +1084,134 @@ const styles = StyleSheet.create({
   },
   registerBtnText: {
     fontSize: 14,
-    fontFamily: Fonts.semiBold,
+    fontFamily: Fonts.bold,
+  },
+  onboardingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  onboardingIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  urgentDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  onboardingTitle: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+  onboardingSubtitle: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 15,
+  },
+  onboardingActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  onboardingActionPillText: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+  quickTilesGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickTile: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickTileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  quickTileLabel: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+  },
+  quickTileSub: {
+    fontSize: 10,
+    fontFamily: Fonts.regular,
   },
   menuGroup: {
-    padding: 16,
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 0.5,
+    overflow: 'hidden',
+  },
+  subGroupHeading: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     gap: 14,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
+  },
+  menuItemBorderTop: {
+    borderTopWidth: 0.5,
+  },
+  menuIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuTextContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  menuTitle: {
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+  },
+  menuSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    lineHeight: 16,
   },
   groupHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
   },
   groupHeaderLeft: {
     flexDirection: 'row',
@@ -811,31 +1226,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.bold,
   },
-  subGroupHeading: {
-    fontSize: 12,
-    fontFamily: Fonts.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   themeCardsGrid: {
     flexDirection: 'row',
     gap: 10,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
   },
   themeCard: {
     flex: 1,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1.5,
-    gap: 4,
+    gap: 6,
   },
   themeCardActive: {
-    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   themeCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
   },
   themeIconCircle: {
     width: 32,
@@ -843,8 +1257,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
   checkCircle: {
     width: 18,
@@ -856,41 +1268,11 @@ const styles = StyleSheet.create({
   themeCardName: {
     fontSize: 13,
     fontFamily: Fonts.bold,
+    marginTop: 2,
   },
   themeCardDesc: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontFamily: Fonts.regular,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 4,
-  },
-  menuIconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuTextContainer: {
-    flex: 1,
-  },
-  menuTitle: {
-    fontSize: 14,
-    fontFamily: Fonts.semiBold,
-  },
-  menuSubtitle: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    marginTop: 1,
-  },
-  contactPersonText: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-    marginTop: -2,
-    marginBottom: 2,
   },
   accountActionButtons: {
     gap: 10,
@@ -901,11 +1283,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 48,
-    borderRadius: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   logoutButtonText: {
-    color: '#EF4444',
     fontSize: 14,
     fontFamily: Fonts.bold,
   },
@@ -914,19 +1295,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 44,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   deleteAccountButtonText: {
-    color: '#EF4444',
     fontSize: 13,
     fontFamily: Fonts.medium,
+    color: '#EF4444',
   },
   appVersion: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
     textAlign: 'center',
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-    marginTop: 10,
+    paddingVertical: 12,
   },
 })
