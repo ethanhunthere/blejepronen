@@ -6,14 +6,12 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Platform,
-  StatusBar,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
-import { MessageSquare, Clock, ChevronRight, Building2 } from 'lucide-react-native'
-import { BrandColors } from '@/constants/Colors'
+import { MessageSquare, ChevronRight } from 'lucide-react-native'
+import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 
 interface ConversationItem {
@@ -29,11 +27,11 @@ interface ConversationItem {
 
 export default function MessagesScreen() {
   const router = useRouter()
+  const { colors, theme } = useTheme()
   const [conversations, setConversations] = useState<ConversationItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch conversations from Supabase
     async function loadConversations() {
       try {
         setLoading(true)
@@ -42,7 +40,6 @@ export default function MessagesScreen() {
         } = await supabase.auth.getUser()
 
         if (!user) {
-          // If guest, show clean demo / empty state
           setConversations([])
           return
         }
@@ -54,7 +51,7 @@ export default function MessagesScreen() {
           .order('updated_at', { ascending: false })
 
         if (error) {
-          console.error('Error fetching conversations:', error)
+          console.warn('Conversations notice:', error.message)
         } else if (data) {
           const mapped: ConversationItem[] = data.map((c: any) => ({
             id: c.id,
@@ -68,8 +65,8 @@ export default function MessagesScreen() {
           }))
           setConversations(mapped)
         }
-      } catch (err) {
-        console.error(err)
+      } catch (err: any) {
+        console.warn('Conversations catch:', err?.message || err)
       } finally {
         setLoading(false)
       }
@@ -79,13 +76,13 @@ export default function MessagesScreen() {
   }, [])
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F7F7" />
-
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mesazhet</Text>
-        <Text style={styles.headerSubtitle}>Bisedat me blerësit dhe shitësit</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mesazhet</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+          Bisedat me blerësit dhe shitësit
+        </Text>
       </View>
 
       <ScrollView
@@ -95,33 +92,48 @@ export default function MessagesScreen() {
       >
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={BrandColors.primary} />
-            <Text style={styles.loadingText}>Duke ngarkuar bisedat...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+              Duke ngarkuar bisedat...
+            </Text>
           </View>
         ) : conversations.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <MessageSquare size={36} color={BrandColors.primary} strokeWidth={1.8} />
+          <View
+            style={[
+              styles.emptyContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
+              <MessageSquare size={36} color={colors.primary} strokeWidth={1.8} />
             </View>
-            <Text style={styles.emptyTitle}>Asnjë mesazh ende</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Asnjë mesazh ende</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
               Kur të dërgoni apo pranoni mesazhe rreth pronave, bisedat tuaja do të shfaqen këtu.
             </Text>
             <Pressable
-              style={styles.exploreBtn}
+              style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
               onPress={() => router.push('/listings' as any)}
             >
-              <Text style={styles.exploreBtnText}>Eksploro Pronat</Text>
+              <Text
+                style={[
+                  styles.exploreBtnText,
+                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                ]}
+              >
+                Eksploro Pronat
+              </Text>
             </Pressable>
           </View>
         ) : (
           conversations.map((item) => (
             <Pressable
               key={item.id}
-              style={styles.conversationCard}
-              onPress={() => {
-                // Navigate to chat detail
-              }}
+              style={[
+                styles.conversationCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              onPress={() => {}}
             >
               <Image
                 source={{
@@ -135,22 +147,22 @@ export default function MessagesScreen() {
 
               <View style={styles.cardContent}>
                 <View style={styles.cardTopRow}>
-                  <Text style={styles.senderName} numberOfLines={1}>
+                  <Text style={[styles.senderName, { color: colors.textPrimary }]} numberOfLines={1}>
                     {item.seller_name}
                   </Text>
-                  <Text style={styles.timeText}>{item.last_time}</Text>
+                  <Text style={[styles.timeText, { color: colors.textLight }]}>{item.last_time}</Text>
                 </View>
 
-                <Text style={styles.propertyTitle} numberOfLines={1}>
+                <Text style={[styles.propertyTitle, { color: colors.primary }]} numberOfLines={1}>
                   {item.listing_title}
                 </Text>
 
-                <Text style={styles.messagePreview} numberOfLines={1}>
+                <Text style={[styles.messagePreview, { color: colors.textMuted }]} numberOfLines={1}>
                   {item.last_message}
                 </Text>
               </View>
 
-              <ChevronRight size={18} color={BrandColors.textLight} />
+              <ChevronRight size={18} color={colors.textLight} />
             </Pressable>
           ))
         )}
@@ -162,22 +174,19 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F2F7F7',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.extraBold,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
     marginTop: 2,
   },
   container: {
@@ -195,58 +204,50 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
   },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     marginTop: 24,
   },
   emptyIconCircle: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: BrandColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 17,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
   },
   exploreBtn: {
     marginTop: 8,
-    backgroundColor: BrandColors.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 14,
   },
   exploreBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
     fontSize: 14,
   },
   conversationCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#1F2937',
   },
   cardContent: {
     flex: 1,
@@ -270,20 +271,18 @@ const styles = StyleSheet.create({
   },
   senderName: {
     fontSize: 14,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   timeText: {
     fontSize: 11,
-    color: BrandColors.textLight,
+    fontFamily: Fonts.regular,
   },
   propertyTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.primary,
+    fontFamily: Fonts.semiBold,
   },
   messagePreview: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
   },
 })

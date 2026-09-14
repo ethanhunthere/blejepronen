@@ -2,23 +2,28 @@ import React from 'react'
 import { Tabs } from 'expo-router'
 import { Platform, View, StyleSheet } from 'react-native'
 import { Search, Building2, PlusCircle, MessageSquare, User } from 'lucide-react-native'
-import { BrandColors } from '@/constants/Colors'
+import { useTheme, Fonts } from '@/constants/theme'
 
 export default function TabLayout() {
+  const { colors, theme } = useTheme()
+
+  const postBtnBg = theme === 'green' ? colors.gold : colors.primary
+  const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: BrandColors.primary,
-        tabBarInactiveTintColor: BrandColors.textLight,
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: BrandColors.border,
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
+          shadowOpacity: theme === 'black' ? 0.3 : 0.06,
           shadowRadius: 6,
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
@@ -26,7 +31,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontFamily: Fonts.semiBold,
         },
       }}
     >
@@ -34,23 +39,29 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Kërko',
-          tabBarIcon: ({ color, size }) => <Search size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color }) => <Search size={22} color={color} strokeWidth={2.2} />,
         }}
       />
       <Tabs.Screen
         name="listings"
         options={{
           title: 'Pronat',
-          tabBarIcon: ({ color, size }) => <Building2 size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color }) => <Building2 size={22} color={color} strokeWidth={2.2} />,
         }}
       />
       <Tabs.Screen
         name="post"
         options={{
           title: 'Posto',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.postButton, focused && styles.postButtonActive]}>
-              <PlusCircle size={22} color="#FFFFFF" strokeWidth={2.4} />
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={[
+                styles.postButton,
+                { backgroundColor: postBtnBg, shadowColor: postBtnBg },
+                focused && styles.postButtonActive,
+              ]}
+            >
+              <PlusCircle size={22} color={postIconColor} strokeWidth={2.5} />
             </View>
           ),
         }}
@@ -59,14 +70,14 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: 'Mesazhe',
-          tabBarIcon: ({ color, size }) => <MessageSquare size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} strokeWidth={2.2} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profili',
-          tabBarIcon: ({ color, size }) => <User size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color }) => <User size={22} color={color} strokeWidth={2.2} />,
         }}
       />
     </Tabs>
@@ -75,20 +86,17 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   postButton: {
-    backgroundColor: BrandColors.primary,
     width: 38,
     height: 38,
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: BrandColors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.28,
     shadowRadius: 6,
     elevation: 4,
   },
   postButtonActive: {
-    backgroundColor: BrandColors.primaryDark,
-    transform: [{ scale: 1.05 }],
+    transform: [{ scale: 1.06 }],
   },
 })

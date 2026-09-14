@@ -9,16 +9,16 @@ import {
   RefreshControl,
   ActivityIndicator,
   Platform,
-  StatusBar,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Search, SlidersHorizontal, Building2, Home, Trees, Briefcase, Warehouse, Sparkles } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import { BrandColors } from '@/constants/Colors'
+import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { ListingCard } from '@/components/ListingCard'
 import { Logo } from '@/components/Logo'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 const CATEGORY_ITEMS = [
   { id: 'all', label: 'Të gjitha', icon: Sparkles },
@@ -32,6 +32,8 @@ const CATEGORY_ITEMS = [
 
 export default function HomeScreen() {
   const router = useRouter()
+  const { colors, theme } = useTheme()
+
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [transactionType, setTransactionType] = useState<'all' | 'shitje' | 'qira'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -46,7 +48,7 @@ export default function HomeScreen() {
         .from('listings')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(25)
 
       if (transactionType !== 'all') {
         query = query.eq('type', transactionType)
@@ -55,12 +57,12 @@ export default function HomeScreen() {
       const { data, error } = await query
 
       if (error) {
-        console.error('Error fetching listings:', error)
+        console.warn('Listing fetch notice:', error.message)
       } else if (data) {
         setListings(data as Listing[])
       }
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      console.warn('Listing catch notice:', err?.message || err)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -77,16 +79,12 @@ export default function HomeScreen() {
   }
 
   const handleCategoryPress = (catId: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.selectionAsync()
-    }
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
     setSelectedCategory(catId)
   }
 
   const handleTransactionChange = (type: 'all' | 'shitje' | 'qira') => {
-    if (Platform.OS !== 'web') {
-      Haptics.selectionAsync()
-    }
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
     setTransactionType(type)
   }
 
@@ -94,13 +92,7 @@ export default function HomeScreen() {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Filter listings locally for search / category
   const filteredListings = listings.filter((item) => {
-    if (selectedCategory !== 'all') {
-      if (item.apartment_type && !item.apartment_type.toLowerCase().includes(selectedCategory)) {
-        // match category loosely
-      }
-    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       const titleMatch = item.title?.toLowerCase().includes(q)
@@ -112,8 +104,7 @@ export default function HomeScreen() {
   })
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F7F7" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -122,51 +113,71 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={BrandColors.primary}
-            colors={[BrandColors.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
-        {/* Header Branding with Official Logo on Left */}
+        {/* Header with Official Logo on Left & Theme Switcher on Right */}
         <View style={styles.header}>
           <Logo size={38} />
-          <View style={styles.brandBadge}>
-            <Text style={styles.brandBadgeText}>KOSOVË</Text>
-          </View>
+          <ThemeSwitcher compact />
         </View>
 
         {/* Search & Filter Bar */}
         <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
-            <Search size={18} color={BrandColors.textMuted} strokeWidth={2.2} />
+          <View
+            style={[
+              styles.searchBar,
+              { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+            ]}
+          >
+            <Search size={18} color={colors.textMuted} strokeWidth={2.2} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
               placeholder="Qyteti, lagjja ose titulli..."
-              placeholderTextColor={BrandColors.textLight}
+              placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
           <Pressable
-            style={styles.filterButton}
+            style={[styles.filterButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/listings' as any)}
           >
-            <SlidersHorizontal size={18} color="#FFFFFF" strokeWidth={2.2} />
+            <SlidersHorizontal
+              size={18}
+              color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+              strokeWidth={2.2}
+            />
           </Pressable>
         </View>
 
         {/* Transaction Type Selector (Shitje / Qira) */}
-        <View style={styles.transactionTabs}>
+        <View style={[styles.transactionTabs, { backgroundColor: colors.surfaceSubtle }]}>
           {(['all', 'shitje', 'qira'] as const).map((type) => {
             const isActive = transactionType === type
             const label = type === 'all' ? 'Të gjitha' : type === 'shitje' ? 'Në Shitje' : 'Me Qira'
             return (
               <Pressable
                 key={type}
-                style={[styles.transactionTab, isActive && styles.transactionTabActive]}
+                style={[
+                  styles.transactionTab,
+                  isActive && {
+                    backgroundColor: colors.surface,
+                    shadowColor: '#000',
+                    shadowOpacity: theme === 'black' ? 0.3 : 0.08,
+                  },
+                ]}
                 onPress={() => handleTransactionChange(type)}
               >
-                <Text style={[styles.transactionTabText, isActive && styles.transactionTabTextActive]}>
+                <Text
+                  style={[
+                    styles.transactionTabText,
+                    { color: isActive ? colors.textPrimary : colors.textMuted },
+                    isActive && { fontFamily: Fonts.bold },
+                  ]}
+                >
                   {label}
                 </Text>
               </Pressable>
@@ -186,18 +197,25 @@ export default function HomeScreen() {
             return (
               <Pressable
                 key={item.id}
-                style={[styles.categoryPill, isSelected && styles.categoryPillActive]}
+                style={[
+                  styles.categoryPill,
+                  {
+                    backgroundColor: isSelected ? colors.chipActiveBg : colors.chipBg,
+                    borderColor: isSelected ? colors.chipActiveBg : colors.border,
+                  },
+                ]}
                 onPress={() => handleCategoryPress(item.id)}
               >
                 <Icon
                   size={16}
-                  color={isSelected ? '#FFFFFF' : BrandColors.primary}
+                  color={isSelected ? colors.chipTextActive : colors.primary}
                   strokeWidth={2.2}
                 />
                 <Text
                   style={[
                     styles.categoryPillText,
-                    isSelected && styles.categoryPillTextActive,
+                    { color: isSelected ? colors.chipTextActive : colors.textSecondary },
+                    isSelected && { fontFamily: Fonts.bold },
                   ]}
                 >
                   {item.label}
@@ -209,23 +227,32 @@ export default function HomeScreen() {
 
         {/* Section Title */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Pronat e fundit</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pronat e fundit</Text>
           <Pressable onPress={() => router.push('/listings' as any)}>
-            <Text style={styles.sectionLink}>Shiko të gjitha</Text>
+            <Text style={[styles.sectionLink, { color: colors.primary }]}>Shiko të gjitha</Text>
           </Pressable>
         </View>
 
         {/* Listings Feed */}
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={BrandColors.primary} />
-            <Text style={styles.loaderText}>Duke ngarkuar pronat...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loaderText, { color: colors.textMuted }]}>
+              Duke ngarkuar pronat...
+            </Text>
           </View>
         ) : filteredListings.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Building2 size={40} color={BrandColors.textLight} strokeWidth={1.5} />
-            <Text style={styles.emptyTitle}>Nuk u gjet asnjë pronë</Text>
-            <Text style={styles.emptySubtitle}>
+          <View
+            style={[
+              styles.emptyContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Building2 size={40} color={colors.textLight} strokeWidth={1.5} />
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              Nuk u gjet asnjë pronë
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
               Provoni të ndryshoni filtrat ose kërkoni një qytet tjetër.
             </Text>
           </View>
@@ -247,92 +274,49 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F2F7F7',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    paddingTop: 8,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-  },
-  logoTextMain: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: BrandColors.primary,
-    letterSpacing: -0.5,
-  },
-  logoTextAccent: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: BrandColors.gold,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: BrandColors.textMuted,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  brandBadge: {
-    backgroundColor: 'rgba(0, 100, 89, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 100, 89, 0.2)',
-  },
-  brandBadgeText: {
-    color: BrandColors.primary,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    paddingTop: 4,
   },
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   searchBar: {
     flex: 1,
     height: 48,
-    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: BrandColors.border,
   },
   searchInput: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.medium,
   },
   filterButton: {
     width: 48,
     height: 48,
-    backgroundColor: BrandColors.primary,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: BrandColors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -340,7 +324,6 @@ const styles = StyleSheet.create({
   },
   transactionTabs: {
     flexDirection: 'row',
-    backgroundColor: '#E5EBEB',
     padding: 3,
     borderRadius: 12,
     marginBottom: 14,
@@ -351,22 +334,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
   },
-  transactionTabActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   transactionTabText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.textMuted,
-  },
-  transactionTabTextActive: {
-    color: BrandColors.primary,
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   categoriesScroll: {
     gap: 8,
@@ -376,25 +346,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: BrandColors.border,
-  },
-  categoryPillActive: {
-    backgroundColor: BrandColors.primary,
-    borderColor: BrandColors.primary,
   },
   categoryPillText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.textSecondary,
-  },
-  categoryPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -405,13 +364,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.extraBold,
   },
   sectionLink: {
     fontSize: 13,
-    fontWeight: '700',
-    color: BrandColors.primary,
+    fontFamily: Fonts.bold,
   },
   loaderContainer: {
     padding: 40,
@@ -420,26 +377,23 @@ const styles = StyleSheet.create({
   },
   loaderText: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
   },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     marginTop: 8,
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
     textAlign: 'center',
   },
 })

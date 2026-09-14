@@ -8,32 +8,22 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
-  StatusBar,
   Alert,
   Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import {
-  Building2,
-  Home,
-  Trees,
-  Briefcase,
-  Warehouse,
   Sparkles,
   Wand2,
   RotateCcw,
   Camera,
   X,
   Check,
-  MapPin,
-  Tag,
-  Maximize2,
-  BedDouble,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
-import { BrandColors } from '@/constants/Colors'
+import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { CATEGORIES, PropertyCategory } from '@/lib/categories'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
@@ -44,6 +34,7 @@ const CITIES = Object.keys(KOSOVO_LOCATIONS)
 
 export default function PostPropertyScreen() {
   const router = useRouter()
+  const { colors, theme } = useTheme()
 
   // Form State
   const [category, setCategory] = useState<PropertyCategory>('banese')
@@ -70,7 +61,6 @@ export default function PostPropertyScreen() {
 
   const activeCategory = CATEGORIES[category]
 
-  // Category change with synchronized defaults
   const handleCategorySelect = (catKey: PropertyCategory) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setCategory(catKey)
@@ -90,7 +80,6 @@ export default function PostPropertyScreen() {
     }
   }
 
-  // Smart Description Handler
   const handleSmartDescription = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setUndoDescription(description)
@@ -131,7 +120,6 @@ export default function PostPropertyScreen() {
     }
   }
 
-  // Image Picker
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
@@ -162,7 +150,6 @@ export default function PostPropertyScreen() {
     )
   }
 
-  // Submit Listing
   const handleSubmit = async () => {
     if (!title.trim()) {
       Alert.alert('Vëmendje', 'Ju lutemi shkruani një titull për pronën.')
@@ -187,10 +174,9 @@ export default function PostPropertyScreen() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      // Demo/Fallback user ID if not logged in
       const userId = user?.id || 'guest-user-mobile'
 
-      const { data, error } = await supabase.from('listings').insert([
+      const { error } = await supabase.from('listings').insert([
         {
           user_id: userId,
           title: title.trim(),
@@ -210,9 +196,7 @@ export default function PostPropertyScreen() {
         },
       ])
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -229,13 +213,13 @@ export default function PostPropertyScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F7F7" />
-
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Posto Pronë të Re</Text>
-        <Text style={styles.headerSubtitle}>Plotësoni të dhënat e pronës tuaj</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Posto Pronë të Re</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+          Plotësoni të dhënat e pronës tuaj
+        </Text>
       </View>
 
       <ScrollView
@@ -244,8 +228,8 @@ export default function PostPropertyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* SECTION 1: Kategoria e Pronës */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>1. Kategoria e pronës</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>1. Kategoria e pronës</Text>
           <View style={styles.categoryGrid}>
             {CATEGORY_KEYS.map((catKey) => {
               const cat = CATEGORIES[catKey]
@@ -253,61 +237,97 @@ export default function PostPropertyScreen() {
               return (
                 <Pressable
                   key={catKey}
-                  style={[styles.catCard, isSelected && styles.catCardSelected]}
+                  style={[
+                    styles.catCard,
+                    {
+                      backgroundColor: isSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                      borderColor: isSelected ? colors.chipActiveBg : colors.border,
+                    },
+                  ]}
                   onPress={() => handleCategorySelect(catKey)}
                 >
-                  <Text style={[styles.catLabel, isSelected && styles.catLabelSelected]}>
+                  <Text
+                    style={[
+                      styles.catLabel,
+                      { color: isSelected ? colors.chipTextActive : colors.textPrimary },
+                      isSelected && { fontFamily: Fonts.bold },
+                    ]}
+                  >
                     {cat.label}
                   </Text>
-                  <Text style={styles.catBadge}>{cat.badge}</Text>
+                  <Text style={[styles.catBadge, { color: isSelected ? colors.chipTextActive : colors.textMuted }]}>
+                    {cat.badge}
+                  </Text>
                 </Pressable>
               )
             })}
           </View>
         </View>
 
-        {/* SECTION 2: Lloji i Ofertës (Shitje / Qira) */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>2. Lloji i ofertës</Text>
-          <View style={styles.typeToggle}>
-            <Pressable
-              style={[styles.typeOption, type === 'shitje' && styles.typeOptionActive]}
-              onPress={() => setType('shitje')}
-            >
-              <Text style={[styles.typeOptionText, type === 'shitje' && styles.typeOptionTextActive]}>
-                Në Shitje
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.typeOption, type === 'qira' && styles.typeOptionActive]}
-              onPress={() => setType('qira')}
-            >
-              <Text style={[styles.typeOptionText, type === 'qira' && styles.typeOptionTextActive]}>
-                Me Qira
-              </Text>
-            </Pressable>
+        {/* SECTION 2: Lloji i Ofertës */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>2. Lloji i ofertës</Text>
+          <View style={[styles.typeToggle, { backgroundColor: colors.surfaceSubtle }]}>
+            {(['shitje', 'qira'] as const).map((t) => {
+              const isAct = type === t
+              const label = t === 'shitje' ? 'Në Shitje' : 'Me Qira'
+              return (
+                <Pressable
+                  key={t}
+                  style={[
+                    styles.typeOption,
+                    isAct && {
+                      backgroundColor: colors.surface,
+                      shadowColor: '#000',
+                      shadowOpacity: 0.1,
+                    },
+                  ]}
+                  onPress={() => setType(t)}
+                >
+                  <Text
+                    style={[
+                      styles.typeOptionText,
+                      { color: isAct ? colors.textPrimary : colors.textMuted },
+                      isAct && { fontFamily: Fonts.bold },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              )
+            })}
           </View>
         </View>
 
         {/* SECTION 3: Lokacioni */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>3. Lokacioni</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>3. Lokacioni</Text>
 
-          {/* Qyteti */}
-          <Text style={styles.inputLabel}>Qyteti *</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Qyteti *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalChips}>
             {CITIES.map((c) => {
               const isCSelected = city === c
               return (
                 <Pressable
                   key={c}
-                  style={[styles.cityChip, isCSelected && styles.cityChipActive]}
+                  style={[
+                    styles.cityChip,
+                    {
+                      backgroundColor: isCSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                    },
+                  ]}
                   onPress={() => {
                     setCity(c)
                     setNeighborhood('')
                   }}
                 >
-                  <Text style={[styles.cityChipText, isCSelected && styles.cityChipTextActive]}>
+                  <Text
+                    style={[
+                      styles.cityChipText,
+                      { color: isCSelected ? colors.chipTextActive : colors.textSecondary },
+                      isCSelected && { fontFamily: Fonts.bold },
+                    ]}
+                  >
                     {c}
                   </Text>
                 </Pressable>
@@ -315,20 +335,30 @@ export default function PostPropertyScreen() {
             })}
           </ScrollView>
 
-          {/* Lagjja */}
           {city && KOSOVO_LOCATIONS[city]?.length > 0 && (
             <>
-              <Text style={styles.inputLabel}>Lagjja në {city}</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Lagjja në {city}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalChips}>
                 {KOSOVO_LOCATIONS[city].map((n) => {
                   const isNSelected = neighborhood === n
                   return (
                     <Pressable
                       key={n}
-                      style={[styles.cityChip, isNSelected && styles.cityChipActive]}
+                      style={[
+                        styles.cityChip,
+                        {
+                          backgroundColor: isNSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                        },
+                      ]}
                       onPress={() => setNeighborhood(n)}
                     >
-                      <Text style={[styles.cityChipText, isNSelected && styles.cityChipTextActive]}>
+                      <Text
+                        style={[
+                          styles.cityChipText,
+                          { color: isNSelected ? colors.chipTextActive : colors.textSecondary },
+                          isNSelected && { fontFamily: Fonts.bold },
+                        ]}
+                      >
                         {n}
                       </Text>
                     </Pressable>
@@ -338,40 +368,59 @@ export default function PostPropertyScreen() {
             </>
           )}
 
-          {/* Rruga / Adresa */}
-          <Text style={styles.inputLabel}>Rruga ose pika referuese</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Rruga ose pika referuese</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.searchBg,
+                borderColor: colors.searchBorder,
+                color: colors.textPrimary,
+              },
+            ]}
             placeholder="p.sh. Rr. Dëshmorët e Kombit"
-            placeholderTextColor={BrandColors.textLight}
+            placeholderTextColor={colors.textLight}
             value={address}
             onChangeText={setAddress}
           />
         </View>
 
-        {/* SECTION 4: Të Dhënat & Çmimi */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>4. Çmimi dhe Specifikat</Text>
+        {/* SECTION 4: Specifikat & Çmimi */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>4. Çmimi dhe Specifikat</Text>
 
-          {/* Çmimi & Sipërfaqja */}
           <View style={styles.rowInputs}>
             <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Çmimi (€) *</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Çmimi (€) *</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.searchBg,
+                    borderColor: colors.searchBorder,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="p.sh. 95000"
-                placeholderTextColor={BrandColors.textLight}
+                placeholderTextColor={colors.textLight}
                 keyboardType="numeric"
                 value={price}
                 onChangeText={setPrice}
               />
             </View>
             <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Sipërfaqja (m²) *</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Sipërfaqja (m²) *</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.searchBg,
+                    borderColor: colors.searchBorder,
+                    color: colors.textPrimary,
+                  },
+                ]}
                 placeholder="p.sh. 85"
-                placeholderTextColor={BrandColors.textLight}
+                placeholderTextColor={colors.textLight}
                 keyboardType="numeric"
                 value={area}
                 onChangeText={setArea}
@@ -379,20 +428,30 @@ export default function PostPropertyScreen() {
             </View>
           </View>
 
-          {/* Dhomat & Kati (nëse aplikohet) */}
           {activeCategory.hasRooms && (
             <View style={styles.fieldBlock}>
-              <Text style={styles.inputLabel}>Numri i dhomave</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Numri i dhomave</Text>
               <View style={styles.pillGroup}>
                 {[1, 2, 3, 4, 5, '6+'].map((r) => {
                   const isRSelected = rooms === String(r)
                   return (
                     <Pressable
                       key={String(r)}
-                      style={[styles.pillBtn, isRSelected && styles.pillBtnActive]}
+                      style={[
+                        styles.pillBtn,
+                        {
+                          backgroundColor: isRSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                        },
+                      ]}
                       onPress={() => setRooms(String(r))}
                     >
-                      <Text style={[styles.pillBtnText, isRSelected && styles.pillBtnTextActive]}>
+                      <Text
+                        style={[
+                          styles.pillBtnText,
+                          { color: isRSelected ? colors.chipTextActive : colors.textSecondary },
+                          isRSelected && { fontFamily: Fonts.bold },
+                        ]}
+                      >
                         {r}
                       </Text>
                     </Pressable>
@@ -402,21 +461,31 @@ export default function PostPropertyScreen() {
             </View>
           )}
 
-          {/* Veçoritë */}
-          <Text style={styles.inputLabel}>Përparësitë & Veçoritë</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Përparësitë & Veçoritë</Text>
           <View style={styles.featuresWrap}>
-            {activeCategory.features.map((feat) => {
+            {activeCategory.features.map((feat: string) => {
               const isFSelected = selectedFeatures.includes(feat)
               return (
                 <Pressable
                   key={feat}
-                  style={[styles.featureChip, isFSelected && styles.featureChipActive]}
+                  style={[
+                    styles.featureChip,
+                    {
+                      backgroundColor: isFSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                    },
+                  ]}
                   onPress={() => toggleFeature(feat)}
                 >
-                  <Text style={[styles.featureChipText, isFSelected && styles.featureChipTextActive]}>
+                  <Text
+                    style={[
+                      styles.featureChipText,
+                      { color: isFSelected ? colors.chipTextActive : colors.textSecondary },
+                      isFSelected && { fontFamily: Fonts.bold },
+                    ]}
+                  >
                     {feat}
                   </Text>
-                  {isFSelected && <Check size={12} color="#FFFFFF" />}
+                  {isFSelected && <Check size={12} color={colors.chipTextActive} />}
                 </Pressable>
               )
             })}
@@ -424,55 +493,69 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 5: Titulli & Përshkrimi Inteligjent */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>5. Titulli dhe Përshkrimi</Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>5. Titulli dhe Përshkrimi</Text>
 
-          <Text style={styles.inputLabel}>Titulli i shpalljes *</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Titulli i shpalljes *</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.searchBg,
+                borderColor: colors.searchBorder,
+                color: colors.textPrimary,
+              },
+            ]}
             placeholder={activeCategory.titlePlaceholder}
-            placeholderTextColor={BrandColors.textLight}
+            placeholderTextColor={colors.textLight}
             value={title}
             onChangeText={setTitle}
           />
 
-          {/* Smart Assistant Description Toolbar */}
           <View style={styles.descHeader}>
-            <Text style={styles.inputLabel}>Përshkrimi i hollësishëm *</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Përshkrimi i hollësishëm *</Text>
 
             <View style={styles.descActions}>
               {undoDescription !== null && (
                 <Pressable style={styles.undoBtn} onPress={handleUndo}>
-                  <RotateCcw size={12} color={BrandColors.textMuted} />
-                  <Text style={styles.undoBtnText}>Kthe</Text>
+                  <RotateCcw size={12} color={colors.textMuted} />
+                  <Text style={[styles.undoBtnText, { color: colors.textMuted }]}>Kthe</Text>
                 </Pressable>
               )}
 
               <Pressable
                 style={[
                   styles.smartBtn,
-                  description.trim().length > 0 && styles.smartBtnEnhance,
+                  {
+                    backgroundColor: colors.badgeBg,
+                    borderColor: colors.border,
+                  },
                 ]}
                 onPress={handleSmartDescription}
               >
                 {description.trim().length > 0 ? (
-                  <Wand2 size={13} color={BrandColors.primary} strokeWidth={2.2} />
+                  <Wand2 size={13} color={colors.badgeText} strokeWidth={2.4} />
                 ) : (
-                  <Sparkles size={13} color={BrandColors.primary} strokeWidth={2.2} />
+                  <Sparkles size={13} color={colors.badgeText} strokeWidth={2.4} />
                 )}
-                <Text style={styles.smartBtnText}>
-                  {description.trim().length > 0
-                    ? 'Rregullo & përmirëso'
-                    : 'Sugjero përshkrim'}
+                <Text style={[styles.smartBtnText, { color: colors.badgeText }]}>
+                  {description.trim().length > 0 ? 'Rregullo & përmirëso' : 'Sugjero përshkrim'}
                 </Text>
               </Pressable>
             </View>
           </View>
 
           <TextInput
-            style={styles.textArea}
+            style={[
+              styles.textArea,
+              {
+                backgroundColor: colors.searchBg,
+                borderColor: colors.searchBorder,
+                color: colors.textPrimary,
+              },
+            ]}
             placeholder={activeCategory.descriptionPlaceholder}
-            placeholderTextColor={BrandColors.textLight}
+            placeholderTextColor={colors.textLight}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -482,9 +565,9 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 6: Fotografitë */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>6. Fotografitë e pronës</Text>
-          <Text style={styles.helperText}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>6. Fotografitë e pronës</Text>
+          <Text style={[styles.helperText, { color: colors.textMuted }]}>
             Ngarkoni deri në 10 foto cilësore. Fotoja e parë do të jetë kryesore.
           </Text>
 
@@ -493,24 +576,32 @@ export default function PostPropertyScreen() {
               <View key={uri} style={styles.imageThumbContainer}>
                 <Image source={{ uri }} style={styles.imageThumb} />
                 {idx === 0 && (
-                  <View style={styles.coverBadge}>
-                    <Text style={styles.coverBadgeText}>Kryesore</Text>
+                  <View style={[styles.coverBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.coverBadgeText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+                      Kryesore
+                    </Text>
                   </View>
                 )}
-                <Pressable
-                  style={styles.removeImageBtn}
-                  onPress={() => removeImage(idx)}
-                >
+                <Pressable style={styles.removeImageBtn} onPress={() => removeImage(idx)}>
                   <X size={12} color="#FFFFFF" />
                 </Pressable>
               </View>
             ))}
 
             {images.length < 10 && (
-              <Pressable style={styles.uploadBtn} onPress={pickImages}>
-                <Camera size={24} color={BrandColors.primary} strokeWidth={2} />
-                <Text style={styles.uploadBtnText}>Shto Foto</Text>
-                <Text style={styles.uploadBtnCount}>{images.length}/10</Text>
+              <Pressable
+                style={[
+                  styles.uploadBtn,
+                  {
+                    borderColor: colors.primary,
+                    backgroundColor: colors.badgeBg,
+                  },
+                ]}
+                onPress={pickImages}
+              >
+                <Camera size={24} color={colors.primary} strokeWidth={2} />
+                <Text style={[styles.uploadBtnText, { color: colors.primary }]}>Shto Foto</Text>
+                <Text style={[styles.uploadBtnCount, { color: colors.textMuted }]}>{images.length}/10</Text>
               </Pressable>
             )}
           </View>
@@ -518,14 +609,25 @@ export default function PostPropertyScreen() {
 
         {/* Submit Button */}
         <Pressable
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+          style={[
+            styles.submitButton,
+            { backgroundColor: colors.primary },
+            loading && styles.submitButtonDisabled,
+          ]}
           onPress={handleSubmit}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
           ) : (
-            <Text style={styles.submitButtonText}>Publiko Pronën Tani</Text>
+            <Text
+              style={[
+                styles.submitButtonText,
+                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+              ]}
+            >
+              Publiko Pronën Tani
+            </Text>
           )}
         </Pressable>
       </ScrollView>
@@ -536,22 +638,19 @@ export default function PostPropertyScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F2F7F7',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.extraBold,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
     marginTop: 2,
   },
   container: {
@@ -563,17 +662,14 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     gap: 12,
   },
   sectionHeading: {
     fontSize: 15,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -582,32 +678,21 @@ const styles = StyleSheet.create({
   },
   catCard: {
     width: '48%',
-    backgroundColor: '#F9FAFB',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-  },
-  catCardSelected: {
-    backgroundColor: 'rgba(0, 100, 89, 0.06)',
-    borderColor: BrandColors.primary,
   },
   catLabel: {
     fontSize: 14,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
-  },
-  catLabelSelected: {
-    color: BrandColors.primary,
+    fontFamily: Fonts.bold,
   },
   catBadge: {
     fontSize: 11,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
     marginTop: 2,
   },
   typeToggle: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     padding: 4,
     borderRadius: 14,
   },
@@ -617,22 +702,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
   },
-  typeOptionActive: {
-    backgroundColor: BrandColors.primary,
-  },
   typeOptionText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: BrandColors.textSecondary,
-  },
-  typeOptionTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: '700',
-    color: BrandColors.textSecondary,
+    fontFamily: Fonts.bold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -640,33 +716,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cityChip: {
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 14,
     marginRight: 8,
   },
-  cityChipActive: {
-    backgroundColor: BrandColors.primary,
-  },
   cityChipText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.textSecondary,
-  },
-  cityChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   input: {
-    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: BrandColors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 11,
     fontSize: 14,
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.medium,
   },
   rowInputs: {
     flexDirection: 'row',
@@ -686,22 +751,13 @@ const styles = StyleSheet.create({
   pillBtn: {
     width: 44,
     height: 38,
-    backgroundColor: '#F3F4F6',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillBtnActive: {
-    backgroundColor: BrandColors.primary,
-  },
   pillBtnText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: BrandColors.textSecondary,
-  },
-  pillBtnTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   featuresWrap: {
     flexDirection: 'row',
@@ -712,22 +768,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 12,
   },
-  featureChipActive: {
-    backgroundColor: BrandColors.primary,
-  },
   featureChipText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: BrandColors.textSecondary,
-  },
-  featureChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.medium,
   },
   descHeader: {
     flexDirection: 'row',
@@ -749,43 +796,33 @@ const styles = StyleSheet.create({
   },
   undoBtnText: {
     fontSize: 11,
-    color: BrandColors.textMuted,
-    fontWeight: '600',
+    fontFamily: Fonts.bold,
   },
   smartBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(0, 100, 89, 0.1)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(0, 100, 89, 0.2)',
-  },
-  smartBtnEnhance: {
-    backgroundColor: 'rgba(200, 184, 130, 0.2)',
-    borderColor: 'rgba(200, 184, 130, 0.4)',
   },
   smartBtnText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: BrandColors.primary,
+    fontFamily: Fonts.bold,
   },
   textArea: {
-    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: BrandColors.border,
     borderRadius: 14,
     padding: 12,
     fontSize: 14,
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.regular,
     minHeight: 120,
     lineHeight: 20,
   },
   helperText: {
     fontSize: 12,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
   },
   imagesGrid: {
     flexDirection: 'row',
@@ -808,15 +845,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 4,
     left: 4,
-    backgroundColor: BrandColors.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   coverBadgeText: {
-    color: '#FFFFFF',
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   removeImageBtn: {
     position: 'absolute',
@@ -835,27 +870,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: BrandColors.primary,
-    backgroundColor: 'rgba(0, 100, 89, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
   uploadBtnText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: BrandColors.primary,
+    fontFamily: Fonts.bold,
   },
   uploadBtnCount: {
     fontSize: 10,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
   },
   submitButton: {
-    backgroundColor: BrandColors.primary,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: BrandColors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -865,8 +895,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: Fonts.black,
   },
 })

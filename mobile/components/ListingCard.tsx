@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { MapPin, BedDouble, Maximize2, Layers, Heart } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import { BrandColors } from '@/constants/Colors'
+import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
 
 interface ListingCardProps {
@@ -15,6 +15,7 @@ interface ListingCardProps {
 
 export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: ListingCardProps) {
   const router = useRouter()
+  const { colors, theme } = useTheme()
 
   const handleFavoritePress = (e: any) => {
     e.stopPropagation?.()
@@ -33,9 +34,20 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
       ? listing.images[0]
       : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
 
+  const typeBadgeBg = theme === 'green' ? colors.gold : '#006459'
+  const typeBadgeTextColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowOpacity: theme === 'black' ? 0.3 : 0.06,
+        },
+        pressed && styles.cardPressed,
+      ]}
       onPress={() => router.push(`/listings/${listing.id}` as any)}
     >
       {/* Image Container */}
@@ -44,12 +56,12 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
           source={{ uri: mainImage }}
           style={styles.image}
           contentFit="cover"
-          transition={300}
+          transition={250}
         />
 
         {/* Badge: Shitje / Qira */}
-        <View style={styles.typeBadge}>
-          <Text style={styles.typeBadgeText}>
+        <View style={[styles.typeBadge, { backgroundColor: typeBadgeBg }]}>
+          <Text style={[styles.typeBadgeText, { color: typeBadgeTextColor }]}>
             {listing.type === 'shitje' ? 'NË SHITJE' : 'ME QIRA'}
           </Text>
         </View>
@@ -68,7 +80,7 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         </Pressable>
 
         {/* Price overlay on image */}
-        <View style={styles.priceContainer}>
+        <View style={[styles.priceContainer, { backgroundColor: 'rgba(11, 15, 14, 0.88)' }]}>
           <Text style={styles.priceText}>{formatPrice(listing.price)}</Text>
           {listing.type === 'qira' && <Text style={styles.periodText}>/muaj</Text>}
         </View>
@@ -76,38 +88,38 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
       {/* Details Container */}
       <View style={styles.infoContainer}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
           {listing.title}
         </Text>
 
         {/* Location */}
         <View style={styles.locationRow}>
-          <MapPin size={13} color={BrandColors.primary} strokeWidth={2.2} />
-          <Text style={styles.locationText} numberOfLines={1}>
+          <MapPin size={13} color={colors.primary} strokeWidth={2.4} />
+          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             {listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}
           </Text>
         </View>
 
         {/* Specs Row */}
-        <View style={styles.specsRow}>
+        <View style={[styles.specsRow, { borderTopColor: colors.borderSubtle }]}>
           {listing.area_m2 > 0 && (
             <View style={styles.specItem}>
-              <Maximize2 size={12} color={BrandColors.textMuted} strokeWidth={2} />
-              <Text style={styles.specText}>{listing.area_m2} m²</Text>
+              <Maximize2 size={12} color={colors.textMuted} strokeWidth={2} />
+              <Text style={[styles.specText, { color: colors.textMuted }]}>{listing.area_m2} m²</Text>
             </View>
           )}
 
           {listing.rooms > 0 && (
             <View style={styles.specItem}>
-              <BedDouble size={12} color={BrandColors.textMuted} strokeWidth={2} />
-              <Text style={styles.specText}>{listing.rooms} dhomë</Text>
+              <BedDouble size={12} color={colors.textMuted} strokeWidth={2} />
+              <Text style={[styles.specText, { color: colors.textMuted }]}>{listing.rooms} dhomë</Text>
             </View>
           )}
 
           {listing.floor && (
             <View style={styles.specItem}>
-              <Layers size={12} color={BrandColors.textMuted} strokeWidth={2} />
-              <Text style={styles.specText}>Kati {listing.floor}</Text>
+              <Layers size={12} color={colors.textMuted} strokeWidth={2} />
+              <Text style={[styles.specText, { color: colors.textMuted }]}>Kati {listing.floor}</Text>
             </View>
           )}
         </View>
@@ -118,26 +130,23 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: BrandColors.border,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
   cardPressed: {
-    opacity: 0.95,
+    opacity: 0.94,
     transform: [{ scale: 0.99 }],
   },
   imageContainer: {
     width: '100%',
-    height: 190,
-    backgroundColor: '#E5E7EB',
+    height: 195,
+    backgroundColor: '#1F2937',
     position: 'relative',
   },
   image: {
@@ -148,15 +157,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: 'rgba(0, 100, 89, 0.92)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
   },
   typeBadgeText: {
-    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
     letterSpacing: 0.5,
   },
   favoriteButton: {
@@ -166,7 +173,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -174,23 +181,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 12,
     left: 12,
-    backgroundColor: 'rgba(16, 24, 40, 0.85)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
     borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 2,
+    gap: 3,
   },
   priceText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: Fonts.extraBold,
   },
   periodText: {
     color: '#D1D5DB',
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: Fonts.medium,
   },
   infoContainer: {
     padding: 14,
@@ -198,8 +204,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   locationRow: {
     flexDirection: 'row',
@@ -208,8 +213,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
-    color: BrandColors.textSecondary,
-    fontWeight: '500',
+    fontFamily: Fonts.medium,
     flex: 1,
   },
   specsRow: {
@@ -218,7 +222,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
   specItem: {
     flexDirection: 'row',
@@ -227,7 +230,6 @@ const styles = StyleSheet.create({
   },
   specText: {
     fontSize: 12,
-    color: BrandColors.textMuted,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
 })

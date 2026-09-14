@@ -7,7 +7,6 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
-  StatusBar,
   Linking,
   Dimensions,
 } from 'react-native'
@@ -17,7 +16,6 @@ import { Image } from 'expo-image'
 import {
   ArrowLeft,
   Heart,
-  Share2,
   MapPin,
   Maximize2,
   BedDouble,
@@ -27,9 +25,11 @@ import {
   ShieldCheck,
   Calculator,
   Check,
+  Plus,
+  Minus,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import { BrandColors } from '@/constants/Colors'
+import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -37,6 +37,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const { colors, theme } = useTheme()
 
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
@@ -60,12 +61,12 @@ export default function ListingDetailScreen() {
           .single()
 
         if (error) {
-          console.error('Error fetching listing:', error)
+          console.warn('Listing detail notice:', error.message)
         } else if (data) {
           setListing(data as Listing)
         }
-      } catch (err) {
-        console.error(err)
+      } catch (err: any) {
+        console.warn('Listing catch:', err?.message || err)
       } finally {
         setLoading(false)
       }
@@ -84,7 +85,9 @@ export default function ListingDetailScreen() {
   }
 
   const handleWhatsApp = () => {
-    Linking.openURL('https://wa.me/38349123456?text=P%C3%ABrsh%C3%ABndetje%2C%20jam%20i%20interesuar%20p%C3%ABr%20pron%C3%ABn%20tuaj%20n%C3%AB%20Bleje%20Pron%C3%ABn')
+    Linking.openURL(
+      'https://wa.me/38349123456?text=P%C3%ABrsh%C3%ABndetje%2C%20jam%20i%20interesuar%20p%C3%ABr%20pron%C3%ABn%20tuaj%20n%C3%AB%20Bleje%20Pron%C3%ABn'
+    )
   }
 
   const formatPrice = (val?: number) => {
@@ -92,7 +95,6 @@ export default function ListingDetailScreen() {
     return new Intl.NumberFormat('de-DE').format(val) + ' €'
   }
 
-  // Calculate monthly mortgage payment
   const calculateMortgage = () => {
     if (!listing?.price) return 0
     const principal = listing.price * (1 - downPaymentPercent / 100)
@@ -107,19 +109,26 @@ export default function ListingDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={BrandColors.primary} />
-        <Text style={styles.loadingText}>Duke ngarkuar detajet e pronës...</Text>
+      <SafeAreaView style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+          Duke ngarkuar detajet e pronës...
+        </Text>
       </SafeAreaView>
     )
   }
 
   if (!listing) {
     return (
-      <SafeAreaView style={styles.centerContainer}>
-        <Text style={styles.notFoundTitle}>Prona nuk u gjet</Text>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Kthehu mbrapa</Text>
+      <SafeAreaView style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.notFoundTitle, { color: colors.textPrimary }]}>Prona nuk u gjet</Text>
+        <Pressable
+          style={[styles.backBtn, { backgroundColor: colors.primary }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backBtnText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+            Kthehu mbrapa
+          </Text>
         </Pressable>
       </SafeAreaView>
     )
@@ -131,11 +140,9 @@ export default function ListingDetailScreen() {
       : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent />
-
-      {/* Floating Top Navigation Bar */}
-      <SafeAreaView style={styles.floatingNavSafeArea}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* Floating Top Nav Bar */}
+      <SafeAreaView style={styles.floatingNavSafeArea} edges={['top']}>
         <View style={styles.floatingNav}>
           <Pressable style={styles.navIconBtn} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.4} />
@@ -168,25 +175,23 @@ export default function ListingDetailScreen() {
             scrollEventThrottle={16}
           >
             {imagesList.map((img, i) => (
-              <Image
-                key={i}
-                source={{ uri: img }}
-                style={styles.galleryImage}
-                contentFit="cover"
-              />
+              <Image key={i} source={{ uri: img }} style={styles.galleryImage} contentFit="cover" />
             ))}
           </ScrollView>
 
-          {/* Image index indicator */}
           <View style={styles.imageCounter}>
             <Text style={styles.imageCounterText}>
               {activeImageIdx + 1} / {imagesList.length}
             </Text>
           </View>
 
-          {/* Type Badge */}
-          <View style={styles.heroTypeBadge}>
-            <Text style={styles.heroTypeBadgeText}>
+          <View style={[styles.heroTypeBadge, { backgroundColor: theme === 'green' ? colors.gold : '#006459' }]}>
+            <Text
+              style={[
+                styles.heroTypeBadgeText,
+                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+              ]}
+            >
               {listing.type === 'shitje' ? 'NË SHITJE' : 'ME QIRA'}
             </Text>
           </View>
@@ -195,17 +200,26 @@ export default function ListingDetailScreen() {
         {/* Content Body */}
         <View style={styles.body}>
           {/* Price & Location Header */}
-          <View style={styles.headerBlock}>
+          <View style={[styles.headerBlock, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.priceRow}>
-              <Text style={styles.priceText}>{formatPrice(listing.price)}</Text>
-              {listing.type === 'qira' && <Text style={styles.periodText}>/muaj</Text>}
+              <Text
+                style={[
+                  styles.priceText,
+                  { color: theme === 'green' ? colors.gold : colors.primary },
+                ]}
+              >
+                {formatPrice(listing.price)}
+              </Text>
+              {listing.type === 'qira' && (
+                <Text style={[styles.periodText, { color: colors.textMuted }]}>/muaj</Text>
+              )}
             </View>
 
-            <Text style={styles.titleText}>{listing.title}</Text>
+            <Text style={[styles.titleText, { color: colors.textPrimary }]}>{listing.title}</Text>
 
             <View style={styles.locationRow}>
-              <MapPin size={16} color={BrandColors.primary} strokeWidth={2.2} />
-              <Text style={styles.locationText}>
+              <MapPin size={16} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.locationText, { color: colors.textSecondary }]}>
                 {listing.neighborhood ? `${listing.neighborhood}, ` : ''}
                 {listing.city}
                 {listing.address ? ` • ${listing.address}` : ''}
@@ -215,40 +229,45 @@ export default function ListingDetailScreen() {
 
           {/* Key Specs Grid */}
           <View style={styles.specsGrid}>
-            <View style={styles.specBox}>
-              <Maximize2 size={20} color={BrandColors.primary} strokeWidth={2.2} />
-              <Text style={styles.specValue}>{listing.area_m2} m²</Text>
-              <Text style={styles.specLabel}>Sipërfaqja</Text>
+            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Maximize2 size={20} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specValue, { color: colors.textPrimary }]}>{listing.area_m2} m²</Text>
+              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Sipërfaqja</Text>
             </View>
 
-            <View style={styles.specBox}>
-              <BedDouble size={20} color={BrandColors.primary} strokeWidth={2.2} />
-              <Text style={styles.specValue}>{listing.rooms || '-'}</Text>
-              <Text style={styles.specLabel}>Dhomat</Text>
+            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <BedDouble size={20} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specValue, { color: colors.textPrimary }]}>{listing.rooms || '-'}</Text>
+              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Dhomat</Text>
             </View>
 
-            <View style={styles.specBox}>
-              <Layers size={20} color={BrandColors.primary} strokeWidth={2.2} />
-              <Text style={styles.specValue}>{listing.floor ? `Kati ${listing.floor}` : '-'}</Text>
-              <Text style={styles.specLabel}>Kati</Text>
+            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Layers size={20} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specValue, { color: colors.textPrimary }]}>
+                {listing.floor ? `Kati ${listing.floor}` : '-'}
+              </Text>
+              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Kati</Text>
             </View>
           </View>
 
           {/* Description Section */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Përshkrimi i pronës</Text>
-            <Text style={styles.descText}>{listing.description}</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Përshkrimi i pronës</Text>
+            <Text style={[styles.descText, { color: colors.textSecondary }]}>{listing.description}</Text>
           </View>
 
           {/* Amenities & Features */}
           {listing.features && listing.features.length > 0 && (
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Pajisjet dhe Veçoritë</Text>
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pajisjet dhe Veçoritë</Text>
               <View style={styles.featuresGrid}>
                 {listing.features.map((feat, idx) => (
-                  <View key={idx} style={styles.featureItem}>
-                    <Check size={14} color={BrandColors.primary} strokeWidth={2.6} />
-                    <Text style={styles.featureItemText}>{feat}</Text>
+                  <View
+                    key={idx}
+                    style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}
+                  >
+                    <Check size={14} color={colors.primary} strokeWidth={2.6} />
+                    <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>{feat}</Text>
                   </View>
                 ))}
               </View>
@@ -257,48 +276,107 @@ export default function ListingDetailScreen() {
 
           {/* Interactive Mortgage Calculator */}
           {listing.type === 'shitje' && (
-            <View style={styles.sectionCard}>
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.calculatorHeader}>
-                <Calculator size={18} color={BrandColors.primary} strokeWidth={2.2} />
-                <Text style={styles.sectionTitle}>Kalkulatori i Kredisë</Text>
+                <Calculator size={18} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                  Kalkulatori i Kredisë
+                </Text>
               </View>
 
-              <View style={styles.calcResultBox}>
-                <Text style={styles.calcResultLabel}>Pagesa mujore e përafërt:</Text>
-                <Text style={styles.calcResultValue}>{calculateMortgage()} € / muaj</Text>
-                <Text style={styles.calcResultNote}>
-                  Bazuar në {downPaymentPercent}% pjesëmarrje dhe {interestRate}% normë interesi ({loanYears} vite).
+              <View style={[styles.calcResultBox, { backgroundColor: colors.surfaceSubtle }]}>
+                <Text style={[styles.calcResultLabel, { color: colors.textSecondary }]}>
+                  Pagesa mujore e llogaritur:
                 </Text>
+                <Text style={[styles.calcResultValue, { color: colors.primary }]}>
+                  {calculateMortgage()} € / muaj
+                </Text>
+                <Text style={[styles.calcResultNote, { color: colors.textMuted }]}>
+                  Pjesëmarrja {downPaymentPercent}%, Interesi {interestRate}%, Kohëzgjatja {loanYears} vite.
+                </Text>
+              </View>
+
+              {/* Controls */}
+              <View style={styles.calcControlsRow}>
+                <View style={styles.calcControl}>
+                  <Text style={[styles.calcControlLabel, { color: colors.textMuted }]}>Pjesëmarrja</Text>
+                  <View style={styles.stepperWrap}>
+                    <Pressable
+                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
+                      onPress={() => setDownPaymentPercent((p) => Math.max(10, p - 5))}
+                    >
+                      <Minus size={12} color={colors.textPrimary} />
+                    </Pressable>
+                    <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{downPaymentPercent}%</Text>
+                    <Pressable
+                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
+                      onPress={() => setDownPaymentPercent((p) => Math.min(50, p + 5))}
+                    >
+                      <Plus size={12} color={colors.textPrimary} />
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={styles.calcControl}>
+                  <Text style={[styles.calcControlLabel, { color: colors.textMuted }]}>Kohëzgjatja</Text>
+                  <View style={styles.stepperWrap}>
+                    <Pressable
+                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
+                      onPress={() => setLoanYears((y) => Math.max(5, y - 5))}
+                    >
+                      <Minus size={12} color={colors.textPrimary} />
+                    </Pressable>
+                    <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{loanYears} v</Text>
+                    <Pressable
+                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
+                      onPress={() => setLoanYears((y) => Math.min(30, y + 5))}
+                    >
+                      <Plus size={12} color={colors.textPrimary} />
+                    </Pressable>
+                  </View>
+                </View>
               </View>
             </View>
           )}
 
           {/* Seller / Agent Card */}
-          <View style={styles.sellerCard}>
-            <View style={styles.sellerAvatar}>
-              <ShieldCheck size={28} color={BrandColors.primary} />
+          <View style={[styles.sellerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
+              <ShieldCheck size={28} color={colors.primary} />
             </View>
             <View style={styles.sellerInfo}>
-              <Text style={styles.sellerName}>Pronari / Agjencia</Text>
-              <Text style={styles.sellerRole}>Përdorues i verifikuar në Bleje Pronën</Text>
+              <Text style={[styles.sellerName, { color: colors.textPrimary }]}>Pronari / Agjencia</Text>
+              <Text style={[styles.sellerRole, { color: colors.textMuted }]}>
+                Përdorues i verifikuar në Bleje Pronën
+              </Text>
             </View>
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 110 }} />
         </View>
       </ScrollView>
 
       {/* Sticky Bottom Action Bar */}
-      <SafeAreaView style={styles.bottomBarSafeArea}>
+      <SafeAreaView
+        style={[styles.bottomBarSafeArea, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
+        edges={['bottom']}
+      >
         <View style={styles.bottomBar}>
           <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp}>
             <MessageCircle size={18} color="#FFFFFF" strokeWidth={2.2} />
             <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
           </Pressable>
 
-          <Pressable style={styles.callBtn} onPress={handleCall}>
-            <Phone size={18} color="#FFFFFF" strokeWidth={2.2} />
-            <Text style={styles.callBtnText}>Telefono</Text>
+          <Pressable style={[styles.callBtn, { backgroundColor: colors.primary }]} onPress={handleCall}>
+            <Phone size={18} color={theme === 'green' ? '#003E37' : '#FFFFFF'} strokeWidth={2.2} />
+            <Text
+              style={[
+                styles.callBtnText,
+                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+              ]}
+            >
+              Telefono
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -309,34 +387,29 @@ export default function ListingDetailScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F2F7F7',
   },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: '#F2F7F7',
   },
   loadingText: {
     fontSize: 13,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.medium,
   },
   notFoundTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   backBtn: {
-    backgroundColor: BrandColors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
     marginTop: 8,
   },
   backBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   floatingNavSafeArea: {
     position: 'absolute',
@@ -350,13 +423,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 36 : 10,
+    paddingTop: Platform.OS === 'android' ? 10 : 0,
   },
   navIconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.48)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -371,7 +444,7 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: 320,
     position: 'relative',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0F172A',
   },
   galleryImage: {
     width: SCREEN_WIDTH,
@@ -389,32 +462,28 @@ const styles = StyleSheet.create({
   imageCounterText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   heroTypeBadge: {
     position: 'absolute',
     bottom: 16,
     left: 16,
-    backgroundColor: BrandColors.primary,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
   },
   heroTypeBadgeText: {
-    color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: Fonts.black,
   },
   body: {
     padding: 16,
     gap: 16,
   },
   headerBlock: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     gap: 8,
   },
   priceRow: {
@@ -424,18 +493,15 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 26,
-    fontWeight: '900',
-    color: BrandColors.primary,
+    fontFamily: Fonts.black,
   },
   periodText: {
     fontSize: 14,
-    color: BrandColors.textMuted,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
   },
   titleText: {
     fontSize: 18,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.extraBold,
     lineHeight: 24,
   },
   locationRow: {
@@ -446,8 +512,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
-    color: BrandColors.textSecondary,
-    fontWeight: '500',
+    fontFamily: Fonts.medium,
     flex: 1,
   },
   specsGrid: {
@@ -456,40 +521,33 @@ const styles = StyleSheet.create({
   },
   specBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: BrandColors.border,
     gap: 4,
   },
   specValue: {
     fontSize: 14,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   specLabel: {
     fontSize: 11,
-    color: BrandColors.textMuted,
-    fontWeight: '600',
+    fontFamily: Fonts.medium,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: BrandColors.border,
     gap: 10,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   descText: {
     fontSize: 14,
-    color: BrandColors.textSecondary,
+    fontFamily: Fonts.regular,
     lineHeight: 22,
   },
   featuresGrid: {
@@ -501,15 +559,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
   },
   featureItemText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.textSecondary,
+    fontFamily: Fonts.medium,
   },
   calculatorHeader: {
     flexDirection: 'row',
@@ -517,40 +573,65 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   calcResultBox: {
-    backgroundColor: BrandColors.primaryLight,
     padding: 14,
     borderRadius: 14,
     gap: 4,
   },
   calcResultLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: BrandColors.primary,
+    fontFamily: Fonts.medium,
   },
   calcResultValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: BrandColors.primary,
+    fontSize: 22,
+    fontFamily: Fonts.black,
   },
   calcResultNote: {
     fontSize: 11,
-    color: BrandColors.textSecondary,
+    fontFamily: Fonts.regular,
+  },
+  calcControlsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 6,
+  },
+  calcControl: {
+    flex: 1,
+    gap: 4,
+  },
+  calcControlLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+  },
+  stepperWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepValue: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    minWidth: 42,
+    textAlign: 'center',
   },
   sellerCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: BrandColors.border,
   },
   sellerAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: BrandColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -560,21 +641,18 @@ const styles = StyleSheet.create({
   },
   sellerName: {
     fontSize: 15,
-    fontWeight: '700',
-    color: BrandColors.textPrimary,
+    fontFamily: Fonts.bold,
   },
   sellerRole: {
     fontSize: 11,
-    color: BrandColors.textMuted,
+    fontFamily: Fonts.regular,
   },
   bottomBarSafeArea: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: BrandColors.border,
   },
   bottomBar: {
     flexDirection: 'row',
@@ -594,11 +672,10 @@ const styles = StyleSheet.create({
   whatsAppBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: Fonts.bold,
   },
   callBtn: {
     flex: 1,
-    backgroundColor: BrandColors.primary,
     paddingVertical: 14,
     borderRadius: 16,
     flexDirection: 'row',
@@ -607,8 +684,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   callBtnText: {
-    color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: Fonts.bold,
   },
 })
