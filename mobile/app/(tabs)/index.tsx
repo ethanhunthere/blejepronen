@@ -18,7 +18,6 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { ListingCard } from '@/components/ListingCard'
 import { Logo } from '@/components/Logo'
-import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 
 const CATEGORY_ITEMS = [
   { id: 'all', label: 'Të gjitha', icon: Sparkles },
@@ -73,9 +72,15 @@ export default function HomeScreen() {
     fetchListings()
   }, [fetchListings])
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
     setRefreshing(true)
-    fetchListings()
+    await fetchListings()
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
   }
 
   const handleCategoryPress = (catId: string) => {
@@ -114,14 +119,14 @@ export default function HomeScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.primary}
-            colors={[colors.primary]}
+            colors={[colors.primary, colors.gold]}
+            progressBackgroundColor={colors.surface}
           />
         }
       >
-        {/* Header with Official Logo on Left & Theme Switcher on Right */}
+        {/* Header with Official Logo on Left */}
         <View style={styles.header}>
-          <Logo size={38} />
-          <ThemeSwitcher compact />
+          <Logo size={36} />
         </View>
 
         {/* Search & Filter Bar */}

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  RefreshControl,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -32,6 +33,7 @@ export default function ListingsScreen() {
 
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCity, setSelectedCity] = useState<string>('')
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('')
@@ -82,6 +84,18 @@ export default function ListingsScreen() {
   useEffect(() => {
     fetchListings()
   }, [fetchListings])
+
+  const onRefresh = async () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
+    setRefreshing(true)
+    await fetchListings()
+    setRefreshing(false)
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
+  }
 
   const handleToggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -247,6 +261,15 @@ export default function ListingsScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary, colors.gold]}
+            progressBackgroundColor={colors.surface}
+          />
+        }
       >
         {loading ? (
           <View style={styles.centerContainer}>

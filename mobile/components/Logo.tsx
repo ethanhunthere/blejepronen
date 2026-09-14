@@ -5,24 +5,40 @@ import { useTheme, Fonts } from '@/constants/theme'
 
 interface LogoProps {
   size?: number
-  showTagline?: boolean
 }
 
-export function Logo({ size = 36, showTagline = true }: LogoProps) {
+export function Logo({ size = 34 }: LogoProps) {
   const { colors, theme } = useTheme()
 
   const blejeColor = theme === 'green' ? '#FFFFFF' : theme === 'black' ? '#FFFFFF' : '#006459'
   const pronenColor = colors.gold // #C8B882
 
+  // Dynamically select the exact emblem asset to guarantee 0% background mismatch
+  const logoSource =
+    theme === 'green'
+      ? require('@/assets/images/logo-white.png')
+      : theme === 'black'
+      ? require('@/assets/images/logo-white.png')
+      : require('@/assets/images/logo-teal.png')
+
   return (
     <View style={styles.container}>
-      {/* Official Graphical Brand Logo Icon */}
-      <View style={[styles.iconWrapper, { width: size + 2, height: size + 2, backgroundColor: colors.surface }]}>
+      {/* Official Graphical Brand Logo Emblem */}
+      <View
+        style={[
+          styles.iconWrapper,
+          {
+            width: size + 2,
+            height: size + 2,
+            backgroundColor: theme === 'green' ? 'transparent' : theme === 'black' ? 'transparent' : 'rgba(0, 100, 89, 0.08)',
+          },
+        ]}
+      >
         <Image
-          source={require('@/assets/images/logo-icon.png')}
-          style={{ width: size, height: size, borderRadius: 8 }}
+          source={logoSource}
+          style={{ width: size, height: size }}
           contentFit="contain"
-          transition={200}
+          transition={150}
         />
       </View>
 
@@ -31,11 +47,6 @@ export function Logo({ size = 36, showTagline = true }: LogoProps) {
           <Text style={[styles.brandBleje, { color: blejeColor }]}>Bleje</Text>
           <Text style={[styles.brandPronen, { color: pronenColor }]}>Pronën</Text>
         </View>
-        {showTagline && (
-          <Text style={[styles.brandTagline, { color: colors.textMuted }]}>
-            Gjej pronën tënde ideale në Kosovë
-          </Text>
-        )}
       </View>
     </View>
   )
@@ -45,17 +56,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 9,
   },
   iconWrapper: {
-    borderRadius: 10,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   textContainer: {
     justifyContent: 'center',
@@ -66,21 +72,15 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   brandBleje: {
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '900',
     fontFamily: Fonts.black,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
   },
   brandPronen: {
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '900',
     fontFamily: Fonts.black,
-    letterSpacing: -0.5,
-  },
-  brandTagline: {
-    fontSize: 10,
-    fontWeight: '600',
-    fontFamily: Fonts.medium,
-    marginTop: 1,
+    letterSpacing: -0.6,
   },
 })

@@ -1,11 +1,17 @@
 import React from 'react'
 import { Tabs } from 'expo-router'
 import { Platform, View, StyleSheet } from 'react-native'
-import { Search, Building2, PlusCircle, MessageSquare, User } from 'lucide-react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 
 export default function TabLayout() {
   const { colors, theme } = useTheme()
+  const insets = useSafeAreaInsets()
+
+  // Dynamic safe bottom spacing tailored to device bezels / home indicators
+  const bottomInset = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10
+  const tabHeight = 54 + bottomInset
 
   const postBtnBg = theme === 'green' ? colors.gold : colors.primary
   const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
@@ -20,18 +26,26 @@ export default function TabLayout() {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          elevation: 8,
+          height: tabHeight,
+          paddingTop: 6,
+          paddingBottom: bottomInset,
+          elevation: 10,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: theme === 'black' ? 0.3 : 0.06,
-          shadowRadius: 6,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: theme === 'black' ? 0.4 : 0.07,
+          shadowRadius: 8,
+        },
+        tabBarItemStyle: {
+          height: 48,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingVertical: 2,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontFamily: Fonts.semiBold,
+          marginTop: 2,
+          marginBottom: 0,
         },
       }}
     >
@@ -39,14 +53,18 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Kërko',
-          tabBarIcon: ({ color }) => <Search size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Search size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tabs.Screen
         name="listings"
         options={{
           title: 'Pronat',
-          tabBarIcon: ({ color }) => <Building2 size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Building2 size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -61,7 +79,7 @@ export default function TabLayout() {
                 focused && styles.postButtonActive,
               ]}
             >
-              <PlusCircle size={22} color={postIconColor} strokeWidth={2.5} />
+              <Plus size={18} color={postIconColor} strokeWidth={3} />
             </View>
           ),
         }}
@@ -70,14 +88,18 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: 'Mesazhe',
-          tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MessageSquare size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profili',
-          tabBarIcon: ({ color }) => <User size={22} color={color} strokeWidth={2.2} />,
+          tabBarIcon: ({ color, focused }) => (
+            <User size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
         }}
       />
     </Tabs>
@@ -86,17 +108,18 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   postButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 6,
-    elevation: 4,
+    marginTop: -2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 5,
   },
   postButtonActive: {
-    transform: [{ scale: 1.06 }],
+    transform: [{ scale: 1.08 }],
   },
 })

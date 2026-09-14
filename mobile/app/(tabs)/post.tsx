@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -20,6 +20,9 @@ import {
   Camera,
   X,
   Check,
+  ShieldCheck,
+  LogIn,
+  UserPlus,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
@@ -58,6 +61,32 @@ export default function PostPropertyScreen() {
   const [undoDescription, setUndoDescription] = useState<string | null>(null)
   const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [authChecking, setAuthChecking] = useState(true)
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setCurrentUser(user || null)
+      } catch (err) {
+        console.warn('Post screen auth notice:', err)
+      } finally {
+        setAuthChecking(false)
+      }
+    }
+    checkAuth()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null)
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
 
   const activeCategory = CATEGORIES[category]
 
@@ -174,11 +203,24 @@ export default function PostPropertyScreen() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      const userId = user?.id || 'guest-user-mobile'
+      if (!user) {
+        Alert.alert(
+          'Kërkohet Llogari',
+          'Ju lutemi kyçuni në llogari para se të publikoni pronën tuaj.',
+          [
+            { text: 'Anulo', style: 'cancel' },
+            {
+              text: 'Kyçu',
+              onPress: () => router.push({ pathname: '/modal', params: { initialTab: 'login' } }),
+            },
+          ]
+        )
+        return
+      }
 
       const { error } = await supabase.from('listings').insert([
         {
-          user_id: userId,
+          user_id: user.id,
           title: title.trim(),
           description: description.trim(),
           price: Number(price),
@@ -210,6 +252,110 @@ export default function PostPropertyScreen() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // If user is not authenticated, show an ultra-exclusive luxury Auth Gatekeeper
+  if (!authChecking && !currentUser) {
+    const gateBtnText = theme === 'green' ? '#003E37' : '#FFFFFF'
+
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Posto Pronë</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+            Publikoni shpalljen tuaj në platformën #1 imobiliare
+          </Text>
+        </View>
+
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.gateContentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.gateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.gateIconWrap, { backgroundColor: colors.primaryLight }]}>
+              <Sparkles size={34} color={colors.primary} strokeWidth={2.2} />
+            </View>
+
+            <View style={[styles.gateBadge, { backgroundColor: colors.badgeBg }]}>
+              <ShieldCheck size={12} color={colors.badgeText} strokeWidth={2.4} />
+              <Text style={[styles.gateBadgeText, { color: colors.badgeText }]}>Llogari e nevojshme</Text>
+            </View>
+
+            <Text style={[styles.gateTitle, { color: colors.textPrimary }]}>
+              Kyçuni për të Postuar Pronë
+            </Text>
+
+            <Text style={[styles.gateSubtitle, { color: colors.textMuted }]}>
+              Për të publikuar shpallje në tregun imobiliar, ngarkuar foto me cilësi të lartë dhe pranuar oferta direkte nga blerësit, ju nevojitet një llogari.
+            </Text>
+
+            <View style={styles.perksList}>
+              <View style={styles.perkRow}>
+                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
+                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
+                </View>
+                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
+                  Publikim i menjëhershëm me deri në 10 fotografi
+                </Text>
+              </View>
+
+              <View style={styles.perkRow}>
+                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
+                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
+                </View>
+                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
+                  Gjenerim me AI për përshkrim profesional me 1 klik
+                </Text>
+              </View>
+
+              <View style={styles.perkRow}>
+                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
+                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
+                </View>
+                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
+                  Numri juaj dhe WhatsApp shfaqen drejtpërdrejt te blerësit
+                </Text>
+              </View>
+
+              <View style={styles.perkRow}>
+                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
+                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
+                </View>
+                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
+                  Statistika të detajuara të interesimit dhe shikueshmërisë
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.gateActions}>
+              <Pressable
+                style={[styles.gatePrimaryBtn, { backgroundColor: colors.primary }]}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
+              >
+                <LogIn size={18} color={gateBtnText} strokeWidth={2.2} />
+                <Text style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
+                  Kyçu në Llogari
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.gateSecondaryBtn,
+                  { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                ]}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register' } })}
+              >
+                <UserPlus size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                <Text style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>
+                  Krijo Llogari të Re Falas
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -897,5 +1043,108 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 16,
     fontFamily: Fonts.black,
+  },
+  gateContentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  gateCard: {
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  gateIconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  gateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  gateBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+  },
+  gateTitle: {
+    fontSize: 20,
+    fontFamily: Fonts.extraBold,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  gateSubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  perksList: {
+    width: '100%',
+    gap: 12,
+    marginBottom: 24,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  perkIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  perkText: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    flex: 1,
+  },
+  gateActions: {
+    width: '100%',
+    gap: 10,
+  },
+  gatePrimaryBtn: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  gatePrimaryBtnText: {
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+  },
+  gateSecondaryBtn: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  gateSecondaryBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
   },
 })
