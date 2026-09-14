@@ -317,10 +317,10 @@ export default function ListingsScreen() {
 
     await fetchListings(true)
 
-    // Golden UX duration: minimum 1.2s to feel organic, stable and satisfying
+    // Optimized snappy UX duration: 650ms for responsive, crisp refresh
     const elapsed = Date.now() - startTime
-    if (elapsed < 1200) {
-      await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed))
+    if (elapsed < 650) {
+      await new Promise((resolve) => setTimeout(resolve, 650 - elapsed))
     }
 
     setRefreshing(false)
