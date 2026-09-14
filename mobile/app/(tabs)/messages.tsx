@@ -15,24 +15,18 @@ import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import {
   MessageSquare,
-  ChevronRight,
   ShieldCheck,
   LogIn,
   UserPlus,
   Lock,
   Phone,
-  Video,
   Search,
   X,
-  PhoneIncoming,
-  PhoneOutgoing,
-  PhoneMissed,
-  Clock,
-  Sparkles,
   Building2,
   CheckCheck,
   Check,
-  User,
+  MessageCircle,
+  Users,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -58,63 +52,8 @@ interface ConversationItem {
   is_last_message_read?: boolean
 }
 
-interface CallLogItem {
-  id: string
-  name: string
-  avatar?: string
-  phone?: string
-  listing_title?: string
-  call_type: 'audio' | 'video'
-  direction: 'incoming' | 'outgoing' | 'missed'
-  timestamp: string
-  duration?: string
-}
-
-type TabMode = 'chats' | 'calls'
+type TabMode = 'chats' | 'contacts'
 type FilterChip = 'all' | 'unread' | 'agencies' | 'owners'
-
-const ACTIVE_CONTACTS = [
-  {
-    id: 'contact-1',
-    name: 'Prishtina Real Estate',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&q=80',
-    isAgency: true,
-    phone: '+38349100200',
-    listingTitle: 'Banesë 92m² në Qendër',
-  },
-  {
-    id: 'contact-2',
-    name: 'Valon Krasniqi',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    isAgency: false,
-    phone: '+38344123456',
-    listingTitle: 'Penthouse në Veternik',
-  },
-  {
-    id: 'contact-3',
-    name: 'Dukagjini Invest',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-    isAgency: true,
-    phone: '+38349888999',
-    listingTitle: 'Vilë luksoze në Marigona',
-  },
-  {
-    id: 'contact-4',
-    name: 'Drenica Properties',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
-    isAgency: true,
-    phone: '+38344555666',
-    listingTitle: 'Lokal 140m² te Rruga B',
-  },
-  {
-    id: 'contact-5',
-    name: 'Gentiana Morina',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80',
-    isAgency: false,
-    phone: '+38349222333',
-    listingTitle: 'Banesë 65m² në Dardani',
-  },
-]
 
 export default function MessagesScreen() {
   const router = useRouter()
@@ -127,21 +66,19 @@ export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState<FilterChip>('all')
 
-  // Call Modal State
-  const [callModal, setCallModal] = useState<{
+  // Contact Action Sheet State
+  const [contactSheet, setContactSheet] = useState<{
     visible: boolean
     name: string
     avatar?: string | null
     phone?: string | null
     listingTitle?: string | null
-    type: 'audio' | 'video'
   }>({
     visible: false,
     name: '',
     avatar: null,
     phone: null,
     listingTitle: null,
-    type: 'audio',
   })
 
   const loadConversations = useCallback(async () => {
@@ -274,8 +211,8 @@ export default function MessagesScreen() {
     await loadConversations()
 
     const elapsed = Date.now() - startTime
-    if (elapsed < 650) {
-      await new Promise((resolve) => setTimeout(resolve, 650 - elapsed))
+    if (elapsed < 600) {
+      await new Promise((resolve) => setTimeout(resolve, 600 - elapsed))
     }
 
     setRefreshing(false)
@@ -313,128 +250,61 @@ export default function MessagesScreen() {
     return conversations.reduce((acc, curr) => acc + (curr.unread_count || 0), 0)
   }, [conversations])
 
-  // Mocked/Derived Call History
-  const callLogs: CallLogItem[] = useMemo(() => {
-    const defaultLogs: CallLogItem[] = [
-      {
-        id: 'call-1',
-        name: 'Prishtina Real Estate',
-        avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&q=80',
-        phone: '+38349100200',
-        listing_title: 'Banesë 92m² në Qendër',
-        call_type: 'video',
-        direction: 'incoming',
-        timestamp: 'Sot, 17:45',
-        duration: '4m 12s',
-      },
-      {
-        id: 'call-2',
-        name: 'Valon Krasniqi',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-        phone: '+38344123456',
-        listing_title: 'Penthouse në Veternik',
-        call_type: 'audio',
-        direction: 'outgoing',
-        timestamp: 'Sot, 14:10',
-        duration: '2m 30s',
-      },
-      {
-        id: 'call-3',
-        name: 'Dukagjini Invest',
-        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80',
-        phone: '+38349888999',
-        listing_title: 'Vilë luksoze në Marigona',
-        call_type: 'video',
-        direction: 'missed',
-        timestamp: 'Dje, 19:22',
-      },
-      {
-        id: 'call-4',
-        name: 'Gentiana Morina',
-        avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80',
-        phone: '+38349222333',
-        listing_title: 'Banesë 65m² në Dardani',
-        call_type: 'audio',
-        direction: 'incoming',
-        timestamp: '12 Shtator, 11:05',
-        duration: '6m 48s',
-      },
-    ]
+  // Real Contacts extracted strictly from user's genuine conversations
+  const contactsList = useMemo(() => {
+    const seen = new Set<string>()
+    const list: ConversationItem[] = []
 
-    // Append dynamic conversation contacts as call entries if available
-    if (conversations.length > 0) {
-      const dynamicCalls: CallLogItem[] = conversations.slice(0, 3).map((c, i) => ({
-        id: `dyn-call-${c.id}`,
-        name: c.counterpart_name || 'Pronar',
-        avatar: c.counterpart_avatar,
-        phone: c.counterpart_phone,
-        listing_title: c.listing_title,
-        call_type: i % 2 === 0 ? 'video' : 'audio',
-        direction: i === 0 ? 'incoming' : i === 1 ? 'outgoing' : 'missed',
-        timestamp: c.last_time || 'Këtë javë',
-        duration: i === 2 ? undefined : `${i + 1}m ${30 + i * 15}s`,
-      }))
-      return [...dynamicCalls, ...defaultLogs]
+    for (const c of conversations) {
+      const key = c.counterpart_id || c.counterpart_name || c.id
+      if (!seen.has(key)) {
+        seen.add(key)
+        list.push(c)
+      }
     }
-
-    return defaultLogs
+    return list
   }, [conversations])
 
-  const startCall = (
-    name: string,
-    type: 'audio' | 'video',
-    avatar?: string | null,
-    phone?: string | null,
-    listingTitle?: string | null
-  ) => {
+  const openContactSheet = (item: ConversationItem) => {
     playTapSound()
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     }
-    setCallModal({
+    setContactSheet({
       visible: true,
-      name,
-      avatar,
-      phone,
-      listingTitle,
-      type,
+      name: item.counterpart_name || 'Pronar',
+      avatar: item.counterpart_avatar,
+      phone: item.counterpart_phone,
+      listingTitle: item.listing_title,
     })
   }
 
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.10)'
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Top Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mesazhet</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-              Bisedat dhe thirrjet në kohë reale
-            </Text>
-          </View>
-
-          {currentUser && (
-            <View style={styles.headerStatusRow}>
-              <View style={[styles.onlineDot, { backgroundColor: '#10B981' }]} />
-              <Text style={[styles.onlineText, { color: '#10B981' }]}>Aktiv</Text>
-            </View>
-          )}
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mesazhet</Text>
         </View>
 
-        {/* WhatsApp/iOS 18 Segmented Switcher (Bisedat vs Thirrjet) */}
+        {/* Apple iOS 18 Segmented Switcher (Bisedat vs Kontaktet) */}
         {currentUser && (
           <View
             style={[
               styles.segmentedContainer,
               {
                 backgroundColor: colors.surfaceSubtle,
-                borderColor:
-                  theme === 'white'
-                    ? 'rgba(0,0,0,0.06)'
-                    : 'rgba(255,255,255,0.08)',
+                borderColor: specularBorder,
               },
             ]}
           >
@@ -445,7 +315,6 @@ export default function MessagesScreen() {
                   styles.segmentedTabActive,
                   {
                     backgroundColor: colors.surface,
-                    shadowColor: '#000',
                   },
                 ],
               ]}
@@ -483,41 +352,44 @@ export default function MessagesScreen() {
             <Pressable
               style={[
                 styles.segmentedTab,
-                activeTab === 'calls' && [
+                activeTab === 'contacts' && [
                   styles.segmentedTabActive,
                   {
                     backgroundColor: colors.surface,
-                    shadowColor: '#000',
                   },
                 ],
               ]}
               onPress={() => {
-                if (activeTab !== 'calls') {
+                if (activeTab !== 'contacts') {
                   playTapSound()
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
-                  setActiveTab('calls')
+                  setActiveTab('contacts')
                 }
               }}
             >
-              <Phone
+              <Users
                 size={16}
-                color={activeTab === 'calls' ? (theme === 'green' ? colors.gold : colors.primary) : colors.textMuted}
+                color={activeTab === 'contacts' ? (theme === 'green' ? colors.gold : colors.primary) : colors.textMuted}
                 strokeWidth={2.4}
               />
               <Text
                 style={[
                   styles.segmentedTabText,
                   {
-                    color: activeTab === 'calls' ? colors.textPrimary : colors.textMuted,
-                    fontFamily: activeTab === 'calls' ? Fonts.bold : Fonts.medium,
+                    color: activeTab === 'contacts' ? colors.textPrimary : colors.textMuted,
+                    fontFamily: activeTab === 'contacts' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
               >
-                Thirrjet
+                Kontaktet
               </Text>
-              <View style={[styles.tabLiveBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Text style={[styles.tabLiveBadgeText, { color: '#10B981' }]}>HD</Text>
-              </View>
+              {contactsList.length > 0 && (
+                <View style={[styles.tabCountPill, { backgroundColor: colors.surfaceSubtle }]}>
+                  <Text style={[styles.tabCountPillText, { color: colors.textMuted }]}>
+                    {contactsList.length}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           </View>
         )}
@@ -543,7 +415,7 @@ export default function MessagesScreen() {
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Duke ngarkuar të dhënat...
+              Duke ngarkuar bisedat...
             </Text>
           </View>
         ) : !currentUser ? (
@@ -553,25 +425,20 @@ export default function MessagesScreen() {
               styles.authCard,
               {
                 backgroundColor: colors.surface,
-                borderColor:
-                  theme === 'white'
-                    ? 'rgba(0, 0, 0, 0.08)'
-                    : theme === 'green'
-                    ? 'rgba(255, 255, 255, 0.12)'
-                    : 'rgba(255, 255, 255, 0.10)',
+                borderColor: specularBorder,
               },
             ]}
           >
             <View style={[styles.authIconCircle, { backgroundColor: colors.primaryLight }]}>
-              <MessageSquare size={32} color={colors.primary} strokeWidth={2.2} />
+              <MessageSquare size={30} color={colors.primary} strokeWidth={2.2} />
             </View>
 
             <Text style={[styles.authTitle, { color: colors.textPrimary }]}>
-              Mesazhet dhe Thirrjet
+              Mesazhet Tuaja
             </Text>
 
             <Text style={[styles.authSubtitle, { color: colors.textMuted }]}>
-              Kyçuni për të biseduar dhe kryer thirrje direkte audio & video me pronarët dhe agjencitë.
+              Kyçuni për të komunikuar drejtpërdrejt me shitësit, blerësit dhe agjencitë.
             </Text>
 
             <View style={styles.authActionsRow}>
@@ -606,17 +473,14 @@ export default function MessagesScreen() {
                 styles.searchBar,
                 {
                   backgroundColor: colors.surfaceSubtle,
-                  borderColor:
-                    theme === 'white'
-                      ? 'rgba(0,0,0,0.08)'
-                      : 'rgba(255,255,255,0.08)',
+                  borderColor: specularBorder,
                 },
               ]}
             >
               <Search size={18} color={colors.textLight} strokeWidth={2.2} />
               <TextInput
                 style={[styles.searchInput, { color: colors.textPrimary }]}
-                placeholder="Kërko biseda, pronarë ose agjenci..."
+                placeholder="Kërko biseda ose pronarë..."
                 placeholderTextColor={colors.textLight}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -633,112 +497,56 @@ export default function MessagesScreen() {
             </View>
 
             {/* Filter Chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterChipsRow}
-            >
-              {[
-                { key: 'all', label: 'Të gjitha' },
-                { key: 'unread', label: `Të palexuara (${totalUnread})` },
-                { key: 'agencies', label: 'Agjencitë' },
-                { key: 'owners', label: 'Pronarët' },
-              ].map((chip) => {
-                const isSelected = selectedFilter === chip.key
-                return (
-                  <Pressable
-                    key={chip.key}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: isSelected
-                          ? theme === 'green'
-                            ? colors.gold
-                            : colors.primary
-                          : colors.surface,
-                        borderColor: isSelected
-                          ? 'transparent'
-                          : colors.border,
-                      },
-                    ]}
-                    onPress={() => {
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      setSelectedFilter(chip.key as FilterChip)
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        {
-                          color: isSelected ? primaryBtnText : colors.textPrimary,
-                          fontFamily: isSelected ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-
-            {/* Active Contacts / Stories Rail */}
-            <View style={styles.storiesSection}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                  Kontaktet & Agjencitë Aktive
-                </Text>
-                <View style={styles.livePill}>
-                  <View style={[styles.liveDotSmall, { backgroundColor: '#10B981' }]} />
-                  <Text style={styles.livePillText}>Online Tani</Text>
-                </View>
-              </View>
-
+            {conversations.length > 0 && (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.storiesList}
+                contentContainerStyle={styles.filterChipsRow}
               >
-                {ACTIVE_CONTACTS.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    style={styles.storyItem}
-                    onPress={() => {
-                      startCall(item.name, 'video', item.avatar, item.phone, item.listingTitle)
-                    }}
-                  >
-                    <View style={styles.storyAvatarWrapper}>
-                      <Image
-                        source={{ uri: item.avatar }}
-                        style={styles.storyAvatar}
-                        contentFit="cover"
-                        transition={200}
-                      />
-                      <View
+                {[
+                  { key: 'all', label: 'Të gjitha' },
+                  { key: 'unread', label: `Të palexuara (${totalUnread})` },
+                  { key: 'agencies', label: 'Agjencitë' },
+                  { key: 'owners', label: 'Pronarët' },
+                ].map((chip) => {
+                  const isSelected = selectedFilter === chip.key
+                  return (
+                    <Pressable
+                      key={chip.key}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: isSelected
+                            ? theme === 'green'
+                              ? colors.gold
+                              : colors.primary
+                            : colors.surface,
+                          borderColor: isSelected
+                            ? 'transparent'
+                            : colors.border,
+                        },
+                      ]}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setSelectedFilter(chip.key as FilterChip)
+                      }}
+                    >
+                      <Text
                         style={[
-                          styles.storyStatusDot,
+                          styles.filterChipText,
                           {
-                            backgroundColor: '#10B981',
-                            borderColor: colors.background,
+                            color: isSelected ? primaryBtnText : colors.textPrimary,
+                            fontFamily: isSelected ? Fonts.bold : Fonts.medium,
                           },
                         ]}
-                      />
-                      {item.isAgency && (
-                        <View style={[styles.agencyBadgeSmall, { backgroundColor: colors.primary }]}>
-                          <Building2 size={10} color="#FFFFFF" strokeWidth={2.4} />
-                        </View>
-                      )}
-                    </View>
-                    <Text
-                      style={[styles.storyName, { color: colors.textPrimary }]}
-                      numberOfLines={1}
-                    >
-                      {item.name.split(' ')[0]}
-                    </Text>
-                  </Pressable>
-                ))}
+                      >
+                        {chip.label}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
               </ScrollView>
-            </View>
+            )}
 
             {/* Conversation List or Empty */}
             {filteredConversations.length === 0 ? (
@@ -747,23 +555,20 @@ export default function MessagesScreen() {
                   styles.emptyContainer,
                   {
                     backgroundColor: colors.surface,
-                    borderColor:
-                      theme === 'white'
-                        ? 'rgba(0, 0, 0, 0.08)'
-                        : 'rgba(255, 255, 255, 0.10)',
+                    borderColor: specularBorder,
                   },
                 ]}
               >
                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
-                  <MessageSquare size={36} color={colors.primary} strokeWidth={1.8} />
+                  <MessageSquare size={32} color={colors.primary} strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                   {searchQuery ? 'Asnjë bisedë e gjetur' : 'Asnjë bisedë ende'}
                 </Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                   {searchQuery
-                    ? 'Provoni të kërkoni me një emër tjetër ose pastroni filtrat.'
-                    : 'Kur të dërgoni apo pranoni mesazhe rreth pronave, bisedat do të shfaqen këtu menjëherë.'}
+                    ? 'Provoni të kërkoni me një emër tjetër.'
+                    : 'Pasi të kontaktoni shitësin e një prone, bisedat tuaja do të ruhen këtu.'}
                 </Text>
                 {!searchQuery && (
                   <Pressable
@@ -787,12 +592,7 @@ export default function MessagesScreen() {
                         styles.convoCard,
                         {
                           backgroundColor: colors.surface,
-                          borderColor:
-                            theme === 'white'
-                              ? 'rgba(0, 0, 0, 0.06)'
-                              : theme === 'green'
-                              ? 'rgba(255, 255, 255, 0.10)'
-                              : 'rgba(255, 255, 255, 0.08)',
+                          borderColor: specularBorder,
                         },
                       ]}
                       onPress={() => {
@@ -800,22 +600,13 @@ export default function MessagesScreen() {
                         router.push(`/messages/${item.id}` as any)
                       }}
                     >
-                      {/* Avatar with status and thumbnail */}
+                      {/* Avatar */}
                       <View style={styles.avatarWrapper}>
                         <Image
                           source={{ uri: avatarUri }}
                           style={styles.convoAvatar}
                           contentFit="cover"
                           transition={200}
-                        />
-                        <View
-                          style={[
-                            styles.avatarOnlineDot,
-                            {
-                              backgroundColor: '#10B981',
-                              borderColor: colors.surface,
-                            },
-                          ]}
                         />
                       </View>
 
@@ -829,7 +620,11 @@ export default function MessagesScreen() {
                             >
                               {item.counterpart_name}
                             </Text>
-                            <ShieldCheck size={14} color={colors.primary} strokeWidth={2.4} />
+                            {item.is_agency ? (
+                              <Building2 size={13} color={colors.primary} strokeWidth={2.4} />
+                            ) : (
+                              <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
+                            )}
                           </View>
                           <Text style={[styles.convoTimeText, { color: colors.textMuted }]}>
                             {item.last_time}
@@ -877,41 +672,18 @@ export default function MessagesScreen() {
                         </View>
                       </View>
 
-                      {/* Right direct quick-action buttons (Audio Call & Video Call) */}
+                      {/* Right direct quick-action (Contact Sheet button) */}
                       <View style={styles.cardActionsCol}>
-                        <View style={styles.quickCallButtonsRow}>
-                          <Pressable
-                            style={[styles.quickCallIconBtn, { backgroundColor: colors.surfaceSubtle }]}
-                            onPress={() => {
-                              startCall(
-                                item.counterpart_name || 'Bisedë',
-                                'audio',
-                                item.counterpart_avatar,
-                                item.counterpart_phone,
-                                item.listing_title
-                              )
-                            }}
-                            hitSlop={6}
-                          >
-                            <Phone size={15} color={colors.primary} strokeWidth={2.4} />
-                          </Pressable>
-
-                          <Pressable
-                            style={[styles.quickCallIconBtn, { backgroundColor: colors.surfaceSubtle }]}
-                            onPress={() => {
-                              startCall(
-                                item.counterpart_name || 'Bisedë',
-                                'video',
-                                item.counterpart_avatar,
-                                item.counterpart_phone,
-                                item.listing_title
-                              )
-                            }}
-                            hitSlop={6}
-                          >
-                            <Video size={15} color={colors.primary} strokeWidth={2.4} />
-                          </Pressable>
-                        </View>
+                        <Pressable
+                          style={[styles.quickCallIconBtn, { backgroundColor: colors.surfaceSubtle }]}
+                          onPress={(e) => {
+                            e.stopPropagation()
+                            openContactSheet(item)
+                          }}
+                          hitSlop={6}
+                        >
+                          <Phone size={15} color={colors.primary} strokeWidth={2.2} />
+                        </Pressable>
 
                         {(item.unread_count || 0) > 0 ? (
                           <View
@@ -942,187 +714,122 @@ export default function MessagesScreen() {
               </View>
             )}
 
-            {/* WhatsApp/Signal-style End-to-End Encryption Banner */}
+            {/* Apple-style Privacy Guarantee */}
             <View style={styles.privacyFooter}>
-              <Lock size={14} color={colors.textLight} strokeWidth={2} />
+              <Lock size={13} color={colors.textLight} strokeWidth={2} />
               <Text style={[styles.privacyFooterText, { color: colors.textLight }]}>
-                Bisedat dhe thirrjet tuaja janë të mbrojtura me enkriptim nga skaji në skaj.
+                Bisedat tuaja janë të mbrojtura dhe private.
               </Text>
             </View>
           </View>
         ) : (
-          /* ================= CALLS TAB ================= */
+          /* ================= CONTACTS TAB ================= */
           <View style={styles.tabContent}>
-            {/* Quick Call Out Banner */}
-            <View
-              style={[
-                styles.callHeroBanner,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor:
-                    theme === 'white'
-                      ? 'rgba(0,0,0,0.06)'
-                      : 'rgba(255,255,255,0.08)',
-                },
-              ]}
-            >
-              <View style={[styles.callHeroIconCircle, { backgroundColor: colors.primaryLight }]}>
-                <Sparkles size={24} color={colors.primary} strokeWidth={2.2} />
-              </View>
-              <View style={styles.callHeroTextCol}>
-                <Text style={[styles.callHeroTitle, { color: colors.textPrimary }]}>
-                  Thirrje Audio & Video HD
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Kontaktet nga Pronat Tuaja
+            </Text>
+
+            {contactsList.length === 0 ? (
+              <View
+                style={[
+                  styles.emptyContainer,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: specularBorder,
+                  },
+                ]}
+              >
+                <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
+                  <Users size={32} color={colors.primary} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                  Asnjë kontakt ende
                 </Text>
-                <Text style={[styles.callHeroDesc, { color: colors.textMuted }]}>
-                  Komunikoni drejtpërdrejt dhe shpejt me agjentët më të vlerësuar.
+                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                  Personat dhe agjencitë me të cilët bisedoni rreth pronave do të shfaqen këtu për qasje të shpejtë telefonike.
                 </Text>
               </View>
-            </View>
-
-            {/* Calls List */}
-            <View style={styles.callsListSection}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>
-                Historia e Thirrjeve të Fundit
-              </Text>
-
-              <View style={styles.callsList}>
-                {callLogs.map((log) => {
-                  const isVideo = log.call_type === 'video'
-                  const isMissed = log.direction === 'missed'
-                  const isOutgoing = log.direction === 'outgoing'
-
+            ) : (
+              <View style={styles.contactsList}>
+                {contactsList.map((contact) => {
+                  const avatarUri = getAvatarUri(contact.counterpart_avatar || contact.listing_image)
                   return (
-                    <View
-                      key={log.id}
+                    <Pressable
+                      key={`contact-${contact.id}`}
                       style={[
-                        styles.callLogCard,
+                        styles.contactCard,
                         {
                           backgroundColor: colors.surface,
-                          borderColor:
-                            theme === 'white'
-                              ? 'rgba(0,0,0,0.06)'
-                              : 'rgba(255,255,255,0.08)',
+                          borderColor: specularBorder,
                         },
                       ]}
+                      onPress={() => openContactSheet(contact)}
                     >
-                      {/* Avatar with direction badge */}
-                      <View style={styles.callAvatarWrapper}>
-                        <Image
-                          source={{ uri: log.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=256&q=80' }}
-                          style={styles.callAvatar}
-                          contentFit="cover"
-                        />
-                        <View
-                          style={[
-                            styles.directionBadge,
-                            {
-                              backgroundColor: isMissed
-                                ? '#EF4444'
-                                : isOutgoing
-                                ? '#38BDF8'
-                                : '#10B981',
-                              borderColor: colors.surface,
-                            },
-                          ]}
-                        >
-                          {isMissed ? (
-                            <PhoneMissed size={9} color="#FFFFFF" strokeWidth={2.6} />
-                          ) : isOutgoing ? (
-                            <PhoneOutgoing size={9} color="#FFFFFF" strokeWidth={2.6} />
-                          ) : (
-                            <PhoneIncoming size={9} color="#FFFFFF" strokeWidth={2.6} />
-                          )}
-                        </View>
-                      </View>
+                      <Image source={{ uri: avatarUri }} style={styles.contactAvatar} contentFit="cover" />
 
-                      {/* Info */}
-                      <View style={styles.callInfoCol}>
-                        <Text
-                          style={[
-                            styles.callContactName,
-                            {
-                              color: isMissed ? '#EF4444' : colors.textPrimary,
-                            },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {log.name}
-                        </Text>
-
-                        <View style={styles.callMetaRow}>
-                          <Text style={[styles.callMetaText, { color: colors.textMuted }]}>
-                            {isVideo ? 'Video Thirrje' : 'Audio Thirrje'} • {log.timestamp}
+                      <View style={styles.contactInfoCol}>
+                        <View style={styles.contactNameRow}>
+                          <Text style={[styles.contactName, { color: colors.textPrimary }]} numberOfLines={1}>
+                            {contact.counterpart_name}
                           </Text>
-                          {log.duration && (
-                            <Text style={[styles.callDurationText, { color: colors.textLight }]}>
-                              ({log.duration})
-                            </Text>
+                          {contact.is_agency ? (
+                            <Building2 size={13} color={colors.primary} strokeWidth={2.4} />
+                          ) : (
+                            <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
                           )}
                         </View>
 
-                        {log.listing_title && (
+                        {contact.counterpart_phone ? (
+                          <Text style={[styles.contactPhoneText, { color: colors.textMuted }]}>
+                            {contact.counterpart_phone}
+                          </Text>
+                        ) : (
+                          <Text style={[styles.contactPhoneText, { color: colors.textLight }]}>
+                            Komunikim në Chat
+                          </Text>
+                        )}
+
+                        {contact.listing_title && (
                           <Text
                             style={[
-                              styles.callListingTag,
+                              styles.contactListingTag,
                               { color: theme === 'green' ? colors.gold : colors.primary },
                             ]}
                             numberOfLines={1}
                           >
-                            {log.listing_title}
+                            {contact.listing_title}
                           </Text>
                         )}
                       </View>
 
-                      {/* Callback Actions */}
-                      <View style={styles.callBackBtnsRow}>
-                        <Pressable
-                          style={[
-                            styles.callBackBtn,
-                            { backgroundColor: colors.surfaceSubtle },
-                          ]}
-                          onPress={() => startCall(log.name, 'audio', log.avatar, log.phone, log.listing_title)}
-                          hitSlop={6}
-                        >
-                          <Phone size={17} color={colors.primary} strokeWidth={2.2} />
-                        </Pressable>
-
-                        <Pressable
-                          style={[
-                            styles.callBackBtn,
-                            { backgroundColor: colors.surfaceSubtle },
-                          ]}
-                          onPress={() => startCall(log.name, 'video', log.avatar, log.phone, log.listing_title)}
-                          hitSlop={6}
-                        >
-                          <Video size={17} color={colors.primary} strokeWidth={2.2} />
-                        </Pressable>
-                      </View>
-                    </View>
+                      {/* Direct Call Icon */}
+                      <Pressable
+                        style={[styles.contactCallBtn, { backgroundColor: colors.primaryLight }]}
+                        onPress={(e) => {
+                          e.stopPropagation()
+                          openContactSheet(contact)
+                        }}
+                        hitSlop={8}
+                      >
+                        <Phone size={16} color={colors.primary} strokeWidth={2.2} />
+                      </Pressable>
+                    </Pressable>
                   )
                 })}
               </View>
-            </View>
-
-            {/* Privacy note */}
-            <View style={styles.privacyFooter}>
-              <Lock size={14} color={colors.textLight} strokeWidth={2} />
-              <Text style={[styles.privacyFooterText, { color: colors.textLight }]}>
-                Thirrjet zanore dhe video janë të enkriptuara drejtpërdrejt P2P.
-              </Text>
-            </View>
+            )}
           </View>
         )}
       </ScrollView>
 
-      {/* High-Fidelity WhatsApp/FaceTime Call Modal */}
+      {/* Apple iOS 18 Contact Sheet */}
       <CallModal
-        visible={callModal.visible}
-        onClose={() => setCallModal((prev) => ({ ...prev, visible: false }))}
-        counterpartName={callModal.name}
-        counterpartAvatar={callModal.avatar}
-        counterpartPhone={callModal.phone}
-        listingTitle={callModal.listingTitle}
-        initialCallType={callModal.type}
+        visible={contactSheet.visible}
+        onClose={() => setContactSheet((prev) => ({ ...prev, visible: false }))}
+        counterpartName={contactSheet.name}
+        counterpartAvatar={contactSheet.avatar}
+        counterpartPhone={contactSheet.phone}
+        listingTitle={contactSheet.listingTitle}
       />
     </SafeAreaView>
   )
@@ -1148,32 +855,9 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.extraBold,
     letterSpacing: -0.6,
   },
-  headerSubtitle: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    marginTop: 2,
-  },
-  headerStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    gap: 6,
-  },
-  onlineDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  onlineText: {
-    fontSize: 12,
-    fontFamily: Fonts.bold,
-  },
   segmentedContainer: {
     flexDirection: 'row',
-    borderRadius: 14,
+    borderRadius: 13,
     padding: 3,
     borderWidth: 1,
   },
@@ -1182,14 +866,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 11,
-    gap: 7,
+    paddingVertical: 7,
+    borderRadius: 10,
+    gap: 6,
   },
   segmentedTabActive: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
   segmentedTabText: {
@@ -1207,14 +892,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.extraBold,
   },
-  tabLiveBadge: {
+  tabCountPill: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 1.5,
+    borderRadius: 8,
   },
-  tabLiveBadgeText: {
-    fontSize: 9,
-    fontFamily: Fonts.extraBold,
+  tabCountPillText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
   },
   container: {
     flex: 1,
@@ -1233,15 +918,15 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   tabContent: {
-    gap: 16,
+    gap: 14,
     marginTop: 4,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    height: 44,
-    borderRadius: 14,
+    height: 42,
+    borderRadius: 13,
     borderWidth: 1,
     gap: 8,
   },
@@ -1259,121 +944,44 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingVertical: 6,
+    borderRadius: 18,
     borderWidth: 1,
   },
   filterChipText: {
     fontSize: 12,
   },
-  storiesSection: {
-    gap: 10,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: Fonts.bold,
   },
-  livePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  liveDotSmall: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  livePillText: {
-    fontSize: 11,
-    fontFamily: Fonts.semiBold,
-    color: '#10B981',
-  },
-  storiesList: {
-    gap: 14,
-    paddingVertical: 4,
-  },
-  storyItem: {
-    alignItems: 'center',
-    width: 62,
-    gap: 6,
-  },
-  storyAvatarWrapper: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    position: 'relative',
-  },
-  storyAvatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-  },
-  storyStatusDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 2,
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    borderWidth: 2,
-  },
-  agencyBadgeSmall: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  storyName: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-    textAlign: 'center',
-  },
   conversationsList: {
-    gap: 10,
+    gap: 9,
   },
   convoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 12,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
     elevation: 1,
   },
   avatarWrapper: {
-    position: 'relative',
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
   },
   convoAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  avatarOnlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    borderWidth: 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   convoMain: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   convoTopRow: {
     flexDirection: 'row',
@@ -1412,10 +1020,6 @@ const styles = StyleSheet.create({
   },
   cardActionsCol: {
     alignItems: 'flex-end',
-    gap: 8,
-  },
-  quickCallButtonsRow: {
-    flexDirection: 'row',
     gap: 6,
   },
   quickCallIconBtn: {
@@ -1442,107 +1046,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginTop: 12,
+    marginTop: 8,
     paddingHorizontal: 16,
   },
   privacyFooterText: {
     fontSize: 11,
-    fontFamily: Fonts.medium,
+    fontFamily: Fonts.regular,
     textAlign: 'center',
   },
-  callHeroBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 14,
+  contactsList: {
+    gap: 9,
   },
-  callHeroIconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  callHeroTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  callHeroTitle: {
-    fontSize: 15,
-    fontFamily: Fonts.bold,
-  },
-  callHeroDesc: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    lineHeight: 16,
-  },
-  callsListSection: {
-    marginTop: 4,
-  },
-  callsList: {
-    gap: 10,
-  },
-  callLogCard: {
+  contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 12,
   },
-  callAvatarWrapper: {
-    position: 'relative',
-    width: 48,
-    height: 48,
+  contactAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
-  callAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  directionBadge: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 17,
-    height: 17,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  callInfoCol: {
+  contactInfoCol: {
     flex: 1,
     gap: 2,
   },
-  callContactName: {
+  contactNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  contactName: {
     fontSize: 14,
     fontFamily: Fonts.bold,
   },
-  callMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  callMetaText: {
-    fontSize: 11,
+  contactPhoneText: {
+    fontSize: 12,
     fontFamily: Fonts.regular,
   },
-  callDurationText: {
-    fontSize: 10,
-    fontFamily: Fonts.medium,
-  },
-  callListingTag: {
+  contactListingTag: {
     fontSize: 11,
     fontFamily: Fonts.semiBold,
   },
-  callBackBtnsRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  callBackBtn: {
+  contactCallBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -1561,15 +1110,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   authIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   authTitle: {
-    fontSize: 21,
+    fontSize: 20,
     fontFamily: Fonts.extraBold,
     textAlign: 'center',
     marginBottom: 8,
@@ -1590,25 +1139,21 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 14,
+    height: 46,
+    borderRadius: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
   },
   loginBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: Fonts.bold,
   },
   registerBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 14,
+    height: 46,
+    borderRadius: 13,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1616,7 +1161,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   registerBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: Fonts.semiBold,
   },
   emptyContainer: {
@@ -1625,43 +1170,36 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     alignItems: 'center',
     marginTop: 20,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    gap: 6,
   },
   emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: Fonts.bold,
-    marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 13,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 20,
+    lineHeight: 18,
+    maxWidth: 280,
+    marginBottom: 12,
   },
   exploreBtn: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
   },
   exploreBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: Fonts.bold,
   },
 })

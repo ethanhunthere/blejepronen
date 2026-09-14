@@ -31,7 +31,6 @@ import {
   MapPin,
   BedDouble,
   Maximize2,
-  Sparkles,
   LogIn,
   SlidersHorizontal,
   X,

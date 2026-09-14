@@ -34,7 +34,9 @@ import {
   Leaf,
   Moon,
   Trash2,
-  Sparkles,
+  TrendingUp,
+  UserCheck,
+  UserCog,
   PlusCircle,
   MessageSquare,
   Bookmark,
@@ -658,8 +660,7 @@ export default function ProfileScreen() {
                   },
                 ]}
               >
-                <View style={styles.amberPulsingDot} />
-                <ShieldAlert size={12} color="#F59E0B" strokeWidth={2.5} />
+                <ShieldAlert size={13} color="#F59E0B" strokeWidth={2.5} />
                 <Text style={styles.unverifiedMiniPillText}>Llogari e Paverifikuar</Text>
               </View>
 
@@ -704,7 +705,7 @@ export default function ProfileScreen() {
                   },
                 ]}
               >
-                <Sparkles size={13} color="#F59E0B" strokeWidth={2.4} />
+                <TrendingUp size={13} color="#F59E0B" strokeWidth={2.4} />
                 <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
                   Prioritet në Kërkim
                 </Text>
@@ -832,7 +833,7 @@ export default function ProfileScreen() {
                 },
               ]}
             >
-              <Sparkles
+              <UserCheck
                 size={20}
                 color={theme === 'green' ? colors.gold : colors.primary}
                 strokeWidth={2.4}
@@ -840,12 +841,9 @@ export default function ProfileScreen() {
             </View>
 
             <View style={{ flex: 1, gap: 2 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.onboardingTitle, { color: colors.textPrimary }]}>
-                  Plotësoni Profilin Tuaj
-                </Text>
-                <View style={[styles.urgentDot, { backgroundColor: '#EF4444' }]} />
-              </View>
+              <Text style={[styles.onboardingTitle, { color: colors.textPrimary }]}>
+                Plotësoni Profilin Tuaj
+              </Text>
               <Text style={[styles.onboardingSubtitle, { color: colors.textMuted }]}>
                 Zgjidhni telefonin, qytetin dhe biografinë tuaj për profil të plotë.
               </Text>
@@ -1027,7 +1025,7 @@ export default function ProfileScreen() {
                   },
                 ]}
               >
-                <Sparkles
+                <UserCog
                   size={18}
                   color={theme === 'green' ? colors.gold : colors.primary}
                   strokeWidth={2.2}
@@ -1427,7 +1425,7 @@ export default function ProfileScreen() {
                   router.push('/completo-profilin' as any)
                 }}
               >
-                <Sparkles
+                <UserCheck
                   size={16}
                   color={theme === 'green' ? colors.gold : colors.primary}
                   strokeWidth={2.2}
@@ -1632,7 +1630,7 @@ export default function ProfileScreen() {
                     router.push('/completo-profilin' as any)
                   }}
                 >
-                  <Sparkles
+                  <UserCheck
                     size={16}
                     color={theme === 'green' ? colors.gold : colors.primary}
                     strokeWidth={2.4}
@@ -1848,11 +1846,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  urgentDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
   },
   onboardingTitle: {
     fontSize: 14,
@@ -2099,12 +2092,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
-  },
-  amberPulsingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F59E0B',
   },
   unverifiedMiniPillText: {
     fontSize: 11,

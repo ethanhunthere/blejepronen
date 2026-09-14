@@ -19,7 +19,6 @@ import { Image } from 'expo-image'
 import {
   ArrowLeft,
   Phone,
-  Video,
   Send,
   ShieldCheck,
   CheckCheck,
@@ -31,11 +30,8 @@ import {
   Image as ImageIcon,
   DollarSign,
   Calendar,
-  Mic,
   X,
-  Play,
-  Volume2,
-  Sparkles,
+  MessageCircle,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
@@ -96,22 +92,8 @@ export default function ChatConversationScreen() {
   const [sending, setSending] = useState(false)
   const [showAttachmentTray, setShowAttachmentTray] = useState(false)
 
-  // Call Modal State
-  const [callModal, setCallModal] = useState<{
-    visible: boolean
-    name: string
-    avatar?: string | null
-    phone?: string | null
-    listingTitle?: string | null
-    type: 'audio' | 'video'
-  }>({
-    visible: false,
-    name: '',
-    avatar: null,
-    phone: null,
-    listingTitle: null,
-    type: 'audio',
-  })
+  // Contact Action Sheet State
+  const [contactSheetVisible, setContactSheetVisible] = useState(false)
 
   const flatListRef = useRef<FlatList>(null)
 
@@ -353,24 +335,13 @@ export default function ChatConversationScreen() {
     }
   }
 
-  // Simulated Voice Note Mic Click
-  const handleSendVoiceNote = () => {
-    playSuccessSound()
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    }
-    const durations = ['0:09', '0:14', '0:22', '0:18']
-    const randDuration = durations[Math.floor(Math.random() * durations.length)]
-    handleSendMessage(`🎵 Mesazh zanor (${randDuration})`)
-  }
-
-  // Send Offer
+  // Send Offer Prompt
   const handleSendOfferPrompt = () => {
     setShowAttachmentTray(false)
     if (listing?.price) {
       const discountedPrice = Math.round((listing.price * 0.95) / 1000) * 1000
       handleSendMessage(
-        `💶 Ofertë zyrtare: Dëshiroj të propozoj çmimin prej ${new Intl.NumberFormat('de-DE').format(discountedPrice)} € për këtë pronë. A keni hapësirë për marrëveshje?`
+        `💶 Ofertë: Dëshiroj të propozoj çmimin prej ${new Intl.NumberFormat('de-DE').format(discountedPrice)} € për këtë pronë. A keni hapësirë për marrëveshje?`
       )
     } else {
       handleSendMessage('💶 Dëshiroj të bëj një ofertë çmimi për këtë pronë. A mund të diskutojmë?')
@@ -383,20 +354,6 @@ export default function ChatConversationScreen() {
     handleSendMessage(
       '📅 Përshëndetje! Dëshiroj të caktojmë një termin për vizitë në pronë gjatë këtyre ditëve. Në cilën orë jeni të lirë?'
     )
-  }
-
-  const startHeaderCall = (type: 'audio' | 'video') => {
-    const counterpartName = otherUser
-      ? `${otherUser.first_name} ${otherUser.last_name}`.trim()
-      : 'Bisedë'
-    setCallModal({
-      visible: true,
-      name: counterpartName,
-      avatar: otherUser?.avatar_url,
-      phone: otherUser?.phone,
-      listingTitle: listing?.title,
-      type,
-    })
   }
 
   const formatPrice = (val?: number) => {
@@ -415,7 +372,6 @@ export default function ChatConversationScreen() {
 
   const renderMessageBubble = ({ item }: { item: MessageItem }) => {
     const isMine = item.sender_id === currentUserId
-    const isVoiceNote = item.content.startsWith('🎵 Mesazh zanor')
     const isPhoto = item.content.startsWith('[Foto:')
 
     const bubbleBg = isMine
@@ -451,7 +407,6 @@ export default function ChatConversationScreen() {
             isMine ? styles.bubbleMine : styles.bubbleOther,
           ]}
         >
-          {/* Photo Attachment Bubble */}
           {isPhoto ? (
             <View style={styles.photoBubbleContainer}>
               <Image
@@ -462,50 +417,6 @@ export default function ChatConversationScreen() {
                 contentFit="cover"
                 transition={200}
               />
-            </View>
-          ) : isVoiceNote ? (
-            /* Voice Note Audio Waveform Bubble */
-            <View style={styles.voiceNoteContainer}>
-              <View
-                style={[
-                  styles.playVoiceBtn,
-                  {
-                    backgroundColor: isMine
-                      ? 'rgba(0,0,0,0.15)'
-                      : colors.primaryLight,
-                  },
-                ]}
-              >
-                <Play
-                  size={14}
-                  color={isMine ? textColor : colors.primary}
-                  fill={isMine ? textColor : colors.primary}
-                />
-              </View>
-              <View style={styles.waveformContainer}>
-                <View style={styles.waveBars}>
-                  {[12, 18, 8, 22, 16, 24, 14, 20, 10, 16, 22, 12, 18, 14, 8].map(
-                    (height, i) => (
-                      <View
-                        key={i}
-                        style={[
-                          styles.waveBar,
-                          {
-                            height,
-                            backgroundColor: isMine
-                              ? textColor
-                              : colors.primary,
-                            opacity: i < 6 ? 1 : 0.45,
-                          },
-                        ]}
-                      />
-                    )
-                  )}
-                </View>
-                <Text style={[styles.voiceDurationText, { color: metaColor }]}>
-                  {item.content.replace('🎵 Mesazh zanor', '').replace(/[()]/g, '').trim()}
-                </Text>
-              </View>
             </View>
           ) : (
             <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
@@ -530,9 +441,16 @@ export default function ChatConversationScreen() {
 
   const counterpartAvatar = getAvatarUri(otherUser?.avatar_url)
 
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.10)'
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* 1. Ultra-Clean WhatsApp/FaceTime Header */}
+      {/* 1. Clean Apple iMessage Header */}
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <Pressable
           style={styles.backBtn}
@@ -546,26 +464,22 @@ export default function ChatConversationScreen() {
         </Pressable>
 
         <View style={styles.headerProfile}>
-          <View style={styles.headerAvatarWrapper}>
-            <Image
-              source={{ uri: counterpartAvatar }}
-              style={styles.headerAvatar}
-              contentFit="cover"
-            />
-            <View
-              style={[
-                styles.headerOnlineDot,
-                { backgroundColor: '#10B981', borderColor: colors.surface },
-              ]}
-            />
-          </View>
+          <Image
+            source={{ uri: counterpartAvatar }}
+            style={styles.headerAvatar}
+            contentFit="cover"
+          />
 
           <View style={styles.headerInfo}>
             <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
               {otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
             </Text>
             <View style={styles.verifiedRow}>
-              <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
+              {otherUser?.is_agency ? (
+                <Building2 size={12} color={colors.primary} strokeWidth={2.4} />
+              ) : (
+                <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
+              )}
               <Text style={[styles.verifiedText, { color: colors.primary }]}>
                 {otherUser?.is_agency ? 'Agjenci e Verifikuar' : 'Profil i Verifikuar'}
               </Text>
@@ -573,24 +487,18 @@ export default function ChatConversationScreen() {
           </View>
         </View>
 
-        {/* Audio & Video Calling Buttons in Header */}
-        <View style={styles.headerActionsRow}>
-          <Pressable
-            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
-            onPress={() => startHeaderCall('audio')}
-            hitSlop={8}
-          >
-            <Phone size={17} color={colors.primary} strokeWidth={2.4} />
-          </Pressable>
-
-          <Pressable
-            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
-            onPress={() => startHeaderCall('video')}
-            hitSlop={8}
-          >
-            <Video size={17} color={colors.primary} strokeWidth={2.4} />
-          </Pressable>
-        </View>
+        {/* Real Contact Action Button in Header */}
+        <Pressable
+          style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
+          onPress={() => {
+            playTapSound()
+            if (Platform.OS !== 'web') Haptics.selectionAsync()
+            setContactSheetVisible(true)
+          }}
+          hitSlop={8}
+        >
+          <Phone size={17} color={colors.primary} strokeWidth={2.2} />
+        </Pressable>
       </View>
 
       {/* 2. Listing Quick Banner */}
@@ -663,7 +571,7 @@ export default function ChatConversationScreen() {
             ListEmptyComponent={
               <View style={styles.emptyMessages}>
                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
-                  <Building2 size={28} color={colors.primary} />
+                  <Building2 size={26} color={colors.primary} />
                 </View>
                 <Text style={[styles.emptyChatTitle, { color: colors.textPrimary }]}>
                   Filloni bisedën me shitësin
@@ -698,7 +606,7 @@ export default function ChatConversationScreen() {
           </ScrollView>
         </View>
 
-        {/* 5. Input Composer Bar with Attachment Tray & Mic/Send Toggle */}
+        {/* 5. Clean Input Composer Bar */}
         <View
           style={[
             styles.inputBar,
@@ -747,43 +655,42 @@ export default function ChatConversationScreen() {
             maxLength={1000}
           />
 
-          {/* Dynamic Action: Send button when text exists, Mic button when empty */}
-          {inputText.trim() ? (
-            <Pressable
-              style={[
-                styles.actionBtn,
-                {
-                  backgroundColor:
-                    theme === 'green' ? colors.gold : colors.primary,
-                },
-              ]}
-              onPress={() => handleSendMessage()}
-              disabled={sending}
-              hitSlop={8}
-            >
-              {sending ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Send
-                  size={17}
-                  color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                  strokeWidth={2.4}
-                />
-              )}
-            </Pressable>
-          ) : (
-            <Pressable
-              style={[styles.actionBtn, { backgroundColor: colors.primaryLight }]}
-              onPress={handleSendVoiceNote}
-              hitSlop={8}
-            >
-              <Mic size={18} color={colors.primary} strokeWidth={2.2} />
-            </Pressable>
-          )}
+          {/* Send Button */}
+          <Pressable
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: inputText.trim()
+                  ? theme === 'green'
+                    ? colors.gold
+                    : colors.primary
+                  : colors.surfaceSubtle,
+              },
+            ]}
+            onPress={() => handleSendMessage()}
+            disabled={!inputText.trim() || sending}
+            hitSlop={8}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Send
+                size={17}
+                color={
+                  inputText.trim()
+                    ? theme === 'green'
+                      ? '#003E37'
+                      : '#FFFFFF'
+                    : colors.textLight
+                }
+                strokeWidth={2.4}
+              />
+            )}
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
 
-      {/* Attachment Tray Modal (Camera, Gallery, Offer, Visit) */}
+      {/* Attachment Sheet Modal */}
       <Modal
         visible={showAttachmentTray}
         transparent
@@ -799,7 +706,7 @@ export default function ChatConversationScreen() {
               styles.attachmentSheet,
               {
                 backgroundColor: colors.surface,
-                borderColor: colors.border,
+                borderColor: specularBorder,
                 paddingBottom: Math.max(insets.bottom, 20),
               },
             ]}
@@ -812,34 +719,34 @@ export default function ChatConversationScreen() {
                 onPress={() => setShowAttachmentTray(false)}
                 style={styles.closeSheetBtn}
               >
-                <X size={20} color={colors.textMuted} />
+                <X size={18} color={colors.textMuted} />
               </Pressable>
             </View>
 
             <View style={styles.sheetGrid}>
               <Pressable style={styles.sheetOption} onPress={handleTakePhoto}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
                   <Camera size={22} color="#3B82F6" strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Kamerë</Text>
               </Pressable>
 
               <Pressable style={styles.sheetOption} onPress={handlePickImage}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
                   <ImageIcon size={22} color="#10B981" strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Galeri</Text>
               </Pressable>
 
               <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.15)' }]}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.12)' }]}>
                   <DollarSign size={22} color="#EAB308" strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Ofertë</Text>
               </Pressable>
 
               <Pressable style={styles.sheetOption} onPress={handleSendTourRequest}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.15)' }]}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
                   <Calendar size={22} color="#A855F7" strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Vizitë</Text>
@@ -849,15 +756,14 @@ export default function ChatConversationScreen() {
         </Pressable>
       </Modal>
 
-      {/* High-Fidelity Call Modal for FaceTime / WhatsApp Call */}
+      {/* Apple iOS 18 Contact Action Sheet */}
       <CallModal
-        visible={callModal.visible}
-        onClose={() => setCallModal((prev) => ({ ...prev, visible: false }))}
-        counterpartName={callModal.name}
-        counterpartAvatar={callModal.avatar}
-        counterpartPhone={callModal.phone}
-        listingTitle={callModal.listingTitle}
-        initialCallType={callModal.type}
+        visible={contactSheetVisible}
+        onClose={() => setContactSheetVisible(false)}
+        counterpartName={otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
+        counterpartAvatar={otherUser?.avatar_url}
+        counterpartPhone={otherUser?.phone}
+        listingTitle={listing?.title}
       />
     </SafeAreaView>
   )
@@ -884,24 +790,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  headerAvatarWrapper: {
-    position: 'relative',
-    width: 40,
-    height: 40,
-  },
   headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  headerOnlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    borderWidth: 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   headerInfo: {
     flex: 1,
@@ -919,11 +811,6 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontSize: 11,
     fontFamily: Fonts.semiBold,
-  },
-  headerActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   headerIconBtn: {
     width: 36,
@@ -1003,9 +890,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -1071,38 +958,6 @@ const styles = StyleSheet.create({
   bubblePhoto: {
     width: '100%',
     height: '100%',
-  },
-  voiceNoteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 2,
-    minWidth: 170,
-  },
-  playVoiceBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waveformContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  waveBars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    height: 24,
-  },
-  waveBar: {
-    width: 3,
-    borderRadius: 2,
-  },
-  voiceDurationText: {
-    fontSize: 10,
-    fontFamily: Fonts.semiBold,
   },
   quickRepliesContainer: {
     borderTopWidth: 1,
@@ -1173,7 +1028,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sheetTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: Fonts.bold,
   },
   closeSheetBtn: {
@@ -1189,9 +1044,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sheetOptionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
   },

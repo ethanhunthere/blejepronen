@@ -38,7 +38,6 @@ import {
   Smartphone,
   Volume2,
   Vibrate,
-  Sparkles,
   Palette,
   Sun,
   Leaf,

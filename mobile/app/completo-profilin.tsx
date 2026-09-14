@@ -23,7 +23,7 @@ import {
   Calendar,
   FileText,
   Globe,
-  Sparkles,
+  UserCheck,
   Check,
   ChevronLeft,
   ShieldCheck,
@@ -413,7 +413,7 @@ export default function CompletoProfilinScreen() {
                 },
               ]}
             >
-              <Sparkles size={24} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.4} />
+              <UserCheck size={24} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.4} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.heroHeading, { color: colors.textPrimary }]}>

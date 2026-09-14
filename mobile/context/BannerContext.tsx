@@ -16,7 +16,6 @@ import {
   LogOut,
   Trash2,
   X,
-  Sparkles,
   ShieldAlert,
   ShieldCheck,
   Info,
@@ -230,7 +229,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
           accent: theme === 'green' ? colors.gold : colors.primary,
           bg: theme === 'green' ? 'rgba(200, 184, 130, 0.18)' : 'rgba(0, 100, 89, 0.12)',
           border: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : 'rgba(0, 100, 89, 0.25)',
-          icon: Sparkles,
+          icon: Info,
         }
     }
   }
@@ -330,7 +329,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
                 { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
               ]}
             >
-              <Sparkles
+              <Info
                 size={18}
                 color={theme === 'green' ? '#003E37' : '#FFFFFF'}
                 strokeWidth={2.4}

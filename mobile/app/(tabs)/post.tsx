@@ -23,7 +23,6 @@ import {
   ShieldCheck,
   LogIn,
   UserPlus,
-  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
@@ -822,7 +821,7 @@ export default function PostPropertyScreen() {
                 onPress={handleSmartTitle}
                 hitSlop={8}
               >
-                <Sparkles size={13} color={colors.badgeText} strokeWidth={2.2} />
+                <FileText size={13} color={colors.badgeText} strokeWidth={2.2} />
                 <Text style={[styles.smartBtnText, { color: colors.badgeText }]}>
                   Sugjero titull
                 </Text>
