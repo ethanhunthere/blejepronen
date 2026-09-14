@@ -255,9 +255,35 @@ export default function ListingsScreen() {
         }
 
         if (selectedApartmentType && selectedApartmentType !== 'all') {
-          query = query.or(
-            `apartment_type.ilike.%${selectedApartmentType}%,title.ilike.%${selectedApartmentType}%`
-          )
+          if (selectedApartmentType === 'Banesë') {
+            query = query.or(
+              'apartment_type.ilike.%banes%,apartment_type.ilike.%apart%,apartment_type.ilike.%1+1%,apartment_type.ilike.%2+1%,apartment_type.ilike.%3+1%,apartment_type.ilike.%4+1%,apartment_type.ilike.%duplex%,apartment_type.ilike.%penthouse%,title.ilike.%banes%,title.ilike.%apart%'
+            )
+          } else if (selectedApartmentType === 'Shtëpi') {
+            query = query.or(
+              'apartment_type.ilike.%shtëp%,apartment_type.ilike.%shtep%,title.ilike.%shtëp%,title.ilike.%shtep%'
+            )
+          } else if (selectedApartmentType === 'Vilë') {
+            query = query.or(
+              'apartment_type.ilike.%vil%,title.ilike.%vil%'
+            )
+          } else if (selectedApartmentType === 'Tokë') {
+            query = query.or(
+              'apartment_type.ilike.%tok%,apartment_type.ilike.%truall%,title.ilike.%tok%,title.ilike.%truall%'
+            )
+          } else if (selectedApartmentType === 'Lokal') {
+            query = query.or(
+              'apartment_type.ilike.%lokal%,apartment_type.ilike.%zyr%,title.ilike.%lokal%,title.ilike.%zyr%'
+            )
+          } else if (selectedApartmentType === 'Garazhë') {
+            query = query.or(
+              'apartment_type.ilike.%garazh%,title.ilike.%garazh%,title.ilike.%park%'
+            )
+          } else {
+            query = query.or(
+              `apartment_type.ilike.%${selectedApartmentType}%,title.ilike.%${selectedApartmentType}%`
+            )
+          }
         }
 
         if (minPrice && !isNaN(Number(minPrice))) {

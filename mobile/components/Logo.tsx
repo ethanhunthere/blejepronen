@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Platform } from 'react-native'
 import { Image } from 'expo-image'
 import { useTheme, Fonts } from '@/constants/theme'
 
@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
   textContainer: {
     justifyContent: 'center',
     backgroundColor: 'transparent',
+    paddingTop: 2,
   },
   brandRow: {
     flexDirection: 'row',

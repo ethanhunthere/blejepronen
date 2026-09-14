@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -29,6 +29,94 @@ const CATEGORY_ITEMS = [
   { id: 'garazh', label: 'Garazha', icon: Warehouse },
 ]
 
+const matchesCategory = (item: Listing, catId: string): boolean => {
+  if (catId === 'all') return true
+  const apt = (item.apartment_type || '').toLowerCase()
+  const title = (item.title || '').toLowerCase()
+  const desc = (item.description || '').toLowerCase()
+
+  switch (catId) {
+    case 'banese':
+      return (
+        apt.includes('banes') ||
+        apt.includes('apart') ||
+        apt.includes('1+1') ||
+        apt.includes('2+1') ||
+        apt.includes('3+1') ||
+        apt.includes('4+1') ||
+        apt.includes('garson') ||
+        apt.includes('studio') ||
+        apt.includes('duplex') ||
+        apt.includes('penthouse') ||
+        title.includes('banes') ||
+        title.includes('apartament') ||
+        title.includes('1+1') ||
+        title.includes('2+1') ||
+        title.includes('3+1') ||
+        title.includes('4+1') ||
+        title.includes('garson') ||
+        title.includes('studio') ||
+        title.includes('duplex') ||
+        title.includes('penthouse') ||
+        desc.includes('banes') ||
+        desc.includes('apartament')
+      )
+    case 'shtepi':
+      return (
+        apt.includes('shtëpi') ||
+        apt.includes('shtepi') ||
+        title.includes('shtëpi') ||
+        title.includes('shtepi') ||
+        desc.includes('shtëpi') ||
+        desc.includes('shtepi')
+      )
+    case 'vile':
+      return (
+        apt.includes('vil') ||
+        title.includes('vil') ||
+        desc.includes('vil')
+      )
+    case 'toke':
+      return (
+        apt.includes('tok') ||
+        apt.includes('truall') ||
+        title.includes('tok') ||
+        title.includes('truall') ||
+        desc.includes('tokë') ||
+        desc.includes('toke') ||
+        desc.includes('truall')
+      )
+    case 'lokal':
+      return (
+        apt.includes('lokal') ||
+        apt.includes('zyr') ||
+        apt.includes('biznes') ||
+        apt.includes('depo') ||
+        apt.includes('magazin') ||
+        apt.includes('afarist') ||
+        title.includes('lokal') ||
+        title.includes('zyr') ||
+        title.includes('biznes') ||
+        title.includes('depo') ||
+        title.includes('magazin') ||
+        title.includes('afarist') ||
+        desc.includes('lokal') ||
+        desc.includes('zyr')
+      )
+    case 'garazh':
+      return (
+        apt.includes('garazh') ||
+        apt.includes('park') ||
+        title.includes('garazh') ||
+        title.includes('park') ||
+        desc.includes('garazh') ||
+        desc.includes('parkim')
+      )
+    default:
+      return true
+  }
+}
+
 export default function HomeScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
@@ -47,7 +135,7 @@ export default function HomeScreen() {
         .from('listings')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(25)
+        .limit(50)
 
       if (transactionType !== 'all') {
         query = query.eq('type', transactionType)
@@ -106,16 +194,31 @@ export default function HomeScreen() {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const filteredListings = listings.filter((item) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      const titleMatch = item.title?.toLowerCase().includes(q)
-      const cityMatch = item.city?.toLowerCase().includes(q)
-      const neighborhoodMatch = item.neighborhood?.toLowerCase().includes(q)
-      return titleMatch || cityMatch || neighborhoodMatch
-    }
-    return true
-  })
+  const filteredListings = useMemo(() => {
+    return listings.filter((item) => {
+      // 1. Category Filter
+      if (!matchesCategory(item, selectedCategory)) {
+        return false
+      }
+
+      // 2. Transaction Type Filter
+      if (transactionType !== 'all' && item.type !== transactionType) {
+        return false
+      }
+
+      // 3. Search Query Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const titleMatch = item.title?.toLowerCase().includes(q)
+        const cityMatch = item.city?.toLowerCase().includes(q)
+        const neighborhoodMatch = item.neighborhood?.toLowerCase().includes(q)
+        const descMatch = item.description?.toLowerCase().includes(q)
+        return titleMatch || cityMatch || neighborhoodMatch || descMatch
+      }
+
+      return true
+    })
+  }, [listings, selectedCategory, transactionType, searchQuery])
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
@@ -241,7 +344,20 @@ export default function HomeScreen() {
 
         {/* Section Title */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pronat e fundit</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              {selectedCategory === 'all'
+                ? 'Pronat e fundit'
+                : `Pronat: ${CATEGORY_ITEMS.find((c) => c.id === selectedCategory)?.label || ''}`}
+            </Text>
+            {selectedCategory !== 'all' && (
+              <View style={[styles.activeCategoryBadge, { backgroundColor: colors.chipActiveBg }]}>
+                <Text style={[styles.activeCategoryBadgeText, { color: colors.chipTextActive }]}>
+                  {filteredListings.length}
+                </Text>
+              </View>
+            )}
+          </View>
           <Pressable onPress={() => router.push('/listings' as any)}>
             <Text style={[styles.sectionLink, { color: colors.primary }]}>Shiko të gjitha</Text>
           </Pressable>
@@ -267,8 +383,23 @@ export default function HomeScreen() {
               Nuk u gjet asnjë pronë
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              Provoni të ndryshoni filtrat ose kërkoni një qytet tjetër.
+              {selectedCategory !== 'all'
+                ? `Nuk ka prona aktive në kategorinë "${CATEGORY_ITEMS.find((c) => c.id === selectedCategory)?.label}".`
+                : 'Provoni të ndryshoni filtrat ose kërkoni një qytet tjetër.'}
             </Text>
+            <Pressable
+              style={[styles.resetButton, { backgroundColor: colors.surfaceSubtle }]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                setSelectedCategory('all')
+                setTransactionType('all')
+                setSearchQuery('')
+              }}
+            >
+              <Text style={[styles.resetButtonText, { color: colors.primary }]}>
+                Pastro filtrat
+              </Text>
+            </Pressable>
           </View>
         ) : (
           filteredListings.map((listing) => (
@@ -411,5 +542,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.regular,
     textAlign: 'center',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  activeCategoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  activeCategoryBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+  },
+  resetButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  resetButtonText: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
   },
 })
