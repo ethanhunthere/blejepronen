@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   textContainer: {
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    paddingTop: 4,
+    paddingTop: 2,
   },
   brandRow: {
     flexDirection: 'row',
