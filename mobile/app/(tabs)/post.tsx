@@ -218,6 +218,42 @@ export default function PostPropertyScreen() {
         return
       }
 
+      // Upload local device images to Supabase Storage concurrently
+      let uploadedImageUrls: string[] = []
+      if (images.length > 0) {
+        uploadedImageUrls = await Promise.all(
+          images.map(async (imgUri) => {
+            if (imgUri.startsWith('http://') || imgUri.startsWith('https://')) {
+              return imgUri
+            }
+            try {
+              const ext = imgUri.split('.').pop()?.toLowerCase() || 'jpg'
+              const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+              const path = `${user.id}/${filename}`
+
+              const response = await fetch(imgUri)
+              const blob = await response.blob()
+
+              const { error: uploadError } = await supabase.storage.from('listings').upload(path, blob, {
+                contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}`,
+                cacheControl: '31536000, immutable',
+              })
+
+              if (uploadError) {
+                console.warn('Image upload error:', uploadError.message)
+                return imgUri
+              }
+
+              const { data: publicData } = supabase.storage.from('listings').getPublicUrl(path)
+              return publicData.publicUrl
+            } catch (uploadEx: any) {
+              console.warn('Image upload exception:', uploadEx?.message || uploadEx)
+              return imgUri
+            }
+          })
+        )
+      }
+
       const { error } = await supabase.from('listings').insert([
         {
           user_id: user.id,
@@ -234,7 +270,8 @@ export default function PostPropertyScreen() {
           floor,
           apartment_type: subtype || activeCategory.titleShort,
           features: selectedFeatures,
-          images: images.length > 0 ? images : [],
+          images: uploadedImageUrls,
+          is_active: true,
         },
       ])
 
@@ -243,6 +280,15 @@ export default function PostPropertyScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       }
+
+      // Reset form fields
+      setTitle('')
+      setDescription('')
+      setPrice('')
+      setArea('')
+      setImages([])
+      setNeighborhood('')
+      setAddress('')
 
       Alert.alert('Urime!', 'Prona juaj u postua me sukses në Bleje Pronën.', [
         { text: 'Në rregull', onPress: () => router.push('/listings' as any) },
