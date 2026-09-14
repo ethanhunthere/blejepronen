@@ -7,40 +7,29 @@ interface LogoProps {
   size?: number
 }
 
-export function Logo({ size = 34 }: LogoProps) {
+export function Logo({ size = 36 }: LogoProps) {
   const { colors, theme } = useTheme()
 
   const blejeColor = theme === 'green' ? '#FFFFFF' : theme === 'black' ? '#FFFFFF' : '#006459'
   const pronenColor = colors.gold // #C8B882
 
-  // Dynamically select the exact emblem asset to guarantee 0% background mismatch
+  // On white theme: green (#006459) transparent PNG without background
+  // On green theme: white (#FFFFFF) transparent PNG without background
+  // On black theme: white (#FFFFFF) transparent PNG without background
   const logoSource =
-    theme === 'green'
-      ? require('@/assets/images/logo-white.png')
-      : theme === 'black'
-      ? require('@/assets/images/logo-white.png')
-      : require('@/assets/images/logo-teal.png')
+    theme === 'white'
+      ? require('@/assets/images/logo-teal.png')
+      : require('@/assets/images/logo-white.png')
 
   return (
     <View style={styles.container}>
-      {/* Official Graphical Brand Logo Emblem */}
-      <View
-        style={[
-          styles.iconWrapper,
-          {
-            width: size + 2,
-            height: size + 2,
-            backgroundColor: theme === 'green' ? 'transparent' : theme === 'black' ? 'transparent' : 'rgba(0, 100, 89, 0.08)',
-          },
-        ]}
-      >
-        <Image
-          source={logoSource}
-          style={{ width: size, height: size }}
-          contentFit="contain"
-          transition={150}
-        />
-      </View>
+      {/* Official Graphical Brand Logo Emblem - Transparent PNG with No Background */}
+      <Image
+        source={logoSource}
+        style={{ width: size, height: size }}
+        contentFit="contain"
+        transition={100}
+      />
 
       <View style={styles.textContainer}>
         <View style={styles.brandRow}>
@@ -57,14 +46,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-  },
-  iconWrapper: {
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   textContainer: {
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   brandRow: {
     flexDirection: 'row',
