@@ -19,40 +19,13 @@ function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarIte
   const activeColor = colors.tabBarActive
   const inactiveColor = colors.tabBarInactive
 
-  const activeCapsuleBg =
-    theme === 'green'
-      ? 'rgba(200, 184, 130, 0.22)'
-      : theme === 'black'
-      ? 'rgba(52, 211, 153, 0.18)'
-      : 'rgba(0, 100, 89, 0.10)'
-
-  const activeCapsuleBorder =
-    theme === 'green'
-      ? 'rgba(200, 184, 130, 0.42)'
-      : theme === 'black'
-      ? 'rgba(52, 211, 153, 0.40)'
-      : 'rgba(0, 100, 89, 0.20)'
-
   return (
     <View style={styles.tabItemContainer}>
-      {/* Active Pill Capsule with Ambient Glow */}
-      <View
-        style={[
-          styles.iconCapsule,
-          focused && [
-            styles.iconCapsuleActive,
-            {
-              backgroundColor: activeCapsuleBg,
-              borderColor: activeCapsuleBorder,
-              shadowColor: activeColor,
-            },
-          ],
-        ]}
-      >
+      <View style={styles.iconWrapper}>
         <Icon
-          size={19}
+          size={22}
           color={focused ? activeColor : inactiveColor}
-          strokeWidth={focused ? 2.6 : 1.9}
+          strokeWidth={focused ? 2.4 : 1.75}
         />
 
         {badgeCount && badgeCount > 0 ? (
@@ -76,29 +49,18 @@ function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarIte
         ) : null}
       </View>
 
-      {/* Label with dynamic weight and color */}
       <Text
         style={[
           styles.tabLabel,
           {
             color: focused ? activeColor : inactiveColor,
-            fontFamily: focused ? Fonts.extraBold : Fonts.medium,
+            fontFamily: focused ? Fonts.bold : Fonts.medium,
           },
         ]}
         numberOfLines={1}
       >
         {title}
       </Text>
-
-      {/* Luminous Active Micro-Jewel Accent Bar */}
-      <View
-        style={[
-          styles.indicatorPill,
-          {
-            backgroundColor: focused ? activeColor : 'transparent',
-          },
-        ]}
-      />
     </View>
   )
 }
@@ -111,46 +73,19 @@ function PostTabBarItem({ focused }: { focused: boolean }) {
   const postBtnBg = theme === 'green' ? colors.gold : colors.primary
   const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
 
-  const auraBg =
-    focused
-      ? theme === 'green'
-        ? 'rgba(200, 184, 130, 0.30)'
-        : 'rgba(0, 100, 89, 0.22)'
-      : theme === 'green'
-      ? 'rgba(200, 184, 130, 0.14)'
-      : 'rgba(0, 100, 89, 0.09)'
-
-  const auraBorder =
-    focused
-      ? theme === 'green'
-        ? colors.gold
-        : colors.primary
-      : 'transparent'
-
   return (
     <View style={styles.tabItemContainer}>
-      {/* Concentric Halo Aura around the action button */}
       <View
         style={[
-          styles.postAura,
+          styles.postButton,
           {
-            backgroundColor: auraBg,
-            borderColor: auraBorder,
+            backgroundColor: postBtnBg,
+            shadowColor: postBtnBg,
           },
-          focused && styles.postAuraActive,
+          focused && styles.postButtonActive,
         ]}
       >
-        <View
-          style={[
-            styles.postInnerButton,
-            {
-              backgroundColor: postBtnBg,
-              shadowColor: postBtnBg,
-            },
-          ]}
-        >
-          <Plus size={17} color={postIconColor} strokeWidth={3} />
-        </View>
+        <Plus size={18} color={postIconColor} strokeWidth={2.8} />
       </View>
 
       <Text
@@ -158,22 +93,13 @@ function PostTabBarItem({ focused }: { focused: boolean }) {
           styles.tabLabel,
           {
             color: focused ? activeColor : inactiveColor,
-            fontFamily: focused ? Fonts.extraBold : Fonts.medium,
+            fontFamily: focused ? Fonts.bold : Fonts.medium,
           },
         ]}
         numberOfLines={1}
       >
         Posto
       </Text>
-
-      <View
-        style={[
-          styles.indicatorPill,
-          {
-            backgroundColor: focused ? activeColor : 'transparent',
-          },
-        ]}
-      />
     </View>
   )
 }
@@ -335,42 +261,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: 64,
-    height: 50,
+    height: 48,
+    gap: 4,
   },
-  iconCapsule: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
+  iconWrapper: {
+    width: 28,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
-  },
-  iconCapsuleActive: {
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 2,
   },
   tabLabel: {
-    fontSize: 10,
-    marginTop: 2,
-    lineHeight: 12,
+    fontSize: 10.5,
+    lineHeight: 13,
     textAlign: 'center',
-  },
-  indicatorPill: {
-    width: 14,
-    height: 2.5,
-    borderRadius: 1.25,
-    marginTop: 2,
+    letterSpacing: -0.2,
   },
   unreadBadge: {
     position: 'absolute',
-    top: -2,
-    right: 3,
+    top: -4,
+    right: -8,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -383,30 +293,20 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     lineHeight: 11,
   },
-  postAura: {
-    width: 38,
-    height: 30,
-    borderRadius: 15,
+  postButton: {
+    width: 42,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-  },
-  postAuraActive: {
-    transform: [{ scale: 1.06 }],
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    shadowOpacity: 0.22,
+    shadowRadius: 4,
     elevation: 3,
   },
-  postInnerButton: {
-    width: 28,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 4,
+  postButtonActive: {
+    shadowOpacity: 0.38,
+    shadowRadius: 6,
+    transform: [{ scale: 1.04 }],
   },
 })
