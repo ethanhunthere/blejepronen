@@ -6,10 +6,10 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
   StatusBar,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { MessageSquare, Clock, ChevronRight, Building2 } from 'lucide-react-native'

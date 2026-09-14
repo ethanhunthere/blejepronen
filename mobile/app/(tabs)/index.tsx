@@ -8,16 +8,17 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
   StatusBar,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Search, SlidersHorizontal, Building2, Home, Trees, Briefcase, Warehouse, Sparkles } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { BrandColors } from '@/constants/Colors'
 import { supabase, Listing } from '@/lib/supabase'
 import { ListingCard } from '@/components/ListingCard'
+import { Logo } from '@/components/Logo'
 
 const CATEGORY_ITEMS = [
   { id: 'all', label: 'Të gjitha', icon: Sparkles },
@@ -126,15 +127,9 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header Branding */}
+        {/* Header Branding with Official Logo on Left */}
         <View style={styles.header}>
-          <View>
-            <View style={styles.logoRow}>
-              <Text style={styles.logoTextMain}>Bleje</Text>
-              <Text style={styles.logoTextAccent}>Pronën</Text>
-            </View>
-            <Text style={styles.subtitle}>Gjej pronën tënde ideale në Kosovë</Text>
-          </View>
+          <Logo size={38} />
           <View style={styles.brandBadge}>
             <Text style={styles.brandBadgeText}>KOSOVË</Text>
           </View>
