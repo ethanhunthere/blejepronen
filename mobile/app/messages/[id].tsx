@@ -9,8 +9,9 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
-  Linking,
   ScrollView,
+  Modal,
+  Alert,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -18,16 +19,31 @@ import { Image } from 'expo-image'
 import {
   ArrowLeft,
   Phone,
+  Video,
   Send,
   ShieldCheck,
   CheckCheck,
   Check,
   Building2,
   ExternalLink,
+  Plus,
+  Camera,
+  Image as ImageIcon,
+  DollarSign,
+  Calendar,
+  Mic,
+  X,
+  Play,
+  Volume2,
+  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
+import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { getAvatarUri } from '@/lib/avatars'
+import { CallModal } from '@/components/CallModal'
+import { playTapSound, playSuccessSound } from '@/lib/sound'
 
 interface MessageItem {
   id: string
@@ -44,6 +60,7 @@ interface OtherUser {
   last_name: string
   phone?: string | null
   avatar_url?: string | null
+  is_agency?: boolean
 }
 
 interface ListingPreview {
@@ -77,6 +94,24 @@ export default function ChatConversationScreen() {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showAttachmentTray, setShowAttachmentTray] = useState(false)
+
+  // Call Modal State
+  const [callModal, setCallModal] = useState<{
+    visible: boolean
+    name: string
+    avatar?: string | null
+    phone?: string | null
+    listingTitle?: string | null
+    type: 'audio' | 'video'
+  }>({
+    visible: false,
+    name: '',
+    avatar: null,
+    phone: null,
+    listingTitle: null,
+    type: 'audio',
+  })
 
   const flatListRef = useRef<FlatList>(null)
 
@@ -116,16 +151,18 @@ export default function ChatConversationScreen() {
       }
 
       if (convData) {
-        // Determine whether current user is buyer or seller
         const isBuyer = user.id === convData.buyer_id
         const counterpart: any = isBuyer ? convData.seller : convData.buyer
         if (counterpart) {
+          const fullName = `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim()
+          const isAgency = /agjenci|real estate|invest|patundshm|group|shpk/i.test(fullName)
           setOtherUser({
             id: counterpart.id,
             first_name: counterpart.first_name || (isBuyer ? 'Shitësi' : 'Blerësi'),
             last_name: counterpart.last_name || '',
             phone: counterpart.phone,
             avatar_url: counterpart.avatar_url,
+            is_agency: isAgency,
           })
         }
 
@@ -171,7 +208,6 @@ export default function ChatConversationScreen() {
   useEffect(() => {
     loadConversationData()
 
-    // Subscribe to realtime messages for this conversation
     if (!id) return
     const channel = supabase
       .channel(`chat_${id}`)
@@ -186,7 +222,6 @@ export default function ChatConversationScreen() {
         (payload) => {
           const newMsg = payload.new as MessageItem
           setMessages((prev) => {
-            // Avoid duplicate if optimistically added
             if (prev.some((m) => m.id === newMsg.id)) return prev
             return [...prev, newMsg]
           })
@@ -195,7 +230,6 @@ export default function ChatConversationScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
           }
 
-          // Mark as read if received from other
           if (currentUserId && newMsg.sender_id !== currentUserId) {
             supabase
               .from('messages')
@@ -218,6 +252,7 @@ export default function ChatConversationScreen() {
 
     setInputText('')
     setSending(true)
+    playTapSound()
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     }
@@ -235,7 +270,7 @@ export default function ChatConversationScreen() {
     setMessages((prev) => [...prev, optimisticMsg])
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true })
-    }, 80)
+    }, 60)
 
     try {
       const { data, error } = await supabase
@@ -251,14 +286,11 @@ export default function ChatConversationScreen() {
 
       if (error) {
         console.warn('Error sending message:', error.message)
-        // Rollback optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
       } else if (data) {
-        // Replace temp optimistic message with real message
         setMessages((prev) =>
           prev.map((m) => (m.id === optimisticId ? (data as MessageItem) : m))
         )
-        // Touch conversation updated_at
         supabase
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
@@ -272,10 +304,99 @@ export default function ChatConversationScreen() {
     }
   }
 
-  const handleCall = () => {
-    if (otherUser?.phone) {
-      Linking.openURL(`tel:${otherUser.phone}`)
+  // Pick Image from Gallery
+  const handlePickImage = async () => {
+    setShowAttachmentTray(false)
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Leje e nevojshme', 'Ju lutemi lejoni aksesin tek fotot për të dërguar imazhe.')
+        return
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+        allowsEditing: true,
+      })
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const photoUri = result.assets[0].uri
+        await handleSendMessage(`[Foto: ${photoUri}]`)
+      }
+    } catch (e: any) {
+      console.warn('Image picker notice:', e?.message || e)
     }
+  }
+
+  // Capture Photo with Camera
+  const handleTakePhoto = async () => {
+    setShowAttachmentTray(false)
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Leje e nevojshme', 'Ju lutemi lejoni aksesin tek kamera për të bërë foto.')
+        return
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.8,
+        allowsEditing: true,
+      })
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const photoUri = result.assets[0].uri
+        await handleSendMessage(`[Foto: ${photoUri}]`)
+      }
+    } catch (e: any) {
+      console.warn('Camera capture notice:', e?.message || e)
+    }
+  }
+
+  // Simulated Voice Note Mic Click
+  const handleSendVoiceNote = () => {
+    playSuccessSound()
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
+    const durations = ['0:09', '0:14', '0:22', '0:18']
+    const randDuration = durations[Math.floor(Math.random() * durations.length)]
+    handleSendMessage(`🎵 Mesazh zanor (${randDuration})`)
+  }
+
+  // Send Offer
+  const handleSendOfferPrompt = () => {
+    setShowAttachmentTray(false)
+    if (listing?.price) {
+      const discountedPrice = Math.round((listing.price * 0.95) / 1000) * 1000
+      handleSendMessage(
+        `💶 Ofertë zyrtare: Dëshiroj të propozoj çmimin prej ${new Intl.NumberFormat('de-DE').format(discountedPrice)} € për këtë pronë. A keni hapësirë për marrëveshje?`
+      )
+    } else {
+      handleSendMessage('💶 Dëshiroj të bëj një ofertë çmimi për këtë pronë. A mund të diskutojmë?')
+    }
+  }
+
+  // Send Tour Request
+  const handleSendTourRequest = () => {
+    setShowAttachmentTray(false)
+    handleSendMessage(
+      '📅 Përshëndetje! Dëshiroj të caktojmë një termin për vizitë në pronë gjatë këtyre ditëve. Në cilën orë jeni të lirë?'
+    )
+  }
+
+  const startHeaderCall = (type: 'audio' | 'video') => {
+    const counterpartName = otherUser
+      ? `${otherUser.first_name} ${otherUser.last_name}`.trim()
+      : 'Bisedë'
+    setCallModal({
+      visible: true,
+      name: counterpartName,
+      avatar: otherUser?.avatar_url,
+      phone: otherUser?.phone,
+      listingTitle: listing?.title,
+      type,
+    })
   }
 
   const formatPrice = (val?: number) => {
@@ -294,6 +415,9 @@ export default function ChatConversationScreen() {
 
   const renderMessageBubble = ({ item }: { item: MessageItem }) => {
     const isMine = item.sender_id === currentUserId
+    const isVoiceNote = item.content.startsWith('🎵 Mesazh zanor')
+    const isPhoto = item.content.startsWith('[Foto:')
+
     const bubbleBg = isMine
       ? theme === 'green'
         ? colors.gold
@@ -327,7 +451,66 @@ export default function ChatConversationScreen() {
             isMine ? styles.bubbleMine : styles.bubbleOther,
           ]}
         >
-          <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
+          {/* Photo Attachment Bubble */}
+          {isPhoto ? (
+            <View style={styles.photoBubbleContainer}>
+              <Image
+                source={{
+                  uri: item.content.replace('[Foto:', '').replace(']', '').trim(),
+                }}
+                style={styles.bubblePhoto}
+                contentFit="cover"
+                transition={200}
+              />
+            </View>
+          ) : isVoiceNote ? (
+            /* Voice Note Audio Waveform Bubble */
+            <View style={styles.voiceNoteContainer}>
+              <View
+                style={[
+                  styles.playVoiceBtn,
+                  {
+                    backgroundColor: isMine
+                      ? 'rgba(0,0,0,0.15)'
+                      : colors.primaryLight,
+                  },
+                ]}
+              >
+                <Play
+                  size={14}
+                  color={isMine ? textColor : colors.primary}
+                  fill={isMine ? textColor : colors.primary}
+                />
+              </View>
+              <View style={styles.waveformContainer}>
+                <View style={styles.waveBars}>
+                  {[12, 18, 8, 22, 16, 24, 14, 20, 10, 16, 22, 12, 18, 14, 8].map(
+                    (height, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.waveBar,
+                          {
+                            height,
+                            backgroundColor: isMine
+                              ? textColor
+                              : colors.primary,
+                            opacity: i < 6 ? 1 : 0.45,
+                          },
+                        ]}
+                      />
+                    )
+                  )}
+                </View>
+                <Text style={[styles.voiceDurationText, { color: metaColor }]}>
+                  {item.content.replace('🎵 Mesazh zanor', '').replace(/[()]/g, '').trim()}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
+          )}
+
           <View style={styles.bubbleFooter}>
             <Text style={[styles.timeText, { color: metaColor }]}>
               {formatTime(item.created_at)}
@@ -345,26 +528,36 @@ export default function ChatConversationScreen() {
     )
   }
 
+  const counterpartAvatar = getAvatarUri(otherUser?.avatar_url)
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* 1. Header Bar */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      {/* 1. Ultra-Clean WhatsApp/FaceTime Header */}
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <Pressable
           style={styles.backBtn}
           onPress={() => {
             if (Platform.OS !== 'web') Haptics.selectionAsync()
             router.back()
           }}
-          hitSlop={12}
+          hitSlop={10}
         >
           <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
         </Pressable>
 
         <View style={styles.headerProfile}>
-          <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
-            <Text style={[styles.avatarText, { color: colors.primary }]}>
-              {otherUser ? (otherUser.first_name[0] || 'U').toUpperCase() : 'U'}
-            </Text>
+          <View style={styles.headerAvatarWrapper}>
+            <Image
+              source={{ uri: counterpartAvatar }}
+              style={styles.headerAvatar}
+              contentFit="cover"
+            />
+            <View
+              style={[
+                styles.headerOnlineDot,
+                { backgroundColor: '#10B981', borderColor: colors.surface },
+              ]}
+            />
           </View>
 
           <View style={styles.headerInfo}>
@@ -373,22 +566,31 @@ export default function ChatConversationScreen() {
             </Text>
             <View style={styles.verifiedRow}>
               <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
-              <Text style={[styles.verifiedText, { color: colors.primary }]}>Përdorues i Verifikuar</Text>
+              <Text style={[styles.verifiedText, { color: colors.primary }]}>
+                {otherUser?.is_agency ? 'Agjenci e Verifikuar' : 'Profil i Verifikuar'}
+              </Text>
             </View>
           </View>
         </View>
 
-        {otherUser?.phone ? (
+        {/* Audio & Video Calling Buttons in Header */}
+        <View style={styles.headerActionsRow}>
           <Pressable
-            style={[styles.callHeaderBtn, { backgroundColor: colors.primaryLight }]}
-            onPress={handleCall}
+            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
+            onPress={() => startHeaderCall('audio')}
             hitSlop={8}
           >
-            <Phone size={18} color={colors.primary} strokeWidth={2.2} />
+            <Phone size={17} color={colors.primary} strokeWidth={2.4} />
           </Pressable>
-        ) : (
-          <View style={{ width: 36 }} />
-        )}
+
+          <Pressable
+            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
+            onPress={() => startHeaderCall('video')}
+            hitSlop={8}
+          >
+            <Video size={17} color={colors.primary} strokeWidth={2.4} />
+          </Pressable>
+        </View>
       </View>
 
       {/* 2. Listing Quick Banner */}
@@ -428,11 +630,14 @@ export default function ChatConversationScreen() {
               <Text style={[styles.listingCity, { color: colors.textMuted }]}>• {listing.city}</Text>
             </View>
           </View>
-          <ExternalLink size={16} color={colors.textLight} />
+          <View style={[styles.listingViewPill, { backgroundColor: colors.primaryLight }]}>
+            <Text style={[styles.listingViewPillText, { color: colors.primary }]}>Shiko</Text>
+            <ExternalLink size={12} color={colors.primary} />
+          </View>
         </Pressable>
       )}
 
-      {/* 3. Messages List */}
+      {/* 3. Messages List Area */}
       <KeyboardAvoidingView
         style={styles.chatArea}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -441,7 +646,9 @@ export default function ChatConversationScreen() {
         {loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Duke ngarkuar mesazhet...</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+              Duke ngarkuar mesazhet...
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -458,9 +665,11 @@ export default function ChatConversationScreen() {
                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
                   <Building2 size={28} color={colors.primary} />
                 </View>
-                <Text style={[styles.emptyChatTitle, { color: colors.textPrimary }]}>Filloni bisedën</Text>
+                <Text style={[styles.emptyChatTitle, { color: colors.textPrimary }]}>
+                  Filloni bisedën me shitësin
+                </Text>
                 <Text style={[styles.emptyChatDesc, { color: colors.textMuted }]}>
-                  Dërgoni një pyetje shitësit ose përdorni përgjigjet e shpejta më poshtë.
+                  Bëni pyetje rreth pronës, çmimit, dokumentacionit ose caktoni një takim direkt.
                 </Text>
               </View>
             }
@@ -469,7 +678,11 @@ export default function ChatConversationScreen() {
 
         {/* 4. Quick Replies Carousel */}
         <View style={[styles.quickRepliesContainer, { borderTopColor: colors.border }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRepliesList}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickRepliesList}
+          >
             {QUICK_REPLIES.map((text, idx) => (
               <Pressable
                 key={idx}
@@ -485,7 +698,7 @@ export default function ChatConversationScreen() {
           </ScrollView>
         </View>
 
-        {/* 5. Input Composer Bar */}
+        {/* 5. Input Composer Bar with Attachment Tray & Mic/Send Toggle */}
         <View
           style={[
             styles.inputBar,
@@ -496,6 +709,20 @@ export default function ChatConversationScreen() {
             },
           ]}
         >
+          {/* Attachment Toggle (+) */}
+          <Pressable
+            style={[styles.attachBtn, { backgroundColor: colors.surfaceSubtle }]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              setShowAttachmentTray(true)
+            }}
+            hitSlop={6}
+          >
+            <Plus size={20} color={colors.primary} strokeWidth={2.4} />
+          </Pressable>
+
+          {/* Text Input */}
           <TextInput
             style={[
               styles.textInput,
@@ -520,39 +747,118 @@ export default function ChatConversationScreen() {
             maxLength={1000}
           />
 
-          <Pressable
-            style={[
-              styles.sendBtn,
-              {
-                backgroundColor: inputText.trim()
-                  ? theme === 'green'
-                    ? colors.gold
-                    : colors.primary
-                  : colors.surfaceHighlight,
-              },
-            ]}
-            onPress={() => handleSendMessage()}
-            disabled={!inputText.trim() || sending}
-            hitSlop={8}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Send
-                size={18}
-                color={
-                  inputText.trim()
-                    ? theme === 'green'
-                      ? '#003E37'
-                      : '#FFFFFF'
-                    : colors.textLight
-                }
-                strokeWidth={2.4}
-              />
-            )}
-          </Pressable>
+          {/* Dynamic Action: Send button when text exists, Mic button when empty */}
+          {inputText.trim() ? (
+            <Pressable
+              style={[
+                styles.actionBtn,
+                {
+                  backgroundColor:
+                    theme === 'green' ? colors.gold : colors.primary,
+                },
+              ]}
+              onPress={() => handleSendMessage()}
+              disabled={sending}
+              hitSlop={8}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Send
+                  size={17}
+                  color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                  strokeWidth={2.4}
+                />
+              )}
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.actionBtn, { backgroundColor: colors.primaryLight }]}
+              onPress={handleSendVoiceNote}
+              hitSlop={8}
+            >
+              <Mic size={18} color={colors.primary} strokeWidth={2.2} />
+            </Pressable>
+          )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Attachment Tray Modal (Camera, Gallery, Offer, Visit) */}
+      <Modal
+        visible={showAttachmentTray}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAttachmentTray(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowAttachmentTray(false)}
+        >
+          <View
+            style={[
+              styles.attachmentSheet,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                paddingBottom: Math.max(insets.bottom, 20),
+              },
+            ]}
+          >
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
+                Dërgo Shtesë në Bisedë
+              </Text>
+              <Pressable
+                onPress={() => setShowAttachmentTray(false)}
+                style={styles.closeSheetBtn}
+              >
+                <X size={20} color={colors.textMuted} />
+              </Pressable>
+            </View>
+
+            <View style={styles.sheetGrid}>
+              <Pressable style={styles.sheetOption} onPress={handleTakePhoto}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                  <Camera size={22} color="#3B82F6" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Kamerë</Text>
+              </Pressable>
+
+              <Pressable style={styles.sheetOption} onPress={handlePickImage}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                  <ImageIcon size={22} color="#10B981" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Galeri</Text>
+              </Pressable>
+
+              <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.15)' }]}>
+                  <DollarSign size={22} color="#EAB308" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Ofertë</Text>
+              </Pressable>
+
+              <Pressable style={styles.sheetOption} onPress={handleSendTourRequest}>
+                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.15)' }]}>
+                  <Calendar size={22} color="#A855F7" strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Vizitë</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* High-Fidelity Call Modal for FaceTime / WhatsApp Call */}
+      <CallModal
+        visible={callModal.visible}
+        onClose={() => setCallModal((prev) => ({ ...prev, visible: false }))}
+        counterpartName={callModal.name}
+        counterpartAvatar={callModal.avatar}
+        counterpartPhone={callModal.phone}
+        listingTitle={callModal.listingTitle}
+        initialCallType={callModal.type}
+      />
     </SafeAreaView>
   )
 }
@@ -565,7 +871,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     gap: 12,
   },
@@ -578,16 +884,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  avatar: {
+  headerAvatarWrapper: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+  },
+  headerAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  avatarText: {
-    fontSize: 16,
-    fontFamily: Fonts.extraBold,
+  headerOnlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 2,
   },
   headerInfo: {
     flex: 1,
@@ -606,10 +920,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: Fonts.semiBold,
   },
-  callHeaderBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  headerActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -624,7 +943,7 @@ const styles = StyleSheet.create({
   listingThumb: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   listingDetails: {
     flex: 1,
@@ -647,6 +966,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: Fonts.medium,
   },
+  listingViewPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+  },
+  listingViewPillText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+  },
   chatArea: {
     flex: 1,
   },
@@ -654,16 +985,41 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 12,
   },
   loadingText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
   },
   messagesList: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  emptyMessages: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 24,
     gap: 10,
+  },
+  emptyIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyChatTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+  },
+  emptyChatDesc: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   bubbleWrapper: {
     width: '100%',
@@ -678,7 +1034,7 @@ const styles = StyleSheet.create({
   bubble: {
     maxWidth: '82%',
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 18,
     borderWidth: 1,
     gap: 4,
@@ -705,45 +1061,61 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.medium,
   },
-  emptyMessages: {
-    paddingVertical: 60,
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 24,
+  photoBubbleContainer: {
+    width: 220,
+    height: 160,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginVertical: 2,
   },
-  emptyIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  bubblePhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  voiceNoteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 2,
+    minWidth: 170,
+  },
+  playVoiceBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  emptyChatTitle: {
-    fontSize: 17,
-    fontFamily: Fonts.bold,
+  waveformContainer: {
+    flex: 1,
+    gap: 4,
   },
-  emptyChatDesc: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    textAlign: 'center',
-    lineHeight: 18,
+  waveBars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 24,
+  },
+  waveBar: {
+    width: 3,
+    borderRadius: 2,
+  },
+  voiceDurationText: {
+    fontSize: 10,
+    fontFamily: Fonts.semiBold,
   },
   quickRepliesContainer: {
+    borderTopWidth: 1,
     paddingVertical: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   quickRepliesList: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     gap: 8,
   },
   quickReplyChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
   },
   quickReplyText: {
@@ -752,29 +1124,79 @@ const styles = StyleSheet.create({
   },
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 14,
-    paddingTop: 10,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
-    gap: 10,
+    gap: 8,
+  },
+  attachBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textInput: {
     flex: 1,
-    minHeight: 42,
-    maxHeight: 120,
-    borderRadius: 21,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
+    minHeight: 40,
+    maxHeight: 100,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingTop: Platform.OS === 'ios' ? 10 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
     fontSize: 14,
     fontFamily: Fonts.regular,
   },
-  sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  actionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  attachmentSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+    gap: 16,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+  },
+  closeSheetBtn: {
+    padding: 4,
+  },
+  sheetGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  sheetOption: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  sheetOptionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetOptionLabel: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
   },
 })
