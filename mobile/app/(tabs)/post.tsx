@@ -787,16 +787,17 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: Platform.OS === 'ios' ? 8 : 12,
+    paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: Fonts.extraBold,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
+    fontSize: 13,
+    fontFamily: Fonts.regular,
     marginTop: 2,
   },
   container: {

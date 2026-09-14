@@ -119,6 +119,11 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Top Bar Header with Official Logo - Identical padding across all tabs */}
+      <View style={styles.header}>
+        <Logo size={34} />
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -133,11 +138,6 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header with Official Logo on Left */}
-        <View style={styles.header}>
-          <Logo size={36} />
-        </View>
-
         {/* Search & Filter Bar */}
         <View style={styles.searchBarContainer}>
           <View
@@ -293,15 +293,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 6,
     paddingBottom: 36,
   },
   header: {
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 8 : 12,
+    paddingBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingTop: 4,
   },
   searchBarContainer: {
     flexDirection: 'row',

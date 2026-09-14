@@ -393,12 +393,13 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
   },
   headerTitle: {
     fontSize: 24,
     fontFamily: Fonts.extraBold,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 13,
