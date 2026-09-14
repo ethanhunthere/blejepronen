@@ -284,7 +284,6 @@ export default function ListingsScreen() {
         console.warn('Listings catch notice:', err?.message || err)
       } finally {
         setLoading(false)
-        setRefreshing(false)
       }
     },
     [
@@ -314,7 +313,17 @@ export default function ListingsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     }
     setRefreshing(true)
+    const startTime = Date.now()
+
     await fetchListings(true)
+
+    // Golden UX duration: minimum 1.2s to feel organic, stable and satisfying
+    const elapsed = Date.now() - startTime
+    if (elapsed < 1200) {
+      await new Promise((resolve) => setTimeout(resolve, 1200 - elapsed))
+    }
+
+    setRefreshing(false)
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
