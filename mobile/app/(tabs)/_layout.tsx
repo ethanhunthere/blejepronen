@@ -1,10 +1,182 @@
 import React, { useState, useEffect } from 'react'
 import { Tabs } from 'expo-router'
-import { Platform, View, StyleSheet } from 'react-native'
+import { Platform, View, Text, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+
+interface TabBarItemContentProps {
+  icon: any
+  title: string
+  focused: boolean
+  badgeCount?: number
+}
+
+function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarItemContentProps) {
+  const { colors, theme } = useTheme()
+
+  const activeColor = colors.tabBarActive
+  const inactiveColor = colors.tabBarInactive
+
+  const activeCapsuleBg =
+    theme === 'green'
+      ? 'rgba(200, 184, 130, 0.22)'
+      : theme === 'black'
+      ? 'rgba(52, 211, 153, 0.18)'
+      : 'rgba(0, 100, 89, 0.10)'
+
+  const activeCapsuleBorder =
+    theme === 'green'
+      ? 'rgba(200, 184, 130, 0.42)'
+      : theme === 'black'
+      ? 'rgba(52, 211, 153, 0.40)'
+      : 'rgba(0, 100, 89, 0.20)'
+
+  return (
+    <View style={styles.tabItemContainer}>
+      {/* Active Pill Capsule with Ambient Glow */}
+      <View
+        style={[
+          styles.iconCapsule,
+          focused && [
+            styles.iconCapsuleActive,
+            {
+              backgroundColor: activeCapsuleBg,
+              borderColor: activeCapsuleBorder,
+              shadowColor: activeColor,
+            },
+          ],
+        ]}
+      >
+        <Icon
+          size={19}
+          color={focused ? activeColor : inactiveColor}
+          strokeWidth={focused ? 2.6 : 1.9}
+        />
+
+        {badgeCount && badgeCount > 0 ? (
+          <View
+            style={[
+              styles.unreadBadge,
+              {
+                backgroundColor: theme === 'green' ? colors.gold : '#EF4444',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.unreadBadgeText,
+                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+              ]}
+            >
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Label with dynamic weight and color */}
+      <Text
+        style={[
+          styles.tabLabel,
+          {
+            color: focused ? activeColor : inactiveColor,
+            fontFamily: focused ? Fonts.extraBold : Fonts.medium,
+          },
+        ]}
+        numberOfLines={1}
+      >
+        {title}
+      </Text>
+
+      {/* Luminous Active Micro-Jewel Accent Bar */}
+      <View
+        style={[
+          styles.indicatorPill,
+          {
+            backgroundColor: focused ? activeColor : 'transparent',
+          },
+        ]}
+      />
+    </View>
+  )
+}
+
+function PostTabBarItem({ focused }: { focused: boolean }) {
+  const { colors, theme } = useTheme()
+  const activeColor = colors.tabBarActive
+  const inactiveColor = colors.tabBarInactive
+
+  const postBtnBg = theme === 'green' ? colors.gold : colors.primary
+  const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+
+  const auraBg =
+    focused
+      ? theme === 'green'
+        ? 'rgba(200, 184, 130, 0.30)'
+        : 'rgba(0, 100, 89, 0.22)'
+      : theme === 'green'
+      ? 'rgba(200, 184, 130, 0.14)'
+      : 'rgba(0, 100, 89, 0.09)'
+
+  const auraBorder =
+    focused
+      ? theme === 'green'
+        ? colors.gold
+        : colors.primary
+      : 'transparent'
+
+  return (
+    <View style={styles.tabItemContainer}>
+      {/* Concentric Halo Aura around the action button */}
+      <View
+        style={[
+          styles.postAura,
+          {
+            backgroundColor: auraBg,
+            borderColor: auraBorder,
+          },
+          focused && styles.postAuraActive,
+        ]}
+      >
+        <View
+          style={[
+            styles.postInnerButton,
+            {
+              backgroundColor: postBtnBg,
+              shadowColor: postBtnBg,
+            },
+          ]}
+        >
+          <Plus size={17} color={postIconColor} strokeWidth={3} />
+        </View>
+      </View>
+
+      <Text
+        style={[
+          styles.tabLabel,
+          {
+            color: focused ? activeColor : inactiveColor,
+            fontFamily: focused ? Fonts.extraBold : Fonts.medium,
+          },
+        ]}
+        numberOfLines={1}
+      >
+        Posto
+      </Text>
+
+      <View
+        style={[
+          styles.indicatorPill,
+          {
+            backgroundColor: focused ? activeColor : 'transparent',
+          },
+        ]}
+      />
+    </View>
+  )
+}
 
 export default function TabLayout() {
   const { colors, theme } = useTheme()
@@ -78,17 +250,13 @@ export default function TabLayout() {
 
   // Dynamic safe bottom spacing tailored to device bezels / home indicators
   const bottomInset = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10
-  const tabHeight = 54 + bottomInset
-
-  const postBtnBg = theme === 'green' ? colors.gold : colors.primary
-  const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const tabHeight = 56 + bottomInset
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.tabBarActive,
-        tabBarInactiveTintColor: colors.tabBarInactive,
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopColor: colors.tabBarBorder,
@@ -96,23 +264,17 @@ export default function TabLayout() {
           height: tabHeight,
           paddingTop: 6,
           paddingBottom: bottomInset,
-          elevation: 10,
+          elevation: 12,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: theme === 'black' ? 0.4 : 0.07,
-          shadowRadius: 8,
+          shadowOpacity: theme === 'black' ? 0.45 : 0.08,
+          shadowRadius: 10,
         },
         tabBarItemStyle: {
-          height: 48,
+          height: 52,
           justifyContent: 'center',
           alignItems: 'center',
-          paddingVertical: 2,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontFamily: Fonts.semiBold,
-          marginTop: 2,
-          marginBottom: 0,
+          paddingVertical: 0,
         },
       }}
     >
@@ -120,8 +282,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Kërko',
-          tabBarIcon: ({ color, focused }) => (
-            <Search size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarItemContent icon={Search} title="Kërko" focused={focused} />
           ),
         }}
       />
@@ -129,8 +291,8 @@ export default function TabLayout() {
         name="listings"
         options={{
           title: 'Pronat',
-          tabBarIcon: ({ color, focused }) => (
-            <Building2 size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarItemContent icon={Building2} title="Pronat" focused={focused} />
           ),
         }}
       />
@@ -138,33 +300,20 @@ export default function TabLayout() {
         name="post"
         options={{
           title: 'Posto',
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={[
-                styles.postButton,
-                { backgroundColor: postBtnBg, shadowColor: postBtnBg },
-                focused && styles.postButtonActive,
-              ]}
-            >
-              <Plus size={18} color={postIconColor} strokeWidth={3} />
-            </View>
-          ),
+          tabBarIcon: ({ focused }) => <PostTabBarItem focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Mesazhe',
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: theme === 'green' ? colors.gold : '#EF4444',
-            color: theme === 'green' ? '#003E37' : '#FFFFFF',
-            fontSize: 10,
-            fontFamily: Fonts.bold,
-            lineHeight: 13,
-          },
-          tabBarIcon: ({ color, focused }) => (
-            <MessageSquare size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarItemContent
+              icon={MessageSquare}
+              title="Mesazhe"
+              focused={focused}
+              badgeCount={unreadCount}
+            />
           ),
         }}
       />
@@ -172,8 +321,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profili',
-          tabBarIcon: ({ color, focused }) => (
-            <User size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarItemContent icon={User} title="Profili" focused={focused} />
           ),
         }}
       />
@@ -182,19 +331,82 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  postButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  tabItemContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -2,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 5,
+    width: 64,
+    height: 50,
   },
-  postButtonActive: {
-    transform: [{ scale: 1.08 }],
+  iconCapsule: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+  },
+  iconCapsuleActive: {
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabLabel: {
+    fontSize: 10,
+    marginTop: 2,
+    lineHeight: 12,
+    textAlign: 'center',
+  },
+  indicatorPill: {
+    width: 14,
+    height: 2.5,
+    borderRadius: 1.25,
+    marginTop: 2,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -2,
+    right: 3,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    fontSize: 9,
+    fontFamily: Fonts.bold,
+    lineHeight: 11,
+  },
+  postAura: {
+    width: 38,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  postAuraActive: {
+    transform: [{ scale: 1.06 }],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  postInnerButton: {
+    width: 28,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
   },
 })
