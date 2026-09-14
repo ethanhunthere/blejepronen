@@ -216,7 +216,15 @@ export default function MessagesScreen() {
           <View
             style={[
               styles.authCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              {
+                backgroundColor: colors.surface,
+                borderColor:
+                  theme === 'white'
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : theme === 'green'
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(255, 255, 255, 0.10)',
+              },
             ]}
           >
             <View style={[styles.authIconCircle, { backgroundColor: colors.primaryLight }]}>
@@ -259,7 +267,15 @@ export default function MessagesScreen() {
           <View
             style={[
               styles.emptyContainer,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              {
+                backgroundColor: colors.surface,
+                borderColor:
+                  theme === 'white'
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : theme === 'green'
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(255, 255, 255, 0.10)',
+              },
             ]}
           >
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
@@ -291,7 +307,15 @@ export default function MessagesScreen() {
                 key={item.id}
                 style={[
                   styles.convoItem,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor:
+                      theme === 'white'
+                        ? 'rgba(0, 0, 0, 0.08)'
+                        : theme === 'green'
+                        ? 'rgba(255, 255, 255, 0.12)'
+                        : 'rgba(255, 255, 255, 0.10)',
+                  },
                 ]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
@@ -405,7 +429,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 28,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 0.5,
     marginTop: 24,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -474,7 +498,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: 32,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0.5,
     alignItems: 'center',
     marginTop: 20,
     shadowOffset: { width: 0, height: 2 },
@@ -523,19 +547,19 @@ const styles = StyleSheet.create({
   convoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    padding: 13,
+    borderRadius: 16,
+    borderWidth: 0.5,
     gap: 12,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 1,
   },
   avatarContainer: {
     width: 52,
     height: 52,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   avatarImage: {

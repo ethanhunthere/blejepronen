@@ -39,6 +39,13 @@ export default function PostPropertyScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
 
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.10)'
+
   // Form State
   const [category, setCategory] = useState<PropertyCategory>('banese')
   const [subtype, setSubtype] = useState<string>('2+1')
@@ -315,7 +322,7 @@ export default function PostPropertyScreen() {
         </View>
 
         <View style={styles.gateWrapper}>
-          <View style={[styles.gateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.gateCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             <View style={[styles.gateIconWrap, { backgroundColor: colors.primaryLight }]}>
               <PlusCircle size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
@@ -374,7 +381,7 @@ export default function PostPropertyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* SECTION 1: Kategoria e Pronës */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>1. Kategoria e pronës</Text>
           <View style={styles.categoryGrid}>
             {CATEGORY_KEYS.map((catKey) => {
@@ -411,7 +418,7 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 2: Lloji i Ofertës */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>2. Lloji i ofertës</Text>
           <View style={[styles.typeToggle, { backgroundColor: colors.surfaceSubtle }]}>
             {(['shitje', 'qira'] as const).map((t) => {
@@ -446,7 +453,7 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 3: Lokacioni */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>3. Lokacioni</Text>
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Qyteti *</Text>
@@ -550,7 +557,7 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 4: Specifikat & Çmimi */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>4. Çmimi dhe Specifikat</Text>
 
           <View style={styles.rowInputs}>
@@ -685,7 +692,7 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 5: Titulli & Përshkrimi Inteligjent */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>5. Titulli dhe Përshkrimi</Text>
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Titulli i shpalljes *</Text>
@@ -770,7 +777,7 @@ export default function PostPropertyScreen() {
         </View>
 
         {/* SECTION 6: Fotografitë */}
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>6. Fotografitë e pronës</Text>
           <Text style={[styles.helperText, { color: colors.textMuted }]}>
             Ngarkoni deri në 10 foto cilësore. Fotoja e parë do të jetë kryesore.
@@ -872,9 +879,9 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   sectionCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
-    borderWidth: 1,
+    borderWidth: 0.5,
     gap: 12,
   },
   sectionHeading: {
@@ -1118,7 +1125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 28,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 0.5,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

@@ -45,7 +45,12 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         styles.card,
         {
           backgroundColor: colors.surface,
-          borderColor: colors.border,
+          borderColor:
+            theme === 'white'
+              ? 'rgba(0, 0, 0, 0.08)'
+              : theme === 'green'
+              ? 'rgba(255, 255, 255, 0.12)'
+              : 'rgba(255, 255, 255, 0.10)',
           shadowColor: theme === 'black' ? '#000' : '#101828',
           shadowOpacity: theme === 'black' ? 0.35 : 0.07,
         },
@@ -321,9 +326,9 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 22,
+    borderRadius: 24,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.5,
     marginBottom: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 14,
@@ -450,8 +455,8 @@ const styles = StyleSheet.create({
   typologyPill: {
     paddingHorizontal: 9,
     paddingVertical: 3.5,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
   },
   typologyPillText: {
     fontSize: 11,
@@ -479,7 +484,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 2,
     paddingTop: 8,
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
   },
   specModule: {
     flexDirection: 'row',
@@ -487,8 +492,8 @@ const styles = StyleSheet.create({
     gap: 4.5,
     paddingHorizontal: 8,
     paddingVertical: 4.5,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.5,
   },
   specModuleText: {
     fontSize: 11.5,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native'
+import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, LayoutGrid } from 'lucide-react-native'
@@ -267,6 +268,11 @@ export default function HomeScreen() {
               },
             ]}
           >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 70 : 100}
+              tint={colors.blurTint}
+              style={StyleSheet.absoluteFill}
+            />
             <Search
               size={18}
               color={
@@ -506,6 +512,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 16,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,

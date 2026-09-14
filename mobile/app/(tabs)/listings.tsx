@@ -473,6 +473,11 @@ export default function ListingsScreen() {
             },
           ]}
         >
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 70 : 100}
+            tint={colors.blurTint}
+            style={StyleSheet.absoluteFill}
+          />
           <Search
             size={18}
             color={
@@ -505,8 +510,19 @@ export default function ListingsScreen() {
           style={[
             styles.filterButton,
             {
-              backgroundColor: activeFiltersCount > 0 ? colors.primary : colors.surface,
-              borderColor: activeFiltersCount > 0 ? colors.primary : colors.border,
+              backgroundColor:
+                activeFiltersCount > 0
+                  ? colors.primary
+                  : Platform.OS === 'ios'
+                  ? 'transparent'
+                  : colors.surface,
+              borderColor:
+                activeFiltersCount > 0
+                  ? colors.primary
+                  : theme === 'white'
+                  ? 'rgba(0, 0, 0, 0.08)'
+                  : 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 0.5,
             },
           ]}
           onPress={() => {
@@ -514,6 +530,15 @@ export default function ListingsScreen() {
             setShowFilterModal(true)
           }}
         >
+          {Platform.OS === 'ios' && activeFiltersCount === 0 && (
+            <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]}>
+              <BlurView
+                intensity={70}
+                tint={colors.blurTint}
+                style={StyleSheet.absoluteFill}
+              />
+            </View>
+          )}
           <SlidersHorizontal
             size={18}
             color={
@@ -1789,13 +1814,14 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flex: 1,
-    height: 46,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   searchInput: {
     flex: 1,
@@ -1804,9 +1830,9 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   filterButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

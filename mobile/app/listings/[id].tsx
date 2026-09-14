@@ -472,7 +472,17 @@ export default function ListingDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom Action Bar with Native iOS Frosted Glass */}
-      <View style={styles.bottomBarWrapper}>
+      <View
+        style={[
+          styles.bottomBarWrapper,
+          {
+            borderTopColor:
+              theme === 'white'
+                ? 'rgba(0, 0, 0, 0.08)'
+                : 'rgba(255, 255, 255, 0.12)',
+          },
+        ]}
+      >
         <BlurView
           intensity={Platform.OS === 'ios' ? 88 : 100}
           tint={colors.blurTint}
@@ -492,15 +502,7 @@ export default function ListingDetailScreen() {
           ]}
         />
         <SafeAreaView
-          style={[
-            styles.bottomBarSafeArea,
-            {
-              borderTopColor:
-                theme === 'white'
-                  ? 'rgba(0, 0, 0, 0.08)'
-                  : 'rgba(255, 255, 255, 0.12)',
-            },
-          ]}
+          style={styles.bottomBarSafeArea}
           edges={['bottom']}
         >
           {currentUser?.id === listing.user_id ? (

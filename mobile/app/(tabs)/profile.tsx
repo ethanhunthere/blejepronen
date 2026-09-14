@@ -93,6 +93,13 @@ export default function ProfileScreen() {
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.10)'
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
@@ -109,7 +116,7 @@ export default function ProfileScreen() {
       >
         {/* Top Card: Authenticated vs Guest */}
         {currentUser ? (
-          <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
               <User size={34} color={colors.primary} strokeWidth={2.2} />
             </View>
@@ -131,7 +138,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         ) : (
-          <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             <View style={[styles.guestIconWrap, { backgroundColor: colors.primaryLight }]}>
               <User size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
@@ -171,7 +178,7 @@ export default function ProfileScreen() {
         )}
 
         {/* SETTINGS: Theme Selector (E Bardhë / E Gjelbër / E Zezë) */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <View style={styles.groupHeaderRow}>
             <View style={styles.groupHeaderLeft}>
               <Palette size={18} color={colors.primary} strokeWidth={2.2} />
@@ -272,7 +279,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Activity Section */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Aktiviteti</Text>
 
           <Pressable
@@ -315,7 +322,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Support & Legal */}
-        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Ndihmë & Ligjore</Text>
 
           <Pressable
@@ -431,9 +438,9 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    padding: 18,
+    borderRadius: 22,
+    borderWidth: 0.5,
     gap: 14,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -490,9 +497,9 @@ const styles = StyleSheet.create({
   },
   guestCard: {
     alignItems: 'center',
-    padding: 22,
-    borderRadius: 18,
-    borderWidth: 1,
+    padding: 24,
+    borderRadius: 22,
+    borderWidth: 0.5,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -553,8 +560,8 @@ const styles = StyleSheet.create({
   },
   menuGroup: {
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0.5,
     gap: 14,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
