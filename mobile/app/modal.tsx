@@ -12,10 +12,22 @@ import {
   Alert,
 } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { X, Mail, Lock, User, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react-native'
+import {
+  X,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  LogIn,
+  UserPlus,
+  ArrowRight,
+} from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { Logo } from '@/components/Logo'
 
 export default function AuthModalScreen() {
   const router = useRouter()
@@ -31,6 +43,7 @@ export default function AuthModalScreen() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [focusedField, setFocusedField] = useState<'fullName' | 'email' | 'password' | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -45,7 +58,7 @@ export default function AuthModalScreen() {
     const trimmedEmail = email.trim()
 
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      setErrorMessage('Ju lutemi shkruani një email të vlefshëm.')
+      setErrorMessage('Ju lutemi shkruani një adresë email të vlefshme.')
       return
     }
 
@@ -120,8 +133,8 @@ export default function AuthModalScreen() {
     }
   }
 
-  const primaryBtnText =
-    theme === 'green' ? '#003E37' : '#FFFFFF'
+  const primaryBtnText = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const brandHighlight = theme === 'green' ? colors.gold : colors.primary
 
   return (
     <KeyboardAvoidingView
@@ -145,24 +158,33 @@ export default function AuthModalScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Brand Header */}
+        {/* 1. Official Brand Logo & Text */}
+        <View style={styles.brandHero}>
+          <Logo size={42} />
+          <Text style={[styles.brandTagline, { color: colors.textMuted }]}>
+            Platforma #1 e Patundshmërive në Kosovë
+          </Text>
+        </View>
+
+        {/* 2. Contextual Title & Subtitle */}
         <View style={styles.header}>
-          <View style={[styles.badge, { backgroundColor: colors.badgeBg }]}>
-            <Sparkles size={13} color={colors.badgeText} strokeWidth={2.4} />
-            <Text style={[styles.badgeText, { color: colors.badgeText }]}>Bleje Pronën ID</Text>
-          </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>
             {activeTab === 'login' ? 'Mirësevini Përsëri' : 'Krijoni Llogari Falas'}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             {activeTab === 'login'
-              ? 'Kyçuni për të menaxhuar pronat dhe ofertat tuaja'
-              : 'Bashkohuni me mijëra përdorues në Kosovë'}
+              ? 'Kyçuni për të menaxhuar pronat, ofertat dhe bisedat'
+              : 'Bëhuni pjesë e Bleje Pronën për të postuar dhe kontaktuar'}
           </Text>
         </View>
 
-        {/* Tab Switcher (Kyçu / Regjistrohu) */}
-        <View style={[styles.tabSwitcher, { backgroundColor: colors.surfaceSubtle }]}>
+        {/* 3. Luxury Apple/Airbnb-Grade Segmented Tabs (Kyçu / Regjistrohu) */}
+        <View
+          style={[
+            styles.tabSwitcher,
+            { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+          ]}
+        >
           <Pressable
             style={[
               styles.tabBtn,
@@ -170,18 +192,26 @@ export default function AuthModalScreen() {
                 styles.tabBtnActive,
                 {
                   backgroundColor: colors.surface,
+                  borderColor: colors.border,
                   shadowColor: '#000',
-                  shadowOpacity: theme === 'black' ? 0.3 : 0.08,
+                  shadowOpacity: theme === 'black' ? 0.35 : 0.08,
                 },
               ],
             ]}
             onPress={() => handleTabChange('login')}
           >
+            <LogIn
+              size={16}
+              color={activeTab === 'login' ? brandHighlight : colors.textMuted}
+              strokeWidth={activeTab === 'login' ? 2.5 : 2}
+            />
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeTab === 'login' ? colors.textPrimary : colors.textMuted },
-                activeTab === 'login' && { fontFamily: Fonts.bold },
+                {
+                  color: activeTab === 'login' ? colors.textPrimary : colors.textMuted,
+                  fontFamily: activeTab === 'login' ? Fonts.bold : Fonts.medium,
+                },
               ]}
             >
               Kyçu
@@ -195,18 +225,26 @@ export default function AuthModalScreen() {
                 styles.tabBtnActive,
                 {
                   backgroundColor: colors.surface,
+                  borderColor: colors.border,
                   shadowColor: '#000',
-                  shadowOpacity: theme === 'black' ? 0.3 : 0.08,
+                  shadowOpacity: theme === 'black' ? 0.35 : 0.08,
                 },
               ],
             ]}
             onPress={() => handleTabChange('register')}
           >
+            <UserPlus
+              size={16}
+              color={activeTab === 'register' ? brandHighlight : colors.textMuted}
+              strokeWidth={activeTab === 'register' ? 2.5 : 2}
+            />
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeTab === 'register' ? colors.textPrimary : colors.textMuted },
-                activeTab === 'register' && { fontFamily: Fonts.bold },
+                {
+                  color: activeTab === 'register' ? colors.textPrimary : colors.textMuted,
+                  fontFamily: activeTab === 'register' ? Fonts.bold : Fonts.medium,
+                },
               ]}
             >
               Regjistrohu
@@ -214,14 +252,14 @@ export default function AuthModalScreen() {
           </Pressable>
         </View>
 
-        {/* Error Alert */}
+        {/* 4. Error Alert */}
         {errorMessage && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         )}
 
-        {/* Form Inputs */}
+        {/* 5. Clean Input Fields */}
         <View style={styles.form}>
           {activeTab === 'register' && (
             <View style={styles.inputGroup}>
@@ -231,16 +269,27 @@ export default function AuthModalScreen() {
               <View
                 style={[
                   styles.inputField,
-                  { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+                  {
+                    backgroundColor: colors.searchBg,
+                    borderColor:
+                      focusedField === 'fullName' ? brandHighlight : colors.searchBorder,
+                    borderWidth: focusedField === 'fullName' ? 1.5 : 1,
+                  },
                 ]}
               >
-                <User size={18} color={colors.textMuted} strokeWidth={2} />
+                <User
+                  size={18}
+                  color={focusedField === 'fullName' ? brandHighlight : colors.textMuted}
+                  strokeWidth={2}
+                />
                 <TextInput
                   style={[styles.textInput, { color: colors.textPrimary }]}
                   placeholder="psh. Artan Krasniqi"
                   placeholderTextColor={colors.textLight}
                   value={fullName}
                   onChangeText={setFullName}
+                  onFocus={() => setFocusedField('fullName')}
+                  onBlur={() => setFocusedField(null)}
                   autoCapitalize="words"
                 />
               </View>
@@ -252,16 +301,26 @@ export default function AuthModalScreen() {
             <View
               style={[
                 styles.inputField,
-                { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+                {
+                  backgroundColor: colors.searchBg,
+                  borderColor: focusedField === 'email' ? brandHighlight : colors.searchBorder,
+                  borderWidth: focusedField === 'email' ? 1.5 : 1,
+                },
               ]}
             >
-              <Mail size={18} color={colors.textMuted} strokeWidth={2} />
+              <Mail
+                size={18}
+                color={focusedField === 'email' ? brandHighlight : colors.textMuted}
+                strokeWidth={2}
+              />
               <TextInput
                 style={[styles.textInput, { color: colors.textPrimary }]}
                 placeholder="shembull@email.com"
                 placeholderTextColor={colors.textLight}
                 value={email}
                 onChangeText={setEmail}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -274,16 +333,27 @@ export default function AuthModalScreen() {
             <View
               style={[
                 styles.inputField,
-                { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+                {
+                  backgroundColor: colors.searchBg,
+                  borderColor:
+                    focusedField === 'password' ? brandHighlight : colors.searchBorder,
+                  borderWidth: focusedField === 'password' ? 1.5 : 1,
+                },
               ]}
             >
-              <Lock size={18} color={colors.textMuted} strokeWidth={2} />
+              <Lock
+                size={18}
+                color={focusedField === 'password' ? brandHighlight : colors.textMuted}
+                strokeWidth={2}
+              />
               <TextInput
                 style={[styles.textInput, { color: colors.textPrimary }]}
                 placeholder="Të paktën 6 karaktere"
                 placeholderTextColor={colors.textLight}
                 value={password}
                 onChangeText={setPassword}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
                 secureTextEntry={!showPassword}
               />
               <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={10}>
@@ -296,11 +366,11 @@ export default function AuthModalScreen() {
             </View>
           </View>
 
-          {/* Submit CTA */}
+          {/* 6. Submit CTA Button */}
           <Pressable
             style={[
               styles.submitBtn,
-              { backgroundColor: colors.primary },
+              { backgroundColor: brandHighlight },
               loading && styles.submitBtnDisabled,
             ]}
             onPress={handleAuthSubmit}
@@ -309,18 +379,41 @@ export default function AuthModalScreen() {
             {loading ? (
               <ActivityIndicator color={primaryBtnText} />
             ) : (
-              <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
-                {activeTab === 'login' ? 'Kyçu Menjëherë' : 'Krijo Llogari'}
-              </Text>
+              <View style={styles.submitBtnInner}>
+                <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                  {activeTab === 'login' ? 'Kyçu në Llogari' : 'Krijo Llogarinë'}
+                </Text>
+                <ArrowRight size={18} color={primaryBtnText} strokeWidth={2.4} />
+              </View>
             )}
           </Pressable>
+
+          {/* 7. Quick Switcher Prompt */}
+          <View style={styles.switchPromptRow}>
+            <Text style={[styles.switchPromptText, { color: colors.textMuted }]}>
+              {activeTab === 'login' ? 'Nuk keni llogari ende?' : 'Keni tashmë një llogari?'}
+            </Text>
+            <Pressable
+              onPress={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
+              hitSlop={8}
+            >
+              <Text style={[styles.switchActionText, { color: brandHighlight }]}>
+                {activeTab === 'login' ? 'Regjistrohuni falas' : 'Kyçuni këtu'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
-        {/* Security badge */}
-        <View style={styles.securityNote}>
-          <ShieldCheck size={14} color={colors.textLight} strokeWidth={2} />
-          <Text style={[styles.securityText, { color: colors.textLight }]}>
-            Të dhënat tuaja ruhen me enkriptim të sigurt sipas standardeve më të larta
+        {/* 8. Trust & Security Badge */}
+        <View
+          style={[
+            styles.securityNote,
+            { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+          ]}
+        >
+          <ShieldCheck size={16} color={colors.primary} strokeWidth={2.2} />
+          <Text style={[styles.securityText, { color: colors.textSecondary }]}>
+            Komunikim dhe të dhëna të mbrojtura me enkriptim të sigurt sipas standardeve më të larta
           </Text>
         </View>
       </ScrollView>
@@ -341,7 +434,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dragHandle: {
-    width: 36,
+    width: 38,
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
@@ -358,56 +451,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingBottom: 40,
   },
+  brandHero: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 14,
+    gap: 6,
+  },
+  brandTagline: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
+  },
   header: {
     alignItems: 'center',
-    marginTop: 10,
     marginBottom: 20,
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginBottom: 10,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
-  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: Fonts.extraBold,
     marginBottom: 6,
     textAlign: 'center',
+    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 13,
     fontFamily: Fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
+    maxWidth: 320,
   },
   tabSwitcher: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 4,
+    gap: 6,
     marginBottom: 20,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 10,
+    height: 44,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 9,
+    justifyContent: 'center',
+    borderRadius: 11,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   tabBtnActive: {
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 2,
   },
   tabBtnText: {
     fontSize: 13,
-    fontFamily: Fonts.medium,
   },
   errorContainer: {
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
@@ -437,10 +536,9 @@ const styles = StyleSheet.create({
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
-    height: 48,
+    height: 50,
     gap: 10,
   },
   textInput: {
@@ -455,29 +553,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 3,
   },
   submitBtnDisabled: {
     opacity: 0.6,
   },
+  submitBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   submitBtnText: {
     fontSize: 15,
+    fontFamily: Fonts.bold,
+  },
+  switchPromptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 4,
+    paddingVertical: 4,
+  },
+  switchPromptText: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+  },
+  switchActionText: {
+    fontSize: 13,
     fontFamily: Fonts.bold,
   },
   securityNote: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: 24,
-    paddingHorizontal: 16,
+    gap: 8,
+    marginTop: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   securityText: {
     fontSize: 11,
-    fontFamily: Fonts.regular,
+    fontFamily: Fonts.medium,
     textAlign: 'center',
+    flex: 1,
     lineHeight: 15,
   },
 })

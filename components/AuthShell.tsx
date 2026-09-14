@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import Globe from '@/components/originkit/ui/globe-fast'
 
 interface AuthShellProps {
@@ -66,6 +67,22 @@ export default function AuthShell({
           the white field carries less visual mass than the globe-filled teal) */}
       <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-white px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
         <div className="w-full max-w-[410px] my-auto py-6 sm:py-10 flex flex-col justify-center shrink-0">
+          <Link
+            href="/"
+            className="mb-6 inline-flex items-center gap-2.5 transition-opacity hover:opacity-85 self-start"
+          >
+            <Image
+              src="/logo-teal.png"
+              alt="Bleje Pronën"
+              width={36}
+              height={36}
+              priority
+              className="h-8 w-8 object-contain"
+            />
+            <span className="text-2xl font-black tracking-tight text-[#006459]">
+              Bleje <span className="text-[#C8B882]">Pronën</span>
+            </span>
+          </Link>
           {children}
         </div>
       </div>
