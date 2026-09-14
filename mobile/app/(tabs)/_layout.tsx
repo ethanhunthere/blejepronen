@@ -1,13 +1,80 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Tabs } from 'expo-router'
 import { Platform, View, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
+import { supabase } from '@/lib/supabase'
 
 export default function TabLayout() {
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
+  const [unreadCount, setUnreadCount] = useState<number>(0)
+
+  useEffect(() => {
+    async function checkUnread() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          setUnreadCount(0)
+          return
+        }
+
+        const { data: convos } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+
+        if (convos && convos.length > 0) {
+          const cIds = convos.map((c) => c.id)
+          const { count } = await supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .in('conversation_id', cIds)
+            .eq('is_read', false)
+            .neq('sender_id', user.id)
+
+          setUnreadCount(count || 0)
+        } else {
+          setUnreadCount(0)
+        }
+      } catch (err) {
+        // Silent catch for network jitter
+      }
+    }
+
+    checkUnread()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      checkUnread()
+    })
+
+    const channel = supabase
+      .channel('tab_unread_messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        () => {
+          checkUnread()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => {
+          checkUnread()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      authListener.subscription.unsubscribe()
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   // Dynamic safe bottom spacing tailored to device bezels / home indicators
   const bottomInset = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10
@@ -88,6 +155,14 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: 'Mesazhe',
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: theme === 'green' ? colors.gold : '#EF4444',
+            color: theme === 'green' ? '#003E37' : '#FFFFFF',
+            fontSize: 10,
+            fontFamily: Fonts.bold,
+            lineHeight: 13,
+          },
           tabBarIcon: ({ color, focused }) => (
             <MessageSquare size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
           ),

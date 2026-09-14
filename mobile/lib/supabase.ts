@@ -62,6 +62,7 @@ export interface Listing {
   is_active: boolean
   is_featured: boolean
   created_at: string
+  profiles?: Profile | null
 }
 
 export interface Profile {

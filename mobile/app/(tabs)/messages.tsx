@@ -58,23 +58,60 @@ export default function MessagesScreen() {
 
       const { data, error } = await supabase
         .from('conversations')
-        .select('*, listings(id, title, images), buyer:buyer_id(first_name, last_name), seller:seller_id(first_name, last_name)')
+        .select(`
+          id,
+          listing_id,
+          buyer_id,
+          seller_id,
+          listings(id, title, images),
+          buyer:buyer_id(id, first_name, last_name),
+          seller:seller_id(id, first_name, last_name),
+          messages(id, content, sender_id, created_at, is_read)
+        `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('updated_at', { ascending: false })
 
       if (error) {
         console.warn('Conversations notice:', error.message)
       } else if (data) {
-        const mapped: ConversationItem[] = data.map((c: any) => ({
-          id: c.id,
-          listing_id: c.listing_id,
-          listing_title: c.listings?.title || 'Pronë në Bleje Pronën',
-          listing_image: c.listings?.images?.[0] || '',
-          seller_name: `${c.seller?.first_name || 'Shitës'} ${c.seller?.last_name || ''}`.trim(),
-          last_message: 'Përshëndetje! A është ende e lirë kjo pronë?',
-          last_time: 'Sot',
-          unread_count: 0,
-        }))
+        const mapped: ConversationItem[] = data.map((c: any) => {
+          const isBuyer = user.id === c.buyer_id
+          const counterpart = isBuyer ? c.seller : c.buyer
+          const counterpartName = counterpart
+            ? `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim() || (isBuyer ? 'Shitësi' : 'Blerësi')
+            : (isBuyer ? 'Shitësi' : 'Blerësi')
+
+          const sortedMsgs = Array.isArray(c.messages)
+            ? c.messages.slice().sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+            : []
+          const lastMsgObj = sortedMsgs[sortedMsgs.length - 1]
+          const lastMsg = lastMsgObj?.content || 'Bisedë e re'
+
+          let lastTime = 'Sot'
+          if (lastMsgObj?.created_at) {
+            const d = new Date(lastMsgObj.created_at)
+            const now = new Date()
+            const isToday = d.toDateString() === now.toDateString()
+            lastTime = isToday
+              ? d.toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })
+              : d.toLocaleDateString('sq-AL', { day: 'numeric', month: 'short' })
+          }
+
+          const unreadCount = sortedMsgs.filter(
+            (m: any) => !m.is_read && m.sender_id !== user.id
+          ).length
+
+          return {
+            id: c.id,
+            listing_id: c.listing_id,
+            listing_title: c.listings?.title || 'Pronë në Bleje Pronën',
+            listing_image: c.listings?.images?.[0] || '',
+            seller_name: counterpartName,
+            last_message: lastMsg,
+            last_time: lastTime,
+            unread_count: unreadCount,
+          }
+        })
         setConversations(mapped)
       }
     } catch (err: any) {
@@ -92,8 +129,28 @@ export default function MessagesScreen() {
       loadConversations()
     })
 
+    // Realtime listener for incoming messages to refresh preview
+    const channel = supabase
+      .channel('conversations_list_watch')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        () => {
+          loadConversations()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => {
+          loadConversations()
+        }
+      )
+      .subscribe()
+
     return () => {
       authListener.subscription.unsubscribe()
+      supabase.removeChannel(channel)
     }
   }, [loadConversations])
 
@@ -244,7 +301,7 @@ export default function MessagesScreen() {
                 ]}
                 onPress={() => {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
-                  router.push(`/listings/${item.listing_id}` as any)
+                  router.push(`/messages/${item.id}` as any)
                 }}
               >
                 <View style={styles.avatarContainer}>
@@ -283,14 +340,29 @@ export default function MessagesScreen() {
                   </Text>
 
                   <Text
-                    style={[styles.lastMessageText, { color: colors.textMuted }]}
+                    style={[
+                      styles.lastMessageText,
+                      {
+                        color: (item.unread_count || 0) > 0 ? colors.textPrimary : colors.textMuted,
+                        fontFamily: (item.unread_count || 0) > 0 ? Fonts.bold : Fonts.regular,
+                      },
+                    ]}
                     numberOfLines={1}
                   >
                     {item.last_message}
                   </Text>
                 </View>
 
-                <ChevronRight size={16} color={colors.textLight} />
+                <View style={styles.convoRightCol}>
+                  {(item.unread_count || 0) > 0 && (
+                    <View style={[styles.unreadBadge, { backgroundColor: theme === 'green' ? colors.gold : colors.primary }]}>
+                      <Text style={[styles.unreadBadgeText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+                        {item.unread_count}
+                      </Text>
+                    </View>
+                  )}
+                  <ChevronRight size={16} color={colors.textLight} />
+                </View>
               </Pressable>
             ))}
           </View>
@@ -518,5 +590,21 @@ const styles = StyleSheet.create({
   lastMessageText: {
     fontSize: 12,
     fontFamily: Fonts.regular,
+  },
+  convoRightCol: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  unreadBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    fontSize: 10,
+    fontFamily: Fonts.bold,
   },
 })

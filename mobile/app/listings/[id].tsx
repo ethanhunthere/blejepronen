@@ -9,6 +9,7 @@ import {
   Platform,
   Linking,
   Dimensions,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -22,6 +23,7 @@ import {
   Layers,
   Phone,
   MessageCircle,
+  MessageSquare,
   ShieldCheck,
   Calculator,
   Check,
@@ -39,10 +41,12 @@ export default function ListingDetailScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
 
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIdx, setActiveImageIdx] = useState(0)
+  const [startingChat, setStartingChat] = useState(false)
 
   // Mortgage Calculator State
   const [downPaymentPercent, setDownPaymentPercent] = useState(20)
@@ -54,9 +58,15 @@ export default function ListingDetailScreen() {
       if (!id) return
       try {
         setLoading(true)
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setCurrentUser(user || null)
+
         const { data, error } = await supabase
           .from('listings')
-          .select('*')
+          .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url)')
           .eq('id', id)
           .single()
 
@@ -80,14 +90,73 @@ export default function ListingDetailScreen() {
     setIsFavorite(!isFavorite)
   }
 
+  const seller = listing?.profiles
+  const sellerName = seller
+    ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || 'Pronari'
+    : 'Pronari / Agjencia'
+  const sellerPhone = seller?.phone || '+38349123456'
+
   const handleCall = () => {
-    Linking.openURL('tel:+38349123456')
+    Linking.openURL(`tel:${sellerPhone}`)
   }
 
   const handleWhatsApp = () => {
-    Linking.openURL(
-      'https://wa.me/38349123456?text=P%C3%ABrsh%C3%ABndetje%2C%20jam%20i%20interesuar%20p%C3%ABr%20pron%C3%ABn%20tuaj%20n%C3%AB%20Bleje%20Pron%C3%ABn'
+    const cleanPhone = sellerPhone.replace(/[^0-9]/g, '')
+    const text = encodeURIComponent(
+      `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronën "${listing?.title || ''}" (${formatPrice(listing?.price)}).`
     )
+    Linking.openURL(`https://wa.me/${cleanPhone}?text=${text}`)
+  }
+
+  const handleChat = async () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+    if (!currentUser) {
+      router.push({ pathname: '/modal', params: { initialTab: 'login' } })
+      return
+    }
+
+    if (currentUser.id === listing?.user_id) {
+      Alert.alert('Prona Juaj', 'Kjo është prona juaj e publikuar në Bleje Pronën.')
+      return
+    }
+
+    if (!listing?.id || !listing?.user_id) return
+
+    try {
+      setStartingChat(true)
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('listing_id', listing.id)
+        .eq('buyer_id', currentUser.id)
+        .maybeSingle()
+
+      if (existing?.id) {
+        router.push(`/messages/${existing.id}` as any)
+        return
+      }
+
+      const { data: created, error: createErr } = await supabase
+        .from('conversations')
+        .insert({
+          listing_id: listing.id,
+          buyer_id: currentUser.id,
+          seller_id: listing.user_id,
+        })
+        .select('id')
+        .single()
+
+      if (createErr) {
+        Alert.alert('Vërejtje', 'Nuk mund të hapet biseda: ' + createErr.message)
+      } else if (created?.id) {
+        router.push(`/messages/${created.id}` as any)
+      }
+    } catch (err: any) {
+      console.warn('Chat err:', err)
+    } finally {
+      setStartingChat(false)
+    }
   }
 
   const formatPrice = (val?: number) => {
@@ -342,13 +411,27 @@ export default function ListingDetailScreen() {
           {/* Seller / Agent Card */}
           <View style={[styles.sellerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
-              <ShieldCheck size={28} color={colors.primary} />
+              {seller?.avatar_url ? (
+                <Image source={{ uri: seller.avatar_url }} style={styles.sellerAvatarImg} contentFit="cover" />
+              ) : (
+                <Text style={[styles.sellerAvatarInitials, { color: colors.primary }]}>
+                  {(seller?.first_name?.[0] || 'P').toUpperCase()}
+                </Text>
+              )}
             </View>
             <View style={styles.sellerInfo}>
-              <Text style={[styles.sellerName, { color: colors.textPrimary }]}>Pronari / Agjencia</Text>
-              <Text style={[styles.sellerRole, { color: colors.textMuted }]}>
-                Përdorues i verifikuar në Bleje Pronën
-              </Text>
+              <Text style={[styles.sellerName, { color: colors.textPrimary }]}>{sellerName}</Text>
+              <View style={styles.sellerVerifiedRow}>
+                <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
+                <Text style={[styles.sellerRole, { color: colors.textMuted }]}>
+                  Përdorues i verifikuar në Bleje Pronën
+                </Text>
+              </View>
+              {seller?.phone && (
+                <Text style={[styles.sellerPhoneText, { color: colors.textSecondary }]}>
+                  {seller.phone}
+                </Text>
+              )}
             </View>
           </View>
 
@@ -361,24 +444,68 @@ export default function ListingDetailScreen() {
         style={[styles.bottomBarSafeArea, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
         edges={['bottom']}
       >
-        <View style={styles.bottomBar}>
-          <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp}>
-            <MessageCircle size={18} color="#FFFFFF" strokeWidth={2.2} />
-            <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
-          </Pressable>
-
-          <Pressable style={[styles.callBtn, { backgroundColor: colors.primary }]} onPress={handleCall}>
-            <Phone size={18} color={theme === 'green' ? '#003E37' : '#FFFFFF'} strokeWidth={2.2} />
-            <Text
-              style={[
-                styles.callBtnText,
-                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
-              ]}
-            >
-              Telefono
+        {currentUser?.id === listing.user_id ? (
+          <View style={styles.ownerNoticeBar}>
+            <ShieldCheck size={18} color={colors.primary} strokeWidth={2.2} />
+            <Text style={[styles.ownerNoticeText, { color: colors.textPrimary }]}>
+              Kjo është prona juaj e publikuar në Bleje Pronën
             </Text>
-          </Pressable>
-        </View>
+          </View>
+        ) : (
+          <View style={styles.bottomBar}>
+            {/* 1. In-App Direct Chat */}
+            <Pressable
+              style={[
+                styles.chatActionBtn,
+                {
+                  backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                },
+              ]}
+              onPress={handleChat}
+              disabled={startingChat}
+            >
+              {startingChat ? (
+                <ActivityIndicator size="small" color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
+              ) : (
+                <>
+                  <MessageSquare
+                    size={17}
+                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    strokeWidth={2.4}
+                  />
+                  <Text
+                    style={[
+                      styles.chatActionBtnText,
+                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                    ]}
+                  >
+                    Bisedo
+                  </Text>
+                </>
+              )}
+            </Pressable>
+
+            {/* 2. WhatsApp Button */}
+            <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp}>
+              <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
+              <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
+            </Pressable>
+
+            {/* 3. Phone Call Button */}
+            <Pressable
+              style={[
+                styles.callBtn,
+                { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+              ]}
+              onPress={handleCall}
+            >
+              <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
+              <Text style={[styles.callBtnText, { color: colors.textPrimary }]}>
+                Telefono
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   )
@@ -634,6 +761,15 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  sellerAvatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  sellerAvatarInitials: {
+    fontSize: 18,
+    fontFamily: Fonts.extraBold,
   },
   sellerInfo: {
     flex: 1,
@@ -643,9 +779,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.bold,
   },
+  sellerVerifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   sellerRole: {
     fontSize: 11,
     fontFamily: Fonts.regular,
+  },
+  sellerPhoneText: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
+    marginTop: 2,
   },
   bottomBarSafeArea: {
     position: 'absolute',
@@ -654,37 +800,71 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: 1,
   },
-  bottomBar: {
-    flexDirection: 'row',
-    padding: 14,
-    gap: 12,
-  },
-  whatsAppBtn: {
-    flex: 1,
-    backgroundColor: '#25D366',
-    paddingVertical: 14,
-    borderRadius: 16,
+  ownerNoticeBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  ownerNoticeText: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 8,
+  },
+  chatActionBtn: {
+    flex: 1.1,
+    paddingVertical: 13,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chatActionBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+  whatsAppBtn: {
+    flex: 1.1,
+    backgroundColor: '#25D366',
+    paddingVertical: 13,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   whatsAppBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: Fonts.bold,
   },
   callBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
   callBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: Fonts.bold,
   },
 })
