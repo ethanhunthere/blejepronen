@@ -25,8 +25,13 @@ import {
   Home,
   Tag,
   Maximize2,
+  Minimize2,
   Layers,
   ShieldCheck,
+  ChevronDown,
+  TrendingUp,
+  TrendingDown,
+  Clock,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -132,11 +137,41 @@ const AREA_PRESETS = [
 ]
 
 const SORT_OPTIONS = [
-  { id: 'newest', label: 'Më të rejat së pari' },
-  { id: 'price_asc', label: 'Çmimi: Nga më i ulëti' },
-  { id: 'price_desc', label: 'Çmimi: Nga më i larti' },
-  { id: 'area_desc', label: 'Sipërfaqja: Nga më e madhja' },
-  { id: 'area_asc', label: 'Sipërfaqja: Nga më e vogla' },
+  {
+    id: 'newest',
+    label: 'Më të rejat së pari',
+    shortLabel: 'Më të rejat',
+    description: 'Pronat më të fundit të sapo publikuara',
+    icon: Clock,
+  },
+  {
+    id: 'price_desc',
+    label: 'Çmimi: Nga më i larti',
+    shortLabel: 'Çmimi: Më i larti',
+    description: 'Prona luksoze, vila dhe investime ekskluzive',
+    icon: TrendingUp,
+  },
+  {
+    id: 'price_asc',
+    label: 'Çmimi: Nga më i ulëti',
+    shortLabel: 'Çmimi: Më i ulëti',
+    description: 'Mundësitë më ekonomike dhe ofertat më të mira',
+    icon: TrendingDown,
+  },
+  {
+    id: 'area_desc',
+    label: 'Sipërfaqja: Nga më e madhja',
+    shortLabel: 'Sipërfaqja: Më e madhja',
+    description: 'Hapësirat më të bollshme dhe sipërfaqe të mëdha',
+    icon: Maximize2,
+  },
+  {
+    id: 'area_asc',
+    label: 'Sipërfaqja: Nga më e vogla',
+    shortLabel: 'Sipërfaqja: Më e vogla',
+    description: 'Studio, garsoniere dhe ambiente kompakte',
+    icon: Minimize2,
+  },
 ] as const
 
 type SortType = (typeof SORT_OPTIONS)[number]['id']
@@ -165,6 +200,7 @@ export default function ListingsScreen() {
   const [sortBy, setSortBy] = useState<SortType>('newest')
 
   const [showFilterModal, setShowFilterModal] = useState(false)
+  const [showSortModal, setShowSortModal] = useState(false)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
   // Active filters count calculation
@@ -516,29 +552,47 @@ export default function ListingsScreen() {
             </Pressable>
           ) : null}
 
-          {/* Quick Sort Cycle */}
+          {/* Quick Sort Menu Trigger */}
           <Pressable
             style={[
               styles.quickTag,
-              { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+              sortBy !== 'newest'
+                ? {
+                    backgroundColor: colors.chipActiveBg,
+                    borderColor: colors.primary,
+                  }
+                : {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: colors.border,
+                  },
             ]}
             onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setSortBy((prev) =>
-                prev === 'newest'
-                  ? 'price_asc'
-                  : prev === 'price_asc'
-                  ? 'price_desc'
-                  : prev === 'price_desc'
-                  ? 'area_desc'
-                  : 'newest'
-              )
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+              }
+              setShowSortModal(true)
             }}
           >
-            <ArrowUpDown size={12} color={colors.textSecondary} />
-            <Text style={[styles.quickTagText, { color: colors.textSecondary }]}>
-              {SORT_OPTIONS.find((s) => s.id === sortBy)?.label || 'Renditja'}
+            <ArrowUpDown
+              size={12}
+              color={sortBy !== 'newest' ? colors.chipTextActive : colors.primary}
+            />
+            <Text
+              style={[
+                styles.quickTagText,
+                {
+                  color: sortBy !== 'newest' ? colors.chipTextActive : colors.textPrimary,
+                  fontFamily: sortBy !== 'newest' ? Fonts.bold : Fonts.medium,
+                },
+              ]}
+            >
+              {SORT_OPTIONS.find((s) => s.id === sortBy)?.shortLabel || 'Renditja'}
             </Text>
+            <ChevronDown
+              size={12}
+              color={sortBy !== 'newest' ? colors.chipTextActive : colors.textMuted}
+              style={{ marginLeft: 2 }}
+            />
           </Pressable>
         </ScrollView>
       </View>
@@ -587,16 +641,211 @@ export default function ListingsScreen() {
             </Pressable>
           </View>
         ) : (
-          displayedListings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              isFavorite={!!favorites[listing.id]}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))
+          <>
+            {/* Results count & Quick Sort Header Row */}
+            <View style={styles.resultsBar}>
+              <Text style={[styles.resultsCountText, { color: colors.textSecondary }]}>
+                {displayedListings.length}{' '}
+                {displayedListings.length === 1 ? 'pronë e gjetur' : 'prona të gjetura'}
+                {selectedCity ? ` në ${selectedCity}` : ''}
+              </Text>
+              <Pressable
+                style={[
+                  styles.sortInlineBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: sortBy !== 'newest' ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  }
+                  setShowSortModal(true)
+                }}
+              >
+                <ArrowUpDown
+                  size={11}
+                  color={sortBy !== 'newest' ? colors.primary : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.sortInlineBtnText,
+                    {
+                      color: sortBy !== 'newest' ? colors.primary : colors.textPrimary,
+                      fontFamily: sortBy !== 'newest' ? Fonts.bold : Fonts.medium,
+                    },
+                  ]}
+                >
+                  {SORT_OPTIONS.find((s) => s.id === sortBy)?.shortLabel || 'Renditja'}
+                </Text>
+                <ChevronDown size={11} color={colors.textMuted} />
+              </Pressable>
+            </View>
+
+            {displayedListings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                isFavorite={!!favorites[listing.id]}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ))}
+          </>
         )}
       </ScrollView>
+
+      {/* =================================================================== */}
+      {/* ULTRA-LUXURY SORTING MENU BOTTOM SHEET (Apple HIG & Airbnb Grade)   */}
+      {/* =================================================================== */}
+      <Modal
+        visible={showSortModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <View style={styles.sortModalOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowSortModal(false)}
+          />
+
+          <View
+            style={[
+              styles.sortModalSheet,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            {/* Sheet Handle */}
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+
+            {/* Header */}
+            <View style={styles.sortModalHeader}>
+              <View style={styles.sortModalHeaderLeft}>
+                <View
+                  style={[
+                    styles.sortModalIconWrap,
+                    { backgroundColor: colors.surfaceSubtle },
+                  ]}
+                >
+                  <ArrowUpDown size={18} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.sortModalTitle, { color: colors.textPrimary }]}>
+                    Renditja e pronave
+                  </Text>
+                  <Text style={[styles.sortModalSubtitle, { color: colors.textMuted }]}>
+                    Zgjidhni mënyrën e renditjes së rezultateve
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                style={[
+                  styles.sortModalCloseBtn,
+                  { backgroundColor: colors.surfaceSubtle },
+                ]}
+                onPress={() => setShowSortModal(false)}
+                hitSlop={10}
+              >
+                <X size={16} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+
+            {/* Options List */}
+            <View style={styles.sortModalList}>
+              {SORT_OPTIONS.map((opt) => {
+                const isSelected = sortBy === opt.id
+                const IconComponent = opt.icon
+                return (
+                  <Pressable
+                    key={opt.id}
+                    style={({ pressed }) => [
+                      styles.sortModalOption,
+                      {
+                        backgroundColor: isSelected
+                          ? colors.surfaceSubtle
+                          : pressed
+                          ? colors.surfaceSubtle
+                          : colors.surface,
+                        borderColor: isSelected ? colors.primary : colors.borderSubtle,
+                      },
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') {
+                        Haptics.selectionAsync()
+                      }
+                      setSortBy(opt.id)
+                      setTimeout(() => {
+                        setShowSortModal(false)
+                      }, 180)
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.sortOptionIconBox,
+                        {
+                          backgroundColor: isSelected
+                            ? colors.primary
+                            : colors.surfaceSubtle,
+                        },
+                      ]}
+                    >
+                      <IconComponent
+                        size={18}
+                        color={
+                          isSelected
+                            ? theme === 'green'
+                              ? '#003E37'
+                              : '#FFFFFF'
+                            : colors.textSecondary
+                        }
+                      />
+                    </View>
+
+                    <View style={styles.sortOptionTextWrap}>
+                      <Text
+                        style={[
+                          styles.sortOptionLabel,
+                          {
+                            color: isSelected ? colors.primary : colors.textPrimary,
+                            fontFamily: isSelected ? Fonts.bold : Fonts.semiBold,
+                          },
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                      <Text style={[styles.sortOptionDesc, { color: colors.textMuted }]}>
+                        {opt.description}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.sortRadioCircle,
+                        {
+                          borderColor: isSelected ? colors.primary : colors.border,
+                          backgroundColor: isSelected ? colors.primary : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && (
+                        <Check
+                          size={13}
+                          color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                          strokeWidth={3}
+                        />
+                      )}
+                    </View>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* =================================================================== */}
       {/* ULTRA-DETAILED LUXURY FILTER MODAL (Website & Beyond)               */}
@@ -1210,6 +1459,7 @@ export default function ListingsScreen() {
               <View style={styles.sortList}>
                 {SORT_OPTIONS.map((opt) => {
                   const isSelected = sortBy === opt.id
+                  const IconComponent = opt.icon
                   return (
                     <Pressable
                       key={opt.id}
@@ -1227,15 +1477,49 @@ export default function ListingsScreen() {
                         setSortBy(opt.id)
                       }}
                     >
-                      <Text
-                        style={[
-                          styles.sortRowText,
-                          { color: isSelected ? colors.textPrimary : colors.textSecondary },
-                          isSelected && { fontFamily: Fonts.bold },
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                        <View
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            backgroundColor: isSelected ? colors.primary : colors.surfaceSubtle,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <IconComponent
+                            size={16}
+                            color={
+                              isSelected
+                                ? theme === 'green'
+                                  ? '#003E37'
+                                  : '#FFFFFF'
+                                : colors.textSecondary
+                            }
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.sortRowText,
+                              { color: isSelected ? colors.textPrimary : colors.textSecondary },
+                              isSelected && { fontFamily: Fonts.bold },
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              color: colors.textMuted,
+                              fontFamily: Fonts.regular,
+                            }}
+                          >
+                            {opt.description}
+                          </Text>
+                        </View>
+                      </View>
                       <View
                         style={[
                           styles.radioCircle,
@@ -1245,7 +1529,13 @@ export default function ListingsScreen() {
                           },
                         ]}
                       >
-                        {isSelected && <View style={styles.radioInner} />}
+                        {isSelected && (
+                          <Check
+                            size={11}
+                            color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                            strokeWidth={3}
+                          />
+                        )}
                       </View>
                     </Pressable>
                   )
@@ -1731,5 +2021,138 @@ const styles = StyleSheet.create({
   modalApplyButtonText: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+  },
+
+  /* Results Bar */
+  resultsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  resultsCountText: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+  },
+  sortInlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  sortInlineBtnText: {
+    fontSize: 12,
+  },
+
+  /* Ultra-Luxury Sort Bottom Sheet */
+  sortModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  sortModalSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+      },
+      android: {
+        elevation: 16,
+      },
+    }),
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  sortModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    marginBottom: 12,
+  },
+  sortModalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  sortModalIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortModalTitle: {
+    fontSize: 17,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
+  sortModalSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
+  },
+  sortModalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortModalList: {
+    gap: 8,
+  },
+  sortModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  sortOptionIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  sortOptionTextWrap: {
+    flex: 1,
+  },
+  sortOptionLabel: {
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  sortOptionDesc: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+  },
+  sortRadioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
   },
 })
