@@ -23,6 +23,7 @@ import {
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
+import { playSuccessSound, playDeleteSound, playUnlikeSound, playTapSound } from '@/lib/sound'
 
 export type BannerType = 'success' | 'error' | 'info' | 'logout' | 'delete'
 
@@ -92,17 +93,30 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
 
       setBanner(options)
 
-      // Apple-tier tailored tactile haptic feedback
-      if (Platform.OS !== 'web') {
-        if (options.type === 'delete') {
+      // Apple-tier tailored tactile haptic & acoustic audio feedback
+      if (options.type === 'delete') {
+        playDeleteSound()
+        if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-        } else if (options.type === 'error') {
+        }
+      } else if (options.type === 'error') {
+        playUnlikeSound()
+        if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-        } else if (options.type === 'success') {
+        }
+      } else if (options.type === 'success') {
+        playSuccessSound()
+        if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        } else if (options.type === 'logout') {
+        }
+      } else if (options.type === 'logout') {
+        playUnlikeSound()
+        if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-        } else {
+        }
+      } else {
+        playTapSound()
+        if (Platform.OS !== 'web') {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
         }
       }

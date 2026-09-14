@@ -2,9 +2,16 @@ import React from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Sun, Leaf, Moon } from 'lucide-react-native'
 import { useTheme, ThemeMode, Fonts } from '@/constants/theme'
+import { playThemeSound } from '@/lib/sound'
 
 export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme, colors } = useTheme()
+
+  const handleSelect = (mode: ThemeMode) => {
+    if (theme === mode) return
+    playThemeSound()
+    setTheme(mode)
+  }
 
   const modes: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
     { id: 'white', label: 'E Bardhë', icon: Sun },
@@ -25,7 +32,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                 styles.compactBtn,
                 isActive && { backgroundColor: colors.chipActiveBg, shadowColor: '#000', shadowOpacity: 0.15 },
               ]}
-              onPress={() => setTheme(m.id)}
+              onPress={() => handleSelect(m.id)}
             >
               <Icon
                 size={14}
@@ -51,7 +58,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
               styles.optionBtn,
               isActive && { backgroundColor: colors.chipActiveBg },
             ]}
-            onPress={() => setTheme(m.id)}
+            onPress={() => handleSelect(m.id)}
           >
             <Icon
               size={15}

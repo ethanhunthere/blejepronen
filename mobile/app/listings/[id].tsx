@@ -15,6 +15,7 @@ import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
+import { playHeartSound, playUnlikeSound } from '@/lib/sound'
 import {
   ArrowLeft,
   Heart,
@@ -87,7 +88,12 @@ export default function ListingDetailScreen() {
   }, [id])
 
   const handleFavoriteToggle = () => {
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    if (isFavorite) {
+      playUnlikeSound()
+    } else {
+      playHeartSound()
+    }
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setIsFavorite(!isFavorite)
   }
 

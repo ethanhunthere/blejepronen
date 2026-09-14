@@ -8,6 +8,8 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
 
+import { playHeartSound, playUnlikeSound } from '@/lib/sound'
+
 interface ListingCardProps {
   listing: Listing
   isFavorite?: boolean
@@ -20,8 +22,13 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
   const handleFavoritePress = (e: any) => {
     e.stopPropagation?.()
+    if (isFavorite) {
+      playUnlikeSound()
+    } else {
+      playHeartSound()
+    }
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     }
     onToggleFavorite?.(listing.id)
   }

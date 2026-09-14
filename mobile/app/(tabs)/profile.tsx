@@ -41,6 +41,7 @@ import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
 import { apiDeleteAccount } from '@/lib/api'
 import { getAvatarUri } from '@/lib/avatars'
+import { playThemeSound } from '@/lib/sound'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -186,6 +187,8 @@ export default function ProfileScreen() {
 
   const handleThemeSelect = (selectedTheme: ThemeMode) => {
     if (theme === selectedTheme) return
+    playThemeSound()
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
     setTheme(selectedTheme)
   }
 
@@ -498,7 +501,7 @@ export default function ProfileScreen() {
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               if (!currentUser) openAuthModal('login')
-              else router.push('/listings' as any)
+              else router.push('/shpalljet-e-mia' as any)
             }}
           >
             <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
@@ -651,7 +654,8 @@ export default function ProfileScreen() {
               if (!currentUser) {
                 openAuthModal('login')
               } else {
-                router.push('/listings' as any)
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/shpalljet-e-mia' as any)
               }
             }}
           >

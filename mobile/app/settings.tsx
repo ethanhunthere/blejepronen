@@ -58,6 +58,7 @@ import {
   apiDeleteAccount,
   ProfileSettingsPayload,
 } from '@/lib/api'
+import { playThemeSound, playTapSound } from '@/lib/sound'
 
 type SettingsTab = 'profile' | 'notifications' | 'security' | 'app'
 
@@ -547,6 +548,7 @@ export default function SettingsScreen() {
   // Theme Selector
   const handleThemeSelect = (selectedTheme: ThemeMode) => {
     if (theme === selectedTheme) return
+    playThemeSound()
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setTheme(selectedTheme)
   }
@@ -636,6 +638,7 @@ export default function SettingsScreen() {
           <Pressable
             style={[styles.tabButton, activeTab === 'profile' && styles.tabButtonActive]}
             onPress={() => {
+              playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setActiveTab('profile')
             }}
@@ -661,6 +664,7 @@ export default function SettingsScreen() {
           <Pressable
             style={[styles.tabButton, activeTab === 'notifications' && styles.tabButtonActive]}
             onPress={() => {
+              playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setActiveTab('notifications')
             }}
@@ -686,6 +690,7 @@ export default function SettingsScreen() {
           <Pressable
             style={[styles.tabButton, activeTab === 'security' && styles.tabButtonActive]}
             onPress={() => {
+              playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setActiveTab('security')
             }}
@@ -711,6 +716,7 @@ export default function SettingsScreen() {
           <Pressable
             style={[styles.tabButton, activeTab === 'app' && styles.tabButtonActive]}
             onPress={() => {
+              playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setActiveTab('app')
             }}

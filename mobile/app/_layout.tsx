@@ -75,6 +75,7 @@ function RootLayoutNav() {
         <Stack.Screen name="messages/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="completo-profilin" options={{ headerShown: false }} />
+        <Stack.Screen name="shpalljet-e-mia" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </>
