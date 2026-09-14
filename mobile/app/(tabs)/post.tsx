@@ -303,79 +303,30 @@ export default function PostPropertyScreen() {
     }
   }
 
-  // If user is not authenticated, show an ultra-exclusive luxury Auth Gatekeeper
+  // If user is not authenticated, show clean luxury Auth Gatekeeper
   if (!authChecking && !currentUser) {
-    const gateBtnText = theme === 'green' ? '#003E37' : '#FFFFFF'
+    const gateBtnText =
+      theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Posto Pronë</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            Publikoni shpalljen tuaj në platformën #1 imobiliare
-          </Text>
         </View>
 
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.gateContentContainer}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.gateWrapper}>
           <View style={[styles.gateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.gateIconWrap, { backgroundColor: colors.primaryLight }]}>
-              <Sparkles size={34} color={colors.primary} strokeWidth={2.2} />
-            </View>
-
-            <View style={[styles.gateBadge, { backgroundColor: colors.badgeBg }]}>
-              <ShieldCheck size={12} color={colors.badgeText} strokeWidth={2.4} />
-              <Text style={[styles.gateBadgeText, { color: colors.badgeText }]}>Llogari e nevojshme</Text>
+              <Sparkles size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
 
             <Text style={[styles.gateTitle, { color: colors.textPrimary }]}>
-              Kyçuni për të Postuar Pronë
+              Publiko Pronën Tënde
             </Text>
 
             <Text style={[styles.gateSubtitle, { color: colors.textMuted }]}>
-              Për të publikuar shpallje në tregun imobiliar, ngarkuar foto me cilësi të lartë dhe pranuar oferta direkte nga blerësit, ju nevojitet një llogari.
+              Kyçuni ose krijoni llogari për të publikuar shpalljen tuaj.
             </Text>
-
-            <View style={styles.perksList}>
-              <View style={styles.perkRow}>
-                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
-                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
-                </View>
-                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
-                  Publikim i menjëhershëm me deri në 10 fotografi
-                </Text>
-              </View>
-
-              <View style={styles.perkRow}>
-                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
-                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
-                </View>
-                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
-                  Gjenerim me AI për përshkrim profesional me 1 klik
-                </Text>
-              </View>
-
-              <View style={styles.perkRow}>
-                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
-                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
-                </View>
-                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
-                  Numri juaj dhe WhatsApp shfaqen drejtpërdrejt te blerësit
-                </Text>
-              </View>
-
-              <View style={styles.perkRow}>
-                <View style={[styles.perkIconBox, { backgroundColor: colors.badgeBg }]}>
-                  <Check size={13} color={colors.badgeText} strokeWidth={3} />
-                </View>
-                <Text style={[styles.perkText, { color: colors.textSecondary }]}>
-                  Statistika të detajuara të interesimit dhe shikueshmërisë
-                </Text>
-              </View>
-            </View>
 
             <View style={styles.gateActions}>
               <Pressable
@@ -384,7 +335,7 @@ export default function PostPropertyScreen() {
               >
                 <LogIn size={18} color={gateBtnText} strokeWidth={2.2} />
                 <Text style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
-                  Kyçu në Llogari
+                  Kyçu
                 </Text>
               </Pressable>
 
@@ -397,12 +348,12 @@ export default function PostPropertyScreen() {
               >
                 <UserPlus size={18} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>
-                  Krijo Llogari të Re Falas
+                  Regjistrohu
                 </Text>
               </Pressable>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     )
   }
@@ -1161,89 +1112,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.black,
   },
-  gateContentContainer: {
-    padding: 16,
+  gateWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
     paddingBottom: 40,
   },
   gateCard: {
     alignItems: 'center',
-    padding: 24,
-    borderRadius: 20,
+    padding: 28,
+    borderRadius: 24,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   gateIconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-  },
-  gateBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  gateBadgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
+    marginBottom: 16,
   },
   gateTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontFamily: Fonts.extraBold,
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: -0.3,
   },
   gateSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 20,
-  },
-  perksList: {
-    width: '100%',
-    gap: 12,
+    lineHeight: 20,
     marginBottom: 24,
-  },
-  perkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  perkIconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  perkText: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-    flex: 1,
+    maxWidth: 280,
   },
   gateActions: {
     width: '100%',
-    gap: 10,
+    gap: 12,
   },
   gatePrimaryBtn: {
-    height: 48,
+    height: 50,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,
   },
@@ -1252,7 +1172,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
   },
   gateSecondaryBtn: {
-    height: 48,
+    height: 50,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
@@ -1261,7 +1181,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   gateSecondaryBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: Fonts.semiBold,
   },
 })

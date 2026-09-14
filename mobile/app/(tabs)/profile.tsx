@@ -90,7 +90,8 @@ export default function ProfileScreen() {
     setTheme(selectedTheme)
   }
 
-  const primaryBtnText = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const primaryBtnText =
+    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
@@ -98,11 +99,6 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           {currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
-        </Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-          {currentUser
-            ? 'Menaxhoni pronat, të dhënat dhe temën'
-            : 'Kyçuni ose rregulloni pamjen e aplikacionit'}
         </Text>
       </View>
 
@@ -132,12 +128,6 @@ export default function ProfileScreen() {
               </View>
 
               <Text style={[styles.userEmail, { color: colors.textMuted }]}>{currentUser.email}</Text>
-
-              <View style={[styles.accountTypePill, { backgroundColor: colors.surfaceSubtle }]}>
-                <Text style={[styles.accountTypePillText, { color: colors.textSecondary }]}>
-                  Llogari e Verifikuar
-                </Text>
-              </View>
             </View>
           </View>
         ) : (
@@ -146,10 +136,10 @@ export default function ProfileScreen() {
               <User size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
             <Text style={[styles.guestTitle, { color: colors.textPrimary }]}>
-              Mirësevini në Bleje Pronën
+              Llogaria Juaj
             </Text>
             <Text style={[styles.guestSubtitle, { color: colors.textMuted }]}>
-              Kyçuni për të publikuar shpallje, ruajtur pronat e preferuara dhe biseduar me shitësit.
+              Kyçuni për të menaxhuar shpalljet dhe preferencat tuaja.
             </Text>
 
             <View style={styles.authButtonsRow}>

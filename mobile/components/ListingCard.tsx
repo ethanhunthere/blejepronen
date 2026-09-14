@@ -124,7 +124,14 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
             <Text
               style={[
                 styles.priceValue,
-                { color: theme === 'green' ? colors.gold : colors.primary },
+                {
+                  color:
+                    theme === 'green'
+                      ? colors.gold
+                      : theme === 'black'
+                      ? '#34D399'
+                      : colors.primary,
+                },
               ]}
             >
               {formatPrice(listing.price)}
@@ -141,12 +148,34 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
               style={[
                 styles.typologyPill,
                 {
-                  backgroundColor: colors.surfaceSubtle,
-                  borderColor: colors.border,
+                  backgroundColor:
+                    theme === 'white'
+                      ? 'rgba(0, 100, 89, 0.08)'
+                      : theme === 'green'
+                      ? 'rgba(200, 184, 130, 0.18)'
+                      : 'rgba(52, 211, 153, 0.12)',
+                  borderColor:
+                    theme === 'white'
+                      ? 'rgba(0, 100, 89, 0.22)'
+                      : theme === 'green'
+                      ? 'rgba(200, 184, 130, 0.40)'
+                      : 'rgba(52, 211, 153, 0.3)',
                 },
               ]}
             >
-              <Text style={[styles.typologyPillText, { color: colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.typologyPillText,
+                  {
+                    color:
+                      theme === 'green'
+                        ? colors.gold
+                        : theme === 'black'
+                        ? '#34D399'
+                        : colors.primary,
+                  },
+                ]}
+              >
                 {listing.apartment_type}
               </Text>
             </View>
@@ -154,31 +183,59 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         </View>
 
         {/* Row 2: Listing Title */}
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
           {listing.title}
         </Text>
 
         {/* Row 3: Location */}
         <View style={styles.locationRow}>
-          <MapPin size={13} color={colors.primary} strokeWidth={2.4} />
+          <MapPin
+            size={13}
+            color={theme === 'green' ? colors.gold : colors.primary}
+            strokeWidth={2.4}
+          />
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             {listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}
           </Text>
         </View>
 
         {/* Row 4: Organized Specs Modules (Area, Rooms, Floor) */}
-        <View style={[styles.specsModuleRow, { borderTopColor: colors.borderSubtle }]}>
+        <View
+          style={[
+            styles.specsModuleRow,
+            {
+              borderTopColor:
+                theme === 'white'
+                  ? '#F3F4F6'
+                  : 'rgba(255, 255, 255, 0.08)',
+            },
+          ]}
+        >
           {listing.area_m2 > 0 && (
             <View
               style={[
                 styles.specModule,
                 {
-                  backgroundColor: colors.surfaceSubtle,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor:
+                    theme === 'white'
+                      ? '#F4F7F6'
+                      : theme === 'green'
+                      ? 'rgba(0, 48, 42, 0.85)'
+                      : '#1B2422',
+                  borderColor:
+                    theme === 'white'
+                      ? '#E5E7EB'
+                      : theme === 'green'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : '#263330',
                 },
               ]}
             >
-              <Maximize2 size={11} color={colors.primary} strokeWidth={2.2} />
+              <Maximize2
+                size={11}
+                color={theme === 'green' ? colors.gold : colors.primary}
+                strokeWidth={2.2}
+              />
               <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 {listing.area_m2} m²
               </Text>
@@ -190,12 +247,26 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
               style={[
                 styles.specModule,
                 {
-                  backgroundColor: colors.surfaceSubtle,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor:
+                    theme === 'white'
+                      ? '#F4F7F6'
+                      : theme === 'green'
+                      ? 'rgba(0, 48, 42, 0.85)'
+                      : '#1B2422',
+                  borderColor:
+                    theme === 'white'
+                      ? '#E5E7EB'
+                      : theme === 'green'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : '#263330',
                 },
               ]}
             >
-              <BedDouble size={12} color={colors.primary} strokeWidth={2.2} />
+              <BedDouble
+                size={12}
+                color={theme === 'green' ? colors.gold : colors.primary}
+                strokeWidth={2.2}
+              />
               <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 {listing.rooms} dhomë
               </Text>
@@ -207,12 +278,26 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
               style={[
                 styles.specModule,
                 {
-                  backgroundColor: colors.surfaceSubtle,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor:
+                    theme === 'white'
+                      ? '#F4F7F6'
+                      : theme === 'green'
+                      ? 'rgba(0, 48, 42, 0.85)'
+                      : '#1B2422',
+                  borderColor:
+                    theme === 'white'
+                      ? '#E5E7EB'
+                      : theme === 'green'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : '#263330',
                 },
               ]}
             >
-              <Layers size={11} color={colors.primary} strokeWidth={2.2} />
+              <Layers
+                size={11}
+                color={theme === 'green' ? colors.gold : colors.primary}
+                strokeWidth={2.2}
+              />
               <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 Kati {listing.floor}
               </Text>

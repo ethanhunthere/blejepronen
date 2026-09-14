@@ -175,7 +175,8 @@ export default function MessagesScreen() {
     }
   }
 
-  const primaryBtnText = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const primaryBtnText =
+    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
@@ -219,22 +220,15 @@ export default function MessagesScreen() {
             ]}
           >
             <View style={[styles.authIconCircle, { backgroundColor: colors.primaryLight }]}>
-              <Lock size={32} color={colors.primary} strokeWidth={2.2} />
-            </View>
-
-            <View style={[styles.authBadge, { backgroundColor: colors.badgeBg }]}>
-              <ShieldCheck size={12} color={colors.badgeText} strokeWidth={2.4} />
-              <Text style={[styles.authBadgeText, { color: colors.badgeText }]}>
-                Komunikim i Sigurt
-              </Text>
+              <MessageSquare size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
 
             <Text style={[styles.authTitle, { color: colors.textPrimary }]}>
-              Kyçuni për të Parë Bisedat
+              Mesazhet Tuaja
             </Text>
 
             <Text style={[styles.authSubtitle, { color: colors.textMuted }]}>
-              Komunikoni drejtpërdrejt me pronarët dhe blerësit, merrni njoftime për çmimet dhe ruani të gjitha negociatat tuaja në mënyrë të mbrojtur.
+              Kyçuni për të biseduar drejtpërdrejt me pronarët dhe blerësit.
             </Text>
 
             <View style={styles.authActionsRow}>
@@ -243,7 +237,7 @@ export default function MessagesScreen() {
                 onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
-                <Text style={[styles.loginBtnText, { color: primaryBtnText }]}>Kyçu në Llogari</Text>
+                <Text style={[styles.loginBtnText, { color: primaryBtnText }]}>Kyçu</Text>
               </Pressable>
 
               <Pressable
@@ -255,7 +249,7 @@ export default function MessagesScreen() {
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.registerBtnText, { color: colors.textPrimary }]}>
-                  Krijo Llogari
+                  Regjistrohu
                 </Text>
               </Pressable>
             </View>
@@ -409,48 +403,37 @@ const styles = StyleSheet.create({
   },
   authCard: {
     alignItems: 'center',
-    padding: 24,
-    borderRadius: 20,
+    padding: 28,
+    borderRadius: 24,
     borderWidth: 1,
-    marginTop: 20,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   authIconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-  },
-  authBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  authBadgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
+    marginBottom: 16,
   },
   authTitle: {
-    fontSize: 19,
+    fontSize: 21,
     fontFamily: Fonts.extraBold,
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: -0.3,
   },
   authSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 20,
+    lineHeight: 20,
+    marginBottom: 24,
+    maxWidth: 280,
   },
   authActionsRow: {
     flexDirection: 'row',
@@ -459,8 +442,8 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -471,13 +454,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   loginBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: Fonts.bold,
   },
   registerBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -485,7 +468,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   registerBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: Fonts.semiBold,
   },
   emptyContainer: {
