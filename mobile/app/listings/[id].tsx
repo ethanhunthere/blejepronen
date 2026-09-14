@@ -372,14 +372,22 @@ export default function ListingDetailScreen() {
                   <View style={styles.stepperWrap}>
                     <Pressable
                       style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => setDownPaymentPercent((p) => Math.max(10, p - 5))}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setDownPaymentPercent((p) => Math.max(10, p - 5))
+                      }}
+                      hitSlop={8}
                     >
                       <Minus size={12} color={colors.textPrimary} />
                     </Pressable>
                     <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{downPaymentPercent}%</Text>
                     <Pressable
                       style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => setDownPaymentPercent((p) => Math.min(50, p + 5))}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setDownPaymentPercent((p) => Math.min(50, p + 5))
+                      }}
+                      hitSlop={8}
                     >
                       <Plus size={12} color={colors.textPrimary} />
                     </Pressable>
@@ -391,14 +399,22 @@ export default function ListingDetailScreen() {
                   <View style={styles.stepperWrap}>
                     <Pressable
                       style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => setLoanYears((y) => Math.max(5, y - 5))}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setLoanYears((y) => Math.max(5, y - 5))
+                      }}
+                      hitSlop={8}
                     >
                       <Minus size={12} color={colors.textPrimary} />
                     </Pressable>
                     <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{loanYears} v</Text>
                     <Pressable
                       style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => setLoanYears((y) => Math.min(30, y + 5))}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setLoanYears((y) => Math.min(30, y + 5))
+                      }}
+                      hitSlop={8}
                     >
                       <Plus size={12} color={colors.textPrimary} />
                     </Pressable>
@@ -463,6 +479,7 @@ export default function ListingDetailScreen() {
               ]}
               onPress={handleChat}
               disabled={startingChat}
+              hitSlop={8}
             >
               {startingChat ? (
                 <ActivityIndicator size="small" color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
@@ -486,7 +503,7 @@ export default function ListingDetailScreen() {
             </Pressable>
 
             {/* 2. WhatsApp Button */}
-            <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp}>
+            <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp} hitSlop={8}>
               <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
               <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
             </Pressable>
@@ -498,6 +515,7 @@ export default function ListingDetailScreen() {
                 { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
               ]}
               onPress={handleCall}
+              hitSlop={8}
             >
               <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
               <Text style={[styles.callBtnText, { color: colors.textPrimary }]}>

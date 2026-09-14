@@ -124,6 +124,7 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [transactionType, setTransactionType] = useState<'all' | 'shitje' | 'qira'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -246,16 +247,36 @@ export default function HomeScreen() {
           <View
             style={[
               styles.searchBar,
-              { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+              {
+                backgroundColor: colors.searchBg,
+                borderColor: isSearchFocused
+                  ? theme === 'green'
+                    ? colors.gold
+                    : colors.primary
+                  : colors.searchBorder,
+                borderWidth: isSearchFocused ? 1.5 : 1,
+              },
             ]}
           >
-            <Search size={18} color={colors.textMuted} strokeWidth={2.2} />
+            <Search
+              size={18}
+              color={
+                isSearchFocused
+                  ? theme === 'green'
+                    ? colors.gold
+                    : colors.primary
+                  : colors.textMuted
+              }
+              strokeWidth={2.2}
+            />
             <TextInput
               style={[styles.searchInput, { color: colors.textPrimary }]}
               placeholder="Qyteti, lagjja ose titulli..."
               placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               returnKeyType="search"
             />
             {searchQuery.length > 0 && (
@@ -271,7 +292,16 @@ export default function HomeScreen() {
         </View>
 
         {/* Transaction Type Selector (Shitje / Qira) */}
-        <View style={[styles.transactionTabs, { backgroundColor: colors.surfaceSubtle }]}>
+        <View
+          style={[
+            styles.transactionTabs,
+            {
+              backgroundColor: colors.surfaceSubtle,
+              borderWidth: 1,
+              borderColor: colors.border,
+            },
+          ]}
+        >
           {(['all', 'shitje', 'qira'] as const).map((type) => {
             const isActive = transactionType === type
             const label = type === 'all' ? 'Të gjitha' : type === 'shitje' ? 'Në Shitje' : 'Me Qira'
@@ -358,7 +388,7 @@ export default function HomeScreen() {
               </View>
             )}
           </View>
-          <Pressable onPress={() => router.push('/listings' as any)}>
+          <Pressable onPress={() => router.push('/listings' as any)} hitSlop={10}>
             <Text style={[styles.sectionLink, { color: colors.primary }]}>Shiko të gjitha</Text>
           </Pressable>
         </View>
@@ -388,7 +418,15 @@ export default function HomeScreen() {
                 : 'Provoni të ndryshoni filtrat ose kërkoni një qytet tjetër.'}
             </Text>
             <Pressable
-              style={[styles.resetButton, { backgroundColor: colors.surfaceSubtle }]}
+              style={[
+                styles.resetButton,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                },
+              ]}
+              hitSlop={8}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                 setSelectedCategory('all')

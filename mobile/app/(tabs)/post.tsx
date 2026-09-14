@@ -63,6 +63,9 @@ export default function PostPropertyScreen() {
   const [loading, setLoading] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [authChecking, setAuthChecking] = useState(true)
+  const [focusedField, setFocusedField] = useState<
+    'title' | 'description' | 'price' | 'area' | 'address' | null
+  >(null)
 
   useEffect(() => {
     async function checkAuth() {
@@ -506,12 +509,16 @@ export default function PostPropertyScreen() {
                     styles.cityChip,
                     {
                       backgroundColor: isCSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                      borderColor: isCSelected ? colors.chipActiveBg : colors.border,
+                      borderWidth: 1,
                     },
                   ]}
                   onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
                     setCity(c)
                     setNeighborhood('')
                   }}
+                  hitSlop={6}
                 >
                   <Text
                     style={[
@@ -540,9 +547,15 @@ export default function PostPropertyScreen() {
                         styles.cityChip,
                         {
                           backgroundColor: isNSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                          borderColor: isNSelected ? colors.chipActiveBg : colors.border,
+                          borderWidth: 1,
                         },
                       ]}
-                      onPress={() => setNeighborhood(n)}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setNeighborhood(n)
+                      }}
+                      hitSlop={6}
                     >
                       <Text
                         style={[
@@ -566,7 +579,13 @@ export default function PostPropertyScreen() {
               styles.input,
               {
                 backgroundColor: colors.searchBg,
-                borderColor: colors.searchBorder,
+                borderColor:
+                  focusedField === 'address'
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.searchBorder,
+                borderWidth: focusedField === 'address' ? 1.5 : 1,
                 color: colors.textPrimary,
               },
             ]}
@@ -574,6 +593,8 @@ export default function PostPropertyScreen() {
             placeholderTextColor={colors.textLight}
             value={address}
             onChangeText={setAddress}
+            onFocus={() => setFocusedField('address')}
+            onBlur={() => setFocusedField(null)}
           />
         </View>
 
@@ -589,7 +610,13 @@ export default function PostPropertyScreen() {
                   styles.input,
                   {
                     backgroundColor: colors.searchBg,
-                    borderColor: colors.searchBorder,
+                    borderColor:
+                      focusedField === 'price'
+                        ? theme === 'green'
+                          ? colors.gold
+                          : colors.primary
+                        : colors.searchBorder,
+                    borderWidth: focusedField === 'price' ? 1.5 : 1,
                     color: colors.textPrimary,
                   },
                 ]}
@@ -598,6 +625,8 @@ export default function PostPropertyScreen() {
                 keyboardType="numeric"
                 value={price}
                 onChangeText={setPrice}
+                onFocus={() => setFocusedField('price')}
+                onBlur={() => setFocusedField(null)}
               />
             </View>
             <View style={styles.halfInput}>
@@ -607,7 +636,13 @@ export default function PostPropertyScreen() {
                   styles.input,
                   {
                     backgroundColor: colors.searchBg,
-                    borderColor: colors.searchBorder,
+                    borderColor:
+                      focusedField === 'area'
+                        ? theme === 'green'
+                          ? colors.gold
+                          : colors.primary
+                        : colors.searchBorder,
+                    borderWidth: focusedField === 'area' ? 1.5 : 1,
                     color: colors.textPrimary,
                   },
                 ]}
@@ -616,6 +651,8 @@ export default function PostPropertyScreen() {
                 keyboardType="numeric"
                 value={area}
                 onChangeText={setArea}
+                onFocus={() => setFocusedField('area')}
+                onBlur={() => setFocusedField(null)}
               />
             </View>
           </View>
@@ -633,9 +670,15 @@ export default function PostPropertyScreen() {
                         styles.pillBtn,
                         {
                           backgroundColor: isRSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                          borderColor: isRSelected ? colors.chipActiveBg : colors.border,
+                          borderWidth: 1,
                         },
                       ]}
-                      onPress={() => setRooms(String(r))}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setRooms(String(r))
+                      }}
+                      hitSlop={6}
                     >
                       <Text
                         style={[
@@ -664,9 +707,15 @@ export default function PostPropertyScreen() {
                     styles.featureChip,
                     {
                       backgroundColor: isFSelected ? colors.chipActiveBg : colors.surfaceSubtle,
+                      borderColor: isFSelected ? colors.chipActiveBg : colors.border,
+                      borderWidth: 1,
                     },
                   ]}
-                  onPress={() => toggleFeature(feat)}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    toggleFeature(feat)
+                  }}
+                  hitSlop={6}
                 >
                   <Text
                     style={[
@@ -694,7 +743,13 @@ export default function PostPropertyScreen() {
               styles.input,
               {
                 backgroundColor: colors.searchBg,
-                borderColor: colors.searchBorder,
+                borderColor:
+                  focusedField === 'title'
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.searchBorder,
+                borderWidth: focusedField === 'title' ? 1.5 : 1,
                 color: colors.textPrimary,
               },
             ]}
@@ -702,6 +757,8 @@ export default function PostPropertyScreen() {
             placeholderTextColor={colors.textLight}
             value={title}
             onChangeText={setTitle}
+            onFocus={() => setFocusedField('title')}
+            onBlur={() => setFocusedField(null)}
           />
 
           <View style={styles.descHeader}>
@@ -709,7 +766,7 @@ export default function PostPropertyScreen() {
 
             <View style={styles.descActions}>
               {undoDescription !== null && (
-                <Pressable style={styles.undoBtn} onPress={handleUndo}>
+                <Pressable style={styles.undoBtn} onPress={handleUndo} hitSlop={10}>
                   <RotateCcw size={12} color={colors.textMuted} />
                   <Text style={[styles.undoBtnText, { color: colors.textMuted }]}>Kthe</Text>
                 </Pressable>
@@ -724,6 +781,7 @@ export default function PostPropertyScreen() {
                   },
                 ]}
                 onPress={handleSmartDescription}
+                hitSlop={8}
               >
                 {description.trim().length > 0 ? (
                   <Wand2 size={13} color={colors.badgeText} strokeWidth={2.4} />
@@ -742,7 +800,13 @@ export default function PostPropertyScreen() {
               styles.textArea,
               {
                 backgroundColor: colors.searchBg,
-                borderColor: colors.searchBorder,
+                borderColor:
+                  focusedField === 'description'
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.searchBorder,
+                borderWidth: focusedField === 'description' ? 1.5 : 1,
                 color: colors.textPrimary,
               },
             ]}
@@ -753,6 +817,8 @@ export default function PostPropertyScreen() {
             textAlignVertical="top"
             value={description}
             onChangeText={setDescription}
+            onFocus={() => setFocusedField('description')}
+            onBlur={() => setFocusedField(null)}
           />
         </View>
 
@@ -774,7 +840,11 @@ export default function PostPropertyScreen() {
                     </Text>
                   </View>
                 )}
-                <Pressable style={styles.removeImageBtn} onPress={() => removeImage(idx)}>
+                <Pressable
+                  style={styles.removeImageBtn}
+                  onPress={() => removeImage(idx)}
+                  hitSlop={10}
+                >
                   <X size={12} color="#FFFFFF" />
                 </Pressable>
               </View>

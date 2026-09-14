@@ -75,6 +75,7 @@ export default function ChatConversationScreen() {
   const [listing, setListing] = useState<ListingPreview | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [inputText, setInputText] = useState('')
+  const [isInputFocused, setIsInputFocused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
 
@@ -502,7 +503,12 @@ export default function ChatConversationScreen() {
               styles.textInput,
               {
                 backgroundColor: colors.surfaceSubtle,
-                borderColor: colors.border,
+                borderColor: isInputFocused
+                  ? theme === 'green'
+                    ? colors.gold
+                    : colors.primary
+                  : colors.border,
+                borderWidth: isInputFocused ? 1.5 : 1,
                 color: colors.textPrimary,
               },
             ]}
@@ -510,6 +516,8 @@ export default function ChatConversationScreen() {
             placeholderTextColor={colors.textLight}
             value={inputText}
             onChangeText={setInputText}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
             multiline
             maxLength={1000}
           />
@@ -527,6 +535,7 @@ export default function ChatConversationScreen() {
             ]}
             onPress={() => handleSendMessage()}
             disabled={!inputText.trim() || sending}
+            hitSlop={8}
           >
             {sending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />

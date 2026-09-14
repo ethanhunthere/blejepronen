@@ -370,12 +370,36 @@ export default function ProfileScreen() {
           <Pressable
             style={[
               styles.logoutButton,
-              { backgroundColor: theme === 'black' ? '#2A1414' : '#FEE2E2' },
+              {
+                backgroundColor:
+                  theme === 'white'
+                    ? '#FEE2E2'
+                    : theme === 'green'
+                    ? 'rgba(239, 68, 68, 0.16)'
+                    : '#2A1414',
+                borderColor:
+                  theme === 'white'
+                    ? '#FECACA'
+                    : 'rgba(239, 68, 68, 0.35)',
+                borderWidth: 1,
+              },
             ]}
             onPress={handleLogout}
+            hitSlop={8}
           >
-            <LogOut size={18} color="#EF4444" strokeWidth={2.2} />
-            <Text style={styles.logoutButtonText}>Çkyçu nga llogaria</Text>
+            <LogOut
+              size={18}
+              color={theme === 'green' ? '#FCA5A5' : '#EF4444'}
+              strokeWidth={2.2}
+            />
+            <Text
+              style={[
+                styles.logoutButtonText,
+                { color: theme === 'green' ? '#FCA5A5' : '#EF4444' },
+              ]}
+            >
+              Çkyçu nga llogaria
+            </Text>
           </Pressable>
         )}
 

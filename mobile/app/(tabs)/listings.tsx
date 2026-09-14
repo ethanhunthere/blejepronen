@@ -201,6 +201,10 @@ export default function ListingsScreen() {
 
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showSortModal, setShowSortModal] = useState(false)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [focusedFilterInput, setFocusedFilterInput] = useState<
+    'minPrice' | 'maxPrice' | 'minArea' | 'maxArea' | null
+  >(null)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
   // Active filters count calculation
@@ -449,16 +453,36 @@ export default function ListingsScreen() {
         <View
           style={[
             styles.searchBar,
-            { backgroundColor: colors.searchBg, borderColor: colors.searchBorder },
+            {
+              backgroundColor: colors.searchBg,
+              borderColor: isSearchFocused
+                ? theme === 'green'
+                  ? colors.gold
+                  : colors.primary
+                : colors.searchBorder,
+              borderWidth: isSearchFocused ? 1.5 : 1,
+            },
           ]}
         >
-          <Search size={18} color={colors.textMuted} strokeWidth={2.2} />
+          <Search
+            size={18}
+            color={
+              isSearchFocused
+                ? theme === 'green'
+                  ? colors.gold
+                  : colors.primary
+                : colors.textMuted
+            }
+            strokeWidth={2.2}
+          />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="Qyteti, lagjja ose fjalë kyçe..."
             placeholderTextColor={colors.textLight}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
@@ -660,7 +684,15 @@ export default function ListingsScreen() {
               Nuk ka prona që përputhen me filtrat tuaj aktualë.
             </Text>
             <Pressable
-              style={[styles.resetButton, { backgroundColor: colors.surfaceSubtle }]}
+              style={[
+                styles.resetButton,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                },
+              ]}
+              hitSlop={10}
               onPress={resetFilters}
             >
               <Text style={[styles.resetButtonText, { color: colors.primary }]}>Pastro filtrat</Text>
@@ -885,7 +917,11 @@ export default function ListingsScreen() {
         <SafeAreaView style={[styles.modalSafeArea, { backgroundColor: colors.surface }]}>
           {/* Modal Header */}
           <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-            <Pressable style={styles.modalResetHeaderBtn} onPress={resetFilters}>
+            <Pressable
+              style={styles.modalResetHeaderBtn}
+              onPress={resetFilters}
+              hitSlop={10}
+            >
               <RotateCcw size={15} color={colors.textMuted} />
               <Text style={[styles.modalResetHeaderText, { color: colors.textMuted }]}>Pastro</Text>
             </Pressable>
@@ -904,6 +940,7 @@ export default function ListingsScreen() {
             <Pressable
               style={[styles.modalCloseButton, { backgroundColor: colors.surfaceSubtle }]}
               onPress={() => setShowFilterModal(false)}
+              hitSlop={10}
             >
               <X size={18} color={colors.textPrimary} strokeWidth={2.2} />
             </Pressable>
@@ -1132,10 +1169,31 @@ export default function ListingsScreen() {
                 <View
                   style={[
                     styles.inputWrapper,
-                    { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor:
+                        focusedFilterInput === 'minPrice'
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                      borderWidth: focusedFilterInput === 'minPrice' ? 1.5 : 1,
+                    },
                   ]}
                 >
-                  <Text style={[styles.inputPrefix, { color: colors.textMuted }]}>Nga</Text>
+                  <Text
+                    style={[
+                      styles.inputPrefix,
+                      {
+                        color:
+                          focusedFilterInput === 'minPrice'
+                            ? colors.primary
+                            : colors.textMuted,
+                      },
+                    ]}
+                  >
+                    Nga
+                  </Text>
                   <TextInput
                     style={[styles.numericInput, { color: colors.textPrimary }]}
                     placeholder="0"
@@ -1143,6 +1201,8 @@ export default function ListingsScreen() {
                     keyboardType="numeric"
                     value={minPrice}
                     onChangeText={setMinPrice}
+                    onFocus={() => setFocusedFilterInput('minPrice')}
+                    onBlur={() => setFocusedFilterInput(null)}
                   />
                   <Text style={[styles.inputSuffix, { color: colors.primary }]}>€</Text>
                 </View>
@@ -1152,10 +1212,31 @@ export default function ListingsScreen() {
                 <View
                   style={[
                     styles.inputWrapper,
-                    { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor:
+                        focusedFilterInput === 'maxPrice'
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                      borderWidth: focusedFilterInput === 'maxPrice' ? 1.5 : 1,
+                    },
                   ]}
                 >
-                  <Text style={[styles.inputPrefix, { color: colors.textMuted }]}>Deri</Text>
+                  <Text
+                    style={[
+                      styles.inputPrefix,
+                      {
+                        color:
+                          focusedFilterInput === 'maxPrice'
+                            ? colors.primary
+                            : colors.textMuted,
+                      },
+                    ]}
+                  >
+                    Deri
+                  </Text>
                   <TextInput
                     style={[styles.numericInput, { color: colors.textPrimary }]}
                     placeholder="Maks"
@@ -1163,6 +1244,8 @@ export default function ListingsScreen() {
                     keyboardType="numeric"
                     value={maxPrice}
                     onChangeText={setMaxPrice}
+                    onFocus={() => setFocusedFilterInput('maxPrice')}
+                    onBlur={() => setFocusedFilterInput(null)}
                   />
                   <Text style={[styles.inputSuffix, { color: colors.primary }]}>€</Text>
                 </View>
@@ -1223,10 +1306,31 @@ export default function ListingsScreen() {
                 <View
                   style={[
                     styles.inputWrapper,
-                    { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor:
+                        focusedFilterInput === 'minArea'
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                      borderWidth: focusedFilterInput === 'minArea' ? 1.5 : 1,
+                    },
                   ]}
                 >
-                  <Text style={[styles.inputPrefix, { color: colors.textMuted }]}>Min</Text>
+                  <Text
+                    style={[
+                      styles.inputPrefix,
+                      {
+                        color:
+                          focusedFilterInput === 'minArea'
+                            ? colors.primary
+                            : colors.textMuted,
+                      },
+                    ]}
+                  >
+                    Min
+                  </Text>
                   <TextInput
                     style={[styles.numericInput, { color: colors.textPrimary }]}
                     placeholder="0"
@@ -1234,6 +1338,8 @@ export default function ListingsScreen() {
                     keyboardType="numeric"
                     value={minArea}
                     onChangeText={setMinArea}
+                    onFocus={() => setFocusedFilterInput('minArea')}
+                    onBlur={() => setFocusedFilterInput(null)}
                   />
                   <Text style={[styles.inputSuffix, { color: colors.primary }]}>m²</Text>
                 </View>
@@ -1243,10 +1349,31 @@ export default function ListingsScreen() {
                 <View
                   style={[
                     styles.inputWrapper,
-                    { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor:
+                        focusedFilterInput === 'maxArea'
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                      borderWidth: focusedFilterInput === 'maxArea' ? 1.5 : 1,
+                    },
                   ]}
                 >
-                  <Text style={[styles.inputPrefix, { color: colors.textMuted }]}>Maks</Text>
+                  <Text
+                    style={[
+                      styles.inputPrefix,
+                      {
+                        color:
+                          focusedFilterInput === 'maxArea'
+                            ? colors.primary
+                            : colors.textMuted,
+                      },
+                    ]}
+                  >
+                    Maks
+                  </Text>
                   <TextInput
                     style={[styles.numericInput, { color: colors.textPrimary }]}
                     placeholder="Maks"
@@ -1254,6 +1381,8 @@ export default function ListingsScreen() {
                     keyboardType="numeric"
                     value={maxArea}
                     onChangeText={setMaxArea}
+                    onFocus={() => setFocusedFilterInput('maxArea')}
+                    onBlur={() => setFocusedFilterInput(null)}
                   />
                   <Text style={[styles.inputSuffix, { color: colors.primary }]}>m²</Text>
                 </View>
@@ -1583,6 +1712,7 @@ export default function ListingsScreen() {
             <Pressable
               style={[styles.modalFooterReset, { borderColor: colors.border }]}
               onPress={resetFilters}
+              hitSlop={10}
             >
               <RotateCcw size={16} color={colors.textSecondary} />
               <Text style={[styles.modalFooterResetText, { color: colors.textSecondary }]}>
