@@ -169,9 +169,34 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-          {currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+            {currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+            {currentUser
+              ? isCompany
+                ? 'Agjenci / Kompani Imobiliare'
+                : 'Përdorues i regjistruar'
+              : 'Mirësevini në Bleje Pronën'}
+          </Text>
+        </View>
+
+        {currentUser && (
+          <Pressable
+            style={[
+              styles.headerSettingsBtn,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/settings' as any)
+            }}
+            hitSlop={8}
+          >
+            <Settings size={19} color={colors.textPrimary} strokeWidth={2.2} />
+          </Pressable>
+        )}
       </View>
 
       <ScrollView
@@ -377,6 +402,58 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Settings Section (Cilësimet) */}
+        <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Cilësimet e Llogarisë</Text>
+
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              if (!currentUser) {
+                openAuthModal('login')
+              } else {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/settings' as any)
+              }
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.primaryLight }]}>
+              <Settings size={18} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                  Cilësimet e Llogarisë
+                </Text>
+                {isCompany && (
+                  <View
+                    style={[
+                      styles.miniCompanyBadge,
+                      {
+                        backgroundColor:
+                          theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.miniCompanyBadgeText,
+                        { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                      ]}
+                    >
+                      Agjenci
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Ndrysho profilin, njoftimet push, sigurinë & kalimin në kompani
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
+        </View>
+
         {/* Activity Section */}
         <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>Aktiviteti</Text>
@@ -541,9 +618,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
+  },
+  headerSettingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.5,
   },
   headerTitle: {
     fontSize: 24,
@@ -554,6 +642,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.regular,
     marginTop: 2,
+  },
+  miniCompanyBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  miniCompanyBadgeText: {
+    fontSize: 10,
+    fontFamily: Fonts.bold,
   },
   container: {
     flex: 1,

@@ -177,3 +177,113 @@ export async function apiDeleteAccount(accessToken: string): Promise<ApiResponse
     }
   }
 }
+
+export interface ProfileSettingsPayload {
+  isCompany: boolean
+  accountType: 'company' | 'individual'
+  firstName?: string
+  lastName?: string
+  phone?: string
+  bio?: string
+  city?: string
+  avatarUrl?: string
+  emailVerified?: boolean
+
+  // Individual fields
+  individualFirstName?: string
+  individualLastName?: string
+  individualPhone?: string
+  individualEmail?: string
+  individualBio?: string
+
+  // Company fields
+  companyName?: string
+  companyContactPerson?: string
+  companyPhone?: string
+  companyEmail?: string
+  companyDescription?: string
+  foundedYear?: string
+  nipt?: string
+  officeAddress?: string
+  website?: string
+
+  // Socials
+  instagram?: string
+  facebook?: string
+  whatsapp?: string
+  tiktok?: string
+  linkedin?: string
+  youtube?: string
+  twitter?: string
+
+  // Notifications (Site + App specific)
+  notifications?: {
+    messages?: boolean
+    inquiries?: boolean
+    followers?: boolean
+    weeklyReport?: boolean
+    newsletter?: boolean
+    pushEnabled?: boolean
+    pushSound?: boolean
+    pushVibrate?: boolean
+    priceDropAlerts?: boolean
+    newMatchAlerts?: boolean
+  }
+
+  // Privacy
+  privacy?: {
+    showPhone?: boolean
+    showSocials?: boolean
+    showOnline?: boolean
+    allowDirectMsgs?: boolean
+    showListingsOnProfile?: boolean
+  }
+
+  // App Specific Preferences
+  appPreferences?: {
+    biometricLock?: boolean
+    language?: string
+    currency?: string
+    highContrast?: boolean
+  }
+}
+
+/**
+ * Save complete profile and settings to the backend.
+ * Synchronizes with Web database and Supabase.
+ */
+export async function apiSaveProfileSettings(
+  payload: ProfileSettingsPayload,
+  accessToken: string
+): Promise<ApiResponse> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/profile/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.message || data.error || 'Dështoi ruajtja e cilësimeve.',
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Cilësimet u ruajtën me sukses!',
+    }
+  } catch (err: any) {
+    console.warn('apiSaveProfileSettings exception:', err)
+    return {
+      success: false,
+      error: 'Lidhja me serverin dështoi gjatë ruajtjes së cilësimeve.',
+    }
+  }
+}
+

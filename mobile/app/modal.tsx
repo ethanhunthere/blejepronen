@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Keyboard,
 } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import {
@@ -235,10 +236,23 @@ export default function AuthModalScreen() {
   // Handle 6-Digit OTP Verification
   const handleVerifyOtp = async (codeToVerify?: string) => {
     const code = (codeToVerify || otpCode).trim()
-    if (code.length !== 6 || verifying) return
+    if (code.length !== 6) {
+      setErrorMessage('Ju lutemi shkruani të 6 shifrat e kodit të verifikimit.')
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      }
+      otpInputRef.current?.focus()
+      return
+    }
 
+    if (verifying) return
+
+    Keyboard.dismiss()
     setErrorMessage(null)
     setVerifying(true)
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    }
 
     try {
       const res = await apiVerifyOtp({
@@ -394,76 +408,114 @@ export default function AuthModalScreen() {
               </View>
             )}
 
-            {/* 6-Digit OTP Visual Boxes */}
-            <Pressable
-              style={styles.otpBoxesRow}
-              onPress={() => otpInputRef.current?.focus()}
-            >
-              {[0, 1, 2, 3, 4, 5].map((idx) => {
-                const char = otpCode[idx] || ''
-                const isCurrent = otpCode.length === idx
-                return (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.otpBox,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: isCurrent
-                          ? brandHighlight
-                          : char
-                          ? colors.primary
-                          : specularBorderColor,
-                        borderWidth: isCurrent ? 2 : 1,
-                      },
-                    ]}
-                  >
-                    <Text
+            {/* 6-Digit OTP Interactive Panel */}
+            <View style={styles.otpInteractiveContainer}>
+              <View style={styles.otpBoxesRow} pointerEvents="none">
+                {[0, 1, 2, 3, 4, 5].map((idx) => {
+                  const char = otpCode[idx] || ''
+                  const isCurrent = otpCode.length === idx
+                  return (
+                    <View
+                      key={idx}
                       style={[
-                        styles.otpBoxChar,
-                        { color: char ? colors.textPrimary : colors.textLight },
+                        styles.otpBox,
+                        {
+                          backgroundColor:
+                            theme === 'white'
+                              ? '#FFFFFF'
+                              : theme === 'green'
+                              ? 'rgba(0, 77, 69, 0.45)'
+                              : 'rgba(255, 255, 255, 0.06)',
+                          borderColor: isCurrent
+                            ? brandHighlight
+                            : char
+                            ? colors.primary
+                            : specularBorderColor,
+                          borderWidth: isCurrent ? 2 : 1,
+                        },
                       ]}
                     >
-                      {char || '•'}
-                    </Text>
-                  </View>
-                )
-              })}
-            </Pressable>
+                      <Text
+                        style={[
+                          styles.otpBoxChar,
+                          {
+                            color: char
+                              ? colors.textPrimary
+                              : isCurrent
+                              ? brandHighlight
+                              : colors.textLight,
+                          },
+                        ]}
+                      >
+                        {char || (isCurrent ? '•' : '–')}
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
 
-            {/* Hidden Underlying TextInput for Native Input & Paste Handling */}
-            <TextInput
-              ref={otpInputRef}
-              style={styles.hiddenInput}
-              value={otpCode}
-              onChangeText={(val) => {
-                const cleaned = val.replace(/[^0-9]/g, '').slice(0, 6)
-                setOtpCode(cleaned)
-                if (cleaned.length === 6) {
-                  handleVerifyOtp(cleaned)
-                }
-              }}
-              keyboardType="number-pad"
-              maxLength={6}
-              textContentType="oneTimeCode"
-              autoFocus
-            />
+              {/* Stretched direct input over entire box row for 100% reliable tap detection */}
+              <TextInput
+                ref={otpInputRef}
+                style={styles.otpDirectInput}
+                value={otpCode}
+                onChangeText={(val) => {
+                  const cleaned = val.replace(/[^0-9]/g, '').slice(0, 6)
+                  setOtpCode(cleaned)
+                  setErrorMessage(null)
+                  if (cleaned.length === 6) {
+                    handleVerifyOtp(cleaned)
+                  }
+                }}
+                keyboardType="number-pad"
+                maxLength={6}
+                textContentType="oneTimeCode"
+                autoFocus
+                caretHidden={true}
+              />
+            </View>
 
-            {/* Verify Button */}
+            {/* Clear OTP quick action */}
+            {otpCode.length > 0 && (
+              <Pressable
+                style={styles.clearOtpBtn}
+                onPress={() => {
+                  setOtpCode('')
+                  otpInputRef.current?.focus()
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                }}
+                hitSlop={10}
+              >
+                <Text style={[styles.clearOtpText, { color: colors.textMuted }]}>
+                  Pastro kodin ({otpCode.length}/6)
+                </Text>
+              </Pressable>
+            )}
+
+            {/* Verify Button - High-Affordance & Instant Responsive Tap Target */}
             <Pressable
               style={[
                 styles.submitBtn,
-                { backgroundColor: brandHighlight },
-                (otpCode.length !== 6 || verifying) && styles.submitBtnDisabled,
+                styles.verifySubmitBtn,
+                {
+                  backgroundColor: brandHighlight,
+                  opacity: verifying ? 0.75 : 1,
+                },
               ]}
               onPress={() => handleVerifyOtp()}
-              disabled={otpCode.length !== 6 || verifying}
+              disabled={verifying}
+              hitSlop={8}
             >
               {verifying ? (
-                <ActivityIndicator color={primaryBtnText} />
+                <View style={styles.submitBtnInner}>
+                  <ActivityIndicator color={primaryBtnText} size="small" />
+                  <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                    Duke verifikuar...
+                  </Text>
+                </View>
               ) : (
                 <View style={styles.submitBtnInner}>
-                  <CheckCircle2 size={18} color={primaryBtnText} strokeWidth={2.4} />
+                  <CheckCircle2 size={19} color={primaryBtnText} strokeWidth={2.4} />
                   <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
                     Konfirmo Kodin
                   </Text>
@@ -1167,11 +1219,35 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: Fonts.bold,
   },
-  hiddenInput: {
+  otpInteractiveContainer: {
+    position: 'relative',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  otpDirectInput: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     opacity: 0.01,
-    width: 1,
-    height: 1,
+  },
+  clearOtpBtn: {
+    alignSelf: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  clearOtpText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+  },
+  verifySubmitBtn: {
+    marginTop: 6,
   },
   resendSection: {
     marginTop: 20,

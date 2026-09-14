@@ -16,13 +16,28 @@ function getAdminClient() {
 
 export async function POST(request: Request) {
   try {
-    const serverSupabase = await createServerSupabaseClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await serverSupabase.auth.getUser()
+    let user: any = null
+    try {
+      const serverSupabase = await createServerSupabaseClient()
+      const {
+        data: { user: cookieUser },
+      } = await serverSupabase.auth.getUser()
+      if (cookieUser) user = cookieUser
+    } catch {}
 
-    if (authError || !user) {
+    if (!user) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.replace('Bearer ', '').trim()
+        const supabaseAdmin = getAdminClient()
+        const {
+          data: { user: bearerUser },
+        } = await supabaseAdmin.auth.getUser(token)
+        if (bearerUser) user = bearerUser
+      }
+    }
+
+    if (!user) {
       return NextResponse.json({ error: 'unauthorized', message: 'Sesioni ka skaduar.' }, { status: 401 })
     }
 
