@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
-import { MapPin, BedDouble, Maximize2, Layers, Heart } from 'lucide-react-native'
+import { MapPin, BedDouble, Maximize2, Layers, Heart, Sparkles, Camera } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
@@ -34,8 +34,9 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
       ? listing.images[0]
       : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
 
-  const typeBadgeBg = theme === 'green' ? colors.gold : '#006459'
-  const typeBadgeTextColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const isSale = listing.type === 'shitje'
+  const isRent = listing.type === 'qira'
+  const photosCount = listing.images ? listing.images.length : 0
 
   return (
     <Pressable
@@ -44,54 +45,120 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
-          shadowOpacity: theme === 'black' ? 0.3 : 0.06,
+          shadowColor: theme === 'black' ? '#000' : '#101828',
+          shadowOpacity: theme === 'black' ? 0.35 : 0.07,
         },
         pressed && styles.cardPressed,
       ]}
-      onPress={() => router.push(`/listings/${listing.id}` as any)}
+      onPress={() => {
+        if (Platform.OS !== 'web') Haptics.selectionAsync()
+        router.push(`/listings/${listing.id}` as any)
+      }}
     >
-      {/* Image Container */}
+      {/* 1. Cinematic Hero Image Container */}
       <View style={[styles.imageContainer, { backgroundColor: colors.surfaceSubtle }]}>
         <Image
           source={{ uri: mainImage }}
           style={styles.image}
           contentFit="cover"
+          transition={200}
         />
 
-        {/* Badge: Shitje / Qira */}
-        <View style={[styles.typeBadge, { backgroundColor: typeBadgeBg }]}>
-          <Text style={[styles.typeBadgeText, { color: typeBadgeTextColor }]}>
-            {listing.type === 'shitje' ? 'NË SHITJE' : 'ME QIRA'}
-          </Text>
+        {/* Top Floating Glass Badges */}
+        <View style={styles.topOverlayRow}>
+          {/* Status Badge: Frosted Glass Capsule with status micro-dot */}
+          <View style={styles.statusCapsule}>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: isSale ? '#10B981' : '#38BDF8' },
+              ]}
+            />
+            <Text style={styles.statusCapsuleText}>
+              {isSale ? 'Në Shitje' : 'Me Qira'}
+            </Text>
+          </View>
+
+          {/* Featured Gold Badge if applicable */}
+          {listing.is_featured && (
+            <View style={[styles.featuredCapsule, { backgroundColor: colors.gold }]}>
+              <Sparkles size={11} color="#003E37" strokeWidth={2.4} />
+              <Text style={styles.featuredCapsuleText}>E Veçuar</Text>
+            </View>
+          )}
+
+          <View style={{ flex: 1 }} />
+
+          {/* Luxury Circular Frosted Favorite Button */}
+          <Pressable
+            style={[
+              styles.favoriteBtn,
+              isFavorite && styles.favoriteBtnActive,
+            ]}
+            onPress={handleFavoritePress}
+            hitSlop={10}
+          >
+            <Heart
+              size={18}
+              color={isFavorite ? '#EF4444' : '#FFFFFF'}
+              fill={isFavorite ? '#EF4444' : 'transparent'}
+              strokeWidth={2.2}
+            />
+          </Pressable>
         </View>
 
-        {/* Favorite Heart Toggle */}
-        <Pressable
-          style={styles.favoriteButton}
-          onPress={handleFavoritePress}
-          hitSlop={8}
-        >
-          <Heart
-            size={18}
-            color={isFavorite ? '#EF4444' : '#FFFFFF'}
-            fill={isFavorite ? '#EF4444' : 'rgba(0,0,0,0.3)'}
-          />
-        </Pressable>
-
-        {/* Price overlay on image */}
-        <View style={[styles.priceContainer, { backgroundColor: 'rgba(11, 15, 14, 0.88)' }]}>
-          <Text style={styles.priceText}>{formatPrice(listing.price)}</Text>
-          {listing.type === 'qira' && <Text style={styles.periodText}>/muaj</Text>}
-        </View>
+        {/* Bottom Image Photo Counter Badge */}
+        {photosCount > 1 && (
+          <View style={styles.photoCountBadge}>
+            <Camera size={11} color="#FFFFFF" strokeWidth={2} />
+            <Text style={styles.photoCountText}>{photosCount}</Text>
+          </View>
+        )}
       </View>
 
-      {/* Details Container */}
+      {/* 2. Editorial Content Hierarchy */}
       <View style={styles.infoContainer}>
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
+        {/* Row 1: Big Bold Price + Typology Capsule */}
+        <View style={styles.priceRow}>
+          <View style={styles.priceWrap}>
+            <Text
+              style={[
+                styles.priceValue,
+                { color: theme === 'green' ? colors.gold : colors.primary },
+              ]}
+            >
+              {formatPrice(listing.price)}
+            </Text>
+            {isRent && (
+              <Text style={[styles.pricePeriod, { color: colors.textMuted }]}>
+                /muaj
+              </Text>
+            )}
+          </View>
+
+          {listing.apartment_type ? (
+            <View
+              style={[
+                styles.typologyPill,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.typologyPillText, { color: colors.textSecondary }]}>
+                {listing.apartment_type}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Row 2: Listing Title */}
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
           {listing.title}
         </Text>
 
-        {/* Location */}
+        {/* Row 3: Location */}
         <View style={styles.locationRow}>
           <MapPin size={13} color={colors.primary} strokeWidth={2.4} />
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -99,28 +166,58 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
           </Text>
         </View>
 
-        {/* Specs Row */}
-        <View style={[styles.specsRow, { borderTopColor: colors.borderSubtle }]}>
+        {/* Row 4: Organized Specs Modules (Area, Rooms, Floor) */}
+        <View style={[styles.specsModuleRow, { borderTopColor: colors.borderSubtle }]}>
           {listing.area_m2 > 0 && (
-            <View style={styles.specItem}>
-              <Maximize2 size={12} color={colors.textMuted} strokeWidth={2} />
-              <Text style={[styles.specText, { color: colors.textMuted }]}>{listing.area_m2} m²</Text>
+            <View
+              style={[
+                styles.specModule,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Maximize2 size={11} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+                {listing.area_m2} m²
+              </Text>
             </View>
           )}
 
           {listing.rooms > 0 && (
-            <View style={styles.specItem}>
-              <BedDouble size={12} color={colors.textMuted} strokeWidth={2} />
-              <Text style={[styles.specText, { color: colors.textMuted }]}>{listing.rooms} dhomë</Text>
+            <View
+              style={[
+                styles.specModule,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <BedDouble size={12} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+                {listing.rooms} dhomë
+              </Text>
             </View>
           )}
 
-          {listing.floor && (
-            <View style={styles.specItem}>
-              <Layers size={12} color={colors.textMuted} strokeWidth={2} />
-              <Text style={[styles.specText, { color: colors.textMuted }]}>Kati {listing.floor}</Text>
+          {listing.floor ? (
+            <View
+              style={[
+                styles.specModule,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Layers size={11} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+                Kati {listing.floor}
+              </Text>
             </View>
-          )}
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -129,22 +226,21 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     borderWidth: 1,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 14,
     elevation: 3,
   },
   cardPressed: {
     opacity: 0.94,
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.985 }],
   },
   imageContainer: {
     width: '100%',
-    height: 195,
+    height: 215,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -152,83 +248,152 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  typeBadge: {
+  topOverlayRow: {
     position: 'absolute',
     top: 12,
     left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 20,
   },
-  typeBadgeText: {
-    fontSize: 10,
-    fontFamily: Fonts.extraBold,
-    letterSpacing: 0.5,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
-  favoriteButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  statusCapsuleText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.1,
+  },
+  featuredCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  featuredCapsuleText: {
+    color: '#003E37',
+    fontSize: 10.5,
+    fontFamily: Fonts.bold,
+  },
+  favoriteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  priceContainer: {
+  favoriteBtnActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  photoCountBadge: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    borderRadius: 10,
+    bottom: 10,
+    right: 12,
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 3,
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(15, 23, 42, 0.68)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  priceText: {
+  photoCountText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: Fonts.extraBold,
-  },
-  periodText: {
-    color: '#D1D5DB',
-    fontSize: 11,
-    fontFamily: Fonts.medium,
+    fontSize: 10,
+    fontFamily: Fonts.bold,
   },
   infoContainer: {
-    padding: 14,
+    padding: 16,
     gap: 8,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  priceWrap: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  priceValue: {
+    fontSize: 22,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.6,
+  },
+  pricePeriod: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+  },
+  typologyPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  typologyPillText: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
   },
   title: {
     fontSize: 15,
     fontFamily: Fonts.bold,
+    lineHeight: 20,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   locationText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
     flex: 1,
   },
-  specsRow: {
+  specsModuleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 2,
     paddingTop: 8,
     borderTopWidth: 1,
   },
-  specItem: {
+  specModule: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 4.5,
+    paddingHorizontal: 8,
+    paddingVertical: 4.5,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  specText: {
-    fontSize: 12,
+  specModuleText: {
+    fontSize: 11.5,
     fontFamily: Fonts.semiBold,
   },
 })
