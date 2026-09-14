@@ -10,7 +10,7 @@ import {
   Building2,
   Phone,
   MessageCircle,
-  Sparkles,
+  Share2,
   ChevronLeft,
 } from 'lucide-react'
 import ListingCard from '@/components/ListingCard'
@@ -278,7 +278,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
           <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-6 sm:p-7 mb-8">
             <div className="mb-4">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#006459]" />
+                <Share2 className="h-4 w-4 text-[#006459]" />
                 Rrjetet Sociale & Prezenca Digjitale
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">

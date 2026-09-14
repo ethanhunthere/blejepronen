@@ -11,7 +11,7 @@ import {
   Maximize2,
   Building2,
   Home,
-  Sparkles,
+  Star,
   ChevronLeft,
   Phone,
   MessageCircle,
@@ -422,7 +422,7 @@ export default async function ListingDetailPage({
 
                 {listing.is_featured && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                    <Sparkles className="h-3 w-3 text-amber-600 fill-amber-600" />
+                    <Star className="h-3 w-3 text-amber-600 fill-amber-600" />
                     E Veçuar
                   </span>
                 )}
@@ -517,7 +517,7 @@ export default async function ListingDetailPage({
                 {/* Condition */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
                   <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
-                    <Sparkles className="h-5 w-5" />
+                    <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium text-gray-600 uppercase tracking-wide">Gjendja</p>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Calculator, Percent, Calendar, Euro, Info, Sparkles, RotateCcw } from 'lucide-react'
+import { Calculator, Percent, Calendar, Euro, Info, RotateCcw } from 'lucide-react'
 
 interface MortgageCalculatorProps {
   propertyPrice: number
@@ -82,8 +82,7 @@ export default function MortgageCalculator({
           </div>
         </div>
 
-        <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
-          <Sparkles className="h-3 w-3" />
+        <span className="hidden sm:inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
           Financim Bankar
         </span>
       </div>

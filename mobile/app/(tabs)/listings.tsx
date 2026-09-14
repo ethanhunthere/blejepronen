@@ -20,7 +20,6 @@ import {
   Building2,
   ArrowUpDown,
   RotateCcw,
-  Sparkles,
   MapPin,
   Home,
   Tag,

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { MessageCircle, Search, Sparkles } from 'lucide-react'
+import { MessageCircle, Search } from 'lucide-react'
 
 interface ConversationItem {
   id: string
@@ -207,14 +207,13 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
         <div className="flex-shrink-0 px-5 py-5 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#006459] to-[#004d44] flex items-center justify-center shadow-md shadow-[#006459]/20">
-                <Sparkles className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-xl bg-[#006459] flex items-center justify-center shadow-xs">
+                <MessageCircle className="h-4 w-4 text-white" />
               </div>
               <h1 className="text-lg font-bold text-[#101828] tracking-tight">Mesazhet</h1>
             </div>
             {totalUnread > 0 && (
-              <span className="bg-[#006459] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-lg shadow-[#006459]/30 animate-pulse"
-                style={{ animationDuration: '3s' }}>
+              <span className="bg-[#006459] text-white text-[11px] font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-xs">
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
             )}

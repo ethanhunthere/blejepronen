@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Building2, User, Phone, Calendar, Loader2, CheckCircle2, Sparkles } from 'lucide-react'
+import { Building2, User, Phone, Calendar, Loader2, CheckCircle2, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import AvatarPickerModal from '@/components/AvatarPickerModal'
 import { DEFAULT_AVATAR } from '@/lib/avatars'
@@ -264,7 +264,7 @@ export default function CompletoProfilinCompanyPage() {
                 className="object-cover transition-transform duration-200"
               />
               <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                <Sparkles className="h-5 w-5 drop-shadow" />
+                <Camera className="h-5 w-5 drop-shadow" />
               </div>
             </div>
             <button
@@ -272,7 +272,7 @@ export default function CompletoProfilinCompanyPage() {
               onClick={() => setAvatarModalOpen(true)}
               className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-semibold hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Camera className="w-3.5 h-3.5" />
               Zgjidh logon / avatarin
             </button>
           </div>

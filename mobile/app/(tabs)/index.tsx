@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, Sparkles } from 'lucide-react-native'
+import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, LayoutGrid } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
@@ -20,7 +20,7 @@ import { ListingCard } from '@/components/ListingCard'
 import { Logo } from '@/components/Logo'
 
 const CATEGORY_ITEMS = [
-  { id: 'all', label: 'Të gjitha', icon: Sparkles },
+  { id: 'all', label: 'Të gjitha', icon: LayoutGrid },
   { id: 'banese', label: 'Banesa', icon: Building2 },
   { id: 'shtepi', label: 'Shtëpi', icon: Home },
   { id: 'vile', label: 'Vila', icon: Home },

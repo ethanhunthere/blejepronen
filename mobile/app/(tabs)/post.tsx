@@ -14,8 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import {
-  Sparkles,
-  Wand2,
+  PlusCircle,
+  FileText,
   RotateCcw,
   Camera,
   X,
@@ -317,7 +317,7 @@ export default function PostPropertyScreen() {
         <View style={styles.gateWrapper}>
           <View style={[styles.gateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.gateIconWrap, { backgroundColor: colors.primaryLight }]}>
-              <Sparkles size={32} color={colors.primary} strokeWidth={2.2} />
+              <PlusCircle size={32} color={colors.primary} strokeWidth={2.2} />
             </View>
 
             <Text style={[styles.gateTitle, { color: colors.textPrimary }]}>
@@ -734,13 +734,9 @@ export default function PostPropertyScreen() {
                 onPress={handleSmartDescription}
                 hitSlop={8}
               >
-                {description.trim().length > 0 ? (
-                  <Wand2 size={13} color={colors.badgeText} strokeWidth={2.4} />
-                ) : (
-                  <Sparkles size={13} color={colors.badgeText} strokeWidth={2.4} />
-                )}
+                <FileText size={13} color={colors.badgeText} strokeWidth={2.2} />
                 <Text style={[styles.smartBtnText, { color: colors.badgeText }]}>
-                  {description.trim().length > 0 ? 'Rregullo & përmirëso' : 'Sugjero përshkrim'}
+                  {description.trim().length > 0 ? 'Përmirëso tekstin' : 'Sugjero përshkrim'}
                 </Text>
               </Pressable>
             </View>

@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
-import { Sun, Sparkles, Moon } from 'lucide-react-native'
+import { Sun, Leaf, Moon } from 'lucide-react-native'
 import { useTheme, ThemeMode, Fonts } from '@/constants/theme'
 
 export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
@@ -8,7 +8,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
 
   const modes: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
     { id: 'white', label: 'E Bardhë', icon: Sun },
-    { id: 'green', label: 'E Gjelbër', icon: Sparkles },
+    { id: 'green', label: 'E Gjelbër', icon: Leaf },
     { id: 'black', label: 'E Zezë', icon: Moon },
   ]
 

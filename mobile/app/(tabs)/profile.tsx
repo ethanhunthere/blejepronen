@@ -24,7 +24,7 @@ import {
   UserPlus,
   Check,
   Sun,
-  Sparkles,
+  Leaf,
   Moon,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
@@ -227,7 +227,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.themeCardTop}>
                 <View style={[styles.themeIconCircle, { backgroundColor: '#006459' }]}>
-                  <Sparkles size={18} color="#C8B882" strokeWidth={2.2} />
+                  <Leaf size={18} color="#C8B882" strokeWidth={2.2} />
                 </View>
                 {theme === 'green' && (
                   <View style={[styles.checkCircle, { backgroundColor: colors.gold }]}>

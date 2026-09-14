@@ -24,7 +24,6 @@ import {
   Check,
   Building2,
   ExternalLink,
-  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -480,7 +479,6 @@ export default function ChatConversationScreen() {
                 ]}
                 onPress={() => handleSendMessage(text)}
               >
-                <Sparkles size={12} color={colors.primary} />
                 <Text style={[styles.quickReplyText, { color: colors.textPrimary }]}>{text}</Text>
               </Pressable>
             ))}

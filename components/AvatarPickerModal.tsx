@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { X, Check, Upload, Sparkles, Loader2 } from 'lucide-react'
+import { X, Check, Upload, User, Loader2 } from 'lucide-react'
 import { BLEJE_AVATARS, BlejeAvatar, DEFAULT_AVATAR } from '@/lib/avatars'
 
 interface AvatarPickerModalProps {
@@ -53,7 +53,7 @@ export default function AvatarPickerModal({
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5" />
+              <User className="w-5 h-5" />
             </div>
             <div>
               <h3 id="avatar-picker-title" className="text-lg font-bold text-[#101828]">

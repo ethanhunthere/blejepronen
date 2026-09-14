@@ -11,7 +11,7 @@ import {
   Lock,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
+  HelpCircle,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -99,7 +99,7 @@ export default function ContactPage() {
           {/* Department / Request Topics */}
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-[#006459]" />
+              <HelpCircle className="w-4 h-4 text-[#006459]" />
               <h2 className="text-base sm:text-lg font-bold text-[#101828] tracking-tight">
                 Për çfarë mund të na shkruani?
               </h2>

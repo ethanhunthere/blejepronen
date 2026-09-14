@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, BedDouble, Maximize2, Heart, Sparkles, Building2 } from 'lucide-react'
+import { MapPin, BedDouble, Maximize2, Heart, Star, Building2 } from 'lucide-react'
 import type { Listing } from '@/lib/supabase'
 
 export type ListingCardData = Pick<
@@ -155,7 +155,7 @@ const ListingCard = React.memo(function ListingCard({
             )}
             {listing.is_featured && (
               <span className="inline-flex items-center gap-1 bg-[#C8B882] text-[#101828] text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
-                <Sparkles className="h-3 w-3 text-[#101828] fill-[#101828]" />
+                <Star className="h-3 w-3 text-[#101828] fill-[#101828]" />
                 E Veçuar
               </span>
             )}

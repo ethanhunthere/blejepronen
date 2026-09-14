@@ -14,7 +14,7 @@ import {
   Shield,
   Lock,
   Camera,
-  Sparkles,
+  ImageIcon,
   CheckCircle2,
   AlertTriangle,
   Loader2,
@@ -1058,7 +1058,7 @@ export default function SettingsPage() {
                       onClick={() => setShowAvatarModal(true)}
                       className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <ImageIcon className="w-3.5 h-3.5" />
                       Zgjidh nga biblioteka
                     </button>
 
@@ -1605,7 +1605,7 @@ export default function SettingsPage() {
                     Pamja live e lidhjeve tuaja sociale:
                   </span>
                   <span className="text-[11px] text-[#006459] font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> E sinkronizuar me shpalljet
+                    <CheckCircle2 className="w-3 h-3" /> E sinkronizuar me shpalljet
                   </span>
                 </div>
                 <SocialLinksBar socials={socials} variant="large" />

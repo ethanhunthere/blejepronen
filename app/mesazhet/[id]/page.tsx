@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert, Sparkles } from 'lucide-react'
+import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert, MessageCircle } from 'lucide-react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const QUICK_REPLIES = [
@@ -412,7 +412,7 @@ export default function ChatPage() {
             <div className="py-10 px-4 text-center animate-fade-in">
               <div className="max-w-md mx-auto bg-white border border-gray-100/90 shadow-2xs rounded-3xl p-6 sm:p-7">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#006459] mx-auto mb-3.5 shadow-2xs">
-                  <Sparkles className="w-6 h-6" />
+                  <MessageCircle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-[#101828] mb-1">
                   Filloni bisedën me {conv?.otherUser?.first_name || 'shitësin'}
@@ -528,8 +528,7 @@ export default function ChatPage() {
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Quick Replies Strip */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider shrink-0 mr-0.5 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-[#006459]" />
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider shrink-0 mr-1">
               Shpejt:
             </span>
             {QUICK_REPLIES.map((reply) => (

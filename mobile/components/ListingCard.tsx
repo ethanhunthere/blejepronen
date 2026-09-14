@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
-import { MapPin, BedDouble, Maximize2, Layers, Heart, Sparkles, Camera } from 'lucide-react-native'
+import { MapPin, BedDouble, Maximize2, Layers, Heart, Star, Camera } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
@@ -66,23 +66,17 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
 
         {/* Top Floating Glass Badges */}
         <View style={styles.topOverlayRow}>
-          {/* Status Badge: Frosted Glass Capsule with status micro-dot */}
+          {/* Status Badge: Clean Frosted Glass Capsule (No glowing dots) */}
           <View style={styles.statusCapsule}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: isSale ? '#10B981' : '#38BDF8' },
-              ]}
-            />
             <Text style={styles.statusCapsuleText}>
               {isSale ? 'Në Shitje' : 'Me Qira'}
             </Text>
           </View>
 
-          {/* Featured Gold Badge if applicable */}
+          {/* Featured Gold Badge with authentic Star icon */}
           {listing.is_featured && (
             <View style={[styles.featuredCapsule, { backgroundColor: colors.gold }]}>
-              <Sparkles size={11} color="#003E37" strokeWidth={2.4} />
+              <Star size={11} color="#003E37" fill="#003E37" strokeWidth={2} />
               <Text style={styles.featuredCapsuleText}>E Veçuar</Text>
             </View>
           )}
@@ -343,24 +337,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusCapsule: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.72)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.22)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 20,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
   statusCapsuleText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 11.5,
     fontFamily: Fonts.bold,
     letterSpacing: -0.1,
   },

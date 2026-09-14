@@ -16,7 +16,8 @@ import {
   Loader2,
   Building2,
   Home,
-  Sparkles,
+  Star,
+  FileText,
   Trees,
   Briefcase,
   Warehouse,
@@ -26,7 +27,7 @@ import {
   BedDouble,
   Tag,
   ShieldCheck,
-  Wand2,
+  CheckCircle2,
   ChevronRight,
   Eye,
   RotateCcw,
@@ -158,7 +159,7 @@ const CATEGORIES: Record<PropertyCategory, CategoryConfig> = {
     label: 'Vilë Luksoze',
     titleShort: 'Vilë',
     badge: 'Premium',
-    icon: Sparkles,
+    icon: Home,
     description: 'Rezidencë luksoze, vilë pushimi, lagje rezidenciale e mbyllur',
     subtypes: ['Vilë luksoze', 'Vilë pushimi / malore', 'Vilë rezidenciale (Gated)', 'Duplex'],
     features: [
@@ -1041,7 +1042,7 @@ export default function PostoPronaPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               Posto pa pagesë · 30 Ditë Falas
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#101828] tracking-tight">
@@ -2472,7 +2473,7 @@ export default function PostoPronaPage() {
                       onClick={handleSuggestTitle}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-[#006459] hover:underline cursor-pointer"
                     >
-                      <Wand2 className="w-3.5 h-3.5" />
+                      <FileText className="w-3.5 h-3.5" />
                       Sugjero titull tërheqës
                     </button>
                   </div>
@@ -2525,10 +2526,8 @@ export default function PostoPronaPage() {
                       >
                         {isGeneratingDesc ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : formData.description.trim().length > 0 ? (
-                          <Wand2 className="w-3.5 h-3.5 text-[#006459]" />
                         ) : (
-                          <Sparkles className="w-3.5 h-3.5 text-[#006459]" />
+                          <FileText className="w-3.5 h-3.5 text-[#006459]" />
                         )}
                         <span>
                           {isGeneratingDesc
@@ -2638,7 +2637,7 @@ export default function PostoPronaPage() {
                         {/* Primary Badge */}
                         {i === 0 ? (
                           <div className="absolute top-2 left-2 bg-[#006459] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
+                            <Star className="w-3 h-3 fill-current" />
                             Kryesorja
                           </div>
                         ) : (

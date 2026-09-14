@@ -1,18 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { MessagesSquare, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react'
+import { MessagesSquare, ShieldCheck, ArrowRight } from 'lucide-react'
 
 export default function MesazhetPage() {
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-[#F2F7F7] min-h-[500px]">
       <div className="max-w-md w-full text-center bg-white border border-gray-100/90 shadow-sm rounded-3xl p-8 sm:p-10">
         {/* Modern Illustration Badge */}
-        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#006459]/15 via-emerald-50 to-[#C8B882]/20 flex items-center justify-center border border-[#006459]/20 shadow-inner mb-6">
+        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-[#006459]/10 flex items-center justify-center border border-[#006459]/15 shadow-inner mb-6">
           <MessagesSquare className="w-10 h-10 text-[#006459]" />
-          <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#006459] text-white flex items-center justify-center shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-[#C8B882]" />
-          </span>
         </div>
 
         {/* Crisp High-Contrast Typography */}

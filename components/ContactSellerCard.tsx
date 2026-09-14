@@ -11,7 +11,6 @@ import {
   Heart,
   Share2,
   Check,
-  Sparkles,
   Lock,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -141,8 +140,7 @@ export default function ContactSellerCard({
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
             Çmimi i kërkuar
           </span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
-            <Sparkles className="h-3 w-3" />
+          <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
             {type === 'shitje' ? 'Shitje direkte' : 'Qira mujore'}
           </span>
         </div>
