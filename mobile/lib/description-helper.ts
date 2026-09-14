@@ -16,6 +16,118 @@ export interface PropertyData {
   features: string[]
 }
 
+export interface ValidationResult {
+  canSuggest: boolean
+  missingFields: string[]
+  reason?: string
+}
+
+/**
+ * Validate that the user has provided enough concrete filters
+ * to generate a non-vaporware, tailored real-world description or title.
+ */
+export function validatePropertyFilters(
+  data: PropertyData,
+  mode: 'title' | 'description'
+): ValidationResult {
+  const missing: string[] = []
+
+  if (!data.city || !data.city.trim()) {
+    missing.push('Qytetin')
+  }
+
+  if (!data.area_m2 || !data.area_m2.trim() || Number(data.area_m2) <= 0) {
+    missing.push('Sipërfaqen (m²)')
+  }
+
+  if (mode === 'description') {
+    // For a description, we need at least 1-2 additional specific parameters
+    // so the description contains real substance and not hallucinated filler.
+    let concreteDetailsCount = 0
+    if (data.neighborhood && data.neighborhood.trim()) concreteDetailsCount++
+    if (data.price && data.price.trim() && Number(data.price) > 0) concreteDetailsCount++
+    if (data.subtype && data.subtype.trim()) concreteDetailsCount++
+    if (data.rooms && data.rooms.trim()) concreteDetailsCount++
+    if (data.floor && data.floor.trim()) concreteDetailsCount++
+    if (data.condition && data.condition.trim()) concreteDetailsCount++
+    if (data.features && data.features.length > 0) concreteDetailsCount++
+
+    if (concreteDetailsCount < 1) {
+      missing.push('Të paktën një detaj shtesë (Lagjja, Çmimi, Dhomat ose Pajisjet)')
+    }
+  }
+
+  if (missing.length > 0) {
+    return {
+      canSuggest: false,
+      missingFields: missing,
+      reason: `Ju lutemi plotësoni së pari: ${missing.join(', ')} përpara se të kërkoni sugjerim profesional.`,
+    }
+  }
+
+  return {
+    canSuggest: true,
+    missingFields: [],
+  }
+}
+
+/**
+ * Generate a concise, high-converting, professional Real Estate Title
+ * based strictly on the user's actual selected property parameters.
+ */
+export function generateProfessionalTitle(
+  data: PropertyData,
+  cat: CategoryConfig
+): string {
+  const isSale = data.type === 'shitje'
+  const actionText = isSale ? 'në Shitje' : 'me Qira'
+  const areaPart = data.area_m2 ? `${data.area_m2}m²` : ''
+  const locationPart = data.neighborhood
+    ? `${data.neighborhood}, ${data.city}`
+    : data.city || 'Kosovë'
+
+  switch (data.category) {
+    case 'banese': {
+      const roomPart = data.rooms ? ` ${data.rooms}` : ''
+      const subtypePart =
+        data.subtype && !data.subtype.toLowerCase().includes('banes')
+          ? ` (${data.subtype})`
+          : ''
+      const floorPart = data.floor ? ` në Katin ${data.floor}` : ''
+      return `Banesë${roomPart}${subtypePart} ${actionText} ${areaPart}${floorPart} – ${locationPart}`.trim()
+    }
+
+    case 'shtepi': {
+      const subtypePart = data.subtype ? ` ${data.subtype}` : ''
+      return `Shtëpi${subtypePart} ${actionText} ${areaPart} me Oborr – ${locationPart}`.trim()
+    }
+
+    case 'vile': {
+      const subtypePart = data.subtype ? ` ${data.subtype}` : 'Moderne'
+      return `Vilë ${subtypePart} ${actionText} ${areaPart} – ${locationPart}`.trim()
+    }
+
+    case 'lokal': {
+      const subtypePart = data.subtype || 'Hapësirë Afariste'
+      return `${subtypePart} ${actionText} ${areaPart} në Pozitë Strategjike – ${locationPart}`.trim()
+    }
+
+    case 'toke': {
+      const subtypePart = data.subtype ? `${data.subtype}` : 'Truall Ndërtimi'
+      return `${subtypePart} ${actionText} prej ${areaPart} – ${locationPart}`.trim()
+    }
+
+    case 'garazhe':
+    default: {
+      return `Garazhë e Sigurt ${actionText} – ${locationPart}`.trim()
+    }
+  }
+}
+
+/**
+ * Generate or enhance a detailed professional property description
+ * strictly using the user's real parameters, with zero hallucinated vaporware.
+ */
 export function generateOrEnhanceDescription(
   currentText: string,
   data: PropertyData,
@@ -29,51 +141,66 @@ export function generateOrEnhanceDescription(
   const priceStr = data.price ? `${Number(data.price).toLocaleString('de-DE')} €` : ''
   const featuresList = data.features && data.features.length > 0 ? data.features : []
 
-  // Case 1: Përdoruesi nuk ka shkruar asgjë -> Gjenero përshkrim të plotë profesional
+  // Resolve condition label cleanly
+  const condLabel = data.condition
+    ? cat.conditions.find((c) => c.value === data.condition)?.label || data.condition
+    : ''
+
+  // Case 1: Përdoruesi nuk ka shkruar asgjë -> Gjenero bazuar 100% në të dhënat ekzistuese
   if (!currentText.trim()) {
-    const titleLead = `Ofrohet ${transType} ${cat.label.toLowerCase()} me specifikime komode në ${locationStr}.`
+    const titleLead = `Ofrohet ${transType} ${cat.label.toLowerCase()} me sipërfaqe prej ${areaStr} në lokacionin e kërkuar të ${locationStr}.`
 
     let specSection = ''
     if (data.category === 'banese') {
-      specSection = `Kjo banesë ${data.subtype ? `e tipologjisë ${data.subtype}` : ''} shquhet për organizim praktik të hapësirës dhe ndriçim të shkëlqyer natyral gjatë gjithë ditës.
+      const roomsDetail = data.rooms
+        ? `• Tipologjia: ${data.rooms} me planimetri funksionale dhe organizim optimal`
+        : null
+      const floorDetail = data.floor ? `• Kati: Kati ${data.floor}` : null
+      const conditionDetail = condLabel ? `• Gjendja: ${condLabel}` : null
+      const subtypeDetail = data.subtype ? `• Lloji i ndërtesës: ${data.subtype}` : null
+
+      const detailsList = [roomsDetail, floorDetail, conditionDetail, subtypeDetail]
+        .filter(Boolean)
+        .join('\n')
+
+      specSection = `Kjo pronë karakterizohet nga ndriçimi natyral dhe qasja e shpejtë në shërbimet kryesore të zonës.
 Organizimi i brendshëm përfshin:
-• Sallon të rehatshëm ndenjeje me kuzhinë dhe ambient ngrënieje
-• ${data.rooms ? `${data.rooms} dhoma të përshtatshme me kubaturë të rregullt` : 'Dhoma gjumi të qeta'}
-• Banjo moderne dhe ballkon funksional
-• Pozicionuar në ${data.floor ? `katin ${data.floor}` : 'kat të favorshëm'}${areaStr ? `, me sipërfaqe të përgjithshme prej ${areaStr}` : ''}.`
+• Sallon ndenjeje me ambient ngrënieje dhe kuzhinë
+• Ambient pushimi me dritë natyrale
+• Banjo e kompletuar dhe ballkon funksional
+${detailsList ? `\nSpecifikat teknike:\n${detailsList}` : ''}`
     } else if (data.category === 'shtepi') {
-      specSection = `Kjo shtëpi ${data.subtype ? `(${data.subtype})` : 'familjare'} ofron komoditet maksimal, privatësi dhe ambient të qetë ideal për jetesë të rehatshme.
-Pikat kryesore:
-• Ndërtim cilësor dhe i mirëorganizuar ${data.floor ? `në ${data.floor}` : ''}
-• ${data.rooms ? `${data.rooms} dhoma të bollshme me ajrosje dhe dritë natyrale` : 'Dhomë ndenjeje e gjerë dhe dhoma gjumi komode'}
-• ${areaStr ? `Sipërfaqe e përgjithshme banimi prej ${areaStr}` : 'Hapësirë e bollshme banimi'}
-• Oborr i mirëmbajtur me qasje direkte dhe vend për parkim.`
-    } else if (data.category === 'vile') {
-      specSection = `Vilë ekskluzive ${transType} në një prej zonave më prestigjioze dhe të qeta të ${locationStr}.
+      const floorDetail = data.floor ? `• Nivelet: ${data.floor}` : null
+      const roomsDetail = data.rooms ? `• Dhomat: ${data.rooms}` : null
+      const conditionDetail = condLabel ? `• Gjendja: ${condLabel}` : null
+
+      const detailsList = [floorDetail, roomsDetail, conditionDetail].filter(Boolean).join('\n')
+
+      specSection = `Shtëpi me ambient familjar, privatësi dhe qetësi të garantuar në ${locationStr}.
 Karakteristikat e pronës:
-• Arkitekturë moderne me standarde të larta ndërtimi dhe termoizolimi
-• ${areaStr ? `Sipërfaqe banimi prej ${areaStr}` : 'Hapësirë madhështore'} me organizim elegant të ambienteve ditore dhe të fjetjes
-• Oborr privat, ambient i rrethuar me privatësi maksimale dhe ambient relaksues
-• Zgjedhje e përkryer për ata që vlerësojnë sigurinë, qetësinë dhe komoditetin e nivelit të lartë.`
+• Sipërfaqe banimi prej ${areaStr} me hapësira të bollshme
+• Oborr privat i shfrytëzueshëm dhe vend i sigurt parkimi
+${detailsList ? `\nDetajet e ndërtimit:\n${detailsList}` : ''}`
+    } else if (data.category === 'vile') {
+      specSection = `Vilë me standarde bashkëkohore ndërtimi në ${locationStr}.
+Karakteristikat:
+• Sipërfaqe prej ${areaStr} me arkitekturë elegante
+• Ambient i rrethuar me privatësi dhe siguri maksimale
+${condLabel ? `• Gjendja: ${condLabel}` : ''}`
     } else if (data.category === 'toke') {
-      specSection = `Ofrohet ${transType} truall me potencial të lartë zhvillimi dhe investimi në ${locationStr}.
+      specSection = `Truall me potencial të lartë në ${locationStr}.
 Detajet e parcelës:
-• ${areaStr ? `Sipërfaqe totale prej ${areaStr}` : 'Sipërfaqe e favorshme'}
-• Terren i rregullt me qasje të drejtpërdrejtë në rrugë
-• Infrastrukturë e afërt (rrjeti elektrik, ujësjellësi)
-• Dokumentacion i rregullt kadastral me fletë poseduese, i gatshëm për bartje.`
+• Sipërfaqe totale: ${areaStr}
+• Terren i përshtatshëm me qasje direkte
+• Dokumentacion i rregullt kadastral`
     } else if (data.category === 'lokal') {
-      specSection = `Hapësirë moderne afariste ${transType} me pozitë strategjike në ${locationStr}.
+      specSection = `Hapësirë afariste ${transType} me pozitë të favorshme në ${locationStr}.
 Përparësitë kryesore:
-• ${areaStr ? `Sipërfaqe shfrytëzuese prej ${areaStr}` : 'Hapësirë e hapur dhe funksionale'}
-• Fasada me pamje dhe ekspozim të shkëlqyer nga rruga kryesore
-• Ideale për zyra përfaqësie, klinikë, farmaci, showroom, dyqan apo aktivitete të tjera komerciale
-• Qasje e lehtë dhe mundësi parkingu për stafin dhe klientët.`
+• Sipërfaqe shfrytëzuese prej ${areaStr}
+• Fasada e ekspozuar e përshtatshme për çdo aktivitet tregtar apo zyra administrative
+${condLabel ? `• Gjendja e lokalit: ${condLabel}` : ''}`
     } else {
-      specSection = `Ofrohet ${transType} garazhë / hapësirë depoje e sigurt dhe lehtësisht e qasshme në ${locationStr}.
-• ${areaStr ? `Sipërfaqe prej ${areaStr}` : 'Hapësirë e bollshme dhe e mbyllur'}
-• Siguri e garantuar dhe mirëmbajtje e vazhdueshme
-• E përshtatshme për parkim automjeti apo magazinim mallrash.`
+      specSection = `Garazhë / depo e mbyllur dhe e sigurt në ${locationStr} me sipërfaqe prej ${areaStr}.`
     }
 
     const featuresBlock =
@@ -81,14 +208,16 @@ Përparësitë kryesore:
         ? `\n\nPajisjet dhe përparësitë e pronës:\n${featuresList.map((f) => `• ${f}`).join('\n')}`
         : ''
 
-    const priceBlock = priceStr ? `\n\nÇmimi: ${priceStr}${isSale ? ' (i negociueshëm)' : ' në muaj'}` : ''
+    const priceBlock = priceStr
+      ? `\n\nÇmimi: ${priceStr}${isSale ? ' (i negociueshëm)' : ' / muaj'}`
+      : ''
 
-    const footerBlock = `\n\nPër informata shtesë, dokumentacion të plotë apo për të caktuar një vizitë në pronë, ju lutemi të na kontaktoni.`
+    const footerBlock = `\n\nPër informata shtesë ose për të caktuar një vizitë në pronë, ju lutemi të na kontaktoni.`
 
     return `${titleLead}\n\n${specSection}${featuresBlock}${priceBlock}${footerBlock}`.trim()
   }
 
-  // Case 2: Përdoruesi ka shkruar disa fjalë / shënime -> Rregullo, pastro dhe ngrije në stil profesional
+  // Case 2: Përdoruesi ka shkruar disa fjalë / shënime -> Përmirëso stilin pa fshirë idenë e tij
   const trimmed = currentText.trim()
   const cleaned = trimmed
     .replace(/\s+/g, ' ')
@@ -104,21 +233,18 @@ Përparësitë kryesore:
   if (data.subtype) specs.push(`• Tipologjia: ${data.subtype}`)
   if (cat.hasRooms && data.rooms) specs.push(`• Dhomat: ${data.rooms}`)
   if (cat.hasFloors && data.floor) specs.push(`• Kati / Niveli: Kati ${data.floor}`)
-  if (data.condition) {
-    const condLabel = cat.conditions.find((c) => c.value === data.condition)?.label || data.condition
-    specs.push(`• Gjendja: ${condLabel}`)
-  }
+  if (condLabel) specs.push(`• Gjendja: ${condLabel}`)
   if (priceStr) specs.push(`• Çmimi: ${priceStr}${isSale ? ' (i negociueshëm)' : ' / muaj'}`)
 
   if (specs.length > 0) {
-    enhanced += `Të dhënat kryesore:\n${specs.join('\n')}\n\n`
+    enhanced += `Të dhënat kryesore të pronës:\n${specs.join('\n')}\n\n`
   }
 
   if (featuresList.length > 0) {
-    enhanced += `Përparësitë & Veçoritë:\n${featuresList.map((f) => `• ${f}`).join('\n')}\n\n`
+    enhanced += `Përparësitë & Pajisjet:\n${featuresList.map((f) => `• ${f}`).join('\n')}\n\n`
   }
 
-  enhanced += `Prona disponon dokumentacion të rregullt. Për më shumë informata apo për të caktuar një vizitë në pronë, ju mirëpresim të na kontaktoni.`
+  enhanced += `Dokumentacioni është i rregullt. Për më shumë informata apo për të planifikuar një vizitë në pronë, ju mirëpresim të na kontaktoni.`
 
   return enhanced.trim()
 }

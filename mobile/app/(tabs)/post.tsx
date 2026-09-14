@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   LogIn,
   UserPlus,
+  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
@@ -30,7 +31,12 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { CATEGORIES, PropertyCategory } from '@/lib/categories'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
-import { generateOrEnhanceDescription } from '@/lib/description-helper'
+import {
+  generateOrEnhanceDescription,
+  generateProfessionalTitle,
+  validatePropertyFilters,
+} from '@/lib/description-helper'
+import { useBanner } from '@/context/BannerContext'
 
 const CATEGORY_KEYS: PropertyCategory[] = ['banese', 'shtepi', 'vile', 'toke', 'lokal', 'garazh']
 const CITIES = Object.keys(KOSOVO_LOCATIONS)
@@ -64,8 +70,10 @@ export default function PostPropertyScreen() {
     'Ballkon',
   ])
   const [title, setTitle] = useState<string>('')
+  const [undoTitle, setUndoTitle] = useState<string | null>(null)
   const [description, setDescription] = useState<string>('')
   const [undoDescription, setUndoDescription] = useState<string | null>(null)
+  const { showBanner } = useBanner()
   const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -119,8 +127,105 @@ export default function PostPropertyScreen() {
     }
   }
 
+  const handleSmartTitle = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+    const validation = validatePropertyFilters(
+      {
+        category,
+        subtype,
+        title,
+        description,
+        price,
+        city,
+        neighborhood,
+        rooms,
+        area_m2: area,
+        type,
+        condition,
+        floor,
+        features: selectedFeatures,
+      },
+      'title'
+    )
+
+    if (!validation.canSuggest) {
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      Alert.alert(
+        'Mungojnë të dhënat kryesore',
+        `Për të sugjeruar një titull profesional dhe tërheqës, ju lutemi plotësoni fillimisht: ${validation.missingFields.join(', ')}.`
+      )
+      return
+    }
+
+    setUndoTitle(title)
+    const suggested = generateProfessionalTitle(
+      {
+        category,
+        subtype,
+        title,
+        description,
+        price,
+        city,
+        neighborhood,
+        rooms,
+        area_m2: area,
+        type,
+        condition,
+        floor,
+        features: selectedFeatures,
+      },
+      activeCategory
+    )
+
+    setTitle(suggested)
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    showBanner({
+      type: 'success',
+      title: 'Titulli u Sugjerua!',
+      message: 'Titulli u formulua profesionalisht sipas parametrave të pronës.',
+    })
+  }
+
+  const handleUndoTitle = () => {
+    if (undoTitle !== null) {
+      setTitle(undoTitle)
+      setUndoTitle(null)
+      if (Platform.OS !== 'web') Haptics.selectionAsync()
+    }
+  }
+
   const handleSmartDescription = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+
+    const validation = validatePropertyFilters(
+      {
+        category,
+        subtype,
+        title,
+        description,
+        price,
+        city,
+        neighborhood,
+        rooms,
+        area_m2: area,
+        type,
+        condition,
+        floor,
+        features: selectedFeatures,
+      },
+      'description'
+    )
+
+    if (!validation.canSuggest) {
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      Alert.alert(
+        'Mungojnë parametrat e pronës',
+        `Për të sugjeruar një përshkrim real dhe profesional (pa të dhëna të trilluara), ju lutemi plotësoni fillimisht: ${validation.missingFields.join(', ')}.`
+      )
+      return
+    }
+
     setUndoDescription(description)
 
     const enhanced = generateOrEnhanceDescription(
@@ -144,18 +249,19 @@ export default function PostPropertyScreen() {
     )
 
     setDescription(enhanced)
-    Alert.alert(
-      'Sukses',
-      description.trim().length > 0
-        ? 'Përshkrimi u përmirësua profesionalisht!'
-        : 'Përshkrimi profesional u sugjerua me sukses!'
-    )
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    showBanner({
+      type: 'success',
+      title: description.trim().length > 0 ? 'Përshkrimi u Përmirësua!' : 'Përshkrimi u Sugjerua!',
+      message: 'Përshkrimi u përshtat saktësisht me të dhënat e pronës tuaj.',
+    })
   }
 
   const handleUndo = () => {
     if (undoDescription !== null) {
       setDescription(undoDescription)
       setUndoDescription(null)
+      if (Platform.OS !== 'web') Haptics.selectionAsync()
     }
   }
 
@@ -695,7 +801,35 @@ export default function PostPropertyScreen() {
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>5. Titulli dhe Përshkrimi</Text>
 
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Titulli i shpalljes *</Text>
+          {/* Titulli Header me Sugjero Titull */}
+          <View style={styles.fieldHeaderRow}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Titulli i shpalljes *</Text>
+            <View style={styles.fieldHeaderActions}>
+              {undoTitle !== null && (
+                <Pressable style={styles.undoBtn} onPress={handleUndoTitle} hitSlop={10}>
+                  <RotateCcw size={12} color={colors.textMuted} />
+                  <Text style={[styles.undoBtnText, { color: colors.textMuted }]}>Kthe</Text>
+                </Pressable>
+              )}
+              <Pressable
+                style={[
+                  styles.smartBtn,
+                  {
+                    backgroundColor: colors.badgeBg,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={handleSmartTitle}
+                hitSlop={8}
+              >
+                <Sparkles size={13} color={colors.badgeText} strokeWidth={2.2} />
+                <Text style={[styles.smartBtnText, { color: colors.badgeText }]}>
+                  Sugjero titull
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
           <TextInput
             style={[
               styles.input,
@@ -719,10 +853,11 @@ export default function PostPropertyScreen() {
             onBlur={() => setFocusedField(null)}
           />
 
-          <View style={styles.descHeader}>
+          {/* Përshkrimi Header me Sugjero Përshkrim */}
+          <View style={[styles.fieldHeaderRow, { marginTop: 14 }]}>
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Përshkrimi i hollësishëm *</Text>
 
-            <View style={styles.descActions}>
+            <View style={styles.fieldHeaderActions}>
               {undoDescription !== null && (
                 <Pressable style={styles.undoBtn} onPress={handleUndo} hitSlop={10}>
                   <RotateCcw size={12} color={colors.textMuted} />
@@ -993,16 +1128,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.medium,
   },
+  fieldHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  fieldHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   descHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
   },
   descActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   undoBtn: {
     flexDirection: 'row',
@@ -1010,6 +1160,7 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderRadius: 8,
   },
   undoBtnText: {
     fontSize: 11,
@@ -1019,10 +1170,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9,
+    borderWidth: 0.5,
   },
   smartBtnText: {
     fontSize: 11,
