@@ -282,6 +282,38 @@ export default function CompletoProfilinScreen() {
         return
       }
 
+      // Direct local update to Supabase auth session & profiles table for zero latency sync
+      if (currentUser?.id) {
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              account_type: isCompany ? 'company' : 'individual',
+              is_company: isCompany,
+              avatar_url: selectedAvatar,
+              first_name: isCompany ? companyName.trim() : firstName.trim(),
+              last_name: isCompany ? companyContactPerson.trim() : lastName.trim(),
+              company_name: isCompany ? companyName.trim() : undefined,
+              contact_person: isCompany ? companyContactPerson.trim() : undefined,
+              phone: isCompany ? companyPhone.trim() : individualPhone.trim(),
+              city: isCompany ? companyCity : individualCity,
+              onboarding_completed: true,
+              email_verified: true,
+            },
+          })
+
+          await supabase.from('profiles').upsert({
+            id: currentUser.id,
+            first_name: isCompany ? companyName.trim() : firstName.trim(),
+            last_name: isCompany ? companyContactPerson.trim() : lastName.trim(),
+            phone: isCompany ? companyPhone.trim() : individualPhone.trim(),
+            avatar_url: selectedAvatar,
+            email_verified: true,
+          })
+        } catch (localSyncErr) {
+          console.warn('Local Supabase sync notice in completo-profilin:', localSyncErr)
+        }
+      }
+
       showBanner({
         type: 'success',
         title: 'Profili u Plotësua!',

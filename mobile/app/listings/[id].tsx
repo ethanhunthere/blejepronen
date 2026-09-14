@@ -35,6 +35,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
+import { getAvatarUri } from '@/lib/avatars'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -450,7 +451,7 @@ export default function ListingDetailScreen() {
           <View style={[styles.sellerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
               {seller?.avatar_url ? (
-                <Image source={{ uri: seller.avatar_url }} style={styles.sellerAvatarImg} contentFit="cover" />
+                <Image source={{ uri: getAvatarUri(seller.avatar_url) }} style={styles.sellerAvatarImg} contentFit="cover" />
               ) : (
                 <Text style={[styles.sellerAvatarInitials, { color: colors.primary }]}>
                   {(seller?.first_name?.[0] || 'P').toUpperCase()}

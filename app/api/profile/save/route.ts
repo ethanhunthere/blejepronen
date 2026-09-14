@@ -184,6 +184,8 @@ export async function POST(request: Request) {
     const whatsapp = typeof body?.whatsapp === 'string' ? body.whatsapp.trim() : (typeof body?.socials?.whatsapp === 'string' ? body.socials.whatsapp.trim() : (user.user_metadata?.whatsapp || ''))
     const tiktok = typeof body?.tiktok === 'string' ? body.tiktok.trim() : (typeof body?.socials?.tiktok === 'string' ? body.socials.tiktok.trim() : (user.user_metadata?.tiktok || ''))
 
+    const finalAvatar = body?.avatarUrl || existingProfile?.avatar_url || '/avatars/avatar-1.png'
+
     try {
       await supabaseAdmin.auth.admin.updateUserById(user.id, {
         user_metadata: {
@@ -211,6 +213,8 @@ export async function POST(request: Request) {
 
           bio: isCompany ? (companyDescription || user.user_metadata?.bio || '') : (individualBio || user.user_metadata?.bio || ''),
           city,
+          avatar_url: finalAvatar,
+          email_verified: emailVerified,
           onboarding_completed: true,
           ...(finalPhone ? { phone: finalPhone } : {}),
           instagram,
@@ -227,8 +231,6 @@ export async function POST(request: Request) {
     } catch (e) {
       console.error('Update user_metadata error in profile save:', e)
     }
-
-    const finalAvatar = body?.avatarUrl || existingProfile?.avatar_url || '/avatars/avatar-1.png'
 
     const activeFirstName = isCompany
       ? (companyName || user.user_metadata?.company_name || 'Kompani')

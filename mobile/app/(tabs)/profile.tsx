@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -8,13 +8,18 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  Dimensions,
+  KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import {
   User,
   ShieldCheck,
+  ShieldAlert,
   Building2,
   Heart,
   Settings,
@@ -34,14 +39,19 @@ import {
   MessageSquare,
   Bookmark,
   Edit3,
+  X,
+  RotateCcw,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
-import { apiDeleteAccount } from '@/lib/api'
-import { getAvatarUri } from '@/lib/avatars'
-import { playThemeSound } from '@/lib/sound'
+import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
+import { BLEJE_AVATARS, DEFAULT_AVATAR, getAvatarUri } from '@/lib/avatars'
+import { playThemeSound, playSuccessSound, playTapSound } from '@/lib/sound'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -52,6 +62,18 @@ export default function ProfileScreen() {
   const [dbProfile, setDbProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+
+  // Avatar Quick Picker Modal
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false)
+  const [updatingAvatar, setUpdatingAvatar] = useState(false)
+
+  // Account Verification Modal & OTP
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [resendingCode, setResendingCode] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const resendTimerRef = useRef<any>(null)
 
   const fetchUserProfile = async (user: any) => {
     if (!user) {
@@ -72,23 +94,32 @@ export default function ProfileScreen() {
     }
   }
 
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setCurrentUser(user || null)
-        if (user) {
-          await fetchUserProfile(user)
-        }
-      } catch (err) {
-        console.warn('Session check notice:', err)
-      } finally {
-        setLoading(false)
+  const checkSession = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setCurrentUser(user || null)
+      if (user) {
+        await fetchUserProfile(user)
+      } else {
+        setDbProfile(null)
       }
+    } catch (err) {
+      console.warn('Session check notice:', err)
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
+  // Auto-refresh profile and avatar every time screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      checkSession()
+    }, [checkSession])
+  )
+
+  useEffect(() => {
     checkSession()
 
     // Real-time auth listener for instant synchronization
@@ -104,8 +135,139 @@ export default function ProfileScreen() {
 
     return () => {
       authListener.subscription.unsubscribe()
+      if (resendTimerRef.current) clearInterval(resendTimerRef.current)
     }
-  }, [])
+  }, [checkSession])
+
+  // Instant 1-tap quick avatar changer
+  const handleSelectAvatarQuick = async (newAvatarUrl: string) => {
+    if (!currentUser) return
+    playSuccessSound()
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
+    setUpdatingAvatar(true)
+
+    // Immediate optimistic UI update
+    setDbProfile((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }))
+    setCurrentUser((prev: any) => ({
+      ...prev,
+      user_metadata: { ...prev?.user_metadata, avatar_url: newAvatarUrl },
+    }))
+    setAvatarModalVisible(false)
+
+    try {
+      await Promise.all([
+        supabase.auth.updateUser({
+          data: { avatar_url: newAvatarUrl },
+        }),
+        supabase.from('profiles').upsert({
+          id: currentUser.id,
+          avatar_url: newAvatarUrl,
+        }),
+      ])
+
+      showBanner({
+        type: 'success',
+        title: 'Avatari u Përditësua!',
+        message: 'Avatari juaj i ri është aktiv menjëherë në të gjithë aplikacionin.',
+      })
+    } catch (err) {
+      console.warn('Quick avatar update notice:', err)
+    } finally {
+      setUpdatingAvatar(false)
+    }
+  }
+
+  // Handle OTP Verification inside modal
+  const handleConfirmOtp = async () => {
+    const code = otpCode.trim()
+    if (code.length !== 6) {
+      Alert.alert('Kujdes', 'Ju lutemi shkruani të 6 shifrat e kodit të verifikimit.')
+      return
+    }
+    setVerifyingOtp(true)
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+
+    try {
+      const email = currentUser?.email || ''
+      const res = await apiVerifyOtp({ email, code })
+      if (!res.success) {
+        Alert.alert(
+          'Kodi nuk është i saktë',
+          res.error || 'Ju lutemi kontrolloni kodin e dërguar në email dhe provoni përsëri.'
+        )
+        setVerifyingOtp(false)
+        return
+      }
+
+      // Mark verified in DB and local state
+      await supabase.from('profiles').update({ email_verified: true }).eq('id', currentUser.id)
+      await supabase.auth.updateUser({ data: { email_verified: true } })
+
+      setDbProfile((prev: any) => ({ ...prev, email_verified: true }))
+      setCurrentUser((prev: any) => ({
+        ...prev,
+        user_metadata: { ...prev?.user_metadata, email_verified: true },
+      }))
+
+      playSuccessSound()
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+      setVerifyModalVisible(false)
+      setOtpCode('')
+
+      showBanner({
+        type: 'success',
+        title: 'Llogaria u Verifikua!',
+        message: 'Llogaria juaj mori statusin "E Verifikuar" me të gjitha privilegjet zyrtare.',
+      })
+    } catch (err: any) {
+      Alert.alert('Gabim', err?.message || 'Ndodhi një gabim gjatë verifikimit.')
+    } finally {
+      setVerifyingOtp(false)
+    }
+  }
+
+  // Handle OTP Code Resend
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resendingCode) return
+    setResendingCode(true)
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+
+    try {
+      const email = currentUser?.email || ''
+      const res = await apiResendCode(email)
+      if (!res.success) {
+        Alert.alert('Gabim', res.error || 'Dështoi ridërgimi i kodit.')
+        setResendingCode(false)
+        return
+      }
+
+      setResendCooldown(60)
+      if (resendTimerRef.current) clearInterval(resendTimerRef.current)
+      resendTimerRef.current = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            if (resendTimerRef.current) clearInterval(resendTimerRef.current)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      showBanner({
+        type: 'info',
+        title: 'Kodi u Dërgua!',
+        message: `Kodi i ri 6-shifror u dërgua në adresën ${email}.`,
+      })
+    } catch (err: any) {
+      Alert.alert('Gabim', err?.message || 'Ndodhi një gabim gjatë dërgimit.')
+    } finally {
+      setResendingCode(false)
+    }
+  }
 
   const handleLogout = async () => {
     Alert.alert('Çkyçja nga llogaria', 'A jeni të sigurt që dëshironi të çkyçeni?', [
@@ -201,6 +363,15 @@ export default function ProfileScreen() {
     currentUser?.user_metadata?.company_name ||
     (isCompany ? dbProfile?.first_name : '')
 
+  const isGoogle = currentUser?.app_metadata?.provider === 'google'
+  const isVerified = Boolean(
+    dbProfile?.email_verified === true ||
+    currentUser?.email_confirmed_at ||
+    currentUser?.confirmed_at ||
+    currentUser?.user_metadata?.email_verified === true ||
+    isGoogle
+  )
+
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
@@ -274,27 +445,30 @@ export default function ProfileScreen() {
         {/* Top Profile Card: Logged In vs Guest */}
         {currentUser ? (
           <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-            {/* Real Avatar Image with Fallback and Edit Action */}
+            {/* Real Avatar Image with Instant 1-Tap Quick Picker */}
             <Pressable
               style={[
                 styles.avatarWrap,
                 {
                   borderColor: isCompany
                     ? theme === 'green' ? colors.gold : colors.primary
-                    : specularBorder,
+                    : isVerified
+                    ? '#10B981'
+                    : '#F59E0B',
                   backgroundColor: colors.surfaceSubtle,
                 },
               ]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.selectionAsync()
-                router.push('/completo-profilin' as any)
+                setAvatarModalVisible(true)
               }}
             >
               <Image
+                key={`avatar-${avatarUri}-${rawAvatar || ''}`}
                 source={{ uri: avatarUri }}
                 style={styles.avatarImg}
                 contentFit="cover"
-                transition={200}
+                transition={150}
               />
               <View
                 style={[
@@ -320,38 +494,87 @@ export default function ProfileScreen() {
                   {displayName}
                 </Text>
 
+                {/* Professional Status Badges: Verified vs Unverified */}
                 <View
                   style={[
                     styles.verifiedBadge,
-                    {
-                      backgroundColor: isCompany
-                        ? theme === 'white'
-                          ? '#FEF3C7'
-                          : 'rgba(245, 158, 11, 0.20)'
-                        : colors.badgeBg,
-                    },
+                    isVerified
+                      ? isCompany
+                        ? {
+                            backgroundColor:
+                              theme === 'white'
+                                ? '#FEF3C7'
+                                : 'rgba(245, 158, 11, 0.20)',
+                            borderColor:
+                              theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
+                          }
+                        : {
+                            backgroundColor:
+                              theme === 'white' ? '#DCFCE7' : 'rgba(16, 185, 129, 0.18)',
+                            borderColor:
+                              theme === 'white' ? '#BBF7D0' : 'rgba(16, 185, 129, 0.35)',
+                          }
+                      : {
+                          backgroundColor:
+                            theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.18)',
+                          borderColor:
+                            theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
+                        },
                   ]}
                 >
                   {isCompany ? (
+                    isVerified ? (
+                      <>
+                        <Building2
+                          size={11}
+                          color={theme === 'white' ? '#B45309' : '#FBBF24'}
+                          strokeWidth={2.4}
+                        />
+                        <Text
+                          style={[
+                            styles.verifiedBadgeText,
+                            { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                          ]}
+                        >
+                          Agjenci e Verifikuar
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={11} color="#F59E0B" strokeWidth={2.4} />
+                        <Text
+                          style={[
+                            styles.verifiedBadgeText,
+                            { color: theme === 'white' ? '#B45309' : '#F59E0B' },
+                          ]}
+                        >
+                          Agjenci e Paverifikuar
+                        </Text>
+                      </>
+                    )
+                  ) : isVerified ? (
                     <>
-                      <Building2
-                        size={11}
-                        color={theme === 'white' ? '#B45309' : '#FBBF24'}
-                        strokeWidth={2.4}
-                      />
+                      <ShieldCheck size={11} color="#10B981" strokeWidth={2.4} />
                       <Text
                         style={[
                           styles.verifiedBadgeText,
-                          { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                          { color: theme === 'white' ? '#047857' : '#10B981' },
                         ]}
                       >
-                        Agjenci
+                        Profil i Verifikuar
                       </Text>
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={11} color={colors.badgeText} strokeWidth={2.4} />
-                      <Text style={[styles.verifiedBadgeText, { color: colors.badgeText }]}>Aktiv</Text>
+                      <ShieldAlert size={11} color="#F59E0B" strokeWidth={2.4} />
+                      <Text
+                        style={[
+                          styles.verifiedBadgeText,
+                          { color: theme === 'white' ? '#B45309' : '#F59E0B' },
+                        ]}
+                      >
+                        E Paverifikuar
+                      </Text>
                     </>
                   )}
                 </View>
@@ -406,8 +629,187 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Incomplete Profile Callout Banner (Apple Frosted Glass) */}
-        {currentUser && !isOnboardingDone && (
+        {/* Unverified Account Apple Live Activity Frosted Glass Banner */}
+        {currentUser && !isVerified && (
+          <View
+            style={[
+              styles.unverifiedCard,
+              {
+                backgroundColor:
+                  theme === 'white'
+                    ? '#FFFBEB'
+                    : theme === 'green'
+                    ? 'rgba(245, 158, 11, 0.10)'
+                    : 'rgba(245, 158, 11, 0.08)',
+                borderColor:
+                  theme === 'white'
+                    ? '#FDE68A'
+                    : 'rgba(245, 158, 11, 0.32)',
+              },
+            ]}
+          >
+            <View style={styles.unverifiedCardTop}>
+              <View
+                style={[
+                  styles.unverifiedMiniPill,
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.18)',
+                  },
+                ]}
+              >
+                <View style={styles.amberPulsingDot} />
+                <ShieldAlert size={12} color="#F59E0B" strokeWidth={2.5} />
+                <Text style={styles.unverifiedMiniPillText}>Llogari e Paverifikuar</Text>
+              </View>
+
+              <View style={styles.actionRequiredPill}>
+                <Text style={styles.actionRequiredPillText}>Veprim i Kërkuar</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.unverifiedHeadline, { color: colors.textPrimary }]}>
+              Verifikoni Llogarinë Tuaj
+            </Text>
+            <Text style={[styles.unverifiedSub, { color: colors.textSecondary }]}>
+              Përfitoni distinktivin zyrtar të besueshmërisë, prioritet në kërkime dhe deri në 3x më shumë interesim nga blerësit seriozë.
+            </Text>
+
+            <View style={styles.chipsRow}>
+              <View
+                style={[
+                  styles.valueChip,
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
+                    borderColor:
+                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
+                  },
+                ]}
+              >
+                <ShieldCheck size={13} color="#10B981" strokeWidth={2.4} />
+                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
+                  Distinktiv Zyrtar
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.valueChip,
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
+                    borderColor:
+                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
+                  },
+                ]}
+              >
+                <Sparkles size={13} color="#F59E0B" strokeWidth={2.4} />
+                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
+                  Prioritet në Kërkim
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.valueChip,
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
+                    borderColor:
+                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
+                  },
+                ]}
+              >
+                <CheckCircle2 size={13} color="#3B82F6" strokeWidth={2.4} />
+                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
+                  Besueshmëri 3x
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              style={[
+                styles.unverifiedCtaBtn,
+                {
+                  backgroundColor:
+                    theme === 'green' ? colors.gold : colors.primary,
+                },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                setVerifyModalVisible(true)
+              }}
+            >
+              <ShieldCheck
+                size={16}
+                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                strokeWidth={2.4}
+              />
+              <Text
+                style={[
+                  styles.unverifiedCtaBtnText,
+                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                ]}
+              >
+                Verifiko Llogarinë Tani
+              </Text>
+              <ArrowRight
+                size={15}
+                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                strokeWidth={2.4}
+              />
+            </Pressable>
+          </View>
+        )}
+
+        {/* Verified Account VIP Trust Card */}
+        {currentUser && isVerified && (
+          <View
+            style={[
+              styles.verifiedCard,
+              {
+                backgroundColor:
+                  theme === 'white'
+                    ? '#F0FDF4'
+                    : theme === 'green'
+                    ? 'rgba(16, 185, 129, 0.10)'
+                    : 'rgba(16, 185, 129, 0.07)',
+                borderColor:
+                  theme === 'white'
+                    ? '#BBF7D0'
+                    : 'rgba(16, 185, 129, 0.28)',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.verifiedIconWrap,
+                {
+                  backgroundColor:
+                    theme === 'white' ? '#DCFCE7' : 'rgba(16, 185, 129, 0.20)',
+                },
+              ]}
+            >
+              <ShieldCheck size={20} color="#10B981" strokeWidth={2.4} />
+            </View>
+
+            <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[styles.verifiedCardTitle, { color: colors.textPrimary }]}>
+                  Llogari e Verifikuar Zyrtarisht
+                </Text>
+                <CheckCircle2 size={14} color="#10B981" strokeWidth={2.5} />
+              </View>
+              <Text style={[styles.verifiedCardSubtitle, { color: colors.textSecondary }]}>
+                Gëzoni distinktivin zyrtar, mbrojtje kundër llogarive false dhe prioritet në shpallje.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Incomplete Profile Callout Banner (if verified but missing details) */}
+        {currentUser && isVerified && !isOnboardingDone && (
           <Pressable
             style={[
               styles.onboardingBanner,
@@ -445,7 +847,7 @@ export default function ProfileScreen() {
                 <View style={[styles.urgentDot, { backgroundColor: '#EF4444' }]} />
               </View>
               <Text style={[styles.onboardingSubtitle, { color: colors.textMuted }]}>
-                Zgjidhni avataron, telefonin dhe qytetin për të verifikuar llogarinë tuaj.
+                Zgjidhni telefonin, qytetin dhe biografinë tuaj për profil të plotë.
               </Text>
             </View>
 
@@ -907,6 +1309,344 @@ export default function ProfileScreen() {
           Bleje Pronën Mobile v1.0.0 • Kosovë
         </Text>
       </ScrollView>
+
+      {/* Quick Avatar Selector Sheet (Apple iOS 18 Design) */}
+      <Modal
+        visible={avatarModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setAvatarModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => setAvatarModalVisible(false)}
+          />
+          <View
+            style={[
+              styles.avatarSheetContent,
+              {
+                backgroundColor: colors.surface,
+                borderColor: specularBorder,
+              },
+            ]}
+          >
+            {/* Sheet Handle */}
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+
+            {/* Header */}
+            <View style={styles.avatarSheetHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.avatarSheetTitle, { color: colors.textPrimary }]}>
+                  Zgjidh Avataron
+                </Text>
+                <Text style={[styles.avatarSheetSubtitle, { color: colors.textMuted }]}>
+                  20 avatarë me cilësi të lartë të Bleje Pronën
+                </Text>
+              </View>
+              <Pressable
+                style={[
+                  styles.modalCloseBtn,
+                  { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                ]}
+                onPress={() => setAvatarModalVisible(false)}
+                hitSlop={8}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            {/* Avatars Grid */}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.avatarSheetGrid}
+            >
+              {BLEJE_AVATARS.map((av) => {
+                const isSelected =
+                  rawAvatar === av.url ||
+                  avatarUri.endsWith(av.url) ||
+                  (rawAvatar && rawAvatar.includes(`avatar-${av.id}.png`))
+                return (
+                  <Pressable
+                    key={av.id}
+                    style={[
+                      styles.avatarSheetItem,
+                      isSelected && [
+                        styles.avatarSheetItemSelected,
+                        {
+                          borderColor:
+                            theme === 'green' ? colors.gold : colors.primary,
+                        },
+                      ],
+                    ]}
+                    onPress={() => handleSelectAvatarQuick(av.url)}
+                  >
+                    <Image
+                      source={{ uri: `https://blejepronen.com${av.url}` }}
+                      style={styles.avatarSheetImg}
+                      contentFit="cover"
+                      transition={150}
+                    />
+                    {isSelected && (
+                      <View
+                        style={[
+                          styles.avatarSheetCheck,
+                          {
+                            backgroundColor:
+                              theme === 'green' ? colors.gold : colors.primary,
+                          },
+                        ]}
+                      >
+                        <Check
+                          size={11}
+                          color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                          strokeWidth={3}
+                        />
+                      </View>
+                    )}
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+
+            {/* More Profile Options Button */}
+            <View style={styles.avatarSheetFooter}>
+              <Pressable
+                style={[
+                  styles.avatarSheetFullProfileBtn,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+                onPress={() => {
+                  setAvatarModalVisible(false)
+                  router.push('/completo-profilin' as any)
+                }}
+              >
+                <Sparkles
+                  size={16}
+                  color={theme === 'green' ? colors.gold : colors.primary}
+                  strokeWidth={2.2}
+                />
+                <Text
+                  style={[
+                    styles.avatarSheetFullProfileBtnText,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  Plotëso të Gjithë Profilin (Të Dhënat & Qytetin)
+                </Text>
+                <ChevronRight size={16} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Verification Modal (Apple iOS 18 Sheet) */}
+      <Modal
+        visible={verifyModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setVerifyModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => setVerifyModalVisible(false)}
+          />
+          <View
+            style={[
+              styles.verifySheetContent,
+              {
+                backgroundColor: colors.surface,
+                borderColor: specularBorder,
+              },
+            ]}
+          >
+            {/* Sheet Handle */}
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+
+            {/* Header */}
+            <View style={styles.verifySheetHeader}>
+              <View
+                style={[
+                  styles.verifyHeaderIcon,
+                  { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
+                ]}
+              >
+                <ShieldAlert size={22} color="#F59E0B" strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.verifySheetTitle, { color: colors.textPrimary }]}>
+                  Verifikimi i Llogarisë
+                </Text>
+                <Text
+                  style={[styles.verifySheetSubtitle, { color: colors.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {currentUser?.email}
+                </Text>
+              </View>
+              <Pressable
+                style={[
+                  styles.modalCloseBtn,
+                  { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                ]}
+                onPress={() => setVerifyModalVisible(false)}
+                hitSlop={8}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.verifySheetBody}
+            >
+              {/* Option 1: 6-digit OTP Code */}
+              <View
+                style={[
+                  styles.verifyOptionBox,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+              >
+                <Text style={[styles.verifyOptionTitle, { color: colors.textPrimary }]}>
+                  1. Verifiko me Kod 6-Shifror
+                </Text>
+                <Text style={[styles.verifyOptionDesc, { color: colors.textMuted }]}>
+                  Shkruani kodin e verifikimit të dërguar në email-in tuaj:
+                </Text>
+
+                <TextInput
+                  value={otpCode}
+                  onChangeText={(val) => setOtpCode(val.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  style={[
+                    styles.otpInput,
+                    {
+                      color: colors.textPrimary,
+                      borderColor:
+                        otpCode.length === 6
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                      backgroundColor: colors.surface,
+                    },
+                  ]}
+                />
+
+                <Pressable
+                  style={[
+                    styles.confirmOtpBtn,
+                    {
+                      backgroundColor:
+                        otpCode.length === 6
+                          ? theme === 'green'
+                            ? colors.gold
+                            : colors.primary
+                          : colors.border,
+                    },
+                  ]}
+                  onPress={handleConfirmOtp}
+                  disabled={verifyingOtp || otpCode.length !== 6}
+                >
+                  {verifyingOtp ? (
+                    <ActivityIndicator size="small" color={primaryBtnText} />
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} color={primaryBtnText} strokeWidth={2.4} />
+                      <Text style={[styles.confirmOtpBtnText, { color: primaryBtnText }]}>
+                        Konfirmo Kodin
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  style={styles.resendBtn}
+                  onPress={handleResendOtp}
+                  disabled={resendingCode || resendCooldown > 0}
+                >
+                  {resendingCode ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.resendBtnText,
+                        {
+                          color:
+                            resendCooldown > 0 ? colors.textLight : colors.primary,
+                        },
+                      ]}
+                    >
+                      {resendCooldown > 0
+                        ? `Dërgo kodin përsëri (${resendCooldown}s)`
+                        : 'Dërgo një kod të ri në email'}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Option 2: Complete Profile */}
+              <View
+                style={[
+                  styles.verifyOptionBox,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+              >
+                <Text style={[styles.verifyOptionTitle, { color: colors.textPrimary }]}>
+                  2. Plotësoni Profilin e Plotë
+                </Text>
+                <Text style={[styles.verifyOptionDesc, { color: colors.textMuted }]}>
+                  Përfundoni të dhënat e telefonit, qytetit dhe biznesit për verifikim të plotë të llogarisë.
+                </Text>
+
+                <Pressable
+                  style={[
+                    styles.completeProfileBtn,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                  onPress={() => {
+                    setVerifyModalVisible(false)
+                    router.push('/completo-profilin' as any)
+                  }}
+                >
+                  <Sparkles
+                    size={16}
+                    color={theme === 'green' ? colors.gold : colors.primary}
+                    strokeWidth={2.4}
+                  />
+                  <Text style={[styles.completeProfileBtnText, { color: colors.textPrimary }]}>
+                    Hap Formularin e Profilit
+                  </Text>
+                  <ArrowRight size={15} color={colors.textMuted} />
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -1314,5 +2054,369 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     textAlign: 'center',
     paddingVertical: 12,
+  },
+
+  // Badges
+  companyVerifiedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  individualVerifiedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  unverifiedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+
+  // Unverified Card
+  unverifiedCard: {
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1.2,
+    gap: 12,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  unverifiedCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unverifiedMiniPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  amberPulsingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#F59E0B',
+  },
+  unverifiedMiniPillText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    color: '#D97706',
+    letterSpacing: 0.2,
+  },
+  actionRequiredPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+  },
+  actionRequiredPillText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.bold,
+    color: '#EF4444',
+  },
+  unverifiedHeadline: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
+  unverifiedSub: {
+    fontSize: 12.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 18,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  valueChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    borderWidth: 0.5,
+  },
+  valueChipText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.semiBold,
+  },
+  unverifiedCtaBtn: {
+    height: 46,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  unverifiedCtaBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+
+  // Verified VIP Trust Card
+  verifiedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  verifiedIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifiedCardTitle: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+  verifiedCardSubtitle: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 16,
+  },
+
+  // Modal Sheets (Apple iOS 18 Design)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalDismissArea: {
+    flex: 1,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 12,
+    opacity: 0.6,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.5,
+  },
+
+  // Avatar Sheet
+  avatarSheetContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    maxHeight: Dimensions.get('window').height * 0.78,
+  },
+  avatarSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(150, 150, 150, 0.15)',
+  },
+  avatarSheetTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+  },
+  avatarSheetSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
+  },
+  avatarSheetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  avatarSheetItem: {
+    width: (Dimensions.get('window').width - 40 - 36) / 4,
+    aspectRatio: 1,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  avatarSheetItemSelected: {
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  avatarSheetImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+  },
+  avatarSheetCheck: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  avatarSheetFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(150, 150, 150, 0.15)',
+  },
+  avatarSheetFullProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
+  },
+  avatarSheetFullProfileBtnText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    flex: 1,
+    marginHorizontal: 8,
+  },
+
+  // Verification Sheet
+  verifySheetContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    maxHeight: Dimensions.get('window').height * 0.85,
+  },
+  verifySheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(150, 150, 150, 0.15)',
+  },
+  verifyHeaderIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifySheetTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+  },
+  verifySheetSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+  verifySheetBody: {
+    padding: 20,
+    gap: 16,
+  },
+  verifyOptionBox: {
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    gap: 10,
+  },
+  verifyOptionTitle: {
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+  },
+  verifyOptionDesc: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    lineHeight: 17,
+  },
+  otpInput: {
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    fontSize: 22,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+    letterSpacing: 10,
+    marginVertical: 4,
+  },
+  confirmOtpBtn: {
+    height: 46,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmOtpBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+  resendBtn: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  resendBtnText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.semiBold,
+  },
+  completeProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
+  },
+  completeProfileBtnText: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    flex: 1,
+    marginHorizontal: 8,
   },
 })
