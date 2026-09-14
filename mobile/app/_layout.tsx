@@ -14,6 +14,8 @@ import 'react-native-reanimated'
 import { ThemeProvider, useTheme } from '@/constants/theme'
 import { StatusBar } from 'expo-status-bar'
 
+import { BannerProvider } from '@/context/BannerContext'
+
 export { ErrorBoundary } from 'expo-router'
 
 export const unstable_settings = {
@@ -49,7 +51,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RootLayoutNav />
+      <BannerProvider>
+        <RootLayoutNav />
+      </BannerProvider>
     </ThemeProvider>
   )
 }

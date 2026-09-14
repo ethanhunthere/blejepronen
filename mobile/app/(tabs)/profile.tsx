@@ -7,6 +7,7 @@ import {
   Pressable,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -26,16 +27,21 @@ import {
   Sun,
   Leaf,
   Moon,
+  Trash2,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { useBanner } from '@/context/BannerContext'
+import { apiDeleteAccount } from '@/lib/api'
 
 export default function ProfileScreen() {
   const router = useRouter()
   const { colors, theme, setTheme } = useTheme()
+  const { showBanner } = useBanner()
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function checkSession() {
@@ -75,9 +81,63 @@ export default function ProfileScreen() {
           }
           await supabase.auth.signOut()
           setCurrentUser(null)
+          showBanner({
+            type: 'logout',
+            title: 'Mirupafshim!',
+            message: 'U çkyçët me sukses nga llogaria.',
+          })
         },
       },
     ])
+  }
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Fshi Llogarinë Përfundimisht',
+      'Kujdes: Ky veprim është i përhershëm dhe i pakthyeshëm. Të gjitha shpalljet, mesazhet dhe të dhënat tuaja do të fshihen plotësisht nga Bleje Pronën.\n\nA dëshironi të vazhdoni?',
+      [
+        { text: 'Anulo', style: 'cancel' },
+        {
+          text: 'Fshi Përfundimisht',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true)
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+            }
+            try {
+              const {
+                data: { session },
+              } = await supabase.auth.getSession()
+
+              if (session?.access_token) {
+                const res = await apiDeleteAccount(session.access_token)
+                if (!res.success) {
+                  Alert.alert(
+                    'Gabim',
+                    res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
+                  )
+                  setDeleting(false)
+                  return
+                }
+              }
+
+              await supabase.auth.signOut()
+              setCurrentUser(null)
+              showBanner({
+                type: 'delete',
+                title: 'Llogaria u Fshi',
+                message: 'Të gjitha të dhënat dhe shpalljet tuaja u fshinë përfundimisht.',
+              })
+            } catch (err: any) {
+              Alert.alert('Gabim', err?.message || 'Ndodhi një problem gjatë fshirjes së llogarisë.')
+            } finally {
+              setDeleting(false)
+            }
+          },
+        },
+      ]
+    )
   }
 
   const openAuthModal = (initialTab: 'login' | 'register') => {
@@ -89,6 +149,11 @@ export default function ProfileScreen() {
     if (theme === selectedTheme) return
     setTheme(selectedTheme)
   }
+
+  const isCompany =
+    currentUser?.user_metadata?.account_type === 'company' ||
+    currentUser?.user_metadata?.is_company === true
+  const companyName = currentUser?.user_metadata?.company_name
 
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
@@ -118,21 +183,55 @@ export default function ProfileScreen() {
         {currentUser ? (
           <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
-              <User size={34} color={colors.primary} strokeWidth={2.2} />
+              {isCompany ? (
+                <Building2 size={32} color={colors.primary} strokeWidth={2.2} />
+              ) : (
+                <User size={34} color={colors.primary} strokeWidth={2.2} />
+              )}
             </View>
 
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
-                <Text style={[styles.userName, { color: colors.textPrimary }]}>
-                  {currentUser.user_metadata?.first_name
-                    ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
-                    : 'Përdorues i regjistruar'}
+                <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {isCompany
+                    ? (companyName || currentUser.user_metadata?.first_name || 'Agjenci Imobiliare')
+                    : (currentUser.user_metadata?.first_name
+                        ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
+                        : 'Përdorues i regjistruar')}
                 </Text>
-                <View style={[styles.verifiedBadge, { backgroundColor: colors.badgeBg }]}>
-                  <ShieldCheck size={12} color={colors.badgeText} strokeWidth={2.4} />
-                  <Text style={[styles.verifiedBadgeText, { color: colors.badgeText }]}>Aktiv</Text>
+                <View
+                  style={[
+                    styles.verifiedBadge,
+                    {
+                      backgroundColor: isCompany
+                        ? theme === 'white'
+                          ? '#FEF3C7'
+                          : 'rgba(245, 158, 11, 0.18)'
+                        : colors.badgeBg,
+                    },
+                  ]}
+                >
+                  {isCompany ? (
+                    <>
+                      <Building2 size={11} color={theme === 'white' ? '#B45309' : '#FBBF24'} strokeWidth={2.4} />
+                      <Text style={[styles.verifiedBadgeText, { color: theme === 'white' ? '#B45309' : '#FBBF24' }]}>
+                        Agjenci
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={11} color={colors.badgeText} strokeWidth={2.4} />
+                      <Text style={[styles.verifiedBadgeText, { color: colors.badgeText }]}>Aktiv</Text>
+                    </>
+                  )}
                 </View>
               </View>
+
+              {isCompany && currentUser.user_metadata?.first_name ? (
+                <Text style={[styles.contactPersonText, { color: colors.textSecondary }]}>
+                  Kontakt: {currentUser.user_metadata.first_name} {currentUser.user_metadata.last_name || ''}
+                </Text>
+              ) : null}
 
               <Text style={[styles.userEmail, { color: colors.textMuted }]}>{currentUser.email}</Text>
             </View>
@@ -362,42 +461,71 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Logout (Shown only if logged in) */}
+        {/* Logout & Delete Account (Shown only if logged in) */}
         {currentUser && (
-          <Pressable
-            style={[
-              styles.logoutButton,
-              {
-                backgroundColor:
-                  theme === 'white'
-                    ? '#FEE2E2'
-                    : theme === 'green'
-                    ? 'rgba(239, 68, 68, 0.16)'
-                    : '#2A1414',
-                borderColor:
-                  theme === 'white'
-                    ? '#FECACA'
-                    : 'rgba(239, 68, 68, 0.35)',
-                borderWidth: 1,
-              },
-            ]}
-            onPress={handleLogout}
-            hitSlop={8}
-          >
-            <LogOut
-              size={18}
-              color={theme === 'green' ? '#FCA5A5' : '#EF4444'}
-              strokeWidth={2.2}
-            />
-            <Text
+          <View style={styles.accountActionButtons}>
+            <Pressable
               style={[
-                styles.logoutButtonText,
-                { color: theme === 'green' ? '#FCA5A5' : '#EF4444' },
+                styles.logoutButton,
+                {
+                  backgroundColor:
+                    theme === 'white'
+                      ? '#FEE2E2'
+                      : theme === 'green'
+                      ? 'rgba(239, 68, 68, 0.16)'
+                      : '#2A1414',
+                  borderColor:
+                    theme === 'white'
+                      ? '#FECACA'
+                      : 'rgba(239, 68, 68, 0.35)',
+                  borderWidth: 1,
+                },
               ]}
+              onPress={handleLogout}
+              hitSlop={8}
             >
-              Çkyçu nga llogaria
-            </Text>
-          </Pressable>
+              <LogOut
+                size={18}
+                color={theme === 'green' ? '#FCA5A5' : '#EF4444'}
+                strokeWidth={2.2}
+              />
+              <Text
+                style={[
+                  styles.logoutButtonText,
+                  { color: theme === 'green' ? '#FCA5A5' : '#EF4444' },
+                ]}
+              >
+                Çkyçu nga llogaria
+              </Text>
+            </Pressable>
+
+            {/* Delete Account (Apple App Store Guideline 5.1.1 compliant) */}
+            <Pressable
+              style={[
+                styles.deleteAccountButton,
+                {
+                  borderColor:
+                    theme === 'white'
+                      ? 'rgba(239, 68, 68, 0.28)'
+                      : 'rgba(239, 68, 68, 0.22)',
+                },
+              ]}
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              hitSlop={8}
+            >
+              {deleting ? (
+                <ActivityIndicator size="small" color="#EF4444" />
+              ) : (
+                <>
+                  <Trash2 size={16} color="#EF4444" strokeWidth={2} />
+                  <Text style={styles.deleteAccountButtonText}>
+                    Fshi llogarinë përfundimisht
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </View>
         )}
 
         <Text style={[styles.appVersion, { color: colors.textLight }]}>
@@ -661,6 +789,16 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     marginTop: 1,
   },
+  contactPersonText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    marginTop: -2,
+    marginBottom: 2,
+  },
+  accountActionButtons: {
+    gap: 10,
+    marginTop: 4,
+  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -668,12 +806,25 @@ const styles = StyleSheet.create({
     gap: 8,
     height: 48,
     borderRadius: 14,
-    marginTop: 4,
   },
   logoutButtonText: {
     color: '#EF4444',
     fontSize: 14,
     fontFamily: Fonts.bold,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  deleteAccountButtonText: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontFamily: Fonts.medium,
   },
   appVersion: {
     textAlign: 'center',
