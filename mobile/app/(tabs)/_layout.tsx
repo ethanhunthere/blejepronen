@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { createSafeChannel } from '@/lib/realtime'
 
 interface TabBarItemContentProps {
   icon: any
@@ -151,27 +152,33 @@ export default function TabLayout() {
       checkUnread()
     })
 
-    const channel = supabase
-      .channel('tab_unread_messages')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages' },
-        () => {
-          checkUnread()
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'conversations' },
-        () => {
-          checkUnread()
-        }
-      )
-      .subscribe()
+    // Realtime subscription for the unread badge. Guarded so a remount can never
+    // crash the tab bar (see lib/realtime.ts for why the topic must be unique).
+    let channel: ReturnType<typeof createSafeChannel> | null = null
+    try {
+      channel = createSafeChannel('tab_unread_messages')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'messages' },
+          () => {
+            checkUnread()
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'conversations' },
+          () => {
+            checkUnread()
+          }
+        )
+        .subscribe()
+    } catch (err) {
+      console.warn('Unread badge realtime notice:', err)
+    }
 
     return () => {
       authListener.subscription.unsubscribe()
-      supabase.removeChannel(channel)
+      if (channel) supabase.removeChannel(channel)
     }
   }, [])
 

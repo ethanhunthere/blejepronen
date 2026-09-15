@@ -17,6 +17,7 @@ import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, LayoutGrid } f
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
+import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { Logo } from '@/components/Logo'
 
@@ -159,6 +160,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     fetchListings()
+    fetchFavoriteIds().then(setFavorites)
   }, [fetchListings])
 
   const onRefresh = async () => {
@@ -169,6 +171,7 @@ export default function HomeScreen() {
     const startTime = Date.now()
 
     await fetchListings()
+    fetchFavoriteIds().then(setFavorites)
 
     // Optimized snappy UX duration: 650ms for responsive, crisp refresh
     const elapsed = Date.now() - startTime
@@ -192,8 +195,16 @@ export default function HomeScreen() {
     setTransactionType(type)
   }
 
-  const handleToggleFavorite = (id: string) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
+  const handleToggleFavorite = async (id: string) => {
+    const wasFavorite = !!favorites[id]
+    // Optimistic UI update first — instant heart feedback
+    setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
+
+    const ok = await persistFavoriteToggle(id, wasFavorite)
+    if (!ok) {
+      // Revert on failure (offline, guest, etc.)
+      setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
+    }
   }
 
   const filteredListings = useMemo(() => {

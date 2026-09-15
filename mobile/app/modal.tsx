@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   View,
   Text,
@@ -24,17 +24,45 @@ import {
   ArrowRight,
   ArrowLeft,
   Building2,
-  Phone,
   RotateCcw,
   CheckCircle2,
   ShieldCheck,
+  FastForward,
+  ChevronRight,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
+import * as WebBrowser from 'expo-web-browser'
+import * as Linking from 'expo-linking'
+import Svg, { Path } from 'react-native-svg'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/Logo'
 import { apiSignUp, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { useBanner } from '@/context/BannerContext'
+
+// ─── Official multi-color Google "G" emblem (vector, crisp at any size) ───
+function GoogleLogo({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.57 5.57 0 0 1-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+      />
+      <Path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+      />
+      <Path
+        fill="#FBBC05"
+        d="M5.27 14.29A7.2 7.2 0 0 1 4.89 12c0-.8.14-1.57.38-2.29V6.62H1.29a11.97 11.97 0 0 0 0 10.76l3.98-3.09z"
+      />
+      <Path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
+      />
+    </Svg>
+  )
+}
 
 export default function AuthModalScreen() {
   const router = useRouter()
@@ -51,12 +79,13 @@ export default function AuthModalScreen() {
   // Account Type: 'individual' | 'company'
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
 
-  // Form Fields
+  // Form Fields — streamlined signup: email + password only
+  // (individuals), company name + email + password (companies).
+  // Name, surname, phone & business details are verified later
+  // from the Profili tab → Verification Center.
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
   const [companyName, setCompanyName] = useState('')
-  const [phone, setPhone] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState<string | null>(null)
 
@@ -71,6 +100,7 @@ export default function AuthModalScreen() {
 
   // State
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // 60-second OTP Countdown timer
@@ -131,15 +161,6 @@ export default function AuthModalScreen() {
       if (accountType === 'company') {
         if (!companyName.trim()) {
           setErrorMessage('Emri i kompanisë është i detyrueshëm.')
-          return
-        }
-        if (!fullName.trim()) {
-          setErrorMessage('Emri i përfaqësuesit është i detyrueshëm.')
-          return
-        }
-      } else {
-        if (!fullName.trim()) {
-          setErrorMessage('Emri dhe mbiemri është i detyrueshëm.')
           return
         }
       }
@@ -206,14 +227,12 @@ export default function AuthModalScreen() {
           router.back()
         }
       } else {
-        // Register flow using the verified backend email OTP route
+        // Register flow: only email, password for individuals; companyName, email, password for companies
         const res = await apiSignUp({
           email: trimmedEmail,
           password,
           accountType,
           companyName: accountType === 'company' ? companyName.trim() : undefined,
-          fullName: fullName.trim(),
-          phone: phone.trim() || undefined,
         })
 
         if (!res.success) {
@@ -223,6 +242,16 @@ export default function AuthModalScreen() {
           }
           setLoading(false)
           return
+        }
+
+        // Optimistically sign in user so if they choose to skip OTP they have an active session
+        try {
+          await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          })
+        } catch (signInErr) {
+          console.warn('Pre-sign-in on register notice:', signInErr)
         }
 
         showBanner({
@@ -238,6 +267,162 @@ export default function AuthModalScreen() {
       setErrorMessage(err?.message || 'Ndodhi një gabim i papritur gjatë komunikimit.')
       setLoading(false)
     }
+  }
+
+  // ── Google OAuth: native browser session, Apple-grade flow ───
+  const googleHandledRef = useRef(false)
+
+  // Completes Google login from a callback URL (implicit tokens or PKCE code)
+  const finishGoogleAuth = useCallback(
+    async (urlStr: string) => {
+      if (googleHandledRef.current) return
+      googleHandledRef.current = true
+
+      const hashPart = urlStr.split('#')[1] || ''
+      const queryPart = urlStr.split('?')[1] || ''
+      const hashParams = new URLSearchParams(hashPart)
+      const queryParams = new URLSearchParams(queryPart)
+
+      const oauthError =
+        hashParams.get('error_description') ||
+        queryParams.get('error_description') ||
+        hashParams.get('error') ||
+        queryParams.get('error')
+
+      const accessToken = hashParams.get('access_token') || queryParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
+      const authCode = queryParams.get('code') || hashParams.get('code')
+
+      if (!accessToken && !authCode) {
+        googleHandledRef.current = false
+        throw new Error(
+          oauthError ||
+            'Google nuk u kthye në aplikacion. Kontrolloni URL-në e ridrejtimit te Supabase → Authentication → URL Configuration.'
+        )
+      }
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        if (sessionError) throw sessionError
+      } else if (authCode) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
+        if (exchangeError) throw exchangeError
+      } else {
+        throw new Error('Nuk u gjetën kredencialet e verifikimit të Google.')
+      }
+
+      // Fetch the fresh user and mirror the email-login success behavior
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      const meta = user?.user_metadata || {}
+      const displayName =
+        meta.full_name ||
+        meta.first_name ||
+        meta.company_name ||
+        user?.email?.split('@')[0] ||
+        'Përdorues'
+
+      showBanner({
+        type: 'success',
+        title: 'Mirësevini!',
+        message: `Jeni kyçur me sukses me Google si ${displayName}.`,
+      })
+
+      setGoogleLoading(false)
+
+      if (!meta.onboarding_completed) {
+        router.replace('/completo-profilin' as any)
+      } else {
+        router.back()
+      }
+    },
+    [router, showBanner]
+  )
+
+  const handleGoogleAuth = async () => {
+    if (googleLoading) return
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+    setErrorMessage(null)
+    setGoogleLoading(true)
+    googleHandledRef.current = false
+
+    // Safety net: on some iOS / Expo Go combinations the callback arrives as a
+    // deep link (re-opening the app) instead of resolving the browser session.
+    const linkSub = Linking.addEventListener('url', ({ url }) => {
+      if (!url) return
+      if (url.includes('access_token=') || url.includes('code=')) {
+        finishGoogleAuth(url).catch((err: any) => {
+          console.warn('Google deep-link notice:', err)
+          setErrorMessage(err?.message || 'Ndodhi një problem gjatë hyrjes me Google.')
+          setGoogleLoading(false)
+        })
+      }
+    })
+
+    try {
+      // Resolves to exp://<host>:8081/--/auth/callback inside Expo Go and to
+      // blejepronen://auth/callback in the standalone iOS/Android build — so the
+      // browser session always returns to THIS app, never to a website.
+      const redirectUrl = Linking.createURL('/auth/callback')
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          skipBrowserRedirect: true,
+          redirectTo: redirectUrl,
+        },
+      })
+
+      if (error || !data?.url) {
+        setErrorMessage(
+          error?.message || 'Hyrja me Google nuk është e disponueshme aktualisht.'
+        )
+        setGoogleLoading(false)
+        return
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
+
+      if (result.type === 'success' && result.url) {
+        await finishGoogleAuth(result.url)
+      } else if (!googleHandledRef.current) {
+        // User dismissed the browser sheet — silent cancel
+        setGoogleLoading(false)
+      }
+    } catch (err: any) {
+      console.warn('Google auth notice:', err)
+      setErrorMessage(
+        err?.message || 'Ndodhi një problem gjatë hyrjes me Google. Provoni përsëri.'
+      )
+      setGoogleLoading(false)
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      }
+    } finally {
+      linkSub.remove()
+    }
+  }
+
+  // Handle Skip Verification
+  const handleSkipVerification = async () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+    try {
+      await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+    } catch {}
+    showBanner({
+      type: 'info',
+      title: 'Verifikoni më vonë',
+      message: 'Mund ta verifikoni email-in dhe identitetin tuaj në çdo kohë nga rubrika "Profili".',
+    })
+    router.replace('/(tabs)/profile' as any)
   }
 
   // Handle 6-Digit OTP Verification
@@ -561,6 +746,35 @@ export default function AuthModalScreen() {
                 </Text>
               )}
             </View>
+
+            {/* Apple-Grade "Skip for now" Escape Hatch */}
+            <View style={styles.skipSection}>
+              <View style={styles.orDividerRow}>
+                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                <Text style={[styles.orDividerText, { color: colors.textMuted }]}>ose</Text>
+                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+              </View>
+
+              <Pressable
+                style={[
+                  styles.skipBtn,
+                  { borderColor: specularBorderColor, backgroundColor: colors.surfaceSubtle },
+                ]}
+                onPress={handleSkipVerification}
+                hitSlop={6}
+              >
+                <FastForward size={16} color={colors.textSecondary} strokeWidth={2.2} />
+                <View style={styles.skipBtnTextGroup}>
+                  <Text style={[styles.skipBtnText, { color: colors.textPrimary }]}>
+                    Kalo për tani
+                  </Text>
+                  <Text style={[styles.skipBtnSubtext, { color: colors.textMuted }]}>
+                    Verifikoni më vonë, nga skedari «Profili»
+                  </Text>
+                </View>
+                <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
+              </Pressable>
+            </View>
           </View>
         ) : (
           /* ================= STEP 1: AUTH (LOGIN & REGISTER) ================= */
@@ -795,82 +1009,6 @@ export default function AuthModalScreen() {
                 </View>
               )}
 
-              {/* Emri dhe Mbiemri / Përfaqësuesi */}
-              {activeTab === 'register' && (
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                    {accountType === 'company'
-                      ? 'Personi Kontaktues (Përfaqësuesi) *'
-                      : 'Emri dhe Mbiemri *'}
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputField,
-                      {
-                        backgroundColor: colors.surfaceSubtle,
-                        borderColor:
-                          focusedField === 'fullName' ? brandHighlight : specularBorderColor,
-                        borderWidth: focusedField === 'fullName' ? 1.5 : 0.5,
-                      },
-                    ]}
-                  >
-                    <User
-                      size={18}
-                      color={focusedField === 'fullName' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2}
-                    />
-                    <TextInput
-                      style={[styles.textInput, { color: colors.textPrimary }]}
-                      placeholder={
-                        accountType === 'company' ? 'psh. Dren Berisha' : 'psh. Artan Krasniqi'
-                      }
-                      placeholderTextColor={colors.textLight}
-                      value={fullName}
-                      onChangeText={setFullName}
-                      onFocus={() => setFocusedField('fullName')}
-                      onBlur={() => setFocusedField(null)}
-                      autoCapitalize="words"
-                    />
-                  </View>
-                </View>
-              )}
-
-              {/* If Company: Phone Number */}
-              {activeTab === 'register' && accountType === 'company' && (
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                    Numri i Telefonit / WhatsApp
-                  </Text>
-                  <View
-                    style={[
-                      styles.inputField,
-                      {
-                        backgroundColor: colors.surfaceSubtle,
-                        borderColor:
-                          focusedField === 'phone' ? brandHighlight : specularBorderColor,
-                        borderWidth: focusedField === 'phone' ? 1.5 : 0.5,
-                      },
-                    ]}
-                  >
-                    <Phone
-                      size={18}
-                      color={focusedField === 'phone' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2}
-                    />
-                    <TextInput
-                      style={[styles.textInput, { color: colors.textPrimary }]}
-                      placeholder="psh. +383 44 123 456"
-                      placeholderTextColor={colors.textLight}
-                      value={phone}
-                      onChangeText={setPhone}
-                      onFocus={() => setFocusedField('phone')}
-                      onBlur={() => setFocusedField(null)}
-                      keyboardType="phone-pad"
-                    />
-                  </View>
-                </View>
-              )}
-
               {/* Email */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -973,6 +1111,40 @@ export default function AuthModalScreen() {
                   </View>
                 )}
               </Pressable>
+
+              {/* ─── Divider + Google OAuth Row ─── */}
+              <View style={styles.googleSection}>
+                <View style={[styles.orDividerRow, { marginBottom: 0 }]}>
+                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                  <Text style={[styles.orDividerText, { color: colors.textMuted }]}>ose</Text>
+                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                </View>
+
+                <Pressable
+                  style={[
+                    styles.googleBtn,
+                    { backgroundColor: colors.surface, borderColor: specularBorderColor },
+                    (googleLoading || loading) && styles.submitBtnDisabled,
+                  ]}
+                  onPress={handleGoogleAuth}
+                  disabled={googleLoading || loading}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator size="small" color={brandHighlight} />
+                  ) : (
+                    <>
+                      <GoogleLogo size={19} />
+                      <Text style={[styles.googleBtnText, { color: colors.textPrimary }]}>
+                        Vazhdo me Google
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+
+                <Text style={[styles.googleHintText, { color: colors.textMuted }]}>
+                  I shpejtë dhe i sigurt — pa fjalëkalim
+                </Text>
+              </View>
 
               {/* 1-Line Switcher Prompt */}
               <View style={styles.switchPromptRow}>
@@ -1276,5 +1448,72 @@ const styles = StyleSheet.create({
   countdownText: {
     fontSize: 13,
     fontFamily: Fonts.regular,
+  },
+  skipSection: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  orDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 12,
+    marginBottom: 14,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 0.5,
+  },
+  orDividerText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.4,
+  },
+  skipBtn: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 16,
+    borderWidth: 0.5,
+  },
+  skipBtnTextGroup: {
+    flex: 1,
+    gap: 1,
+  },
+  skipBtnText: {
+    fontSize: 14.5,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  skipBtnSubtext: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+  },
+  googleSection: {
+    marginTop: 18,
+    alignItems: 'stretch',
+    gap: 12,
+  },
+  googleBtn: {
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 0.5,
+  },
+  googleBtnText: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  googleHintText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
   },
 })

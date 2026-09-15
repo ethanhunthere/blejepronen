@@ -37,6 +37,7 @@ import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { createSafeChannel } from '@/lib/realtime'
 import { getAvatarUri } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
@@ -191,40 +192,44 @@ export default function ChatConversationScreen() {
     loadConversationData()
 
     if (!id) return
-    const channel = supabase
-      .channel(`chat_${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${id}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as MessageItem
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev
-            return [...prev, newMsg]
-          })
+    let channel: ReturnType<typeof createSafeChannel> | null = null
+    try {
+      channel = createSafeChannel(`chat_${id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${id}`,
+          },
+          (payload) => {
+            const newMsg = payload.new as MessageItem
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev
+              return [...prev, newMsg]
+            })
 
-          if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-          }
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+            }
 
-          if (currentUserId && newMsg.sender_id !== currentUserId) {
-            supabase
-              .from('messages')
-              .update({ is_read: true })
-              .eq('id', newMsg.id)
-              .then(() => {})
+            if (currentUserId && newMsg.sender_id !== currentUserId) {
+              supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('id', newMsg.id)
+                .then(() => {})
+            }
           }
-        }
-      )
-      .subscribe()
+        )
+        .subscribe()
+    } catch (err) {
+      console.warn('Chat realtime notice:', err)
+    }
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) supabase.removeChannel(channel)
     }
   }, [id, currentUserId, loadConversationData])
 

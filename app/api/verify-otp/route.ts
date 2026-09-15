@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
-        email_verified: false,
+        email_verified: true,
         verification_code: null,
         verification_code_expires_at: null,
       })
@@ -124,6 +124,9 @@ export async function POST(request: Request) {
     // Confirm user in Supabase auth so user can authenticate
     const { error: confirmAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       email_confirm: true,
+      user_metadata: {
+        email_verified: true,
+      },
     })
 
     if (confirmAuthError) {

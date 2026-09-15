@@ -63,10 +63,12 @@ export async function POST(request: Request) {
       userId = existingUser.id
       const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password,
+        email_confirm: true,
         user_metadata: {
           account_type: accountType,
           company_name: accountType === 'company' ? companyName : undefined,
           full_name: accountType === 'company' ? companyName : undefined,
+          email_verified: false,
         },
       })
 
@@ -79,11 +81,12 @@ export async function POST(request: Request) {
       const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
-        email_confirm: false,
+        email_confirm: true,
         user_metadata: {
           account_type: accountType,
           company_name: accountType === 'company' ? companyName : undefined,
           full_name: accountType === 'company' ? companyName : undefined,
+          email_verified: false,
         },
       })
 

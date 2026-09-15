@@ -15,7 +15,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
 import {
@@ -36,30 +36,53 @@ import {
   X,
   Check,
   AlertTriangle,
+  Bookmark,
+  HeartOff,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
+import { fetchFavoriteListings, persistFavoriteToggle } from '@/lib/favorites'
 import { useBanner } from '@/context/BannerContext'
 import {
   playSuccessSound,
   playDeleteSound,
   playTapSound,
   playThemeSound,
+  playUnlikeSound,
 } from '@/lib/sound'
 
-type FilterStatus = 'all' | 'active' | 'inactive'
+type FilterStatus = 'all' | 'active' | 'inactive' | 'saved'
 
 export default function ShpalljetEMiaScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
 
+    // Deep-link support: /shpalljet-e-mia?filter=saved
+  const searchParams = useLocalSearchParams<{ filter?: string}>()
+  const initialFilter: FilterStatus =
+    searchParams.filter === 'saved' ? 'saved' : 'all'
+
+  // Sync filterStatus when navigated to with ?filter=saved (e.g. from Profili "Të Ruajturat")
+  useEffect(() => {
+    const target: FilterStatus = searchParams.filter === 'saved' ? 'saved' : 'all'
+    console.log('[ShpalljetEMia] searchParams.filter =', searchParams.filter, '-> target filter:', target, '| current:', filterStatus)
+    if (target !== filterStatus) {
+      setFilterStatus(target)
+      if (target === 'saved') fetchSavedListings()
+    }
+  }, [searchParams.filter])
+
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>(initialFilter)
+
+  // Të Ruajturat (Saved listings) — DB-backed via Supabase `favorites`
+  const [savedListings, setSavedListings] = useState<Listing[]>([])
+  const [loadingSaved, setLoadingSaved] = useState(false)
 
   // Price Edit Modal
   const [editPriceListing, setEditPriceListing] = useState<Listing | null>(null)
@@ -90,6 +113,17 @@ export default function ShpalljetEMiaScreen() {
     }
   }, [])
 
+  // ─── Të Ruajturat: fetch saved listings (favorites join) ───
+  const fetchSavedListings = useCallback(async () => {
+    setLoadingSaved(true)
+    try {
+      const rows = await fetchFavoriteListings()
+      setSavedListings(rows as unknown as Listing[])
+    } finally {
+      setLoadingSaved(false)
+    }
+  }, [])
+
   useEffect(() => {
     async function init() {
       try {
@@ -100,6 +134,7 @@ export default function ShpalljetEMiaScreen() {
         setCurrentUser(user || null)
         if (user) {
           await fetchUserListings(user.id)
+          fetchSavedListings()
         } else {
           setLoading(false)
         }
@@ -110,22 +145,51 @@ export default function ShpalljetEMiaScreen() {
     }
 
     init()
-  }, [fetchUserListings])
+  }, [fetchUserListings, fetchSavedListings])
 
   const onRefresh = useCallback(() => {
     setRefreshing(true)
     if (currentUser) {
       fetchUserListings(currentUser.id)
+      fetchSavedListings()
     } else {
       setRefreshing(false)
     }
-  }, [currentUser, fetchUserListings])
+  }, [currentUser, fetchUserListings, fetchSavedListings])
 
   const handleFilterChange = (status: FilterStatus) => {
     if (filterStatus === status) return
     playTapSound()
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setFilterStatus(status)
+    // Always refresh saved listings when entering the tab — stay fresh
+    if (status === 'saved') fetchSavedListings()
+  }
+
+  // ─── Remove a listing from Të Ruajturat (heart off) ───
+  const handleUnsave = async (item: Listing) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+
+    // Optimistic removal
+    setSavedListings((prev) => prev.filter((l) => l.id !== item.id))
+
+    const ok = await persistFavoriteToggle(item.id, true)
+    if (ok) {
+      playUnlikeSound()
+      showBanner({
+        type: 'info',
+        title: 'U hoq nga të ruajturat',
+        message: `«${item.title}» nuk është më në listën tuaj të ruajtur.`,
+      })
+    } else {
+      // Revert on failure
+      setSavedListings((prev) => [item, ...prev])
+      showBanner({
+        type: 'error',
+        title: 'Gabim',
+        message: 'S’u hoq dot nga të ruajturat. Ju lutemi provoni përsëri.',
+      })
+    }
   }
 
   // Toggle Active/Inactive Status
@@ -288,14 +352,18 @@ export default function ShpalljetEMiaScreen() {
   }
 
   // Filtered Listings
-  const filteredListings = listings.filter((l) => {
-    if (filterStatus === 'active') return Boolean(l.is_active)
-    if (filterStatus === 'inactive') return !Boolean(l.is_active)
-    return true
-  })
+  const filteredListings =
+    filterStatus === 'saved'
+      ? savedListings
+      : listings.filter((l) => {
+          if (filterStatus === 'active') return Boolean(l.is_active)
+          if (filterStatus === 'inactive') return !Boolean(l.is_active)
+          return true
+        })
 
   const activeCount = listings.filter((l) => Boolean(l.is_active)).length
   const inactiveCount = listings.filter((l) => !Boolean(l.is_active)).length
+  const savedCount = savedListings.length
 
   const specularBorder =
     theme === 'white'
@@ -562,6 +630,73 @@ export default function ShpalljetEMiaScreen() {
                   </Text>
                 </View>
               </Pressable>
+
+              {/* Saved — Të Ruajturat */}
+              <Pressable
+                style={[
+                  styles.filterPill,
+                  {
+                    backgroundColor:
+                      filterStatus === 'saved'
+                        ? theme === 'green' ? colors.gold : colors.primary
+                        : colors.surface,
+                    borderColor:
+                      filterStatus === 'saved'
+                        ? theme === 'green' ? colors.gold : colors.primary
+                        : specularBorder,
+                  },
+                ]}
+                onPress={() => handleFilterChange('saved')}
+              >
+                <Bookmark
+                  size={13}
+                  color={
+                    filterStatus === 'saved'
+                      ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                      : colors.textMuted
+                  }
+                  fill={filterStatus === 'saved' ? (theme === 'green' ? '#003E37' : '#FFFFFF') : 'none'}
+                  strokeWidth={2.4}
+                />
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    {
+                      color:
+                        filterStatus === 'saved'
+                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          : colors.textPrimary,
+                    },
+                  ]}
+                >
+                  Të Ruajturat
+                </Text>
+                <View
+                  style={[
+                    styles.counterBadge,
+                    {
+                      backgroundColor:
+                        filterStatus === 'saved'
+                          ? theme === 'green' ? 'rgba(0,62,55,0.25)' : 'rgba(255,255,255,0.25)'
+                          : colors.surfaceSubtle,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.counterBadgeText,
+                      {
+                        color:
+                          filterStatus === 'saved'
+                            ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                            : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {savedCount}
+                  </Text>
+                </View>
+              </Pressable>
             </ScrollView>
           </View>
 
@@ -584,6 +719,50 @@ export default function ShpalljetEMiaScreen() {
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                   Po ngarkojmë shpalljet tuaja...
                 </Text>
+              </View>
+            ) : filterStatus === 'saved' && loadingSaved ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                  Po ngarkojmë pronat e ruajtura...
+                </Text>
+              </View>
+            ) : filterStatus === 'saved' && filteredListings.length === 0 ? (
+              <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+                <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
+                  <Bookmark size={38} color={colors.primary} strokeWidth={2.2} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                  Nuk keni prona të ruajtura
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                  Shtypni zemrën në çdo pronë për ta ruajtur këtu dhe për ta gjetur shpejt më vonë.
+                </Text>
+                <Pressable
+                  style={[
+                    styles.emptyPostBtn,
+                    { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                  ]}
+                  onPress={() => {
+                    playTapSound()
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    router.push('/(tabs)/listings' as any)
+                  }}
+                >
+                  <Building2
+                    size={17}
+                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    strokeWidth={2.6}
+                  />
+                  <Text
+                    style={[
+                      styles.emptyPostBtnText,
+                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                    ]}
+                  >
+                    Eksploro Pronat
+                  </Text>
+                </Pressable>
               </View>
             ) : filteredListings.length === 0 ? (
               <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
@@ -626,6 +805,127 @@ export default function ShpalljetEMiaScreen() {
                   </Text>
                 </Pressable>
               </View>
+            ) : filterStatus === 'saved' ? (
+              savedListings.map((item) => {
+                const mainImage =
+                  item.images && item.images.length > 0
+                    ? item.images[0]
+                    : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+
+                return (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.listingCard,
+                      { backgroundColor: colors.surface, borderColor: specularBorder },
+                    ]}
+                  >
+                    {/* Cover */}
+                    <Pressable
+                      style={styles.cardCover}
+                      onPress={() => router.push(`/listings/${item.id}` as any)}
+                    >
+                      <Image
+                        source={{ uri: mainImage }}
+                        style={styles.coverImage}
+                        contentFit="cover"
+                        transition={200}
+                      />
+
+                      <View style={styles.coverBadgesRow}>
+                        <View
+                          style={[
+                            styles.typePill,
+                            {
+                              backgroundColor:
+                                item.type === 'shitje'
+                                  ? 'rgba(0, 100, 89, 0.88)'
+                                  : 'rgba(217, 119, 6, 0.88)',
+                            },
+                          ]}
+                        >
+                          <Text style={styles.typePillText}>
+                            {item.type === 'shitje' ? 'Shitje' : 'Me Qira'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Price Strip Bottom Glass */}
+                      <View style={styles.coverPriceGlass}>
+                        <BlurView
+                          intensity={Platform.OS === 'ios' ? 85 : 100}
+                          tint="dark"
+                          style={StyleSheet.absoluteFill}
+                        />
+                        <Text style={styles.coverPriceText}>{formatPrice(item.price)}</Text>
+                      </View>
+                    </Pressable>
+
+                    {/* Info */}
+                    <View style={styles.cardBody}>
+                      <Pressable onPress={() => router.push(`/listings/${item.id}` as any)}>
+                        <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                          {item.title}
+                        </Text>
+                      </Pressable>
+
+                      <View style={styles.cardLocationRow}>
+                        <MapPin size={14} color={colors.primary} strokeWidth={2.2} />
+                        <Text style={[styles.cardLocationText, { color: colors.textSecondary }]} numberOfLines={1}>
+                          {item.city} {item.neighborhood ? `• ${item.neighborhood}` : ''}
+                        </Text>
+                      </View>
+
+                      <View style={styles.cardFeaturesRow}>
+                        {item.rooms ? (
+                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
+                            <BedDouble size={14} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                              {item.rooms} dhoma
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {item.area_m2 ? (
+                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
+                            <Maximize2 size={13} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                              {item.area_m2} m²
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+
+                    {/* Actions: Unsave + View */}
+                    <View style={[styles.cardActionGrid, { borderTopColor: specularBorder }]}>
+                      <Pressable
+                        style={[
+                          styles.actionBtn,
+                          {
+                            backgroundColor:
+                              theme === 'white' ? '#FEF2F2' : 'rgba(239, 68, 68, 0.12)',
+                          },
+                        ]}
+                        onPress={() => handleUnsave(item)}
+                      >
+                        <HeartOff size={15} color="#EF4444" strokeWidth={2.2} />
+                        <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>
+                          Hiq nga Të Ruajturat
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={[styles.actionSquareBtn, { backgroundColor: colors.surfaceSubtle }]}
+                        onPress={() => router.push(`/listings/${item.id}` as any)}
+                        hitSlop={6}
+                      >
+                        <Eye size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                      </Pressable>
+                    </View>
+                  </View>
+                )
+              })
             ) : (
               filteredListings.map((item) => {
                 const isBusy = actionBusyId === item.id

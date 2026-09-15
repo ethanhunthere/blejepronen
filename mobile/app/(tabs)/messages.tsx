@@ -31,6 +31,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { createSafeChannel } from '@/lib/realtime'
 import { getAvatarUri } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound } from '@/lib/sound'
@@ -177,27 +178,31 @@ export default function MessagesScreen() {
       loadConversations()
     })
 
-    const channel = supabase
-      .channel('conversations_list_watch')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages' },
-        () => {
-          loadConversations()
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'conversations' },
-        () => {
-          loadConversations()
-        }
-      )
-      .subscribe()
+    let channel: ReturnType<typeof createSafeChannel> | null = null
+    try {
+      channel = createSafeChannel('conversations_list_watch')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'messages' },
+          () => {
+            loadConversations()
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'conversations' },
+          () => {
+            loadConversations()
+          }
+        )
+        .subscribe()
+    } catch (err) {
+      console.warn('Conversations realtime notice:', err)
+    }
 
     return () => {
       authListener.subscription.unsubscribe()
-      supabase.removeChannel(channel)
+      if (channel) supabase.removeChannel(channel)
     }
   }, [loadConversations])
 

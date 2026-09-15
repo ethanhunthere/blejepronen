@@ -36,6 +36,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
+import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
@@ -372,6 +373,7 @@ export default function ListingsScreen() {
 
   useEffect(() => {
     fetchListings()
+    fetchFavoriteIds().then(setFavorites)
   }, [fetchListings])
 
   const onRefresh = async () => {
@@ -382,6 +384,7 @@ export default function ListingsScreen() {
     const startTime = Date.now()
 
     await fetchListings(true)
+    fetchFavoriteIds().then(setFavorites)
 
     // Optimized snappy UX duration: 650ms for responsive, crisp refresh
     const elapsed = Date.now() - startTime
@@ -395,8 +398,16 @@ export default function ListingsScreen() {
     }
   }
 
-  const handleToggleFavorite = (id: string) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
+  const handleToggleFavorite = async (id: string) => {
+    const wasFavorite = !!favorites[id]
+    // Optimistic UI update first — instant heart feedback
+    setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
+
+    const ok = await persistFavoriteToggle(id, wasFavorite)
+    if (!ok) {
+      // Revert on failure (offline, guest, etc.)
+      setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
+    }
   }
 
   const resetFilters = () => {

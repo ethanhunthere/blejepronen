@@ -34,7 +34,6 @@ import {
   Leaf,
   Moon,
   Trash2,
-  TrendingUp,
   UserCheck,
   UserCog,
   PlusCircle,
@@ -46,6 +45,8 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  Mail,
+  Phone,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
@@ -60,10 +61,16 @@ export default function ProfileScreen() {
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
 
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [dbProfile, setDbProfile] = useState<any>(null)
+  // SINGLE atomic state — user + profile always set together to prevent
+  // any intermediate render where a Google avatar could flash before the DB
+  // avatar loads. This is the root-cause fix for the avatar flash.
+  const [authState, setAuthState] = useState<{ user: any; profile: any } | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+
+  // Derived accessors (kept as getters so the rest of the file needs minimal changes)
+  const currentUser = authState?.user || null
+  const dbProfile = authState?.profile || null
 
   // Avatar Quick Picker Modal
   const [avatarModalVisible, setAvatarModalVisible] = useState(false)
@@ -77,42 +84,56 @@ export default function ProfileScreen() {
   const [resendCooldown, setResendCooldown] = useState(0)
   const resendTimerRef = useRef<any>(null)
 
-  const fetchUserProfile = async (user: any) => {
-    if (!user) {
-      setDbProfile(null)
-      return
-    }
+    // Fetch the DB profile row for the given user
+  const fetchProfile = async (user: any): Promise<any> => {
+    if (!user) return null
     try {
       const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle()
-      if (data) {
-        setDbProfile(data)
-      }
+      return data || null
     } catch (e) {
       console.warn('Fetch user profile record notice:', e)
+      return null
     }
   }
 
+  // Set BOTH user and profile in a single state update — atomic, so no
+  // intermediate render ever shows a Google avatar before the DB one loads.
+  const setAuthAndProfile = (user: any, profile: any) => {
+    setAuthState(user ? { user, profile } : null)
+  }
+
   const checkSession = useCallback(async () => {
+    // Capture the LAST KNOWN user so we can avoid clearing it during
+    // AsyncStorage read latency (this is what causes the flash)
+    const prevUser = authState?.user
+
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setCurrentUser(user || null)
+      // getSession() reads from persisted AsyncStorage — fastest path
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user || null
+
       if (user) {
-        await fetchUserProfile(user)
-      } else {
-        setDbProfile(null)
+        const profile = await fetchProfile(user)
+        setAuthAndProfile(user, profile)
+      } else if (!prevUser) {
+        // Truly logged out (no session + never had a user)
+        setAuthState(null)
       }
+      // KEY FIX: if prevUser exists but session is null here, DO NOTHING —
+      // keep showing the previous user while AsyncStorage read completes.
+      // The onAuthStateChange listener will fire with a real change if
+      // the session was actually cleared (logout).
     } catch (err) {
       console.warn('Session check notice:', err)
+      // On error, keep existing state — no flash
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [authState?.user])
 
   // Auto-refresh profile and avatar every time screen gains focus
   useFocusEffect(
@@ -127,11 +148,12 @@ export default function ProfileScreen() {
     // Real-time auth listener for instant synchronization
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user || null
-      setCurrentUser(u)
+      // Fetch profile BEFORE setting state — atomic update, no avatar flash
       if (u) {
-        await fetchUserProfile(u)
+        const profile = await fetchProfile(u)
+        setAuthAndProfile(u, profile)
       } else {
-        setDbProfile(null)
+        setAuthState(null)
       }
     })
 
@@ -141,7 +163,7 @@ export default function ProfileScreen() {
     }
   }, [checkSession])
 
-  // Instant 1-tap quick avatar changer
+    // Instant 1-tap quick avatar changer
   const handleSelectAvatarQuick = async (newAvatarUrl: string) => {
     if (!currentUser) return
     playSuccessSound()
@@ -150,12 +172,14 @@ export default function ProfileScreen() {
     }
     setUpdatingAvatar(true)
 
-    // Immediate optimistic UI update
-    setDbProfile((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }))
-    setCurrentUser((prev: any) => ({
-      ...prev,
-      user_metadata: { ...prev?.user_metadata, avatar_url: newAvatarUrl },
-    }))
+    // Immediate optimistic UI update — atomic, prevents avatar flash
+    setAuthState((prev) => {
+      if (!prev) return prev
+      return {
+        user: { ...prev.user, user_metadata: { ...prev.user?.user_metadata, avatar_url: newAvatarUrl } },
+        profile: { ...prev.profile, avatar_url: newAvatarUrl },
+      }
+    })
     setAvatarModalVisible(false)
 
     try {
@@ -207,11 +231,15 @@ export default function ProfileScreen() {
       await supabase.from('profiles').update({ email_verified: true }).eq('id', currentUser.id)
       await supabase.auth.updateUser({ data: { email_verified: true } })
 
-      setDbProfile((prev: any) => ({ ...prev, email_verified: true }))
-      setCurrentUser((prev: any) => ({
-        ...prev,
-        user_metadata: { ...prev?.user_metadata, email_verified: true },
-      }))
+      setAuthState((prev) => {
+        if (!prev) return prev
+        const updatedProfile = { ...prev.profile, email_verified: true }
+        const updatedUser = {
+          ...prev.user,
+          user_metadata: { ...prev.user?.user_metadata, email_verified: true },
+        }
+        return { user: updatedUser, profile: updatedProfile }
+      })
 
       playSuccessSound()
       if (Platform.OS !== 'web') {
@@ -282,8 +310,7 @@ export default function ProfileScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
           }
           await supabase.auth.signOut()
-          setCurrentUser(null)
-          setDbProfile(null)
+          setAuthState(null)
           showBanner({
             type: 'logout',
             title: 'Mirupafshim!',
@@ -326,8 +353,7 @@ export default function ProfileScreen() {
               }
 
               await supabase.auth.signOut()
-              setCurrentUser(null)
-              setDbProfile(null)
+              setAuthState(null)
               showBanner({
                 type: 'delete',
                 title: 'Llogaria u Fshi',
@@ -356,23 +382,36 @@ export default function ProfileScreen() {
     setTheme(selectedTheme)
   }
 
-  const isCompany =
+    const isCompany =
+    dbProfile?.account_type === 'company' ||
     currentUser?.user_metadata?.account_type === 'company' ||
     currentUser?.user_metadata?.is_company === true ||
-    Boolean(currentUser?.user_metadata?.company_name)
+    !!currentUser?.user_metadata?.company_name
 
   const companyName =
+    dbProfile?.company_name ||
     currentUser?.user_metadata?.company_name ||
-    (isCompany ? dbProfile?.first_name : '')
+    ''
 
   const isGoogle = currentUser?.app_metadata?.provider === 'google'
-  const isVerified = Boolean(
+
+  // A user is "verified" only when their email has been confirmed AND their
+  // profile is fully complete (first_name, last_name, phone; plus
+  // company_name for business accounts). Google users start with a confirmed
+  // email, but still need to fill out their name and phone to be verified.
+  const emailConfirmed = Boolean(
     dbProfile?.email_verified === true ||
-    currentUser?.email_confirmed_at ||
-    currentUser?.confirmed_at ||
-    currentUser?.user_metadata?.email_verified === true ||
-    isGoogle
+      currentUser?.email_confirmed_at ||
+      currentUser?.confirmed_at ||
+      currentUser?.user_metadata?.email_verified === true
   )
+  const isProfileComplete = Boolean(
+    dbProfile?.first_name &&
+      dbProfile?.last_name &&
+      dbProfile?.phone &&
+      (isCompany ? dbProfile?.company_name : true)
+  )
+  const isVerified = emailConfirmed && isProfileComplete
 
   const primaryBtnText =
     theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
@@ -396,6 +435,62 @@ export default function ProfileScreen() {
   const isOnboardingDone =
     currentUser?.user_metadata?.onboarding_completed === true ||
     (dbProfile?.first_name && dbProfile?.email_verified)
+
+  // ─── Verification Center ──────────────────────────────────────────────
+  // Users who skipped verification at signup complete each trust step
+  // here later: Email, Identity (or Business details) and Phone.
+  const vcMeta = (currentUser?.user_metadata || {}) as Record<string, any>
+  const vcEmailDone = isVerified
+  const vcIdentityDone = isCompany
+    ? Boolean(
+        (vcMeta.contact_person ||
+          (dbProfile?.last_name && dbProfile.last_name !== 'Kompani')) &&
+          vcMeta.nipt
+      )
+    : Boolean(
+        (dbProfile?.first_name && dbProfile?.last_name) ||
+          (vcMeta.first_name && vcMeta.last_name)
+      )
+  const vcPhoneDone = Boolean(
+    dbProfile?.phone || vcMeta.phone || vcMeta.company_phone || vcMeta.individual_phone
+  )
+
+  const vcRows = [
+    {
+      key: 'email',
+      icon: Mail,
+      title: 'Adresa Email',
+      desc: isCompany
+        ? 'Verifikoni email-in zyrtar të biznesit'
+        : 'Konfirmoni që email-i juaj është i vërtetë',
+      done: vcEmailDone,
+      cta: 'Verifiko',
+      action: () => setVerifyModalVisible(true),
+    },
+    {
+      key: 'identity',
+      icon: isCompany ? Building2 : UserCheck,
+      title: isCompany ? 'Të Dhënat e Biznesit' : 'Emri & Mbiemri',
+      desc: isCompany
+        ? 'Personi kontaktues dhe numri NIPT / NUI'
+        : 'Identiteti zyrtar para blerësve dhe shitësve',
+      done: vcIdentityDone,
+      cta: 'Plotëso',
+      action: () => router.push('/completo-profilin' as any),
+    },
+    {
+      key: 'phone',
+      icon: Phone,
+      title: isCompany ? 'Telefoni i Biznesit' : 'Numri i Telefonit',
+      desc: 'Blerësit mund të kontaktojnë drejtpërdrejt dhe me siguri',
+      done: vcPhoneDone,
+      cta: 'Plotëso',
+      action: () => router.push('/completo-profilin' as any),
+    },
+  ]
+  const vcDoneCount = vcRows.filter((row) => row.done).length
+  const vcAllDone = vcDoneCount === vcRows.length
+  const vcProgress = Math.round((vcDoneCount / vcRows.length) * 100)
 
   const displayName = isCompany
     ? (companyName || currentUser?.user_metadata?.first_name || 'Agjenci Imobiliare')
@@ -631,141 +726,186 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Unverified Account Apple Live Activity Frosted Glass Banner */}
-        {currentUser && !isVerified && (
+        {/* âââ Verification Center: Apple Settings-Grade Trust Checklist âââ */}
+        {currentUser && !vcAllDone && (
           <View
             style={[
-              styles.unverifiedCard,
-              {
-                backgroundColor:
-                  theme === 'white'
-                    ? '#FFFBEB'
-                    : theme === 'green'
-                    ? 'rgba(245, 158, 11, 0.10)'
-                    : 'rgba(245, 158, 11, 0.08)',
-                borderColor:
-                  theme === 'white'
-                    ? '#FDE68A'
-                    : 'rgba(245, 158, 11, 0.32)',
-              },
+              styles.vcCard,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
             ]}
           >
-            <View style={styles.unverifiedCardTop}>
+            {/* Header */}
+            <View style={styles.vcHeader}>
               <View
                 style={[
-                  styles.unverifiedMiniPill,
+                  styles.vcHeaderIcon,
                   {
                     backgroundColor:
-                      theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.18)',
+                      theme === 'green'
+                        ? 'rgba(200, 184, 130, 0.18)'
+                        : colors.primaryLight,
                   },
                 ]}
               >
-                <ShieldAlert size={13} color="#F59E0B" strokeWidth={2.5} />
-                <Text style={styles.unverifiedMiniPillText}>Llogari e Paverifikuar</Text>
+                <ShieldCheck
+                  size={19}
+                  color={theme === 'green' ? colors.gold : colors.primary}
+                  strokeWidth={2.4}
+                />
               </View>
 
-              <View style={styles.actionRequiredPill}>
-                <Text style={styles.actionRequiredPillText}>Veprim i Kërkuar</Text>
-              </View>
-            </View>
-
-            <Text style={[styles.unverifiedHeadline, { color: colors.textPrimary }]}>
-              Verifikoni Llogarinë Tuaj
-            </Text>
-            <Text style={[styles.unverifiedSub, { color: colors.textSecondary }]}>
-              Përfitoni distinktivin zyrtar të besueshmërisë, prioritet në kërkime dhe deri në 3x më shumë interesim nga blerësit seriozë.
-            </Text>
-
-            <View style={styles.chipsRow}>
-              <View
-                style={[
-                  styles.valueChip,
-                  {
-                    backgroundColor:
-                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
-                    borderColor:
-                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
-                  },
-                ]}
-              >
-                <ShieldCheck size={13} color="#10B981" strokeWidth={2.4} />
-                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
-                  Distinktiv Zyrtar
+              <View style={styles.vcHeaderText}>
+                <Text style={[styles.vcTitle, { color: colors.textPrimary }]}>
+                  Qendra e Verifikimit
+                </Text>
+                <Text style={[styles.vcSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
+                  {isCompany
+                    ? 'PlotÃ«soni hapat pÃ«r statusin Â«Agjenci e VerifikuarÂ»'
+                    : 'PlotÃ«soni hapat pÃ«r statusin Â«Profil i VerifikuarÂ»'}
                 </Text>
               </View>
 
               <View
                 style={[
-                  styles.valueChip,
+                  styles.vcCountPill,
                   {
                     backgroundColor:
-                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
-                    borderColor:
-                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
+                      theme === 'white'
+                        ? 'rgba(0, 100, 89, 0.08)'
+                        : 'rgba(255, 255, 255, 0.08)',
                   },
                 ]}
               >
-                <TrendingUp size={13} color="#F59E0B" strokeWidth={2.4} />
-                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
-                  Prioritet në Kërkim
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.valueChip,
-                  {
-                    backgroundColor:
-                      theme === 'white' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.06)',
-                    borderColor:
-                      theme === 'white' ? '#FEEBC8' : 'rgba(245, 158, 11, 0.20)',
-                  },
-                ]}
-              >
-                <CheckCircle2 size={13} color="#3B82F6" strokeWidth={2.4} />
-                <Text style={[styles.valueChipText, { color: colors.textPrimary }]}>
-                  Besueshmëri 3x
+                <Text
+                  style={[
+                    styles.vcCountText,
+                    { color: theme === 'green' ? colors.gold : colors.primary },
+                  ]}
+                >
+                  {vcDoneCount}/{vcRows.length}
                 </Text>
               </View>
             </View>
 
-            <Pressable
+            {/* Progress Bar */}
+            <View
               style={[
-                styles.unverifiedCtaBtn,
+                styles.vcProgressTrack,
                 {
                   backgroundColor:
-                    theme === 'green' ? colors.gold : colors.primary,
+                    theme === 'white'
+                      ? 'rgba(0, 0, 0, 0.06)'
+                      : 'rgba(255, 255, 255, 0.08)',
                 },
               ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
-                setVerifyModalVisible(true)
-              }}
             >
-              <ShieldCheck
-                size={16}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                strokeWidth={2.4}
-              />
-              <Text
+              <View
                 style={[
-                  styles.unverifiedCtaBtnText,
-                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                  styles.vcProgressFill,
+                  {
+                    width: `${vcProgress}%`,
+                    backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                  },
                 ]}
-              >
-                Verifiko Llogarinë Tani
-              </Text>
-              <ArrowRight
-                size={15}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                strokeWidth={2.4}
               />
-            </Pressable>
+            </View>
+
+            {/* Trust Step Rows */}
+            {vcRows.map((row, idx) => (
+              <React.Fragment key={row.key}>
+                {idx > 0 && (
+                  <View style={[styles.vcDivider, { backgroundColor: colors.borderSubtle }]} />
+                )}
+                <Pressable
+                  style={styles.vcRow}
+                  onPress={() => {
+                    if (row.done) return
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    row.action()
+                  }}
+                  disabled={row.done}
+                >
+                  <View
+                    style={[
+                      styles.vcRowIcon,
+                      {
+                        backgroundColor: row.done
+                          ? theme === 'white'
+                            ? '#DCFCE7'
+                            : 'rgba(16, 185, 129, 0.16)'
+                          : theme === 'white'
+                          ? '#FEF3C7'
+                          : 'rgba(245, 158, 11, 0.14)',
+                      },
+                    ]}
+                  >
+                    {row.done ? (
+                      <CheckCircle2 size={16} color="#10B981" strokeWidth={2.4} />
+                    ) : (
+                      <row.icon size={16} color="#F59E0B" strokeWidth={2.4} />
+                    )}
+                  </View>
+
+                  <View style={styles.vcRowText}>
+                    <Text
+                      style={[styles.vcRowTitle, { color: colors.textPrimary }]}
+                      numberOfLines={1}
+                    >
+                      {row.title}
+                    </Text>
+                    <Text
+                      style={[styles.vcRowDesc, { color: colors.textMuted }]}
+                      numberOfLines={1}
+                    >
+                      {row.desc}
+                    </Text>
+                  </View>
+
+                  {row.done ? (
+                    <View
+                      style={[
+                        styles.vcDonePill,
+                        {
+                          backgroundColor:
+                            theme === 'white' ? '#DCFCE7' : 'rgba(16, 185, 129, 0.16)',
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.vcDonePillText, { color: '#10B981' }]}>
+                        E kryer
+                      </Text>
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.vcTodoPill,
+                        {
+                          backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.vcTodoPillText,
+                          { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                        ]}
+                      >
+                        {row.cta}
+                      </Text>
+                      <ChevronRight
+                        size={12}
+                        color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                        strokeWidth={2.8}
+                      />
+                    </View>
+                  )}
+                </Pressable>
+              </React.Fragment>
+            ))}
           </View>
         )}
-
         {/* Verified Account VIP Trust Card */}
-        {currentUser && isVerified && (
+        {currentUser && vcAllDone && (
           <View
             style={[
               styles.verifiedCard,
@@ -809,68 +949,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Incomplete Profile Callout Banner (if verified but missing details) */}
-        {currentUser && isVerified && !isOnboardingDone && (
-          <Pressable
-            style={[
-              styles.onboardingBanner,
-              {
-                backgroundColor: colors.surface,
-                borderColor: theme === 'green' ? colors.gold : colors.primary,
-              },
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              router.push('/completo-profilin' as any)
-            }}
-          >
-            <View
-              style={[
-                styles.onboardingIconBox,
-                {
-                  backgroundColor:
-                    theme === 'green' ? 'rgba(200, 184, 130, 0.2)' : colors.primaryLight,
-                },
-              ]}
-            >
-              <UserCheck
-                size={20}
-                color={theme === 'green' ? colors.gold : colors.primary}
-                strokeWidth={2.4}
-              />
-            </View>
-
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[styles.onboardingTitle, { color: colors.textPrimary }]}>
-                Plotësoni Profilin Tuaj
-              </Text>
-              <Text style={[styles.onboardingSubtitle, { color: colors.textMuted }]}>
-                Zgjidhni telefonin, qytetin dhe biografinë tuaj për profil të plotë.
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.onboardingActionPill,
-                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.onboardingActionPillText,
-                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
-                ]}
-              >
-                Plotëso
-              </Text>
-              <ChevronRight
-                size={14}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                strokeWidth={2.6}
-              />
-            </View>
-          </Pressable>
-        )}
 
         {/* Quick Shortcut Tiles */}
         <View style={styles.quickTilesGrid}>
@@ -1033,10 +1111,12 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.menuTextContainer}>
                 <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
-                  Plotëso & Ndrysho Profilin
+                  {isVerified ? 'Ndrysho Profilin' : 'Plotëso & Ndrysho Profilin'}
                 </Text>
                 <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                  Zgjidh avataron, të dhënat e kontaktit dhe informacionin e biznesit
+                  {isVerified
+                    ? 'Ndrysho avatarin, ndrysho tipin e llogarisë ose të dhënat e kontaktit'
+                    : 'Zgjidh avataron, të dhënat e kontaktit dhe informacionin e biznesit'}
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.textLight} />
@@ -1069,11 +1149,19 @@ export default function ProfileScreen() {
               </Text>
             </View>
             <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
+                    </Pressable>
 
           <Pressable
             style={[styles.menuItem, styles.menuItemBorderTop, { borderTopColor: specularBorder }]}
-            onPress={() => router.push('/listings' as any)}
+            onPress={() => {
+              if (!currentUser) {
+                openAuthModal('login')
+                            } else {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                console.log('[Profile] Navigating to shpalljet-e-mia with filter=saved')
+                router.push({ pathname: '/shpalljet-e-mia', query: { filter: 'saved' } } as any)
+              }
+            }}
           >
             <View style={[styles.menuIconContainer, { backgroundColor: colors.surfaceSubtle }]}>
               <Heart size={18} color="#EF4444" strokeWidth={2.2} />
@@ -2405,5 +2493,108 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     flex: 1,
     marginHorizontal: 8,
+  },
+  // ─── Verification Center (Apple Settings-Grade) ───
+  vcCard: {
+    borderRadius: 20,
+    borderWidth: 0.5,
+    padding: 16,
+    gap: 14,
+  },
+  vcHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  vcHeaderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vcHeaderText: {
+    flex: 1,
+    gap: 1,
+  },
+  vcTitle: {
+    fontSize: 15.5,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
+  vcSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+  },
+  vcCountPill: {
+    minWidth: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vcCountText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.extraBold,
+  },
+  vcProgressTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  vcProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  vcDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 52,
+  },
+  vcRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  vcRowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vcRowText: {
+    flex: 1,
+    gap: 1,
+  },
+  vcRowTitle: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  vcRowDesc: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+  },
+  vcDonePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 11,
+  },
+  vcDonePillText: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+  },
+  vcTodoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 11,
+  },
+  vcTodoPillText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.bold,
   },
 })
