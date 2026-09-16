@@ -74,6 +74,8 @@ export default function MessagesScreen() {
     avatar?: string | null
     phone?: string | null
     listingTitle?: string | null
+    userId?: string | null
+    conversationId?: string | null
   }>({
     visible: false,
     name: '',
@@ -281,6 +283,8 @@ export default function MessagesScreen() {
       avatar: item.counterpart_avatar,
       phone: item.counterpart_phone,
       listingTitle: item.listing_title,
+      userId: item.counterpart_id ?? null,
+      conversationId: item.id,
     })
   }
 
@@ -835,6 +839,8 @@ export default function MessagesScreen() {
         counterpartAvatar={contactSheet.avatar}
         counterpartPhone={contactSheet.phone}
         listingTitle={contactSheet.listingTitle}
+        counterpartUserId={contactSheet.userId}
+        conversationId={contactSheet.conversationId}
       />
     </SafeAreaView>
   )

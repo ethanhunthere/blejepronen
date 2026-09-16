@@ -24,6 +24,8 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { getAvatarUri } from '@/lib/avatars'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
+import { callEngine } from '@/lib/calling'
+import { PhoneCall } from 'lucide-react-native'
 
 export interface CallModalProps {
   visible: boolean
@@ -33,6 +35,11 @@ export interface CallModalProps {
   counterpartPhone?: string | null
   listingTitle?: string | null
   initialCallType?: 'audio' | 'video'
+  /** Enables the free in-app call option (WebRTC) when known */
+  counterpartUserId?: string | null
+  conversationId?: string | null
+  /** Whether the current user is signed in (in-app calls need auth) */
+  isSignedIn?: boolean
 }
 
 export function CallModal({
@@ -42,6 +49,9 @@ export function CallModal({
   counterpartAvatar,
   counterpartPhone,
   listingTitle,
+  counterpartUserId,
+  conversationId,
+  isSignedIn = true,
 }: CallModalProps) {
   const { colors, theme } = useTheme()
 
@@ -52,6 +62,19 @@ export function CallModal({
 
   const cleanPhone = counterpartPhone ? counterpartPhone.replace(/\s+/g, '') : null
   const cleanPhoneDigits = counterpartPhone ? counterpartPhone.replace(/\D/g, '') : null
+
+  const handleInAppCall = () => {
+    if (!counterpartUserId) return
+    playTapSound()
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    void callEngine.startCall({
+      userId: counterpartUserId,
+      name: counterpartName,
+      avatarUrl: counterpartAvatar ?? null,
+      conversationId: conversationId ?? null,
+    })
+    onClose()
+  }
 
   const handleCellularCall = () => {
     if (!cleanPhone) return
@@ -171,6 +194,38 @@ export function CallModal({
               </Text>
             ) : null}
           </View>
+
+          {/* Free In-App Call — primary action (works even without a public phone number) */}
+          {counterpartUserId && Platform.OS !== 'web' && (
+            <Pressable
+              style={[
+                styles.appCallBtn,
+                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+              ]}
+              onPress={handleInAppCall}
+            >
+              <PhoneCall
+                size={19}
+                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                strokeWidth={2.4}
+              />
+              <View style={styles.appCallTextWrap}>
+                <Text
+                  style={[
+                    styles.appCallLabel,
+                    { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                  ]}
+                >
+                  Thirr në aplikacion
+                </Text>
+                <Text
+                  style={[styles.appCallSub, { color: theme === 'green' ? 'rgba(0,62,55,0.7)' : 'rgba(255,255,255,0.75)' }]}
+                >
+                  Falas · Brenda Bleje Pronën
+                </Text>
+              </View>
+            </Pressable>
+          )}
 
           {/* Action Grid (Apple iOS 18 Contact Card Actions) */}
           {cleanPhone ? (
@@ -302,6 +357,28 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 4,
+  },
+  appCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+  },
+  appCallTextWrap: {
+    flex: 1,
+    gap: 1,
+  },
+  appCallLabel: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  appCallSub: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0,
   },
   topRow: {
     flexDirection: 'row',

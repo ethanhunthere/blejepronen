@@ -8,27 +8,52 @@ const SUPABASE_ANON_KEY =
 
 const memoryStorage = new Map<string, string>()
 
+/**
+ * Storage adapter for Supabase auth sessions.
+ *
+ * AsyncStorage is the source of truth (persisted on device). The memory map is
+ * only a last-resort fallback so the app keeps working if a read/write blips.
+ *
+ * IMPORTANT: a failed `setItem` would leave the session in memory only — i.e.
+ * the user would appear logged out after the next reload. We therefore retry
+ * the write once before falling back, and log loudly so it is diagnosable.
+ */
 const safeStorage = {
   getItem: async (key: string): Promise<string | null> => {
     try {
       const val = await AsyncStorage.getItem(key)
-      return val !== null ? val : memoryStorage.get(key) || null
-    } catch {
-      return memoryStorage.get(key) || null
+      if (val !== null) return val
+      // AsyncStorage had nothing — only then consider the memory fallback
+      return memoryStorage.get(key) ?? null
+    } catch (e) {
+      console.warn('Secure storage read failed, using memory fallback:', e)
+      return memoryStorage.get(key) ?? null
     }
   },
   setItem: async (key: string, value: string): Promise<void> => {
+    // Always keep a memory copy so nothing breaks mid-session
+    memoryStorage.set(key, value)
     try {
       await AsyncStorage.setItem(key, value)
-    } catch {
-      memoryStorage.set(key, value)
+      return
+    } catch (e) {
+      console.warn('Secure storage write failed, retrying once:', e)
+    }
+    try {
+      await AsyncStorage.setItem(key, value)
+    } catch (e) {
+      console.warn(
+        'Secure storage write FAILED twice — session is memory-only until the next successful write:',
+        e
+      )
     }
   },
   removeItem: async (key: string): Promise<void> => {
+    memoryStorage.delete(key)
     try {
       await AsyncStorage.removeItem(key)
-    } catch {
-      memoryStorage.delete(key)
+    } catch (e) {
+      console.warn('Secure storage remove failed:', e)
     }
   },
 }

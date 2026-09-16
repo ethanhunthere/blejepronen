@@ -15,7 +15,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
 import {
@@ -43,6 +43,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteListings, persistFavoriteToggle } from '@/lib/favorites'
+import { consumeShpalljetFilter, type ShpalljetFilterIntent } from '@/lib/nav-intent'
 import { useBanner } from '@/context/BannerContext'
 import {
   playSuccessSound,
@@ -60,19 +61,9 @@ export default function ShpalljetEMiaScreen() {
   const { showBanner } = useBanner()
 
     // Deep-link support: /shpalljet-e-mia?filter=saved
-  const searchParams = useLocalSearchParams<{ filter?: string}>()
+  const searchParams = useLocalSearchParams<{ filter?: string }>()
   const initialFilter: FilterStatus =
     searchParams.filter === 'saved' ? 'saved' : 'all'
-
-  // Sync filterStatus when navigated to with ?filter=saved (e.g. from Profili "Të Ruajturat")
-  useEffect(() => {
-    const target: FilterStatus = searchParams.filter === 'saved' ? 'saved' : 'all'
-    console.log('[ShpalljetEMia] searchParams.filter =', searchParams.filter, '-> target filter:', target, '| current:', filterStatus)
-    if (target !== filterStatus) {
-      setFilterStatus(target)
-      if (target === 'saved') fetchSavedListings()
-    }
-  }, [searchParams.filter])
 
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -165,6 +156,25 @@ export default function ShpalljetEMiaScreen() {
     // Always refresh saved listings when entering the tab — stay fresh
     if (status === 'saved') fetchSavedListings()
   }
+
+  /**
+   * Apply an explicit navigation intent / deep link whenever this screen gains
+   * focus. This is what makes Profili → "Të Ruajturat" land EXACTLY on the
+   * Të Ruajturat tab, even when this screen instance was already mounted
+   * (React Navigation reuses instances, so mount-time state alone isn't enough).
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const intent = consumeShpalljetFilter()
+      const fromParam: ShpalljetFilterIntent | null =
+        searchParams.filter === 'saved' ? 'saved' : null
+      const target = intent ?? fromParam
+      if (!target) return
+
+      setFilterStatus(target)
+      if (target === 'saved') fetchSavedListings()
+    }, [searchParams.filter, fetchSavedListings])
+  )
 
   // ─── Remove a listing from Të Ruajturat (heart off) ───
   const handleUnsave = async (item: Listing) => {

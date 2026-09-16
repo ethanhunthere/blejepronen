@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { getAvatarUri } from '@/lib/avatars'
+import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -78,6 +79,10 @@ export default function ListingDetailScreen() {
         } else if (data) {
           setListing(data as Listing)
         }
+
+        // Sync the heart with the user's persisted favorites
+        const favs = await fetchFavoriteIds()
+        if (id in favs) setIsFavorite(true)
       } catch (err: any) {
         console.warn('Listing catch:', err?.message || err)
       } finally {
@@ -88,14 +93,24 @@ export default function ListingDetailScreen() {
     fetchDetails()
   }, [id])
 
-  const handleFavoriteToggle = () => {
-    if (isFavorite) {
+  const favPendingRef = useRef(false)
+
+  const handleFavoriteToggle = async () => {
+    if (!listing || favPendingRef.current) return
+    favPendingRef.current = true
+    const wasFavorite = isFavorite
+    if (wasFavorite) {
       playUnlikeSound()
     } else {
       playHeartSound()
     }
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    setIsFavorite(!isFavorite)
+
+    // Optimistic update, revert if the DB write fails (offline/guest)
+    setIsFavorite(!wasFavorite)
+    const ok = await persistFavoriteToggle(listing.id, wasFavorite)
+    if (!ok) setIsFavorite(wasFavorite)
+    favPendingRef.current = false
   }
 
   const seller = listing?.profiles
@@ -256,10 +271,13 @@ export default function ListingDetailScreen() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             onScroll={(e) => {
-              const slide = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH)
-              setActiveImageIdx(slide)
+              const slide = Math.min(
+                imagesList.length - 1,
+                Math.max(0, Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH))
+              )
+              if (slide !== activeImageIdx) setActiveImageIdx(slide)
             }}
-            scrollEventThrottle={16}
+            scrollEventThrottle={32}
           >
             {imagesList.map((img, i) => (
               <Image key={i} source={{ uri: img }} style={styles.galleryImage} contentFit="cover" />

@@ -19,7 +19,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.blejepronen.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.WAKE_LOCK"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -35,7 +42,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#006459"
         }
-      ]
+      ],
+      ["@config-plugins/react-native-webrtc", {
+        "microphonePermission": "Bleje Pronën ju lejon të telefononi direk në aplikacion me shitësin/blerësin (thirrje zanore falas)."
+      }]
     ],
     "experiments": {
       "typedRoutes": true

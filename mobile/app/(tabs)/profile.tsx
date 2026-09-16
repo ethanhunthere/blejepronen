@@ -36,8 +36,6 @@ import {
   Trash2,
   UserCheck,
   UserCog,
-  PlusCircle,
-  MessageSquare,
   Bookmark,
   Edit3,
   X,
@@ -55,6 +53,7 @@ import { useBanner } from '@/context/BannerContext'
 import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { BLEJE_AVATARS, DEFAULT_AVATAR, getAvatarUri } from '@/lib/avatars'
 import { playThemeSound, playSuccessSound, playTapSound } from '@/lib/sound'
+import { requestShpalljetFilter } from '@/lib/nav-intent'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -68,9 +67,22 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
 
+  // Last known user, kept in a ref so the session check can stay stable
+  // (no effect re-subscription churn on every auth change).
+  const prevUserRef = useRef<any>(null)
+
   // Derived accessors (kept as getters so the rest of the file needs minimal changes)
   const currentUser = authState?.user || null
   const dbProfile = authState?.profile || null
+
+  /**
+   * While the FIRST session check is in flight we must NOT render the
+   * logged-out UI. The session lives in AsyncStorage (Supabase persistSession),
+   * so the user IS still logged in — the UI simply doesn't know it yet.
+   * Rendering a skeleton instead of "Kyçu / Regjistrohu" removes the
+   * "it forgot my account" flash entirely (Apple/Instagram-style).
+   */
+  const authResolved = !loading
 
   // Avatar Quick Picker Modal
   const [avatarModalVisible, setAvatarModalVisible] = useState(false)
@@ -102,38 +114,37 @@ export default function ProfileScreen() {
 
   // Set BOTH user and profile in a single state update — atomic, so no
   // intermediate render ever shows a Google avatar before the DB one loads.
-  const setAuthAndProfile = (user: any, profile: any) => {
+  const setAuthAndProfile = useCallback((user: any, profile: any) => {
+    prevUserRef.current = user || null
     setAuthState(user ? { user, profile } : null)
-  }
+  }, [])
 
   const checkSession = useCallback(async () => {
-    // Capture the LAST KNOWN user so we can avoid clearing it during
-    // AsyncStorage read latency (this is what causes the flash)
-    const prevUser = authState?.user
-
     try {
-      // getSession() reads from persisted AsyncStorage — fastest path
-      const { data: { session } } = await supabase.auth.getSession()
+      // getSession() reads the persisted session from AsyncStorage — no network
+      // round-trip, so a slow/offline connection never looks like a logout.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const user = session?.user || null
 
       if (user) {
         const profile = await fetchProfile(user)
         setAuthAndProfile(user, profile)
-      } else if (!prevUser) {
-        // Truly logged out (no session + never had a user)
+      } else if (!prevUserRef.current) {
+        // Truly logged out (no persisted session and we never had a user)
         setAuthState(null)
       }
-      // KEY FIX: if prevUser exists but session is null here, DO NOTHING —
-      // keep showing the previous user while AsyncStorage read completes.
-      // The onAuthStateChange listener will fire with a real change if
-      // the session was actually cleared (logout).
+      // If prevUserRef.current exists but the session is momentarily null,
+      // keep the current UI — onAuthStateChange will report a real SIGNED_OUT.
     } catch (err) {
       console.warn('Session check notice:', err)
-      // On error, keep existing state — no flash
+      // Network/storage hiccup: keep whatever we already have — never log the
+      // user out because of a transient failure.
     } finally {
       setLoading(false)
     }
-  }, [authState?.user])
+  }, [setAuthAndProfile])
 
   // Auto-refresh profile and avatar every time screen gains focus
   useFocusEffect(
@@ -506,10 +517,12 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            {currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
+            {!authResolved ? 'Profili' : currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
           </Text>
           <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            {currentUser
+            {!authResolved
+              ? ' '
+              : currentUser
               ? isCompany
                 ? 'Agjenci / Kompani Imobiliare'
                 : 'Përdorues i regjistruar'
@@ -539,8 +552,37 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Profile Card: Logged In vs Guest */}
-        {currentUser ? (
+        {/* Top Profile Card: Loading Skeleton → Logged In → Guest */}
+        {!authResolved ? (
+          <View
+            style={[
+              styles.profileCard,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+          >
+            <View style={[styles.skeletonAvatar, { backgroundColor: colors.surfaceSubtle }]} />
+            <View style={styles.skeletonTextWrap}>
+              <View
+                style={[
+                  styles.skeletonLine,
+                  { width: '58%', backgroundColor: colors.surfaceSubtle },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonLine,
+                  { width: '36%', height: 9, backgroundColor: colors.surfaceSubtle },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonLine,
+                  { width: '72%', height: 9, marginTop: 2, backgroundColor: colors.surfaceSubtle },
+                ]}
+              />
+            </View>
+          </View>
+        ) : currentUser ? (
           <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             {/* Real Avatar Image with Instant 1-Tap Quick Picker */}
             <Pressable
@@ -760,8 +802,8 @@ export default function ProfileScreen() {
                 </Text>
                 <Text style={[styles.vcSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
                   {isCompany
-                    ? 'PlotÃ«soni hapat pÃ«r statusin Â«Agjenci e VerifikuarÂ»'
-                    : 'PlotÃ«soni hapat pÃ«r statusin Â«Profil i VerifikuarÂ»'}
+                    ? 'Plotësoni hapat për statusin «Agjenci e Verifikuar»'
+                    : 'Plotësoni hapat për statusin «Profil i Verifikuar»'}
                 </Text>
               </View>
 
@@ -959,27 +1001,11 @@ export default function ProfileScreen() {
             ]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
-              router.push('/post' as any)
-            }}
-          >
-            <View style={[styles.quickTileIcon, { backgroundColor: colors.primaryLight }]}>
-              <PlusCircle size={20} color={colors.primary} strokeWidth={2.2} />
-            </View>
-            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
-              Posto Pronë
-            </Text>
-            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Falas</Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.quickTile,
-              { backgroundColor: colors.surface, borderColor: specularBorder },
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
               if (!currentUser) openAuthModal('login')
-              else router.push('/shpalljet-e-mia' as any)
+              else {
+                requestShpalljetFilter('all')
+                router.push('/shpalljet-e-mia' as any)
+              }
             }}
           >
             <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
@@ -999,26 +1025,10 @@ export default function ProfileScreen() {
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               if (!currentUser) openAuthModal('login')
-              else router.push('/messages' as any)
-            }}
-          >
-            <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
-              <MessageSquare size={20} color={colors.primary} strokeWidth={2.2} />
-            </View>
-            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
-              Mesazhet
-            </Text>
-            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Bisedat</Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.quickTile,
-              { backgroundColor: colors.surface, borderColor: specularBorder },
-            ]}
-            onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              router.push('/listings' as any)
+              else {
+                requestShpalljetFilter('saved')
+                router.push({ pathname: '/shpalljet-e-mia', query: { filter: 'saved' } } as any)
+              }
             }}
           >
             <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
@@ -1135,6 +1145,7 @@ export default function ProfileScreen() {
                 openAuthModal('login')
               } else {
                 if (Platform.OS !== 'web') Haptics.selectionAsync()
+                requestShpalljetFilter('all')
                 router.push('/shpalljet-e-mia' as any)
               }
             }}
@@ -1158,7 +1169,7 @@ export default function ProfileScreen() {
                 openAuthModal('login')
                             } else {
                 if (Platform.OS !== 'web') Haptics.selectionAsync()
-                console.log('[Profile] Navigating to shpalljet-e-mia with filter=saved')
+                requestShpalljetFilter('saved')
                 router.push({ pathname: '/shpalljet-e-mia', query: { filter: 'saved' } } as any)
               }
             }}
@@ -1795,6 +1806,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+  },
+  skeletonAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    opacity: 0.7,
+  },
+  skeletonTextWrap: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonLine: {
+    height: 13,
+    borderRadius: 7,
+    opacity: 0.7,
   },
   avatarWrap: {
     width: 64,

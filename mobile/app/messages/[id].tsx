@@ -769,6 +769,8 @@ export default function ChatConversationScreen() {
         counterpartAvatar={otherUser?.avatar_url}
         counterpartPhone={otherUser?.phone}
         listingTitle={listing?.title}
+        counterpartUserId={otherUser?.id ?? null}
+        conversationId={id}
       />
     </SafeAreaView>
   )
