@@ -1805,6 +1805,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerTitle: {
     fontSize: 24,
@@ -1822,6 +1825,9 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     marginBottom: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   searchBar: {
     flex: 1,
@@ -1892,6 +1898,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingBottom: 115,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   centerContainer: {
     paddingVertical: 80,

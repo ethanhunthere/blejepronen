@@ -36,8 +36,6 @@ import { useBanner } from '@/context/BannerContext'
 import { DEFAULT_AVATAR } from '@/lib/avatars'
 import { apiSaveProfileSettings, ProfileSettingsPayload } from '@/lib/api'
 
-const { width } = Dimensions.get('window')
-
 const MAJOR_CITIES = [
   'Prishtinë',
   'Prizren',
@@ -1015,6 +1013,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 60,
     gap: 16,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   loadingCenter: {
     flex: 1,

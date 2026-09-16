@@ -1270,6 +1270,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0.5,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   backBtn: {
     width: 40,
@@ -1354,6 +1357,9 @@ const styles = StyleSheet.create({
   filterBar: {
     borderBottomWidth: 0.5,
     paddingVertical: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   filterPillsContainer: {
     paddingHorizontal: 16,
@@ -1395,6 +1401,9 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 40,
     gap: 16,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   loadingContainer: {
     paddingVertical: 60,

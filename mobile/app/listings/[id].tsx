@@ -10,6 +10,7 @@ import {
   Linking,
   Dimensions,
   Alert,
+  useWindowDimensions,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -38,12 +39,11 @@ import { supabase, Listing } from '@/lib/supabase'
 import { getAvatarUri } from '@/lib/avatars'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const { width: windowWidth } = useWindowDimensions()
 
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [listing, setListing] = useState<Listing | null>(null)
@@ -265,7 +265,7 @@ export default function ListingDetailScreen() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Fullwidth Image Slider */}
-        <View style={styles.galleryContainer}>
+        <View style={[styles.galleryContainer, { width: windowWidth }]}>
           <ScrollView
             horizontal
             pagingEnabled
@@ -273,14 +273,19 @@ export default function ListingDetailScreen() {
             onScroll={(e) => {
               const slide = Math.min(
                 imagesList.length - 1,
-                Math.max(0, Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH))
+                Math.max(0, Math.round(e.nativeEvent.contentOffset.x / windowWidth))
               )
               if (slide !== activeImageIdx) setActiveImageIdx(slide)
             }}
             scrollEventThrottle={32}
           >
             {imagesList.map((img, i) => (
-              <Image key={i} source={{ uri: img }} style={styles.galleryImage} contentFit="cover" />
+              <Image
+                key={i}
+                source={{ uri: img }}
+                style={[styles.galleryImage, { width: windowWidth }]}
+                contentFit="cover"
+              />
             ))}
           </ScrollView>
 
@@ -565,6 +570,8 @@ export default function ListingDetailScreen() {
                         styles.chatActionBtnText,
                         { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       Bisedo
                     </Text>
@@ -575,7 +582,9 @@ export default function ListingDetailScreen() {
               {/* 2. WhatsApp Button */}
               <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp} hitSlop={8}>
                 <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
+                <Text style={styles.whatsAppBtnText} numberOfLines={1} adjustsFontSizeToFit>
+                  WhatsApp
+                </Text>
               </Pressable>
 
               {/* 3. Phone Call Button */}
@@ -597,7 +606,11 @@ export default function ListingDetailScreen() {
                 hitSlop={8}
               >
                 <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.callBtnText, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.callBtnText, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   Telefono
                 </Text>
               </Pressable>
@@ -669,13 +682,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   galleryContainer: {
-    width: SCREEN_WIDTH,
+    width: '100%',
     height: 320,
     position: 'relative',
     backgroundColor: '#0F172A',
   },
   galleryImage: {
-    width: SCREEN_WIDTH,
     height: 320,
   },
   imageCounter: {
@@ -710,6 +722,9 @@ const styles = StyleSheet.create({
   body: {
     padding: 16,
     gap: 16,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerBlock: {
     borderRadius: 20,
@@ -924,6 +939,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     gap: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   chatActionBtn: {
     flex: 1.1,

@@ -205,7 +205,11 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         </View>
 
         {/* Row 2: Listing Title */}
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+        <Text
+          style={[styles.title, { color: colors.textPrimary }]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {listing.title}
         </Text>
 
@@ -449,6 +453,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
+    flexShrink: 1,
   },
   priceValue: {
     fontSize: 22,

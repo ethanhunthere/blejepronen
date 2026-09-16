@@ -993,6 +993,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerTitle: {
     fontSize: 24,
@@ -1011,6 +1014,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
     paddingBottom: 120,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   sectionCard: {
     borderRadius: 22,

@@ -855,6 +855,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 12,
     gap: 12,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -918,6 +921,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingBottom: 115,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   centerContainer: {
     paddingVertical: 80,

@@ -504,6 +504,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 115,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 16,
@@ -512,6 +515,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   searchBarContainer: {
     flexDirection: 'row',

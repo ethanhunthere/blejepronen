@@ -2275,6 +2275,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 12,
     borderBottomWidth: 0.5,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerIconButton: {
     width: 38,
@@ -2316,6 +2319,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 3,
     borderWidth: 0.5,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   tabButton: {
     flex: 1,
@@ -2342,6 +2348,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 100,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   sectionGap: {
     gap: 16,
