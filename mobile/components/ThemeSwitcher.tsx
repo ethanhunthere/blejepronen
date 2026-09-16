@@ -70,6 +70,8 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                 styles.optionLabel,
                 { color: isActive ? colors.chipTextActive : colors.textSecondary },
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
               {m.label}
             </Text>

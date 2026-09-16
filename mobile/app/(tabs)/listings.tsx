@@ -1037,6 +1037,8 @@ export default function ListingsScreen() {
                           { color: isAct ? colors.textPrimary : colors.textMuted },
                           isAct && { fontFamily: Fonts.bold },
                         ]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
                       >
                         {label}
                       </Text>
@@ -1952,6 +1954,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   modalResetHeaderBtn: {
     flexDirection: 'row',
@@ -1996,6 +2001,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 22,
     paddingBottom: 30,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   modalSection: {
     gap: 10,
@@ -2204,6 +2212,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderTopWidth: 1,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.06,
     shadowRadius: 6,
@@ -2277,6 +2288,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    maxWidth: 540,
+    width: '100%',
+    alignSelf: 'center',
     ...Platform.select({
       ios: {
         shadowColor: '#000',

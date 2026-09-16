@@ -348,6 +348,8 @@ export default function MessagesScreen() {
                     fontFamily: activeTab === 'chats' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 Bisedat
               </Text>
@@ -389,6 +391,8 @@ export default function MessagesScreen() {
                     fontFamily: activeTab === 'contacts' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 Kontaktet
               </Text>
@@ -456,7 +460,9 @@ export default function MessagesScreen() {
                 onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
-                <Text style={[styles.loginBtnText, { color: primaryBtnText }]}>Kyçu</Text>
+                <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Kyçu
+                </Text>
               </Pressable>
 
               <Pressable
@@ -467,7 +473,7 @@ export default function MessagesScreen() {
                 onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register' } })}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]}>
+                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
                   Regjistrohu
                 </Text>
               </Pressable>
@@ -1121,6 +1127,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 0.5,
     marginTop: 24,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

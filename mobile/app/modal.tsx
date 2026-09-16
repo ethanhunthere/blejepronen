@@ -829,6 +829,8 @@ export default function AuthModalScreen() {
                       fontFamily: activeTab === 'login' ? Fonts.bold : Fonts.medium,
                     },
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
                   Kyçu
                 </Text>
@@ -865,6 +867,8 @@ export default function AuthModalScreen() {
                       fontFamily: activeTab === 'register' ? Fonts.bold : Fonts.medium,
                     },
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
                   Regjistrohu
                 </Text>
@@ -928,6 +932,8 @@ export default function AuthModalScreen() {
                             accountType === 'individual' ? Fonts.bold : Fonts.medium,
                         },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       Individual
                     </Text>
@@ -963,6 +969,8 @@ export default function AuthModalScreen() {
                           fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
                         },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       Agjenci / Kompani
                     </Text>
@@ -1179,6 +1187,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
   },
   dragHandle: {
     width: 38,

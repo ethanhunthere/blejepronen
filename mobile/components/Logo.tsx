@@ -21,6 +21,8 @@ export function Logo({ size = 36 }: LogoProps) {
       ? require('@/assets/images/logo-teal.png')
       : require('@/assets/images/logo-white.png')
 
+  const fontSize = Math.max(16, Math.round(size * 0.58))
+
   return (
     <View style={styles.container}>
       {/* Official Graphical Brand Logo Emblem - Transparent PNG with No Background */}
@@ -33,8 +35,12 @@ export function Logo({ size = 36 }: LogoProps) {
 
       <View style={styles.textContainer}>
         <View style={styles.brandRow}>
-          <Text style={[styles.brandBleje, { color: blejeColor }]}>Bleje</Text>
-          <Text style={[styles.brandPronen, { color: pronenColor }]}>Pronën</Text>
+          <Text style={[styles.brandBleje, { color: blejeColor, fontSize, lineHeight: fontSize + 3 }]}>
+            Bleje
+          </Text>
+          <Text style={[styles.brandPronen, { color: pronenColor, fontSize, lineHeight: fontSize + 3 }]}>
+            Pronën
+          </Text>
         </View>
       </View>
     </View>

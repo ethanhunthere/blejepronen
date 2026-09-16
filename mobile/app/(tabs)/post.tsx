@@ -510,6 +510,8 @@ export default function PostPropertyScreen() {
                       { color: isSelected ? colors.chipTextActive : colors.textPrimary },
                       isSelected && { fontFamily: Fonts.bold },
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                   >
                     {cat.label}
                   </Text>
@@ -548,6 +550,8 @@ export default function PostPropertyScreen() {
                       { color: isAct ? colors.textPrimary : colors.textMuted },
                       isAct && { fontFamily: Fonts.bold },
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                   >
                     {label}
                   </Text>
@@ -1282,6 +1286,9 @@ const styles = StyleSheet.create({
     padding: 28,
     borderRadius: 24,
     borderWidth: 0.5,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

@@ -787,6 +787,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     gap: 12,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   backBtn: {
     padding: 4,
@@ -833,6 +836,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     gap: 12,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   listingThumb: {
     width: 44,
@@ -889,6 +895,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   emptyMessages: {
     alignItems: 'center',
@@ -969,6 +978,9 @@ const styles = StyleSheet.create({
   quickRepliesContainer: {
     borderTopWidth: 1,
     paddingVertical: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   quickRepliesList: {
     paddingHorizontal: 14,
@@ -991,6 +1003,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     gap: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   attachBtn: {
     width: 38,
@@ -1028,6 +1043,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     gap: 16,
+    maxWidth: 540,
+    width: '100%',
+    alignSelf: 'center',
   },
   sheetHeader: {
     flexDirection: 'row',

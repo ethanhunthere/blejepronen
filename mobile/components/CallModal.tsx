@@ -241,8 +241,12 @@ export function CallModal({
                 <View style={[styles.actionIconCircle, { backgroundColor: '#10B981' }]}>
                   <Phone size={20} color="#FFFFFF" strokeWidth={2.4} />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>Thirr</Text>
-                <Text style={[styles.actionSub, { color: colors.textMuted }]}>Telefonik</Text>
+                <Text style={[styles.actionLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Thirr
+                </Text>
+                <Text style={[styles.actionSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Telefonik
+                </Text>
               </Pressable>
 
               {/* WhatsApp */}
@@ -256,8 +260,12 @@ export function CallModal({
                 <View style={[styles.actionIconCircle, { backgroundColor: '#25D366' }]}>
                   <MessageCircle size={20} color="#FFFFFF" strokeWidth={2.4} />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>WhatsApp</Text>
-                <Text style={[styles.actionSub, { color: colors.textMuted }]}>Bisedo</Text>
+                <Text style={[styles.actionLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+                  WhatsApp
+                </Text>
+                <Text style={[styles.actionSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Bisedo
+                </Text>
               </Pressable>
 
               {/* SMS Message */}
@@ -271,8 +279,12 @@ export function CallModal({
                 <View style={[styles.actionIconCircle, { backgroundColor: '#3B82F6' }]}>
                   <MessageSquare size={20} color="#FFFFFF" strokeWidth={2.4} />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>SMS</Text>
-                <Text style={[styles.actionSub, { color: colors.textMuted }]}>Mesazh</Text>
+                <Text style={[styles.actionLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+                  SMS
+                </Text>
+                <Text style={[styles.actionSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Mesazh
+                </Text>
               </Pressable>
 
               {/* Copy Phone */}
@@ -298,8 +310,12 @@ export function CallModal({
                     strokeWidth={2.4}
                   />
                 </View>
-                <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>Kopjo</Text>
-                <Text style={[styles.actionSub, { color: colors.textMuted }]}>Numrin</Text>
+                <Text style={[styles.actionLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Kopjo
+                </Text>
+                <Text style={[styles.actionSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Numrin
+                </Text>
               </Pressable>
             </View>
           ) : (
@@ -345,6 +361,9 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 38 : 24,
     gap: 16,
+    maxWidth: 540,
+    width: '100%',
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
@@ -445,13 +464,14 @@ const styles = StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
     marginTop: 4,
   },
   actionButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 14,
+    paddingHorizontal: 4,
     borderRadius: 16,
     borderWidth: 1,
     gap: 4,

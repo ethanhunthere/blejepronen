@@ -746,7 +746,9 @@ export default function ProfileScreen() {
                 onPress={() => openAuthModal('login')}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
-                <Text style={[styles.loginBtnText, { color: primaryBtnText }]}>Kyçu</Text>
+                <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit>
+                  Kyçu
+                </Text>
               </Pressable>
 
               <Pressable
@@ -760,7 +762,7 @@ export default function ProfileScreen() {
                 onPress={() => openAuthModal('register')}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]}>
+                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
                   Regjistrohu
                 </Text>
               </Pressable>
@@ -1011,10 +1013,10 @@ export default function ProfileScreen() {
             <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
               <Building2 size={20} color={colors.primary} strokeWidth={2.2} />
             </View>
-            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
               Shpalljet e Mia
             </Text>
-            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Menaxho</Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>Menaxho</Text>
           </Pressable>
 
           <Pressable
@@ -1034,10 +1036,10 @@ export default function ProfileScreen() {
             <View style={[styles.quickTileIcon, { backgroundColor: colors.surfaceSubtle }]}>
               <Heart size={20} color="#EF4444" strokeWidth={2.2} />
             </View>
-            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]}>
+            <Text style={[styles.quickTileLabel, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
               Të Ruajturat
             </Text>
-            <Text style={[styles.quickTileSub, { color: colors.textMuted }]}>Favoritet</Text>
+            <Text style={[styles.quickTileSub, { color: colors.textMuted }]} numberOfLines={1} adjustsFontSizeToFit>Favoritet</Text>
           </Pressable>
         </View>
 
@@ -1759,6 +1761,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerSettingsBtn: {
     width: 40,

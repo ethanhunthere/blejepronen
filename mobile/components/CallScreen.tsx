@@ -193,8 +193,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 84,
+    paddingTop: Platform.OS === 'ios' ? 64 : 44,
     paddingBottom: 28,
+    maxWidth: 540,
+    width: '100%',
+    alignSelf: 'center',
   },
   identity: {
     alignItems: 'center',
@@ -223,6 +226,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     letterSpacing: -0.4,
+    paddingHorizontal: 24,
   },
   status: {
     fontSize: 16,

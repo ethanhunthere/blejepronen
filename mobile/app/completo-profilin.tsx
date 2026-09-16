@@ -449,6 +449,8 @@ export default function CompletoProfilinScreen() {
                     fontFamily: accountType === 'individual' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 Individual
               </Text>
@@ -487,6 +489,8 @@ export default function CompletoProfilinScreen() {
                     fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 Kompani / Agjenci
               </Text>
@@ -1034,6 +1038,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0.5,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   navBackBtn: {
     width: 38,
