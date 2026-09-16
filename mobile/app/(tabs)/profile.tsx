@@ -511,22 +511,40 @@ export default function ProfileScreen() {
         ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
         : 'Përdorues i regjistruar')
 
+  const hour = new Date().getHours()
+  const greetingText =
+    hour >= 5 && hour < 12
+      ? 'Mirëmëngjes'
+      : hour >= 12 && hour < 18
+      ? 'Mirëdita'
+      : 'Mirëmbrëma'
+  const greetingIcon =
+    hour >= 5 && hour < 12
+      ? '☀️'
+      : hour >= 12 && hour < 18
+      ? '🌤️'
+      : '🌙'
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Top Header */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            {!authResolved ? 'Profili' : currentUser ? 'Profili Im' : 'Llogaria & Cilësimet'}
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+          <Text style={[styles.headerGreeting, { color: colors.textMuted }]}>
             {!authResolved
               ? ' '
               : currentUser
-              ? isCompany
-                ? 'Agjenci / Kompani Imobiliare'
-                : 'Përdorues i regjistruar'
-              : 'Mirësevini në Bleje Pronën'}
+              ? `${greetingText} ${greetingIcon}`
+              : 'Mirësevini në Bleje Pronën 🏠'}
+          </Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+            {!authResolved
+              ? 'Profili'
+              : currentUser
+              ? (isCompany
+                  ? companyName || 'Agjenci Imobiliare'
+                  : dbProfile?.first_name || currentUser?.user_metadata?.first_name || 'Profili Im')
+              : 'Llogaria Juaj'}
           </Text>
         </View>
 
@@ -584,160 +602,194 @@ export default function ProfileScreen() {
           </View>
         ) : currentUser ? (
           <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-            {/* Real Avatar Image with Instant 1-Tap Quick Picker */}
-            <Pressable
-              style={[
-                styles.avatarWrap,
-                {
-                  borderColor: isCompany
-                    ? theme === 'green' ? colors.gold : colors.primary
-                    : isVerified
-                    ? '#10B981'
-                    : '#F59E0B',
-                  backgroundColor: colors.surfaceSubtle,
-                },
-              ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
-                setAvatarModalVisible(true)
-              }}
-            >
-              <Image
-                key={`avatar-${avatarUri}-${rawAvatar || ''}`}
-                source={{ uri: avatarUri }}
-                style={styles.avatarImg}
-                contentFit="cover"
-                transition={150}
-              />
-              <View
+            <View style={styles.profileCardTopRow}>
+              {/* Real Avatar Image with Instant 1-Tap Quick Picker */}
+              <Pressable
                 style={[
-                  styles.avatarEditPill,
+                  styles.avatarWrap,
                   {
-                    backgroundColor:
-                      theme === 'green' ? colors.gold : colors.primary,
+                    borderColor: isCompany
+                      ? theme === 'green' ? colors.gold : colors.primary
+                      : isVerified
+                      ? '#10B981'
+                      : '#F59E0B',
+                    backgroundColor: colors.surfaceSubtle,
                   },
                 ]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setAvatarModalVisible(true)
+                }}
               >
-                <Edit3
-                  size={10}
-                  color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                  strokeWidth={2.6}
+                <Image
+                  key={`avatar-${avatarUri}-${rawAvatar || ''}`}
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                  transition={150}
                 />
-              </View>
-            </Pressable>
-
-            {/* Profile Meta Information */}
-            <View style={styles.profileInfo}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {displayName}
-                </Text>
-
-                {/* Professional Status Badges: Verified vs Unverified */}
                 <View
                   style={[
-                    styles.verifiedBadge,
-                    isVerified
-                      ? isCompany
-                        ? {
-                            backgroundColor:
-                              theme === 'white'
-                                ? '#FEF3C7'
-                                : 'rgba(245, 158, 11, 0.20)',
-                            borderColor:
-                              theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
-                          }
-                        : {
-                            backgroundColor:
-                              theme === 'white' ? '#DCFCE7' : 'rgba(16, 185, 129, 0.18)',
-                            borderColor:
-                              theme === 'white' ? '#BBF7D0' : 'rgba(16, 185, 129, 0.35)',
-                          }
-                      : {
-                          backgroundColor:
-                            theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.18)',
-                          borderColor:
-                            theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
-                        },
+                    styles.avatarEditPill,
+                    {
+                      backgroundColor:
+                        theme === 'green' ? colors.gold : colors.primary,
+                    },
                   ]}
                 >
-                  {isCompany ? (
-                    isVerified ? (
+                  <Edit3
+                    size={10}
+                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    strokeWidth={2.6}
+                  />
+                </View>
+              </Pressable>
+
+              {/* Profile Meta Information */}
+              <View style={styles.profileInfo}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {displayName}
+                  </Text>
+
+                  {/* Professional Status Badges: Verified vs Unverified */}
+                  <View
+                    style={[
+                      styles.verifiedBadge,
+                      isVerified
+                        ? isCompany
+                          ? {
+                              backgroundColor:
+                                theme === 'white'
+                                  ? '#FEF3C7'
+                                  : 'rgba(245, 158, 11, 0.20)',
+                              borderColor:
+                                theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
+                            }
+                          : {
+                              backgroundColor:
+                                theme === 'white' ? '#DCFCE7' : 'rgba(16, 185, 129, 0.18)',
+                              borderColor:
+                                theme === 'white' ? '#BBF7D0' : 'rgba(16, 185, 129, 0.35)',
+                            }
+                        : {
+                            backgroundColor:
+                              theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.18)',
+                            borderColor:
+                              theme === 'white' ? '#FDE68A' : 'rgba(245, 158, 11, 0.35)',
+                          },
+                    ]}
+                  >
+                    {isCompany ? (
+                      isVerified ? (
+                        <>
+                          <Building2
+                            size={11}
+                            color={theme === 'white' ? '#B45309' : '#FBBF24'}
+                            strokeWidth={2.4}
+                          />
+                          <Text
+                            style={[
+                              styles.verifiedBadgeText,
+                              { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                            ]}
+                          >
+                            Agjenci e Verifikuar
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={11} color="#F59E0B" strokeWidth={2.4} />
+                          <Text
+                            style={[
+                              styles.verifiedBadgeText,
+                              { color: theme === 'white' ? '#B45309' : '#F59E0B' },
+                            ]}
+                          >
+                            Agjenci e Paverifikuar
+                          </Text>
+                        </>
+                      )
+                    ) : isVerified ? (
                       <>
-                        <Building2
-                          size={11}
-                          color={theme === 'white' ? '#B45309' : '#FBBF24'}
-                          strokeWidth={2.4}
-                        />
+                        <ShieldCheck size={11} color="#10B981" strokeWidth={2.4} />
                         <Text
                           style={[
                             styles.verifiedBadgeText,
-                            { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                            { color: theme === 'white' ? '#047857' : '#10B981' },
                           ]}
                         >
-                          Agjenci e Verifikuar
+                          Profil i Verifikuar
                         </Text>
                       </>
                     ) : (
                       <>
-                        <AlertCircle size={11} color="#F59E0B" strokeWidth={2.4} />
+                        <ShieldAlert size={11} color="#F59E0B" strokeWidth={2.4} />
                         <Text
                           style={[
                             styles.verifiedBadgeText,
                             { color: theme === 'white' ? '#B45309' : '#F59E0B' },
                           ]}
                         >
-                          Agjenci e Paverifikuar
+                          E Paverifikuar
                         </Text>
                       </>
-                    )
-                  ) : isVerified ? (
-                    <>
-                      <ShieldCheck size={11} color="#10B981" strokeWidth={2.4} />
-                      <Text
-                        style={[
-                          styles.verifiedBadgeText,
-                          { color: theme === 'white' ? '#047857' : '#10B981' },
-                        ]}
-                      >
-                        Profil i Verifikuar
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldAlert size={11} color="#F59E0B" strokeWidth={2.4} />
-                      <Text
-                        style={[
-                          styles.verifiedBadgeText,
-                          { color: theme === 'white' ? '#B45309' : '#F59E0B' },
-                        ]}
-                      >
-                        E Paverifikuar
-                      </Text>
-                    </>
-                  )}
+                    )}
+                  </View>
                 </View>
+
+                {isCompany && currentUser.user_metadata?.first_name ? (
+                  <Text style={[styles.contactPersonText, { color: colors.textSecondary }]}>
+                    Përfaqësuesi: {currentUser.user_metadata.first_name} {currentUser.user_metadata.last_name || ''}
+                  </Text>
+                ) : null}
+
+                <Text style={[styles.userEmail, { color: colors.textMuted }]}>{currentUser.email}</Text>
               </View>
-
-              {isCompany && currentUser.user_metadata?.first_name ? (
-                <Text style={[styles.contactPersonText, { color: colors.textSecondary }]}>
-                  Përfaqësuesi: {currentUser.user_metadata.first_name} {currentUser.user_metadata.last_name || ''}
-                </Text>
-              ) : null}
-
-              <Text style={[styles.userEmail, { color: colors.textMuted }]}>{currentUser.email}</Text>
             </View>
+
+            {/* Quick Action Button: Ndrysho Profilin */}
+            <Pressable
+              style={[
+                styles.editProfileBtn,
+                {
+                  backgroundColor:
+                    theme === 'white'
+                      ? '#F8FAFC'
+                      : theme === 'green'
+                      ? 'rgba(200, 184, 130, 0.12)'
+                      : 'rgba(255, 255, 255, 0.06)',
+                  borderColor: specularBorder,
+                },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                router.push('/completo-profilin' as any)
+              }}
+            >
+              <View style={styles.editProfileBtnLeft}>
+                <Edit3
+                  size={14}
+                  color={theme === 'green' ? colors.gold : colors.primary}
+                  strokeWidth={2.2}
+                />
+                <Text style={[styles.editProfileBtnText, { color: colors.textPrimary }]}>
+                  Ndrysho Profilin
+                </Text>
+              </View>
+              <ChevronRight size={14} color={colors.textMuted} />
+            </Pressable>
           </View>
         ) : (
           <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
             <View style={[styles.guestIconWrap, { backgroundColor: colors.primaryLight }]}>
-              <User size={32} color={colors.primary} strokeWidth={2.2} />
+              <User size={30} color={colors.primary} strokeWidth={2.2} />
             </View>
             <Text style={[styles.guestTitle, { color: colors.textPrimary }]}>
-              Llogaria Juaj
+              Mirësevini në Bleje Pronën
             </Text>
             <Text style={[styles.guestSubtitle, { color: colors.textMuted }]}>
-              Kyçuni për të menaxhuar shpalljet, mesazhet dhe preferencat tuaja.
+              Kyçuni ose krijoni një llogari falas për të ruajtur pronat e preferuara, kontaktuar agjencitë dhe menaxhuar shpalljet tuaja.
             </Text>
 
             <View style={styles.authButtonsRow}>
@@ -1043,64 +1095,16 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Section 1: Llogaria & Cilësimet (Settings Group) */}
+        {/* Section 1: Llogaria & Siguria */}
         <View style={[styles.menuGroup, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
           <Text style={[styles.subGroupHeading, { color: colors.textLight }]}>
-            Llogaria & Preferencat
+            Llogaria & Siguria
           </Text>
 
-          {/* Cilësimet e Llogarisë */}
-          <Pressable
-            style={styles.menuItem}
-            onPress={() => {
-              if (!currentUser) {
-                openAuthModal('login')
-              } else {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
-                router.push('/settings' as any)
-              }
-            }}
-          >
-            <View style={[styles.menuIconContainer, { backgroundColor: colors.primaryLight }]}>
-              <Settings size={18} color={colors.primary} strokeWidth={2.2} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
-                  Cilësimet e Llogarisë
-                </Text>
-                {isCompany && (
-                  <View
-                    style={[
-                      styles.miniCompanyBadge,
-                      {
-                        backgroundColor:
-                          theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.miniCompanyBadgeText,
-                        { color: theme === 'white' ? '#B45309' : '#FBBF24' },
-                      ]}
-                    >
-                      Agjenci
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                Njoftimet push, privatësia, siguria biometrike & kalimi në kompani
-              </Text>
-            </View>
-            <ChevronRight size={18} color={colors.textLight} />
-          </Pressable>
-
-          {/* Plotëso / Ndrysho Profilin */}
+          {/* Ndrysho Profilin */}
           {currentUser && (
             <Pressable
-              style={[styles.menuItem, styles.menuItemBorderTop, { borderTopColor: specularBorder }]}
+              style={styles.menuItem}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.selectionAsync()
                 router.push('/completo-profilin' as any)
@@ -1115,25 +1119,85 @@ export default function ProfileScreen() {
                   },
                 ]}
               >
-                <UserCog
-                  size={18}
-                  color={theme === 'green' ? colors.gold : colors.primary}
-                  strokeWidth={2.2}
-                />
+                {isCompany ? (
+                  <Building2
+                    size={18}
+                    color={theme === 'green' ? colors.gold : colors.primary}
+                    strokeWidth={2.2}
+                  />
+                ) : (
+                  <User
+                    size={18}
+                    color={theme === 'green' ? colors.gold : colors.primary}
+                    strokeWidth={2.2}
+                  />
+                )}
               </View>
               <View style={styles.menuTextContainer}>
-                <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
-                  {isVerified ? 'Ndrysho Profilin' : 'Plotëso & Ndrysho Profilin'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                    Ndrysho Profilin
+                  </Text>
+                  {isCompany && (
+                    <View
+                      style={[
+                        styles.miniCompanyBadge,
+                        {
+                          backgroundColor:
+                            theme === 'white' ? '#FEF3C7' : 'rgba(245, 158, 11, 0.2)',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.miniCompanyBadgeText,
+                          { color: theme === 'white' ? '#B45309' : '#FBBF24' },
+                        ]}
+                      >
+                        Agjenci
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-                  {isVerified
-                    ? 'Ndrysho avatarin, ndrysho tipin e llogarisë ose të dhënat e kontaktit'
-                    : 'Zgjidh avataron, të dhënat e kontaktit dhe informacionin e biznesit'}
+                  {isCompany
+                    ? 'Emri i agjencisë, NIPT, personi kontaktues dhe zyra'
+                    : 'Emri, mbiemri, telefoni, qyteti dhe biografia juaj'}
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.textLight} />
             </Pressable>
           )}
+
+          {/* Cilësimet e Aplikacionit */}
+          <Pressable
+            style={[
+              styles.menuItem,
+              currentUser && styles.menuItemBorderTop,
+              currentUser && { borderTopColor: specularBorder },
+            ]}
+            onPress={() => {
+              if (!currentUser) {
+                openAuthModal('login')
+              } else {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/settings' as any)
+              }
+            }}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: colors.primaryLight }]}>
+              <Settings size={18} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>
+                Cilësimet e Aplikacionit
+              </Text>
+              <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
+                Njoftimet push, siguria me fjalëkalim & privatësia
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.textLight} />
+          </Pressable>
         </View>
 
         {/* Section 2: Aktiviteti Imobiliar */}
@@ -1773,6 +1837,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 0.5,
   },
+  headerGreeting: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+    marginBottom: 2,
+  },
   headerTitle: {
     fontSize: 24,
     fontFamily: Fonts.extraBold,
@@ -1804,16 +1873,40 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     padding: 16,
     borderRadius: 22,
     borderWidth: 0.5,
-    gap: 14,
+    gap: 12,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+  },
+  profileCardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    width: '100%',
+  },
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    width: '100%',
+  },
+  editProfileBtnLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editProfileBtnText: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
   },
   skeletonAvatar: {
     width: 64,

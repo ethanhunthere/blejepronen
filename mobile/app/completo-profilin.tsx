@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { BlurView } from 'expo-blur'
 import {
   User,
@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   ArrowRight,
   AlertCircle,
+  Save,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -53,6 +54,8 @@ const MAJOR_CITIES = [
 
 export default function CompletoProfilinScreen() {
   const router = useRouter()
+  const params = useLocalSearchParams<{ from?: string }>()
+  const isFromSignup = params.from === 'signup'
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
 
@@ -305,14 +308,18 @@ export default function CompletoProfilinScreen() {
 
       showBanner({
         type: 'success',
-        title: 'Profili u Plotësua!',
+        title: 'Ndryshimet u Ruajtën!',
         message: isCompany
-          ? `Llogaria e agjencisë "${companyName}" u konfigurua me sukses!`
-          : `Mirësevini ${firstName}! Profili juaj u plotësua plotësisht.`,
+          ? `Të dhënat e agjencisë "${companyName}" u përditësuan me sukses!`
+          : `Të dhënat tuaja të profilit u përditësuan me sukses!`,
       })
 
       // Navigate back or to tabs
-      router.replace('/(tabs)/profile')
+      if (isFromSignup) {
+        router.replace('/(tabs)/profile')
+      } else {
+        router.back()
+      }
     } catch (err: any) {
       console.error('Save profile completion exception:', err)
       showBanner({
@@ -369,20 +376,32 @@ export default function CompletoProfilinScreen() {
               styles.navBackBtn,
               { backgroundColor: colors.surface, borderColor: specularBorder },
             ]}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (isFromSignup) {
+                router.replace('/(tabs)/profile')
+              } else {
+                router.back()
+              }
+            }}
             hitSlop={8}
           >
             <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.4} />
           </Pressable>
 
           <View style={styles.navTitleWrap}>
-            <Text style={[styles.navStep, { color: colors.primary }]}>HAPI 2 NGA 2</Text>
-            <Text style={[styles.navTitle, { color: colors.textPrimary }]}>Plotësoni Profilin</Text>
+            <Text style={[styles.navTitle, { color: colors.textPrimary }]}>Ndrysho Profilin</Text>
+            <Text style={[styles.navSubtitle, { color: colors.textMuted }]}>
+              {accountType === 'company' ? 'Të dhënat e agjencisë' : 'Të dhënat personale'}
+            </Text>
           </View>
 
-          <Pressable onPress={handleSkip} hitSlop={10} style={styles.skipBtn}>
-            <Text style={[styles.skipBtnText, { color: colors.textMuted }]}>Kalo</Text>
-          </Pressable>
+          {isFromSignup ? (
+            <Pressable onPress={handleSkip} hitSlop={10} style={styles.skipBtn}>
+              <Text style={[styles.skipBtnText, { color: colors.textMuted }]}>Kalo</Text>
+            </Pressable>
+          ) : (
+            <View style={{ width: 38 }} />
+          )}
         </View>
 
         <ScrollView
@@ -406,10 +425,12 @@ export default function CompletoProfilinScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.heroHeading, { color: colors.textPrimary }]}>
-                Personalizoni Përvojën Tuaj
+                {accountType === 'company' ? 'Profili i Kompanisë' : 'Ndrysho Profilin Tuaj'}
               </Text>
               <Text style={[styles.heroSubheading, { color: colors.textSecondary }]}>
-                Plotësoni të dhënat kryesore për të pasur një profil të besueshëm dhe të verifikuar në tregun imobiliar.
+                {accountType === 'company'
+                  ? 'Përditësoni emrin e agjencisë, personin kontaktues, NIPT-in dhe adresën zyrtare.'
+                  : 'Përditësoni emrin, mbiemrin, numrin e telefonit, qytetin dhe biografinë tuaj.'}
               </Text>
             </View>
           </View>
@@ -972,7 +993,7 @@ export default function CompletoProfilinScreen() {
                 />
               ) : (
                 <>
-                  <ShieldCheck
+                  <Save
                     size={19}
                     color={theme === 'green' ? '#003E37' : '#FFFFFF'}
                     strokeWidth={2.4}
@@ -983,22 +1004,19 @@ export default function CompletoProfilinScreen() {
                       { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
                     ]}
                   >
-                    Ruaj & Përfundo Profilin
+                    Ruaj Ndryshimet
                   </Text>
-                  <ArrowRight
-                    size={18}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
-                    strokeWidth={2.4}
-                  />
                 </>
               )}
             </Pressable>
 
-            <Pressable style={styles.secondaryButton} onPress={handleSkip}>
-              <Text style={[styles.secondaryButtonText, { color: colors.textMuted }]}>
-                Plotësoje më vonë nga profili
-              </Text>
-            </Pressable>
+            {isFromSignup && (
+              <Pressable style={styles.secondaryButton} onPress={handleSkip}>
+                <Text style={[styles.secondaryButtonText, { color: colors.textMuted }]}>
+                  Plotësoje më vonë nga profili
+                </Text>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -1061,6 +1079,11 @@ const styles = StyleSheet.create({
   navTitle: {
     fontSize: 16,
     fontFamily: Fonts.bold,
+  },
+  navSubtitle: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    marginTop: 1,
   },
   skipBtn: {
     paddingVertical: 6,

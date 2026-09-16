@@ -59,7 +59,7 @@ import {
 } from '@/lib/api'
 import { playThemeSound, playTapSound } from '@/lib/sound'
 
-type SettingsTab = 'profile' | 'notifications' | 'security' | 'app'
+type SettingsTab = 'notifications' | 'security' | 'app'
 
 const CITIES = [
   'Prishtinë',
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+  const [activeTab, setActiveTab] = useState<SettingsTab>('notifications')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -331,18 +331,6 @@ export default function SettingsScreen() {
 
   // Handle Save All Settings
   const handleSave = async () => {
-    if (isCompany) {
-      if (!companyName.trim()) {
-        Alert.alert('Kujdes', 'Emri i kompanisë është i detyrueshëm.')
-        return
-      }
-    } else {
-      if (!individualFirstName.trim()) {
-        Alert.alert('Kujdes', 'Emri dhe mbiemri janë të detyrueshëm.')
-        return
-      }
-    }
-
     setSaving(true)
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -634,31 +622,6 @@ export default function SettingsScreen() {
             },
           ]}
         >
-          <Pressable
-            style={[styles.tabButton, activeTab === 'profile' && styles.tabButtonActive]}
-            onPress={() => {
-              playTapSound()
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setActiveTab('profile')
-            }}
-          >
-            <User
-              size={15}
-              color={activeTab === 'profile' ? brandHighlight : colors.textMuted}
-              strokeWidth={activeTab === 'profile' ? 2.4 : 2}
-            />
-            <Text
-              style={[
-                styles.tabButtonText,
-                {
-                  color: activeTab === 'profile' ? colors.textPrimary : colors.textMuted,
-                  fontFamily: activeTab === 'profile' ? Fonts.bold : Fonts.medium,
-                },
-              ]}
-            >
-              Profili
-            </Text>
-          </Pressable>
 
           <Pressable
             style={[styles.tabButton, activeTab === 'notifications' && styles.tabButtonActive]}
@@ -743,703 +706,43 @@ export default function SettingsScreen() {
           style={styles.scrollArea}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
         >
-          {/* ======================================================== */}
-          {/* TAB 1: PROFILI DHE AGJENCIA (INDIVIDUAL <-> KOMPANI)     */}
-          {/* ======================================================== */}
-          {activeTab === 'profile' && (
-            <View style={styles.sectionGap}>
-              {/* Account Type Toggle (Individual vs Kompani) */}
+          {/* Quick link banner to dedicated Profile Editor */}
+          <Pressable
+            style={[
+              styles.profileBannerCard,
+              {
+                backgroundColor: theme === 'white' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.05)',
+                borderColor: specularBorder,
+              },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+              router.push('/completo-profilin')
+            }}
+          >
+            <View style={styles.profileBannerLeft}>
               <View
                 style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: specularBorder },
+                  styles.profileBannerIconCircle,
+                  { backgroundColor: brandHighlight + '18' },
                 ]}
               >
-                <View style={styles.cardHeaderRow}>
-                  <Building2 size={18} color={brandHighlight} strokeWidth={2.2} />
-                  <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Lloji i Llogarisë
-                  </Text>
-                </View>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Mund të kaloni në çdo moment midis llogarisë individuale dhe asaj të agjencisë
-                  pa humbur të dhënat tuaja.
-                </Text>
-
-                <View style={styles.accountTypeSelector}>
-                  <Pressable
-                    style={[
-                      styles.accountTypeOption,
-                      !isCompany && [
-                        styles.accountTypeOptionActive,
-                        { borderColor: brandHighlight, backgroundColor: colors.surfaceSubtle },
-                      ],
-                    ]}
-                    onPress={() => handleSwitchAccountType(false)}
-                  >
-                    <User size={18} color={!isCompany ? brandHighlight : colors.textMuted} />
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.accountTypeTitle,
-                          {
-                            color: !isCompany ? colors.textPrimary : colors.textMuted,
-                            fontFamily: !isCompany ? Fonts.bold : Fonts.medium,
-                          },
-                        ]}
-                      >
-                        Individual
-                      </Text>
-                      <Text style={[styles.accountTypeSub, { color: colors.textLight }]}>
-                        Për pronarë privatë & blerës
-                      </Text>
-                    </View>
-                    {!isCompany && (
-                      <View style={[styles.activeDot, { backgroundColor: brandHighlight }]} />
-                    )}
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.accountTypeOption,
-                      isCompany && [
-                        styles.accountTypeOptionActive,
-                        { borderColor: brandHighlight, backgroundColor: colors.surfaceSubtle },
-                      ],
-                    ]}
-                    onPress={() => handleSwitchAccountType(true)}
-                  >
-                    <Building2 size={18} color={isCompany ? brandHighlight : colors.textMuted} />
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.accountTypeTitle,
-                          {
-                            color: isCompany ? colors.textPrimary : colors.textMuted,
-                            fontFamily: isCompany ? Fonts.bold : Fonts.medium,
-                          },
-                        ]}
-                      >
-                        🏢 Agjenci / Kompani
-                      </Text>
-                      <Text style={[styles.accountTypeSub, { color: colors.textLight }]}>
-                        Për agjenci & kompani ndërtimi
-                      </Text>
-                    </View>
-                    {isCompany && (
-                      <View style={[styles.activeDot, { backgroundColor: brandHighlight }]} />
-                    )}
-                  </Pressable>
-                </View>
+                <User size={18} color={brandHighlight} strokeWidth={2.2} />
               </View>
-
-              {/* Avatar Selector */}
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: specularBorder },
-                ]}
-              >
-                <View style={styles.cardHeaderRow}>
-                  <Camera size={18} color={brandHighlight} strokeWidth={2.2} />
-                  <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Fotoja e Profilit / Avatari
-                  </Text>
-                </View>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Zgjidhni një nga avatarët zyrtarë të platformës:
+              <View style={styles.profileBannerTextGroup}>
+                <Text style={[styles.profileBannerTitle, { color: colors.textPrimary }]}>
+                  Ndrysho Profilin
                 </Text>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.avatarRow}
-                >
-                  {AVATARS.map((av, idx) => {
-                    const isSelected = avatarUrl === av
-                    return (
-                      <Pressable
-                        key={idx}
-                        style={[
-                          styles.avatarItem,
-                          isSelected && [
-                            styles.avatarItemSelected,
-                            { borderColor: brandHighlight },
-                          ],
-                        ]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.selectionAsync()
-                          setAvatarUrl(av)
-                        }}
-                      >
-                        <Image
-                          source={{ uri: `https://blejepronen.com${av}` }}
-                          style={styles.avatarImg}
-                        />
-                        {isSelected && (
-                          <View
-                            style={[styles.avatarCheckBadge, { backgroundColor: brandHighlight }]}
-                          >
-                            <Check size={10} color={primaryBtnText} strokeWidth={3} />
-                          </View>
-                        )}
-                      </Pressable>
-                    )
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Profile Details Form */}
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: specularBorder },
-                ]}
-              >
-                <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 14 }]}>
-                  {isCompany ? 'Të Dhënat e Agjencisë / Kompanisë' : 'Të Dhënat Personale'}
+                <Text style={[styles.profileBannerSub, { color: colors.textMuted }]}>
+                  Emri, telefoni, qyteti dhe të dhënat e profilit tuaj
                 </Text>
-
-                {isCompany ? (
-                  /* ================= COMPANY FORM ================= */
-                  <View style={styles.formGap}>
-                    {/* Emri i Kompanisë */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Emri i Kompanisë ose Agjencisë *
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'compName' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'compName' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Building2 size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={companyName}
-                          onChangeText={setCompanyName}
-                          onFocus={() => setFocusedField('compName')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="psh. Prishtina Real Estate Sh.p.k."
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Personi Kontaktues */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Personi Kontaktues / Përfaqësuesi *
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'compContact' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'compContact' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <User size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={companyContactPerson}
-                          onChangeText={setCompanyContactPerson}
-                          onFocus={() => setFocusedField('compContact')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Emri dhe Mbiemri i agjentit"
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Numri i Telefonit */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Numri i Telefonit të Zyrës / WhatsApp
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'compPhone' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'compPhone' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Phone size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={companyPhone}
-                          onChangeText={setCompanyPhone}
-                          onFocus={() => setFocusedField('compPhone')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="+383 4X XXX XXX"
-                          placeholderTextColor={colors.textLight}
-                          keyboardType="phone-pad"
-                        />
-                      </View>
-                    </View>
-
-                    {/* Email Zyrtar */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Email Zyrtar i Kompanisë
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'compEmail' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'compEmail' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Mail size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={companyEmail}
-                          onChangeText={setCompanyEmail}
-                          onFocus={() => setFocusedField('compEmail')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="info@kompania.com"
-                          placeholderTextColor={colors.textLight}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                        />
-                      </View>
-                    </View>
-
-                    {/* Numri Unik Identifikues (NIPT / NUI) */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Numri Unik Identifikues i Biznesit (NIPT / NUI)
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'nipt' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'nipt' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Shield size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={nipt}
-                          onChangeText={setNipt}
-                          onFocus={() => setFocusedField('nipt')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="psh. 810XXXXXX"
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Adresa e Zyrës */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Adresa e Zyrës / Selisë
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'officeAddress' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'officeAddress' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <MapPin size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={officeAddress}
-                          onChangeText={setOfficeAddress}
-                          onFocus={() => setFocusedField('officeAddress')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Rruga Nënë Tereza, Nr. 12"
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Uebsajti Zyrtar */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Uebsajti Zyrtar (URL)
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'website' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'website' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Globe size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={website}
-                          onChangeText={setWebsite}
-                          onFocus={() => setFocusedField('website')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="https://kompania.com"
-                          placeholderTextColor={colors.textLight}
-                          keyboardType="url"
-                          autoCapitalize="none"
-                        />
-                      </View>
-                    </View>
-
-                    {/* Përshkrimi i Kompanisë */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Përshkrimi i Agjencisë
-                      </Text>
-                      <View
-                        style={[
-                          styles.textAreaField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'compDesc' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'compDesc' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[styles.textAreaInput, { color: colors.textPrimary }]}
-                          value={companyDescription}
-                          onChangeText={setCompanyDescription}
-                          onFocus={() => setFocusedField('compDesc')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Përshkruani shërbimet tuaja, historikun dhe eksperiencën në treg..."
-                          placeholderTextColor={colors.textLight}
-                          multiline
-                          numberOfLines={3}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                ) : (
-                  /* ================= INDIVIDUAL FORM ================= */
-                  <View style={styles.formGap}>
-                    {/* Emri */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Emri *
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'indFirst' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'indFirst' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <User size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={individualFirstName}
-                          onChangeText={setIndividualFirstName}
-                          onFocus={() => setFocusedField('indFirst')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Emri juaj"
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Mbiemri */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Mbiemri
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'indLast' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'indLast' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <User size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={individualLastName}
-                          onChangeText={setIndividualLastName}
-                          onFocus={() => setFocusedField('indLast')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Mbiemri juaj"
-                          placeholderTextColor={colors.textLight}
-                        />
-                      </View>
-                    </View>
-
-                    {/* Numri i Telefonit */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Numri i Telefonit / WhatsApp
-                      </Text>
-                      <View
-                        style={[
-                          styles.inputField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'indPhone' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'indPhone' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <Phone size={17} color={colors.textMuted} />
-                        <TextInput
-                          style={[styles.textInput, { color: colors.textPrimary }]}
-                          value={individualPhone}
-                          onChangeText={setIndividualPhone}
-                          onFocus={() => setFocusedField('indPhone')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="+383 4X XXX XXX"
-                          placeholderTextColor={colors.textLight}
-                          keyboardType="phone-pad"
-                        />
-                      </View>
-                    </View>
-
-                    {/* Biografia */}
-                    <View style={styles.inputGroup}>
-                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                        Biografia / Rreth Meje
-                      </Text>
-                      <View
-                        style={[
-                          styles.textAreaField,
-                          {
-                            backgroundColor: colors.surfaceSubtle,
-                            borderColor:
-                              focusedField === 'indBio' ? brandHighlight : specularBorder,
-                            borderWidth: focusedField === 'indBio' ? 1.5 : 0.5,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[styles.textAreaInput, { color: colors.textPrimary }]}
-                          value={individualBio}
-                          onChangeText={setIndividualBio}
-                          onFocus={() => setFocusedField('indBio')}
-                          onBlur={() => setFocusedField(null)}
-                          placeholder="Shkruani disa fjalë për veten ose preferencat tuaja të pronave..."
-                          placeholderTextColor={colors.textLight}
-                          multiline
-                          numberOfLines={3}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              {/* Qyteti (City Selector) */}
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: specularBorder },
-                ]}
-              >
-                <View style={styles.cardHeaderRow}>
-                  <MapPin size={18} color={brandHighlight} strokeWidth={2.2} />
-                  <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Qyteti Kryesor
-                  </Text>
-                </View>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Zgjidhni qytetin tuaj primar për njoftime dhe shpallje të përshtatura:
-                </Text>
-
-                <View style={styles.cityPillsGrid}>
-                  {CITIES.map((cName) => {
-                    const isSelected = city === cName
-                    return (
-                      <Pressable
-                        key={cName}
-                        style={[
-                          styles.cityPill,
-                          {
-                            backgroundColor: isSelected ? brandHighlight : colors.surfaceSubtle,
-                            borderColor: isSelected ? brandHighlight : specularBorder,
-                          },
-                        ]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.selectionAsync()
-                          setCity(cName)
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.cityPillText,
-                            {
-                              color: isSelected ? primaryBtnText : colors.textPrimary,
-                              fontFamily: isSelected ? Fonts.bold : Fonts.medium,
-                            },
-                          ]}
-                        >
-                          {cName}
-                        </Text>
-                      </Pressable>
-                    )
-                  })}
-                </View>
-              </View>
-
-              {/* Rrjetet Sociale (Social Links) */}
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.surface, borderColor: specularBorder },
-                ]}
-              >
-                <View style={styles.cardHeaderRow}>
-                  <Share2 size={18} color={brandHighlight} strokeWidth={2.2} />
-                  <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Rrjetet Sociale
-                  </Text>
-                </View>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Lidhni profilet tuaja që klientët t'ju kontaktojnë drejtpërdrejt:
-                </Text>
-
-                <View style={styles.formGap}>
-                  {/* Instagram */}
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      Instagram (@perdoruesi)
-                    </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                        },
-                      ]}
-                    >
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={instagram}
-                        onChangeText={setInstagram}
-                        placeholder="@emri_juaj ose link"
-                        placeholderTextColor={colors.textLight}
-                        autoCapitalize="none"
-                      />
-                    </View>
-                  </View>
-
-                  {/* Facebook */}
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      Facebook (URL / Faqja)
-                    </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                        },
-                      ]}
-                    >
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={facebook}
-                        onChangeText={setFacebook}
-                        placeholder="facebook.com/faqa-juaj"
-                        placeholderTextColor={colors.textLight}
-                        autoCapitalize="none"
-                      />
-                    </View>
-                  </View>
-
-                  {/* WhatsApp */}
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      WhatsApp (Numri me kod shteti)
-                    </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                        },
-                      ]}
-                    >
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={whatsapp}
-                        onChangeText={setWhatsapp}
-                        placeholder="+38344123456"
-                        placeholderTextColor={colors.textLight}
-                        keyboardType="phone-pad"
-                      />
-                    </View>
-                  </View>
-
-                  {/* TikTok */}
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      TikTok (@perdoruesi)
-                    </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                        },
-                      ]}
-                    >
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={tiktok}
-                        onChangeText={setTiktok}
-                        placeholder="@tiktok_user"
-                        placeholderTextColor={colors.textLight}
-                        autoCapitalize="none"
-                      />
-                    </View>
-                  </View>
-                </View>
               </View>
             </View>
-          )}
+            <ChevronRight size={18} color={colors.textMuted} />
+          </Pressable>
+
 
           {/* ======================================================== */}
           {/* TAB 2: NJOFTIMET (PLATFORM + MOBILE EXCLUSIVE PUSH)       */}
@@ -2666,5 +1969,40 @@ const styles = StyleSheet.create({
   appInfoValue: {
     fontSize: 12.5,
     fontFamily: Fonts.semiBold,
+  },
+  profileBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  profileBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  profileBannerIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileBannerTextGroup: {
+    flex: 1,
+  },
+  profileBannerTitle: {
+    fontSize: 14.5,
+    fontFamily: Fonts.bold,
+  },
+  profileBannerSub: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
   },
 })
