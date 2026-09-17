@@ -64,26 +64,28 @@ export default function ListingDetailScreen() {
       try {
         setLoading(true)
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setCurrentUser(user || null)
+        // Concurrently fetch auth user, listing details, and favorites in parallel (single network waterfall)
+        const [authRes, listingRes, favs] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase
+            .from('listings')
+            .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url, account_type)')
+            .eq('id', id)
+            .single(),
+          fetchFavoriteIds(),
+        ])
 
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url)')
-          .eq('id', id)
-          .single()
+        setCurrentUser(authRes.data?.user || null)
 
-        if (error) {
-          console.warn('Listing detail notice:', error.message)
-        } else if (data) {
-          setListing(data as Listing)
+        if (listingRes.error) {
+          console.warn('Listing detail notice:', listingRes.error.message)
+        } else if (listingRes.data) {
+          setListing(listingRes.data as Listing)
         }
 
-        // Sync the heart with the user's persisted favorites
-        const favs = await fetchFavoriteIds()
-        if (id in favs) setIsFavorite(true)
+        if (favs && id in favs) {
+          setIsFavorite(true)
+        }
       } catch (err: any) {
         console.warn('Listing catch:', err?.message || err)
       } finally {
@@ -289,6 +291,9 @@ export default function ListingDetailScreen() {
                 source={{ uri: img }}
                 style={[styles.galleryImage, { width: windowWidth }]}
                 contentFit="cover"
+                priority={i === 0 ? 'high' : 'normal'}
+                cachePolicy="memory-disk"
+                transition={150}
               />
             ))}
           </ScrollView>

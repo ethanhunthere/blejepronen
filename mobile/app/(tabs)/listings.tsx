@@ -35,6 +35,7 @@ import {
   Clock,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
@@ -42,6 +43,7 @@ import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
+const EXPLORE_CACHE_KEY = '@blejepronen_explore_cache_v2'
 const ALL_CITIES = Object.keys(KOSOVO_LOCATIONS)
 const POPULAR_CITIES = [
   'Prishtinë',
@@ -242,13 +244,28 @@ export default function ListingsScreen() {
     sortBy,
   ])
 
+  // 1. Instant local-first hydration: render in <5ms from disk cache on cold launch
+  useEffect(() => {
+    AsyncStorage.getItem(EXPLORE_CACHE_KEY).then((cached) => {
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListings(parsed)
+            setLoading(false)
+          }
+        } catch {}
+      }
+    })
+  }, [])
+
   const fetchListings = useCallback(
     async (isRefresh = false) => {
       try {
         if (!isRefresh && listings.length === 0) {
           setLoading(true)
         }
-        let query = supabase.from('listings').select('*')
+        let query = supabase.from('listings').select('id,title,description,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features')
 
         if (selectedType !== 'all') {
           query = query.eq('type', selectedType)
@@ -348,7 +365,10 @@ export default function ListingsScreen() {
         if (error) {
           console.warn('Listings query notice:', error.message)
         } else if (data) {
-          setListings(data as Listing[])
+          setListings(data as unknown as Listing[])
+          if (selectedType === 'all' && !selectedCity && !selectedNeighborhood && selectedApartmentType === 'all') {
+            AsyncStorage.setItem(EXPLORE_CACHE_KEY, JSON.stringify(data)).catch(() => {})
+          }
         }
       } catch (err: any) {
         console.warn('Listings catch notice:', err?.message || err)
@@ -389,10 +409,10 @@ export default function ListingsScreen() {
     await fetchListings(true)
     fetchFavoriteIds().then(setFavorites)
 
-    // Optimized snappy UX duration: 650ms for responsive, crisp refresh
+    // Snappy UX duration: 500ms for responsive, crisp refresh
     const elapsed = Date.now() - startTime
-    if (elapsed < 650) {
-      await new Promise((resolve) => setTimeout(resolve, 650 - elapsed))
+    if (elapsed < 500) {
+      await new Promise((resolve) => setTimeout(resolve, 500 - elapsed))
     }
 
     setRefreshing(false)
@@ -401,7 +421,7 @@ export default function ListingsScreen() {
     }
   }
 
-  const handleToggleFavorite = async (id: string) => {
+  const handleToggleFavorite = useCallback(async (id: string) => {
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -419,7 +439,7 @@ export default function ListingsScreen() {
       // Revert on failure (offline, etc.)
       setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
     }
-  }
+  }, [favorites, router])
 
   const resetFilters = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)

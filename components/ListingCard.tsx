@@ -21,12 +21,16 @@ interface ListingCardProps {
   showFavorite?: boolean
 }
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('sq-AL', {
+const formatPrice = (price?: number | null) => {
+  if (price === undefined || price === null || isNaN(price) || price <= 0) {
+    return 'Me marrëveshje'
+  }
+  return new Intl.NumberFormat('sq-AL', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(price)
+}
 
 const MAX_CYCLE_IMAGES = 6
 const CYCLE_INTERVAL_MS = 1100

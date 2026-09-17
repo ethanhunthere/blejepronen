@@ -16,29 +16,32 @@ interface ListingCardProps {
   onToggleFavorite?: (id: string) => void
 }
 
-export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: ListingCardProps) {
+const formatPrice = (val?: number | null) => {
+  if (val === undefined || val === null || isNaN(val) || val <= 0) {
+    return 'Me marrëveshje'
+  }
+  return new Intl.NumberFormat('de-DE').format(val) + ' €'
+}
+
+function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }: ListingCardProps) {
   const router = useRouter()
   const { colors, theme } = useTheme()
 
-  const handleFavoritePress = (e: any) => {
-    e.stopPropagation?.()
-    if (isFavorite) {
-      playUnlikeSound()
-    } else {
-      playHeartSound()
-    }
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    }
-    onToggleFavorite?.(listing.id)
-  }
-
-  const formatPrice = (val?: number | null) => {
-    if (val === undefined || val === null || isNaN(val) || val <= 0) {
-      return 'Me marrëveshje'
-    }
-    return new Intl.NumberFormat('de-DE').format(val) + ' €'
-  }
+  const handleFavoritePress = React.useCallback(
+    (e: any) => {
+      e.stopPropagation?.()
+      if (isFavorite) {
+        playUnlikeSound()
+      } else {
+        playHeartSound()
+      }
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      }
+      onToggleFavorite?.(listing.id)
+    },
+    [isFavorite, listing.id, onToggleFavorite]
+  )
 
   const mainImage =
     listing.images && listing.images.length > 0
@@ -71,13 +74,16 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
         router.push(`/listings/${listing.id}` as any)
       }}
     >
-      {/* 1. Cinematic Hero Image Container */}
+      {/* 1. Cinematic Hero Image Container with hardware-accelerated memory-disk cache */}
       <View style={[styles.imageContainer, { backgroundColor: colors.surfaceSubtle }]}>
         <Image
           source={{ uri: mainImage }}
           style={styles.image}
           contentFit="cover"
-          transition={200}
+          transition={150}
+          priority="normal"
+          cachePolicy="memory-disk"
+          recyclingKey={listing.id}
         />
 
         {/* Top Floating Glass Badges */}
@@ -367,6 +373,21 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
     </Pressable>
   )
 }
+
+export const ListingCard = React.memo(
+  ListingCardComponent,
+  (prev, next) => {
+    return (
+      prev.listing.id === next.listing.id &&
+      prev.isFavorite === next.isFavorite &&
+      prev.listing.created_at === next.listing.created_at &&
+      prev.listing.price === next.listing.price &&
+      prev.listing.title === next.listing.title &&
+      prev.listing.is_featured === next.listing.is_featured &&
+      prev.onToggleFavorite === next.onToggleFavorite
+    )
+  }
+)
 
 const styles = StyleSheet.create({
   card: {

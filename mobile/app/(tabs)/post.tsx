@@ -326,7 +326,7 @@ export default function PostPropertyScreen() {
             { text: 'Anulo', style: 'cancel' },
             {
               text: 'Kyçu',
-              onPress: () => router.push({ pathname: '/modal', params: { initialTab: 'login' } }),
+              onPress: () => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'post' } }),
             },
           ]
         )
@@ -443,7 +443,7 @@ export default function PostPropertyScreen() {
             <View style={styles.gateActions}>
               <Pressable
                 style={[styles.gatePrimaryBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'post' } })}
               >
                 <LogIn size={18} color={gateBtnText} strokeWidth={2.2} />
                 <Text style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
@@ -456,7 +456,7 @@ export default function PostPropertyScreen() {
                   styles.gateSecondaryBtn,
                   { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
                 ]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register' } })}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register', reason: 'post' } })}
               >
                 <UserPlus size={18} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>

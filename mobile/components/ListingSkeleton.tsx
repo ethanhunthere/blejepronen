@@ -204,6 +204,48 @@ export function ListingDetailSkeleton() {
   )
 }
 
+export function ConversationItemSkeleton() {
+  const { colors, theme } = useTheme()
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(255, 255, 255, 0.12)'
+      : 'rgba(255, 255, 255, 0.10)'
+
+  return (
+    <View
+      style={[
+        styles.convoSkeletonCard,
+        {
+          backgroundColor: colors.surface,
+          borderColor: specularBorder,
+        },
+      ]}
+    >
+      <SkeletonBox width={52} height={52} borderRadius={26} />
+      <View style={styles.convoSkeletonBody}>
+        <View style={styles.rowBetween}>
+          <SkeletonBox width="45%" height={16} borderRadius={6} />
+          <SkeletonBox width={44} height={12} borderRadius={4} />
+        </View>
+        <SkeletonBox width="60%" height={13} borderRadius={5} style={{ marginTop: 6 }} />
+        <SkeletonBox width="85%" height={12} borderRadius={5} style={{ marginTop: 6 }} />
+      </View>
+    </View>
+  )
+}
+
+export function ConversationFeedSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <View style={styles.convoFeed}>
+      {Array.from({ length: count }).map((_, i) => (
+        <ConversationItemSkeleton key={`convo-skel-${i}`} />
+      ))}
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
   feedContainer: {
     paddingHorizontal: 16,
@@ -268,5 +310,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     borderWidth: 0.5,
+  },
+  convoFeed: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 10,
+  },
+  convoSkeletonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 0.5,
+    gap: 14,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    elevation: 1,
+  },
+  convoSkeletonBody: {
+    flex: 1,
+    justifyContent: 'center',
   },
 })

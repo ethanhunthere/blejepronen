@@ -9,21 +9,6 @@ import { Button } from '@/components/ui/button'
 
 export const revalidate = 300
 
-const STEPS = [
-  {
-    title: 'Kërko',
-    text: 'Shkruaj qytetin ose adresën në kërkim dhe shiko pronat me foto e çmim.',
-  },
-  {
-    title: 'Kontakto',
-    text: 'Dërgo mesazh direkt pronarit nga faqja e pronës. Pa ndërmjetës.',
-  },
-  {
-    title: 'Merr çelësat',
-    text: 'Merresh vesh me pronarin për çmimin dhe vizitën. Pa komisione.',
-  },
-]
-
 export default async function HomePage() {
   let listings: Listing[] = []
   let error = false
@@ -105,51 +90,102 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* How it works — plain numbered steps, no decorative panels */}
-      <section className="w-full bg-[#F7FAF9] px-4 sm:px-6 lg:px-8 2xl:px-12 py-12 sm:py-16">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4 mx-auto" />
-          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#101828]">
-            Si funksionon
-          </h2>
+      {/* How it works — architectural 3-column grid */}
+      <section className="w-full bg-[#F7FAF9] px-4 sm:px-6 lg:px-8 2xl:px-12 py-14 sm:py-20">
+        <div className="mx-auto max-w-[1400px]">
+          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+            <div className="h-1 w-12 rounded-full bg-[#C8B882] mb-4 mx-auto" />
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#101828]">
+              Si funksionon
+            </h2>
+            <p className="text-gray-600 text-[16px] mt-2">
+              Procesi më i thjeshtë dhe transparent për të gjetur ose shitur pronën tuaj.
+            </p>
+          </div>
 
-          <ol className="mt-8 space-y-6 text-left">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="flex items-start gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#006459] text-[17px] font-bold text-white">
-                  {i + 1}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                  01
                 </span>
-                <div>
-                  <h3 className="text-[18px] font-bold text-[#101828]">{s.title}</h3>
-                  <p className="mt-1 text-[16px] leading-relaxed text-gray-600">{s.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60">
+                  Kërkim
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-[#101828] mb-2">
+                Kërko me saktësi
+              </h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">
+                Eksploro mijëra prona me filtra inteligjentë sipas qytetit, çmimit, sipërfaqes dhe tipologjisë në Kosovë, Shqipëri e Diasporë.
+              </p>
+            </div>
+
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                  02
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C8B882] bg-[#C8B882]/10 px-3 py-1 rounded-full border border-[#C8B882]/30">
+                  Direkt
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-[#101828] mb-2">
+                Kontakto pa ndërmjetës
+              </h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">
+                Dërgo mesazh direkt pronarit ose agjencisë së autorizuar përmes sistemit të sigurt të bisedave pa komisione të fshehura.
+              </p>
+            </div>
+
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                  03
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#006459] bg-[#006459]/10 px-3 py-1 rounded-full border border-[#006459]/20">
+                  Finalizim
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-[#101828] mb-2">
+                Mbyll marrëveshjen
+              </h3>
+              <p className="text-[15px] leading-relaxed text-gray-600">
+                Cakto vizitën në pronë dhe negocio çmimin me kushte transparente dhe dokumentacion të qartë ligjor.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Single clear call to action */}
-      <section className="bg-[#006459] px-4 sm:px-6 lg:px-8 2xl:px-12 py-12 sm:py-16 text-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-          Ke një pronë për të shitur ose dhënë me qira?
-        </h2>
-        <p className="mt-2 text-[16px] text-white/85">
-          Postimi është falas për 30 ditët e para.
-        </p>
-        <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/posto-prona"
-            className="inline-flex items-center justify-center h-12 w-full sm:w-auto rounded-2xl bg-white px-8 text-[16px] font-semibold text-[#006459] shadow-lg shadow-black/20 transition-colors hover:bg-[#C8B882] cursor-pointer"
-          >
+      {/* Call to action — elevated editorial finish */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#006459] via-[#00574D] to-[#004840] px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20 text-center">
+        <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(circle_at_top_right,rgba(200,184,130,0.3),transparent_50%)]" />
+        <div className="relative mx-auto max-w-3xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white text-xs font-semibold tracking-wide uppercase mb-4 backdrop-blur-sm border border-white/15">
+            <span className="w-2 h-2 rounded-full bg-[#C8B882]" />
             Posto pronën falas
-          </Link>
-          <Link
-            href="/listings"
-            className="inline-flex items-center justify-center h-12 w-full sm:w-auto rounded-2xl border border-white/40 px-8 text-[16px] font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
-          >
-            Shiko pronat
-          </Link>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Ke një pronë për të shitur ose dhënë me qira?
+          </h2>
+          <p className="mt-3 text-[17px] text-white/90 max-w-xl mx-auto leading-relaxed">
+            Bashkohu me mijëra pronarë e blerës. Postimi është falas për 30 ditët e para pa asnjë detyrim.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              href="/posto-prona"
+              className="inline-flex items-center justify-center h-13 min-h-[52px] w-full sm:w-auto rounded-2xl bg-white px-8 text-[16px] font-semibold text-[#006459] shadow-lg shadow-black/20 transition-all duration-200 hover:bg-[#C8B882] hover:text-[#101828] cursor-pointer"
+            >
+              Posto pronën falas
+            </Link>
+            <Link
+              href="/listings"
+              className="inline-flex items-center justify-center h-13 min-h-[52px] w-full sm:w-auto rounded-2xl border border-white/30 bg-white/10 backdrop-blur-sm px-8 text-[16px] font-semibold text-white transition-all duration-200 hover:bg-white/20 cursor-pointer"
+            >
+              Shiko të gjitha pronat
+            </Link>
+          </div>
         </div>
       </section>
 

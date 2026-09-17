@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   RefreshControl,
   Platform,
   TextInput,
@@ -35,6 +34,7 @@ import { createSafeChannel } from '@/lib/realtime'
 import { getAvatarUri } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound } from '@/lib/sound'
+import { ConversationFeedSkeleton } from '@/components/ListingSkeleton'
 
 interface ConversationItem {
   id: string
@@ -425,12 +425,7 @@ export default function MessagesScreen() {
         }
       >
         {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Duke ngarkuar bisedat...
-            </Text>
-          </View>
+          <ConversationFeedSkeleton count={5} />
         ) : !currentUser ? (
           /* Unauthenticated Auth Gatekeeper */
           <View
@@ -457,7 +452,7 @@ export default function MessagesScreen() {
             <View style={styles.authActionsRow}>
               <Pressable
                 style={[styles.loginBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'chat' } })}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
                 <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -470,7 +465,7 @@ export default function MessagesScreen() {
                   styles.registerBtn,
                   { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
                 ]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register' } })}
+                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register', reason: 'chat' } })}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>

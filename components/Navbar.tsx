@@ -944,7 +944,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                                   Cilësimet
                                 </p>
                                 <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
-                                  Profili, rrjetet, njoftimet & siguria
+                                  Preferencat, njoftimet & siguria
                                 </p>
                               </div>
                               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />

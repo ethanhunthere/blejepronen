@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', '@base-ui/react', 'clsx', 'tailwind-merge'],
   },
   images: {
     formats: ["image/avif", "image/webp"],
