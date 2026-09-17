@@ -58,6 +58,7 @@ import {
   ProfileSettingsPayload,
 } from '@/lib/api'
 import { playThemeSound, playTapSound } from '@/lib/sound'
+import { safeBack } from '@/lib/navigation'
 
 type SettingsTab = 'notifications' | 'security' | 'app'
 
@@ -573,7 +574,7 @@ export default function SettingsScreen() {
       <View style={[styles.headerBar, { borderBottomColor: specularBorder }]}>
         <Pressable
           style={[styles.headerIconButton, { backgroundColor: colors.surfaceSubtle }]}
-          onPress={() => router.back()}
+          onPress={() => safeBack(router, '/(tabs)/profile')}
           hitSlop={8}
         >
           <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />

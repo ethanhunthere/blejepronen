@@ -42,6 +42,7 @@ import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/Logo'
 import { apiSignUp, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { useBanner } from '@/context/BannerContext'
+import { safeBack } from '@/lib/navigation'
 
 // ─── Official multi-color Google "G" emblem (vector, crisp at any size) ───
 function GoogleLogo({ size = 18 }: { size?: number }) {
@@ -250,7 +251,7 @@ export default function AuthModalScreen() {
         if (!hasCompletedOnboarding) {
           router.replace('/completo-profilin' as any)
         } else {
-          router.back()
+          safeBack(router, '/(tabs)')
         }
       } else {
         // Register flow: only email, password for individuals; companyName, email, password for companies
@@ -364,7 +365,7 @@ export default function AuthModalScreen() {
       if (!meta.onboarding_completed) {
         router.replace('/completo-profilin' as any)
       } else {
-        router.back()
+        safeBack(router, '/(tabs)')
       }
     },
     [router, showBanner]
@@ -566,7 +567,7 @@ export default function AuthModalScreen() {
         <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
         <Pressable
           style={[styles.closeBtn, { backgroundColor: colors.surfaceSubtle }]}
-          onPress={() => router.back()}
+          onPress={() => safeBack(router, '/(tabs)')}
           hitSlop={10}
         >
           <X size={18} color={colors.textSecondary} strokeWidth={2.4} />

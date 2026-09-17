@@ -36,6 +36,7 @@ import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
 import { DEFAULT_AVATAR } from '@/lib/avatars'
 import { apiSaveProfileSettings, ProfileSettingsPayload } from '@/lib/api'
+import { safeBack } from '@/lib/navigation'
 
 const MAJOR_CITIES = [
   'Prishtinë',
@@ -318,7 +319,7 @@ export default function CompletoProfilinScreen() {
       if (isFromSignup) {
         router.replace('/(tabs)/profile')
       } else {
-        router.back()
+        safeBack(router, '/(tabs)/profile')
       }
     } catch (err: any) {
       console.error('Save profile completion exception:', err)
@@ -380,7 +381,7 @@ export default function CompletoProfilinScreen() {
               if (isFromSignup) {
                 router.replace('/(tabs)/profile')
               } else {
-                router.back()
+                safeBack(router, '/(tabs)/profile')
               }
             }}
             hitSlop={8}

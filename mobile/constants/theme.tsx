@@ -166,6 +166,7 @@ export const Fonts = {
 interface ThemeContextType {
   theme: ThemeMode
   colors: ThemeColors
+  isThemeLoaded: boolean
   setTheme: (mode: ThemeMode) => void
   toggleTheme: () => void
 }
@@ -175,12 +176,14 @@ const THEME_STORAGE_KEY = '@blejepronen_app_theme_mode'
 const ThemeContext = createContext<ThemeContextType>({
   theme: 'white',
   colors: THEMES.white,
+  isThemeLoaded: false,
   setTheme: () => {},
   toggleTheme: () => {},
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>('white')
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false)
 
   useEffect(() => {
     async function loadSavedTheme() {
@@ -191,6 +194,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {
         console.warn('Failed to load theme preference', e)
+      } finally {
+        setIsThemeLoaded(true)
       }
     }
     loadSavedTheme()
@@ -214,6 +219,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       value={{
         theme,
         colors: THEMES[theme],
+        isThemeLoaded,
         setTheme,
         toggleTheme,
       }}

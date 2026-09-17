@@ -25,7 +25,7 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 }
 
-SplashScreen.preventAutoHideAsync()
+SplashScreen.preventAutoHideAsync().catch(() => {})
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -42,12 +42,6 @@ export default function RootLayout() {
     if (fontError) throw fontError
   }, [fontError])
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded])
-
   if (!fontsLoaded) {
     return null
   }
@@ -55,14 +49,24 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <BannerProvider>
-        <RootLayoutNav />
+        <RootLayoutNav fontsLoaded={fontsLoaded} />
       </BannerProvider>
     </ThemeProvider>
   )
 }
 
-function RootLayoutNav() {
-  const { colors, theme } = useTheme()
+function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { colors, theme, isThemeLoaded } = useTheme()
+
+  useEffect(() => {
+    if (fontsLoaded && isThemeLoaded) {
+      SplashScreen.hideAsync().catch(() => {})
+    }
+  }, [fontsLoaded, isThemeLoaded])
+
+  if (!isThemeLoaded) {
+    return null
+  }
 
   return (
     <>
@@ -72,15 +76,17 @@ function RootLayoutNav() {
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
           headerShown: false,
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="listings/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="messages/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="completo-profilin" options={{ headerShown: false }} />
-        <Stack.Screen name="shpalljet-e-mia" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="listings/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="messages/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="completo-profilin" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="shpalljet-e-mia" options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="+not-found" options={{ headerShown: false }} />
       </Stack>
     </>
   )

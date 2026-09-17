@@ -52,6 +52,7 @@ import {
   playThemeSound,
   playUnlikeSound,
 } from '@/lib/sound'
+import { safeBack } from '@/lib/navigation'
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'saved'
 
@@ -388,7 +389,7 @@ export default function ShpalljetEMiaScreen() {
       <View style={[styles.navHeader, { borderBottomColor: specularBorder }]}>
         <Pressable
           style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: specularBorder }]}
-          onPress={() => router.back()}
+          onPress={() => safeBack(router, '/(tabs)/profile')}
           hitSlop={8}
         >
           <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />

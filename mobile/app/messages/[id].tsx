@@ -41,6 +41,7 @@ import { createSafeChannel } from '@/lib/realtime'
 import { getAvatarUri } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
+import { safeBack } from '@/lib/navigation'
 
 interface MessageItem {
   id: string
@@ -460,8 +461,7 @@ export default function ChatConversationScreen() {
         <Pressable
           style={styles.backBtn}
           onPress={() => {
-            if (Platform.OS !== 'web') Haptics.selectionAsync()
-            router.back()
+            safeBack(router, '/(tabs)/messages')
           }}
           hitSlop={10}
         >

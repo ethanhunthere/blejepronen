@@ -39,6 +39,7 @@ import { supabase, Listing } from '@/lib/supabase'
 import { getAvatarUri } from '@/lib/avatars'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingDetailSkeleton } from '@/components/ListingSkeleton'
+import { safeBack } from '@/lib/navigation'
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -235,7 +236,7 @@ export default function ListingDetailScreen() {
         <Text style={[styles.notFoundTitle, { color: colors.textPrimary }]}>Prona nuk u gjet</Text>
         <Pressable
           style={[styles.backBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.back()}
+          onPress={() => safeBack(router, '/(tabs)/listings')}
         >
           <Text style={[styles.backBtnText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
             Kthehu mbrapa
@@ -255,7 +256,7 @@ export default function ListingDetailScreen() {
       {/* Floating Top Nav Bar */}
       <SafeAreaView style={styles.floatingNavSafeArea} edges={['top']}>
         <View style={styles.floatingNav}>
-          <Pressable style={styles.navIconBtn} onPress={() => router.back()} hitSlop={8}>
+          <Pressable style={styles.navIconBtn} onPress={() => safeBack(router, '/(tabs)/listings')} hitSlop={8}>
             <BlurView
               intensity={Platform.OS === 'ios' ? 70 : 100}
               tint="dark"
