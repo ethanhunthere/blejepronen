@@ -4,16 +4,14 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   Pressable,
   RefreshControl,
-  ActivityIndicator,
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Search, X, Building2, Home, Trees, Briefcase, Warehouse, LayoutGrid } from 'lucide-react-native'
+import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -23,116 +21,26 @@ import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { Logo } from '@/components/Logo'
 import OmniSearchModal from '@/components/OmniSearchModal'
+import { PropertyFilterBar } from '@/components/PropertyFilterBar'
+import { PropertyFilterModal } from '@/components/PropertyFilterModal'
+import {
+  PropertyFilterState,
+  DEFAULT_FILTER_STATE,
+  countActiveFilters,
+  filterAndSortListings,
+  matchesCategory,
+  CATEGORY_ITEMS,
+} from '@/lib/property-filters'
 
 const HOME_CACHE_KEY = '@blejepronen_home_listings_cache_v2'
-
-const CATEGORY_ITEMS = [
-  { id: 'all', label: 'Të gjitha', icon: LayoutGrid },
-  { id: 'banese', label: 'Banesa', icon: Building2 },
-  { id: 'shtepi', label: 'Shtëpi', icon: Home },
-  { id: 'vile', label: 'Vila', icon: Home },
-  { id: 'toke', label: 'Toka', icon: Trees },
-  { id: 'lokal', label: 'Lokale', icon: Briefcase },
-  { id: 'garazh', label: 'Garazha', icon: Warehouse },
-]
-
-const matchesCategory = (item: Listing, catId: string): boolean => {
-  if (catId === 'all') return true
-  const apt = (item.apartment_type || '').toLowerCase()
-  const title = (item.title || '').toLowerCase()
-  const desc = (item.description || '').toLowerCase()
-
-  switch (catId) {
-    case 'banese':
-      return (
-        apt.includes('banes') ||
-        apt.includes('apart') ||
-        apt.includes('1+1') ||
-        apt.includes('2+1') ||
-        apt.includes('3+1') ||
-        apt.includes('4+1') ||
-        apt.includes('garson') ||
-        apt.includes('studio') ||
-        apt.includes('duplex') ||
-        apt.includes('penthouse') ||
-        title.includes('banes') ||
-        title.includes('apartament') ||
-        title.includes('1+1') ||
-        title.includes('2+1') ||
-        title.includes('3+1') ||
-        title.includes('4+1') ||
-        title.includes('garson') ||
-        title.includes('studio') ||
-        title.includes('duplex') ||
-        title.includes('penthouse') ||
-        desc.includes('banes') ||
-        desc.includes('apartament')
-      )
-    case 'shtepi':
-      return (
-        apt.includes('shtëpi') ||
-        apt.includes('shtepi') ||
-        title.includes('shtëpi') ||
-        title.includes('shtepi') ||
-        desc.includes('shtëpi') ||
-        desc.includes('shtepi')
-      )
-    case 'vile':
-      return (
-        apt.includes('vil') ||
-        title.includes('vil') ||
-        desc.includes('vil')
-      )
-    case 'toke':
-      return (
-        apt.includes('tok') ||
-        apt.includes('truall') ||
-        title.includes('tok') ||
-        title.includes('truall') ||
-        desc.includes('tokë') ||
-        desc.includes('toke') ||
-        desc.includes('truall')
-      )
-    case 'lokal':
-      return (
-        apt.includes('lokal') ||
-        apt.includes('zyr') ||
-        apt.includes('biznes') ||
-        apt.includes('depo') ||
-        apt.includes('magazin') ||
-        apt.includes('afarist') ||
-        title.includes('lokal') ||
-        title.includes('zyr') ||
-        title.includes('biznes') ||
-        title.includes('depo') ||
-        title.includes('magazin') ||
-        title.includes('afarist') ||
-        desc.includes('lokal') ||
-        desc.includes('zyr')
-      )
-    case 'garazh':
-      return (
-        apt.includes('garazh') ||
-        apt.includes('park') ||
-        title.includes('garazh') ||
-        title.includes('park') ||
-        desc.includes('garazh') ||
-        desc.includes('parkim')
-      )
-    default:
-      return true
-  }
-}
 
 export default function HomeScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
 
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [transactionType, setTransactionType] = useState<'all' | 'shitje' | 'qira'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTER_STATE)
   const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -157,12 +65,14 @@ export default function HomeScreen() {
     try {
       let query = supabase
         .from('listings')
-        .select('id,title,description,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features')
+        .select(
+          'id,title,description,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features'
+        )
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(60)
 
-      if (transactionType !== 'all') {
-        query = query.eq('type', transactionType)
+      if (filters.transactionType !== 'all') {
+        query = query.eq('type', filters.transactionType)
       }
 
       const { data, error } = await query
@@ -171,7 +81,7 @@ export default function HomeScreen() {
         console.warn('Listing fetch notice:', error.message)
       } else if (data) {
         setListings(data as unknown as Listing[])
-        if (transactionType === 'all') {
+        if (filters.transactionType === 'all') {
           AsyncStorage.setItem(HOME_CACHE_KEY, JSON.stringify(data)).catch(() => {})
         }
       }
@@ -180,7 +90,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false)
     }
-  }, [transactionType])
+  }, [filters.transactionType])
 
   useEffect(() => {
     fetchListings()
@@ -197,7 +107,6 @@ export default function HomeScreen() {
     await fetchListings()
     fetchFavoriteIds().then(setFavorites)
 
-    // Snappy UX duration: 500ms for responsive, crisp refresh
     const elapsed = Date.now() - startTime
     if (elapsed < 500) {
       await new Promise((resolve) => setTimeout(resolve, 500 - elapsed))
@@ -209,65 +118,53 @@ export default function HomeScreen() {
     }
   }
 
-  const handleCategoryPress = useCallback((catId: string) => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync()
-    setSelectedCategory(catId)
-  }, [])
+  const handleToggleFavorite = useCallback(
+    async (id: string) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+        return
+      }
 
-  const handleTransactionChange = useCallback((type: 'all' | 'shitje' | 'qira') => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync()
-    setTransactionType(type)
-  }, [])
+      const wasFavorite = !!favorites[id]
+      setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
 
-  const handleToggleFavorite = useCallback(async (id: string) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
-      return
+      const ok = await persistFavoriteToggle(id, wasFavorite)
+      if (!ok) {
+        setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
+      }
+    },
+    [favorites, router]
+  )
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const item of listings) {
+      if (filters.transactionType !== 'all' && item.type !== filters.transactionType) continue
+      for (const cat of CATEGORY_ITEMS) {
+        if (cat.id === 'all') {
+          counts.all = (counts.all || 0) + 1
+        } else if (matchesCategory(item, cat.id)) {
+          counts[cat.id] = (counts[cat.id] || 0) + 1
+        }
+      }
     }
+    return counts
+  }, [listings, filters.transactionType])
 
-    const wasFavorite = !!favorites[id]
-    // Optimistic UI update first — instant heart feedback
-    setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
-
-    const ok = await persistFavoriteToggle(id, wasFavorite)
-    if (!ok) {
-      // Revert on failure (offline, etc.)
-      setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
-    }
-  }, [favorites, router])
-
+  // Unified filtering and sorting
   const filteredListings = useMemo(() => {
-    return listings.filter((item) => {
-      // 1. Category Filter
-      if (!matchesCategory(item, selectedCategory)) {
-        return false
-      }
+    return filterAndSortListings(listings, filters)
+  }, [listings, filters])
 
-      // 2. Transaction Type Filter
-      if (transactionType !== 'all' && item.type !== transactionType) {
-        return false
-      }
-
-      // 3. Search Query Filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        const titleMatch = item.title?.toLowerCase().includes(q)
-        const cityMatch = item.city?.toLowerCase().includes(q)
-        const neighborhoodMatch = item.neighborhood?.toLowerCase().includes(q)
-        const descMatch = item.description?.toLowerCase().includes(q)
-        return titleMatch || cityMatch || neighborhoodMatch || descMatch
-      }
-
-      return true
-    })
-  }, [listings, selectedCategory, transactionType, searchQuery])
+  const activeFiltersCount = countActiveFilters(filters)
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Top Bar Header with Official Logo - Identical padding across all tabs */}
+      {/* Top Bar Header with Official Logo */}
       <View style={styles.header}>
         <Logo size={34} />
       </View>
@@ -286,33 +183,17 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Full-Width Luxury Glassy Omni-Search Bar */}
-        <Pressable
-          style={styles.searchBarContainer}
-          onPress={() => {
-            if (Platform.OS !== 'web') Haptics.selectionAsync()
-            setIsOmniModalOpen(true)
-          }}
-        >
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor:
-                  Platform.OS === 'ios'
-                    ? theme === 'white'
-                      ? 'rgba(255, 255, 255, 0.88)'
-                      : theme === 'green'
-                      ? 'rgba(0, 75, 68, 0.75)'
-                      : 'rgba(20, 26, 25, 0.82)'
-                    : colors.searchBg,
-                borderColor:
-                  theme === 'white'
-                    ? 'rgba(0, 0, 0, 0.08)'
-                    : 'rgba(255, 255, 255, 0.12)',
-                borderWidth: 0.5,
-              },
-            ]}
+        {/* 
+          Search & Filter Bar Row:
+          Bounded flex constraints, fluid on any screen size with zero overflow
+        */}
+        <View style={styles.searchRow}>
+          <Pressable
+            style={styles.searchBar}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              setIsOmniModalOpen(true)
+            }}
           >
             <BlurView
               intensity={Platform.OS === 'ios' ? 70 : 100}
@@ -322,18 +203,18 @@ export default function HomeScreen() {
             <Search size={18} color={colors.primary} strokeWidth={2.2} />
             <Text
               style={[
-                styles.searchInput,
-                { color: searchQuery ? colors.textPrimary : colors.textLight },
+                styles.searchInputText,
+                { color: filters.searchQuery ? colors.textPrimary : colors.textLight },
               ]}
               numberOfLines={1}
             >
-              {searchQuery || 'Qyteti, lagjja, agjencia ose prona...'}
+              {filters.searchQuery || 'Qyteti, lagjja, agjencia ose prona...'}
             </Text>
-            {searchQuery.length > 0 && (
+            {filters.searchQuery.length > 0 && (
               <Pressable
                 onPress={(e) => {
                   e.stopPropagation()
-                  setSearchQuery('')
+                  setFilters((prev) => ({ ...prev, searchQuery: '' }))
                 }}
                 hitSlop={8}
                 style={styles.searchClearBtn}
@@ -341,112 +222,82 @@ export default function HomeScreen() {
                 <X size={16} color={colors.textMuted} />
               </Pressable>
             )}
-          </View>
-        </Pressable>
+          </Pressable>
 
-        {/* Apple UISegmentedControl Style Transaction Type Selector (Shitje / Qira) */}
-        <View
-          style={[
-            styles.transactionTabs,
-            {
-              backgroundColor:
-                theme === 'white'
-                  ? 'rgba(0, 0, 0, 0.05)'
-                  : 'rgba(255, 255, 255, 0.07)',
-              borderWidth: 0.5,
-              borderColor:
-                theme === 'white'
-                  ? 'rgba(0, 0, 0, 0.04)'
-                  : 'rgba(255, 255, 255, 0.10)',
-            },
-          ]}
-        >
-          {(['all', 'shitje', 'qira'] as const).map((type) => {
-            const isActive = transactionType === type
-            const label = type === 'all' ? 'Të gjitha' : type === 'shitje' ? 'Në Shitje' : 'Me Qira'
-            return (
-              <Pressable
-                key={type}
-                style={[
-                  styles.transactionTab,
-                  isActive && {
-                    backgroundColor: colors.surface,
-                    borderWidth: 0.5,
-                    borderColor:
-                      theme === 'white'
-                        ? 'rgba(0, 0, 0, 0.04)'
-                        : 'rgba(255, 255, 255, 0.14)',
-                    shadowColor: '#000',
-                    shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  },
-                ]}
-                onPress={() => handleTransactionChange(type)}
-              >
-                <Text
-                  style={[
-                    styles.transactionTabText,
-                    { color: isActive ? colors.textPrimary : colors.textMuted },
-                    isActive && { fontFamily: Fonts.bold },
-                  ]}
-                >
-                  {label}
-                </Text>
-              </Pressable>
-            )
-          })}
+          {/* Unified Filter Trigger Button */}
+          <Pressable
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor:
+                  activeFiltersCount > 0
+                    ? colors.primary
+                    : Platform.OS === 'ios'
+                    ? 'transparent'
+                    : colors.surface,
+                borderColor:
+                  activeFiltersCount > 0
+                    ? colors.primary
+                    : theme === 'white'
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : 'rgba(255, 255, 255, 0.12)',
+                borderWidth: 0.5,
+              },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              setShowFilterModal(true)
+            }}
+          >
+            {Platform.OS === 'ios' && activeFiltersCount === 0 && (
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]}>
+                <BlurView
+                  intensity={70}
+                  tint={colors.blurTint}
+                  style={StyleSheet.absoluteFill}
+                />
+              </View>
+            )}
+            <SlidersHorizontal
+              size={18}
+              color={
+                activeFiltersCount > 0
+                  ? theme === 'green'
+                    ? '#003E37'
+                    : '#FFFFFF'
+                  : colors.textPrimary
+              }
+              strokeWidth={2.2}
+            />
+            {activeFiltersCount > 0 && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.gold }]}>
+                <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
-        {/* Categories Horizontal Scroll */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesScroll}
-        >
-          {CATEGORY_ITEMS.map((item) => {
-            const Icon = item.icon
-            const isSelected = selectedCategory === item.id
-            return (
-              <Pressable
-                key={item.id}
-                style={[
-                  styles.categoryPill,
-                  {
-                    backgroundColor: isSelected ? colors.chipActiveBg : colors.chipBg,
-                    borderColor: isSelected ? colors.chipActiveBg : colors.border,
-                  },
-                ]}
-                onPress={() => handleCategoryPress(item.id)}
-              >
-                <Icon
-                  size={16}
-                  color={isSelected ? colors.chipTextActive : colors.primary}
-                  strokeWidth={2.2}
-                />
-                <Text
-                  style={[
-                    styles.categoryPillText,
-                    { color: isSelected ? colors.chipTextActive : colors.textSecondary },
-                    isSelected && { fontFamily: Fonts.bold },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+        {/* 
+          Shared Modular Filter Bar:
+          Exact same transaction toggle & category pills as Pronat tab
+        */}
+        <PropertyFilterBar
+          transactionType={filters.transactionType}
+          onChangeTransactionType={(t) => setFilters((prev) => ({ ...prev, transactionType: t }))}
+          selectedCategory={filters.category}
+          onChangeCategory={(c) => setFilters((prev) => ({ ...prev, category: c }))}
+          categoryCounts={categoryCounts}
+        />
 
-        {/* Section Title */}
+        {/* Section Title & Count */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleRow}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              {selectedCategory === 'all'
+              {filters.category === 'all'
                 ? 'Pronat e fundit'
-                : `Pronat: ${CATEGORY_ITEMS.find((c) => c.id === selectedCategory)?.label || ''}`}
+                : `Pronat: ${CATEGORY_ITEMS.find((c) => c.id === filters.category)?.label || ''}`}
             </Text>
-            {selectedCategory !== 'all' && (
+            {filters.category !== 'all' && (
               <View style={[styles.activeCategoryBadge, { backgroundColor: colors.chipActiveBg }]}>
                 <Text style={[styles.activeCategoryBadgeText, { color: colors.chipTextActive }]}>
                   {filteredListings.length}
@@ -454,7 +305,19 @@ export default function HomeScreen() {
               </View>
             )}
           </View>
-          <Pressable onPress={() => router.push('/listings' as any)} hitSlop={10}>
+          <Pressable
+            onPress={() => {
+              router.push({
+                pathname: '/(tabs)/listings' as any,
+                params: {
+                  category: filters.category,
+                  type: filters.transactionType,
+                  search: filters.searchQuery,
+                },
+              })
+            }}
+            hitSlop={10}
+          >
             <Text style={[styles.sectionLink, { color: colors.primary }]}>Shiko të gjitha</Text>
           </Pressable>
         </View>
@@ -474,9 +337,7 @@ export default function HomeScreen() {
               Nuk u gjet asnjë pronë
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              {selectedCategory !== 'all'
-                ? `Nuk ka prona aktive në kategorinë "${CATEGORY_ITEMS.find((c) => c.id === selectedCategory)?.label}".`
-                : 'Provoni të ndryshoni filtrat ose kërkoni një qytet tjetër.'}
+              Provoni të pastroni filtrat ose të zgjidhni një kategori tjetër.
             </Text>
             <Pressable
               style={[
@@ -490,9 +351,7 @@ export default function HomeScreen() {
               hitSlop={8}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                setSelectedCategory('all')
-                setTransactionType('all')
-                setSearchQuery('')
+                setFilters(DEFAULT_FILTER_STATE)
               }}
             >
               <Text style={[styles.resetButtonText, { color: colors.primary }]}>
@@ -512,13 +371,30 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
+      {/* Multi-Entity Omni-Search Modal */}
       <OmniSearchModal
         visible={isOmniModalOpen}
         onClose={() => setIsOmniModalOpen(false)}
-        initialQuery={searchQuery}
+        initialQuery={filters.searchQuery}
         onSelectCity={(city, neighborhood) => {
-          setSearchQuery(neighborhood ? `${neighborhood}, ${city}` : city)
+          setFilters((prev) => ({
+            ...prev,
+            city,
+            neighborhood: neighborhood || '',
+            searchQuery: neighborhood ? `${neighborhood}, ${city}` : city,
+          }))
         }}
+        onSelectQuery={(q) => {
+          setFilters((prev) => ({ ...prev, searchQuery: q }))
+        }}
+      />
+
+      {/* Comprehensive Property Filter Modal */}
+      <PropertyFilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        filters={filters}
+        onApply={(updated) => setFilters(updated)}
       />
     </SafeAreaView>
   )
@@ -550,14 +426,17 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  searchBarContainer: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 12,
+    width: '100%',
   },
   searchBar: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     height: 50,
     borderRadius: 16,
     overflow: 'hidden',
@@ -565,15 +444,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 1,
   },
-  searchInput: {
+  searchInputText: {
     flex: 1,
-    height: '100%',
+    minWidth: 0,
+    flexShrink: 1,
     fontSize: 14,
     fontFamily: Fonts.medium,
   },
@@ -584,111 +466,90 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     width: 48,
-    height: 48,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
+    flexShrink: 0,
   },
-  transactionTabs: {
-    flexDirection: 'row',
-    padding: 3,
-    borderRadius: 14,
-    marginBottom: 14,
-  },
-  transactionTab: {
-    flex: 1,
-    paddingVertical: 8,
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
-    borderRadius: 11,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
-  transactionTabText: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-  },
-  categoriesScroll: {
-    gap: 8,
-    paddingBottom: 16,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 22,
-    borderWidth: 0.5,
-  },
-  categoryPillText: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
+  filterBadgeText: {
+    color: '#003E37',
+    fontSize: 10,
+    fontFamily: Fonts.bold,
   },
   sectionHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: 10,
     marginBottom: 14,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: Fonts.extraBold,
-  },
-  sectionLink: {
-    fontSize: 13,
-    fontFamily: Fonts.bold,
-  },
-  loaderContainer: {
-    padding: 40,
-    alignItems: 'center',
-    gap: 12,
-  },
-  loaderText: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: Fonts.bold,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    fontFamily: Fonts.regular,
-    textAlign: 'center',
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  sectionTitle: {
+    fontSize: 17,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
   activeCategoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   activeCategoryBadgeText: {
     fontSize: 11,
     fontFamily: Fonts.bold,
   },
+  sectionLink: {
+    fontSize: 13,
+    fontFamily: Fonts.semiBold,
+  },
+  emptyContainer: {
+    padding: 32,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 20,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontFamily: Fonts.bold,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
   resetButton: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 12,
     marginTop: 6,
   },
   resetButtonText: {
     fontSize: 13,
-    fontFamily: Fonts.bold,
+    fontFamily: Fonts.semiBold,
   },
 })

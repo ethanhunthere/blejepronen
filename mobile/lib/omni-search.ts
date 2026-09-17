@@ -164,7 +164,7 @@ export async function executeMobileOmniSearch(
       supabase
         .from('profiles')
         .select('id, first_name, last_name, phone, avatar_url, email_verified')
-        .or(`first_name.ilike.%${cleanQ}%,last_name.ilike.%${cleanQ}%`)
+        .or(`first_name.ilike.%${cleanQ}%,last_name.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
         .limit(20),
     ])
 
@@ -197,22 +197,35 @@ export async function executeMobileOmniSearch(
 
     for (const p of rawProfiles) {
       const isCompany = p.last_name === 'Kompani'
-      const normName = normalizeSearchString(p.first_name || '')
-      let score = 30
-      if (normName === normQ) score += 60
-      else if (normName.startsWith(normQ)) score += 40
+      const normFirst = normalizeSearchString(p.first_name || '')
+      const normLast = normalizeSearchString(p.last_name || '')
+      const normPhone = normalizeSearchString(p.phone || '')
+
+      let score = 40
+      if (normFirst === normQ) score += 60
+      else if (normFirst.startsWith(normQ)) score += 40
+      else if (normFirst.includes(normQ)) score += 25
+      if (normLast.includes(normQ)) score += 20
+      if (normPhone.includes(normQ)) score += 30
+      if (p.email_verified) score += 10
+
+      const displayName = isCompany
+        ? p.first_name
+        : `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Përdorues'
 
       const item: OmniResultItem = {
         id: p.id,
         entityType: isCompany ? 'agency' : 'agent',
-        title: isCompany ? p.first_name : `${p.first_name} ${p.last_name}`.trim(),
-        subtitle: isCompany ? 'Agjenci e Verifikuar' : 'Përdorues / Pronar',
-        badge: p.email_verified ? 'Verifikuar' : undefined,
+        title: displayName,
+        subtitle: isCompany
+          ? 'Agjenci e Verifikuar e Patundshmërive'
+          : 'Llogari Personale • Pronar',
+        badge: isCompany ? 'Kompani' : 'Pronar',
         imageUrl: p.avatar_url || null,
         price: null,
         score,
-        payload: { phone: p.phone },
-        targetUrl: `/profili/${p.id}`,
+        payload: { phone: p.phone, email_verified: p.email_verified },
+        targetUrl: `/listings?search=${encodeURIComponent(displayName)}`,
       }
 
       if (isCompany) agencies.push(item)

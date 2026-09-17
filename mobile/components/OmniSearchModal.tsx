@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -30,6 +29,7 @@ import {
   Phone,
   ChevronRight,
   ShieldCheck,
+  Check,
 } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import {
@@ -49,6 +49,7 @@ interface OmniSearchModalProps {
   onClose: () => void
   initialQuery?: string
   onSelectCity?: (city: string, neighborhood?: string) => void
+  onSelectQuery?: (query: string) => void
 }
 
 export default function OmniSearchModal({
@@ -56,6 +57,7 @@ export default function OmniSearchModal({
   onClose,
   initialQuery = '',
   onSelectCity,
+  onSelectQuery,
 }: OmniSearchModalProps) {
   const router = useRouter()
   const { colors, theme } = useTheme()
@@ -86,28 +88,25 @@ export default function OmniSearchModal({
   useEffect(() => {
     if (visible) {
       setQuery(initialQuery)
-      setTimeout(() => inputRef.current?.focus(), 150)
+      setTimeout(() => inputRef.current?.focus(), 120)
     }
   }, [visible, initialQuery])
 
   // Save to recent searches
-  const saveRecent = useCallback(
-    async (searchTerm: string) => {
-      const clean = searchTerm.trim()
-      if (!clean || clean.length < 2) return
-      try {
-        setRecentSearches((prev) => {
-          const next = [
-            clean,
-            ...prev.filter((i) => i.toLowerCase() !== clean.toLowerCase()),
-          ].slice(0, MAX_RECENT)
-          AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
-          return next
-        })
-      } catch {}
-    },
-    []
-  )
+  const saveRecent = useCallback(async (searchTerm: string) => {
+    const clean = searchTerm.trim()
+    if (!clean || clean.length < 2) return
+    try {
+      setRecentSearches((prev) => {
+        const next = [
+          clean,
+          ...prev.filter((i) => i.toLowerCase() !== clean.toLowerCase()),
+        ].slice(0, MAX_RECENT)
+        AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
+        return next
+      })
+    } catch {}
+  }, [])
 
   const removeRecent = useCallback(async (searchTerm: string) => {
     try {
@@ -145,7 +144,7 @@ export default function OmniSearchModal({
         const res = await executeMobileOmniSearch(query)
         setResults(res)
       } catch (err) {
-        console.warn('Mobile search error:', err)
+        console.warn('Mobile omni search error:', err)
       } finally {
         setLoading(false)
       }
@@ -182,223 +181,177 @@ export default function OmniSearchModal({
       } else if (item.entityType === 'location') {
         if (onSelectCity && item.payload?.city) {
           onSelectCity(item.payload.city, item.payload.neighborhood)
+        } else if (onSelectQuery) {
+          onSelectQuery(item.payload?.neighborhood ? `${item.payload.neighborhood}, ${item.payload.city}` : item.payload?.city || item.title)
+        } else {
+          router.push({
+            pathname: '/(tabs)/listings' as any,
+            params: { city: item.payload?.city, neighborhood: item.payload?.neighborhood },
+          })
         }
       } else if (item.entityType === 'agency' || item.entityType === 'agent') {
-        // Can open phone call directly if available or profile
-        if (item.payload?.phone) {
-          Linking.openURL(`tel:${item.payload.phone}`)
+        if (onSelectQuery) {
+          onSelectQuery(item.title)
+        } else {
+          router.push({
+            pathname: '/(tabs)/listings' as any,
+            params: { search: item.title },
+          })
         }
       }
     },
-    [query, saveRecent, onClose, router, onSelectCity]
+    [query, saveRecent, onClose, router, onSelectCity, onSelectQuery]
   )
 
   const formatPrice = (price?: number | null) => {
     if (!price || price <= 0) return 'Me marrëveshje'
-    return new Intl.NumberFormat('sq-AL', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(price)
+    return new Intl.NumberFormat('de-DE').format(price) + ' €'
   }
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <SafeAreaView
         style={[styles.safeArea, { backgroundColor: colors.background }]}
-        edges={['top', 'bottom']}
+        edges={['top']}
       >
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        {/* 
+          ROCK-SOLID TOP HEADER BAR
+          Pinned securely OUTSIDE KeyboardAvoidingView so it NEVER overflows or pushes off-screen.
+          Flex constraints strictly bounded with minWidth: 0 to prevent text blowout.
+        */}
+        <View
+          style={[
+            styles.headerBar,
+            {
+              borderBottomColor: colors.border,
+              backgroundColor: colors.background,
+            },
+          ]}
         >
-          {/* Top Bar with Input & Cancel */}
-          <View style={[styles.headerBar, { borderBottomColor: colors.border }]}>
-            <View
+          <View
+            style={[
+              styles.inputWrapper,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Search size={18} color={colors.primary} strokeWidth={2.2} />
+            <TextInput
+              ref={inputRef}
               style={[
-                styles.inputWrapper,
+                styles.textInput,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  color: colors.textPrimary,
                 },
               ]}
-            >
-              <Search size={18} color={colors.primary} strokeWidth={2.2} />
-              <TextInput
-                ref={inputRef}
-                style={[styles.textInput, { color: colors.textPrimary }]}
-                placeholder="Kërko pronë, agjenci, qytet ose agjent..."
-                placeholderTextColor={colors.textLight}
-                value={query}
-                onChangeText={setQuery}
-                returnKeyType="search"
-                autoCapitalize="none"
-              />
-              {loading && <ActivityIndicator size="small" color={colors.primary} />}
-              {query.length > 0 && !loading && (
-                <Pressable
-                  onPress={() => setQuery('')}
-                  hitSlop={8}
-                  style={styles.clearBtn}
-                >
-                  <X size={15} color={colors.textMuted} />
-                </Pressable>
-              )}
-            </View>
-
-            <Pressable onPress={onClose} hitSlop={10} style={styles.cancelBtn}>
-              <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
-            </Pressable>
+              placeholder="Kërko prona, agjenci, llogari, qytet..."
+              placeholderTextColor={colors.textLight}
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="never"
+            />
+            {loading && <ActivityIndicator size="small" color={colors.primary} />}
+            {query.length > 0 && !loading && (
+              <Pressable
+                onPress={() => setQuery('')}
+                hitSlop={8}
+                style={styles.clearBtn}
+              >
+                <X size={15} color={colors.textMuted} />
+              </Pressable>
+            )}
           </View>
 
-          {/* Category Selector Tabs (if results exist) */}
-          {results && results.total > 0 && (
-            <View style={[styles.tabsRow, { borderBottomColor: colors.border }]}>
-              <Pressable
-                onPress={() => setActiveTab('all')}
-                style={[
-                  styles.tabPill,
-                  activeTab === 'all' && [
-                    styles.tabPillActive,
-                    { backgroundColor: colors.primary },
-                  ],
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabPillText,
-                    {
-                      color:
-                        activeTab === 'all'
-                          ? '#FFFFFF'
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  Të gjitha ({results.total})
-                </Text>
-              </Pressable>
+          <Pressable onPress={onClose} hitSlop={10} style={styles.cancelBtn}>
+            <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
+          </Pressable>
+        </View>
 
-              {results.counts.listings > 0 && (
-                <Pressable
-                  onPress={() => setActiveTab('listing')}
-                  style={[
-                    styles.tabPill,
-                    activeTab === 'listing' && [
-                      styles.tabPillActive,
-                      { backgroundColor: colors.primary },
-                    ],
-                  ]}
-                >
-                  <Text
+        {/* 
+          Category Selector Tabs:
+          Properties, Company/Agency accounts, Personal accounts, Cities/Locations
+        */}
+        {results && results.total > 0 && (
+          <View style={[styles.tabsRow, { borderBottomColor: colors.border, backgroundColor: colors.background }]}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsScrollContent}
+              data={[
+                { key: 'all', label: `Të gjitha (${results.total})` },
+                ...(results.counts.listings > 0
+                  ? [{ key: 'listing', label: `Prona (${results.counts.listings})` }]
+                  : []),
+                ...(results.counts.agencies > 0
+                  ? [{ key: 'agency', label: `Agjenci & Kompani (${results.counts.agencies})` }]
+                  : []),
+                ...(results.counts.agents > 0
+                  ? [{ key: 'agent', label: `Llogari Personale (${results.counts.agents})` }]
+                  : []),
+                ...(results.counts.locations > 0
+                  ? [{ key: 'location', label: `Qytete & Zona (${results.counts.locations})` }]
+                  : []),
+              ]}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item }) => {
+                const isActive = activeTab === item.key
+                return (
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      setActiveTab(item.key as any)
+                    }}
                     style={[
-                      styles.tabPillText,
+                      styles.tabPill,
                       {
-                        color:
-                          activeTab === 'listing'
-                            ? '#FFFFFF'
-                            : colors.textSecondary,
+                        backgroundColor: isActive ? colors.chipActiveBg : colors.surfaceSubtle,
+                        borderColor: isActive ? colors.chipActiveBg : colors.border,
                       },
                     ]}
                   >
-                    Prona ({results.counts.listings})
-                  </Text>
-                </Pressable>
-              )}
+                    <Text
+                      style={[
+                        styles.tabPillText,
+                        {
+                          color: isActive ? colors.chipTextActive : colors.textSecondary,
+                          fontFamily: isActive ? Fonts.bold : Fonts.medium,
+                        },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                )
+              }}
+            />
+          </View>
+        )}
 
-              {results.counts.agencies > 0 && (
-                <Pressable
-                  onPress={() => setActiveTab('agency')}
-                  style={[
-                    styles.tabPill,
-                    activeTab === 'agency' && [
-                      styles.tabPillActive,
-                      { backgroundColor: colors.primary },
-                    ],
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabPillText,
-                      {
-                        color:
-                          activeTab === 'agency'
-                            ? '#FFFFFF'
-                            : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    Agjenci ({results.counts.agencies})
-                  </Text>
-                </Pressable>
-              )}
-
-              {results.counts.agents > 0 && (
-                <Pressable
-                  onPress={() => setActiveTab('agent')}
-                  style={[
-                    styles.tabPill,
-                    activeTab === 'agent' && [
-                      styles.tabPillActive,
-                      { backgroundColor: colors.primary },
-                    ],
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabPillText,
-                      {
-                        color:
-                          activeTab === 'agent'
-                            ? '#FFFFFF'
-                            : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    Agjentë ({results.counts.agents})
-                  </Text>
-                </Pressable>
-              )}
-
-              {results.counts.locations > 0 && (
-                <Pressable
-                  onPress={() => setActiveTab('location')}
-                  style={[
-                    styles.tabPill,
-                    activeTab === 'location' && [
-                      styles.tabPillActive,
-                      { backgroundColor: colors.primary },
-                    ],
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabPillText,
-                      {
-                        color:
-                          activeTab === 'location'
-                            ? '#FFFFFF'
-                            : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    Qytete ({results.counts.locations})
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
+        {/* 
+          Results Area with keyboard avoidance ONLY below the fixed header
+        */}
+        <KeyboardAvoidingView
+          style={styles.keyboardContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        >
           {/* Empty Query Default State: Recent & Trending */}
           {!query.trim() && (
             <FlatList
               data={[]}
               renderItem={() => null}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               ListHeaderComponent={
                 <View style={styles.defaultStateWrap}>
                   {/* Recent Searches */}
@@ -498,7 +451,13 @@ export default function OmniSearchModal({
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.resultsListContent}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               renderItem={({ item }) => {
+                const isAgency = item.entityType === 'agency'
+                const isAgent = item.entityType === 'agent'
+                const isLocation = item.entityType === 'location'
+                const isListing = item.entityType === 'listing'
+
                 return (
                   <Pressable
                     onPress={() => handleItemPress(item)}
@@ -528,11 +487,11 @@ export default function OmniSearchModal({
                           style={styles.itemThumbImg}
                           contentFit="cover"
                         />
-                      ) : item.entityType === 'location' ? (
+                      ) : isLocation ? (
                         <MapPin size={22} color={colors.primary} />
-                      ) : item.entityType === 'agency' ? (
-                        <Building2 size={22} color={colors.primary} />
-                      ) : item.entityType === 'agent' ? (
+                      ) : isAgency ? (
+                        <Building2 size={22} color={theme === 'green' ? colors.gold : colors.primary} />
+                      ) : isAgent ? (
                         <User size={22} color={colors.textMuted} />
                       ) : (
                         <Home size={22} color={colors.primary} />
@@ -554,11 +513,13 @@ export default function OmniSearchModal({
                               styles.badgePill,
                               {
                                 backgroundColor:
-                                  item.badge === 'Në shitje'
-                                    ? 'rgba(16, 185, 129, 0.12)'
-                                    : item.badge === 'Verifikuar'
-                                    ? 'rgba(0, 100, 89, 0.12)'
-                                    : 'rgba(59, 130, 246, 0.12)',
+                                  isAgency
+                                    ? 'rgba(0, 100, 89, 0.14)'
+                                    : isAgent
+                                    ? 'rgba(59, 130, 246, 0.12)'
+                                    : item.badge === 'Në shitje'
+                                    ? 'rgba(16, 185, 129, 0.14)'
+                                    : 'rgba(200, 184, 130, 0.20)',
                               },
                             ]}
                           >
@@ -567,11 +528,13 @@ export default function OmniSearchModal({
                                 styles.badgePillText,
                                 {
                                   color:
-                                    item.badge === 'Në shitje'
-                                      ? '#10B981'
-                                      : item.badge === 'Verifikuar'
+                                    isAgency
                                       ? colors.primary
-                                      : '#3B82F6',
+                                      : isAgent
+                                      ? '#3B82F6'
+                                      : item.badge === 'Në shitje'
+                                      ? '#10B981'
+                                      : colors.gold,
                                 },
                               ]}
                             >
@@ -589,21 +552,28 @@ export default function OmniSearchModal({
                       </Text>
                     </View>
 
-                    {/* Price or Call Action */}
+                    {/* Price or Action Column */}
                     <View style={styles.itemActionCol}>
-                      {item.price !== null && item.price !== undefined ? (
+                      {isListing && item.price !== null && item.price !== undefined ? (
                         <Text style={[styles.itemPrice, { color: colors.primary }]}>
                           {formatPrice(item.price)}
                         </Text>
-                      ) : item.payload?.phone ? (
-                        <View
+                      ) : (isAgency || isAgent) && item.payload?.phone ? (
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation()
+                            if (item.payload?.phone) {
+                              Linking.openURL(`tel:${item.payload.phone}`)
+                            }
+                          }}
+                          hitSlop={8}
                           style={[
                             styles.phoneActionBtn,
                             { backgroundColor: colors.primaryLight },
                           ]}
                         >
                           <Phone size={14} color={colors.primary} />
-                        </View>
+                        </Pressable>
                       ) : (
                         <ChevronRight size={18} color={colors.textMuted} />
                       )}
@@ -626,7 +596,7 @@ export default function OmniSearchModal({
                       Nuk u gjet asnjë rezultat për &ldquo;{query}&rdquo;
                     </Text>
                     <Text style={[styles.zeroSub, { color: colors.textMuted }]}>
-                      Provoni të kërkoni një qytet tjetër (psh. Prishtinë, Prizren) ose pastroni filtrat.
+                      Kërkoni me emër prone, lagje, qytet (psh. Prishtinë), ose emër agjencie / pronari.
                     </Text>
                   </View>
                 ) : null
@@ -643,19 +613,21 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  container: {
-    flex: 1,
-  },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    gap: 12,
+    gap: 10,
     borderBottomWidth: 0.5,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   inputWrapper: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     height: 48,
     borderRadius: 16,
     borderWidth: 1,
@@ -666,6 +638,11 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
+    height: '100%',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
     fontSize: 15,
     fontFamily: Fonts.medium,
   },
@@ -673,36 +650,46 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   cancelBtn: {
+    flexShrink: 0,
     paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelText: {
     fontSize: 15,
     fontFamily: Fonts.semiBold,
   },
   tabsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
     borderBottomWidth: 0.5,
+    paddingVertical: 8,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  tabsScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
   tabPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-  },
-  tabPillActive: {
-    elevation: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 0.5,
   },
   tabPillText: {
-    fontSize: 12,
-    fontFamily: Fonts.bold,
+    fontSize: 12.5,
+    letterSpacing: -0.1,
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   defaultStateWrap: {
     padding: 16,
     gap: 24,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   sectionBlock: {
     gap: 10,
@@ -723,7 +710,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   clearAllText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontFamily: Fonts.semiBold,
   },
   recentChipsWrap: {
@@ -734,22 +721,21 @@ const styles = StyleSheet.create({
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
-    paddingRight: 8,
-    paddingVertical: 7,
     borderRadius: 12,
     borderWidth: 0.5,
-    gap: 6,
+    paddingLeft: 12,
+    paddingRight: 6,
+    paddingVertical: 6,
   },
   recentChipTextWrap: {
-    justifyContent: 'center',
+    paddingRight: 4,
   },
   recentChipText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
   },
   recentChipRemove: {
-    padding: 2,
+    padding: 4,
   },
   trendingGrid: {
     flexDirection: 'row',
@@ -757,37 +743,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   trendingCard: {
-    width: '48.5%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 0.5,
+    width: '48%',
+    gap: 6,
   },
   trendingText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
     flex: 1,
-    marginRight: 4,
   },
   resultsListContent: {
     padding: 16,
-    gap: 8,
+    gap: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   resultCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 0.5,
     gap: 12,
   },
   itemThumbBox: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -800,6 +789,7 @@ const styles = StyleSheet.create({
   itemInfo: {
     flex: 1,
     gap: 3,
+    minWidth: 0,
   },
   itemTitleRow: {
     flexDirection: 'row',
@@ -811,6 +801,10 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     flexShrink: 1,
   },
+  itemSubtitle: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+  },
   badgePill: {
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -820,31 +814,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.bold,
   },
-  itemSubtitle: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-  },
   itemActionCol: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   itemPrice: {
-    fontSize: 13.5,
-    fontFamily: Fonts.extraBold,
+    fontSize: 14,
+    fontFamily: Fonts.bold,
   },
   phoneActionBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   zeroResultsWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 50,
-    paddingHorizontal: 24,
+    paddingVertical: 48,
     gap: 10,
+    paddingHorizontal: 20,
   },
   zeroIconWrap: {
     width: 60,
@@ -864,6 +854,5 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
-    maxWidth: 280,
   },
 })
