@@ -38,6 +38,7 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { getAvatarUri } from '@/lib/avatars'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
+import { ListingDetailSkeleton } from '@/components/ListingSkeleton'
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -97,6 +98,12 @@ export default function ListingDetailScreen() {
 
   const handleFavoriteToggle = async () => {
     if (!listing || favPendingRef.current) return
+
+    if (!currentUser) {
+      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+      return
+    }
+
     favPendingRef.current = true
     const wasFavorite = isFavorite
     if (wasFavorite) {
@@ -135,7 +142,7 @@ export default function ListingDetailScreen() {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
     if (!currentUser) {
-      router.push({ pathname: '/modal', params: { initialTab: 'login' } })
+      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'chat' } })
       return
     }
 
@@ -201,11 +208,8 @@ export default function ListingDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-          Duke ngarkuar detajet e pronës...
-        </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+        <ListingDetailSkeleton />
       </SafeAreaView>
     )
   }

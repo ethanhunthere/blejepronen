@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -29,6 +29,9 @@ import {
   ShieldCheck,
   FastForward,
   ChevronRight,
+  Heart,
+  MessageSquare,
+  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as WebBrowser from 'expo-web-browser'
@@ -66,7 +69,7 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
 
 export default function AuthModalScreen() {
   const router = useRouter()
-  const params = useLocalSearchParams<{ initialTab?: string }>()
+  const params = useLocalSearchParams<{ initialTab?: string; reason?: string; title?: string }>()
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
 
@@ -75,6 +78,29 @@ export default function AuthModalScreen() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(
     params.initialTab === 'register' ? 'register' : 'login'
   )
+
+  const heroTitle = useMemo(() => {
+    if (params.title) return params.title
+    if (params.reason === 'favorite') return 'Ruani pronat tuaja të preferuara'
+    if (params.reason === 'chat') return 'Bisedoni me shitësin drejtpërdrejt'
+    if (params.reason === 'post') return 'Publikoni pronën tuaj në treg'
+    return activeTab === 'login' ? 'Mirësevini në Bleje Pronën' : 'Krijoni llogarinë tuaj falas'
+  }, [params.title, params.reason, activeTab])
+
+  const heroSubtitle = useMemo(() => {
+    if (params.reason === 'favorite') {
+      return 'Kyçuni për të ruajtur banesa, shtëpi dhe vila, dhe për t’i gjetur ato në çdo kohë nga të gjitha pajisjet tuaja.'
+    }
+    if (params.reason === 'chat') {
+      return 'Dërgoni mesazhe të menjëhershme dhe merrni përgjigje të shpejta nga agjencitë dhe pronarët e verifikuar.'
+    }
+    if (params.reason === 'post') {
+      return 'Arritni mijëra blerës dhe qiramarrës potencialë në Kosovë, Shqipëri dhe Diasporë brenda pak minutave.'
+    }
+    return activeTab === 'login'
+      ? 'Hyni në llogarinë tuaj për të menaxhuar kërkimet, bisedat dhe ofertat e fundit.'
+      : 'Bashkohuni me platformën më moderne të pasurive të patundshme në Kosovë dhe rajon.'
+  }, [params.reason, activeTab])
 
   // Account Type: 'individual' | 'company'
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
@@ -779,9 +805,61 @@ export default function AuthModalScreen() {
         ) : (
           /* ================= STEP 1: AUTH (LOGIN & REGISTER) ================= */
           <>
-            {/* Centered Brand Emblem */}
+            {/* Centered Brand Emblem & Welcoming Editorial Context */}
             <View style={styles.brandHero}>
-              <Logo size={42} />
+              <Logo size={40} />
+              <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
+                {heroTitle}
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: colors.textMuted }]}>
+                {heroSubtitle}
+              </Text>
+
+              {/* Editorial Value Proposition Badges */}
+              <View style={styles.benefitsRow}>
+                <View
+                  style={[
+                    styles.benefitPill,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorderColor,
+                    },
+                  ]}
+                >
+                  <Heart size={11} color={brandHighlight} strokeWidth={2.4} />
+                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
+                    Ruajtje e pakufizuar
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.benefitPill,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorderColor,
+                    },
+                  ]}
+                >
+                  <MessageSquare size={11} color={brandHighlight} strokeWidth={2.4} />
+                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
+                    Biseda të sigurta
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.benefitPill,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorderColor,
+                    },
+                  ]}
+                >
+                  <ShieldCheck size={11} color={brandHighlight} strokeWidth={2.4} />
+                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
+                    Prona të verifikuara
+                  </Text>
+                </View>
+              </View>
             </View>
 
             {/* Apple/Airbnb-Grade Segmented Tab Switcher (Kyçu / Regjistrohu) */}
@@ -1216,8 +1294,46 @@ const styles = StyleSheet.create({
   brandHero: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.4,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 320,
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  benefitsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    width: '100%',
+  },
+  benefitPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 0.5,
+  },
+  benefitPillText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
   },
   tabSwitcher: {
     flexDirection: 'row',

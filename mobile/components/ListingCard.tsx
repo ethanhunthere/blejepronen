@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
-import { MapPin, BedDouble, Maximize2, Layers, Heart, Star, Camera } from 'lucide-react-native'
+import { MapPin, BedDouble, Maximize2, Layers, Heart, Star, Camera, Building2, ShieldCheck } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
@@ -33,7 +33,10 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
     onToggleFavorite?.(listing.id)
   }
 
-  const formatPrice = (val: number) => {
+  const formatPrice = (val?: number | null) => {
+    if (val === undefined || val === null || isNaN(val) || val <= 0) {
+      return 'Me marrëveshje'
+    }
     return new Intl.NumberFormat('de-DE').format(val) + ' €'
   }
 
@@ -213,16 +216,46 @@ export function ListingCard({ listing, isFavorite = false, onToggleFavorite }: L
           {listing.title}
         </Text>
 
-        {/* Row 3: Location */}
-        <View style={styles.locationRow}>
-          <MapPin
-            size={13}
-            color={theme === 'green' ? colors.gold : colors.primary}
-            strokeWidth={2.4}
-          />
-          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}
-          </Text>
+        {/* Row 3: Location & Verified Badge */}
+        <View style={styles.locationAndPosterRow}>
+          <View style={styles.locationRow}>
+            <MapPin
+              size={13}
+              color={theme === 'green' ? colors.gold : colors.primary}
+              strokeWidth={2.4}
+            />
+            <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}
+            </Text>
+          </View>
+
+          {listing.profiles?.email_verified && (
+            <View
+              style={[
+                styles.verifiedBadge,
+                {
+                  backgroundColor:
+                    theme === 'green'
+                      ? 'rgba(200, 184, 130, 0.15)'
+                      : 'rgba(16, 185, 129, 0.12)',
+                },
+              ]}
+            >
+              <ShieldCheck
+                size={11}
+                color={theme === 'green' ? colors.gold : '#10B981'}
+                strokeWidth={2.4}
+              />
+              <Text
+                style={[
+                  styles.verifiedBadgeText,
+                  { color: theme === 'green' ? colors.gold : '#10B981' },
+                ]}
+              >
+                {listing.profiles.account_type === 'company' ? 'Agjenci' : 'Verifikuar'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Row 4: Organized Specs Modules (Area, Rooms, Floor) */}
@@ -479,15 +512,34 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     lineHeight: 20,
   },
+  locationAndPosterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flex: 1,
   },
   locationText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
     flex: 1,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3.5,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  verifiedBadgeText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.bold,
   },
   specsModuleRow: {
     flexDirection: 'row',

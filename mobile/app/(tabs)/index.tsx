@@ -19,6 +19,7 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
+import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { Logo } from '@/components/Logo'
 
 const CATEGORY_ITEMS = [
@@ -196,13 +197,21 @@ export default function HomeScreen() {
   }
 
   const handleToggleFavorite = async (id: string) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+      return
+    }
+
     const wasFavorite = !!favorites[id]
     // Optimistic UI update first — instant heart feedback
     setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
 
     const ok = await persistFavoriteToggle(id, wasFavorite)
     if (!ok) {
-      // Revert on failure (offline, guest, etc.)
+      // Revert on failure (offline, etc.)
       setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
     }
   }
@@ -434,12 +443,7 @@ export default function HomeScreen() {
 
         {/* Listings Feed */}
         {loading && listings.length === 0 ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loaderText, { color: colors.textMuted }]}>
-              Duke ngarkuar pronat...
-            </Text>
-          </View>
+          <ListingFeedSkeleton count={3} />
         ) : filteredListings.length === 0 ? (
           <View
             style={[

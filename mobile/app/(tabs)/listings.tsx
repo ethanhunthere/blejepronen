@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import {
   Search,
   SlidersHorizontal,
@@ -38,6 +39,7 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
+import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 
 const ALL_CITIES = Object.keys(KOSOVO_LOCATIONS)
@@ -178,6 +180,7 @@ const SORT_OPTIONS = [
 type SortType = (typeof SORT_OPTIONS)[number]['id']
 
 export default function ListingsScreen() {
+  const router = useRouter()
   const { colors, theme } = useTheme()
 
   const [listings, setListings] = useState<Listing[]>([])
@@ -399,13 +402,21 @@ export default function ListingsScreen() {
   }
 
   const handleToggleFavorite = async (id: string) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+      return
+    }
+
     const wasFavorite = !!favorites[id]
     // Optimistic UI update first — instant heart feedback
     setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
 
     const ok = await persistFavoriteToggle(id, wasFavorite)
     if (!ok) {
-      // Revert on failure (offline, guest, etc.)
+      // Revert on failure (offline, etc.)
       setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
     }
   }
@@ -708,12 +719,7 @@ export default function ListingsScreen() {
         }
       >
         {loading && listings.length === 0 ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Duke përditësuar listën...
-            </Text>
-          </View>
+          <ListingFeedSkeleton count={4} />
         ) : displayedListings.length === 0 ? (
           <View
             style={[
@@ -723,10 +729,10 @@ export default function ListingsScreen() {
           >
             <Building2 size={44} color={colors.textLight} strokeWidth={1.5} />
             <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              Nuk u gjet asnjë pronë
+              Nuk gjetëm prona me këto kritere
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              Nuk ka prona që përputhen me filtrat tuaj aktualë.
+              Provoni të zgjeroni gamën e çmimit, të hiqni disa nga karakteristikat e zgjedhura ose të kërkoni në një qytet tjetër.
             </Text>
             <Pressable
               style={[
@@ -740,7 +746,7 @@ export default function ListingsScreen() {
               hitSlop={10}
               onPress={resetFilters}
             >
-              <Text style={[styles.resetButtonText, { color: colors.primary }]}>Pastro filtrat</Text>
+              <Text style={[styles.resetButtonText, { color: colors.primary }]}>Pastro të gjithë filtrat</Text>
             </Pressable>
           </View>
         ) : (
