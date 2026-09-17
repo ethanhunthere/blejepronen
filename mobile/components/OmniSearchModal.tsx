@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Linking,
   ActivityIndicator,
+  StatusBar as RNStatusBar,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { StatusBar as ExpoStatusBar } from 'expo-status-bar'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -61,6 +63,21 @@ export default function OmniSearchModal({
 }: OmniSearchModalProps) {
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const insets = useSafeAreaInsets()
+
+  // Hardware cutout & status bar protection (Dynamic Island, notch, punch-hole)
+  const resolvedTopInset =
+    insets.top > 0
+      ? insets.top
+      : Platform.OS === 'android'
+      ? (RNStatusBar.currentHeight || 28)
+      : Platform.OS === 'ios'
+      ? 48
+      : 0
+
+  // Intentional breathing room below status bar & Dynamic Island according to Apple HIG
+  const headerPaddingTop = resolvedTopInset + (Platform.OS === 'ios' ? 8 : 10)
+  const resolvedBottomInset = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 12
 
   const [query, setQuery] = useState(initialQuery)
   const [activeTab, setActiveTab] = useState<'all' | OmniEntityType>('all')
@@ -213,68 +230,74 @@ export default function OmniSearchModal({
       visible={visible}
       animationType="fade"
       presentationStyle="fullScreen"
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: colors.background }]}
-        edges={['top']}
-      >
+      <ExpoStatusBar style={theme === 'white' ? 'dark' : 'light'} />
+      <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
         {/* 
           ROCK-SOLID TOP HEADER BAR
           Pinned securely OUTSIDE KeyboardAvoidingView so it NEVER overflows or pushes off-screen.
-          Flex constraints strictly bounded with minWidth: 0 to prevent text blowout.
+          Dynamic safe-area paddingTop ensures full clearance from Dynamic Island, notches, and status bars.
         */}
         <View
           style={[
-            styles.headerBar,
+            styles.headerContainer,
             {
-              borderBottomColor: colors.border,
               backgroundColor: colors.background,
+              borderBottomColor: colors.border,
+              paddingTop: headerPaddingTop,
             },
           ]}
         >
-          <View
-            style={[
-              styles.inputWrapper,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <Search size={18} color={colors.primary} strokeWidth={2.2} />
-            <TextInput
-              ref={inputRef}
+          <View style={styles.headerRow}>
+            <View
               style={[
-                styles.textInput,
+                styles.inputWrapper,
                 {
-                  color: colors.textPrimary,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                 },
               ]}
-              placeholder="Kërko prona, agjenci, llogari, qytet..."
-              placeholderTextColor={colors.textLight}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-              autoCapitalize="none"
-              autoCorrect={false}
-              clearButtonMode="never"
-            />
-            {loading && <ActivityIndicator size="small" color={colors.primary} />}
-            {query.length > 0 && !loading && (
-              <Pressable
-                onPress={() => setQuery('')}
-                hitSlop={8}
-                style={styles.clearBtn}
-              >
-                <X size={15} color={colors.textMuted} />
-              </Pressable>
-            )}
-          </View>
+            >
+              <Search size={18} color={colors.primary} strokeWidth={2.2} />
+              <TextInput
+                ref={inputRef}
+                style={[
+                  styles.textInput,
+                  {
+                    color: colors.textPrimary,
+                  },
+                ]}
+                placeholder="Kërko prona, agjenci, llogari, qytet..."
+                placeholderTextColor={colors.textLight}
+                value={query}
+                onChangeText={setQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="never"
+              />
+              {loading && <ActivityIndicator size="small" color={colors.primary} />}
+              {query.length > 0 && !loading && (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.clearBtn}
+                >
+                  <X size={15} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
 
-          <Pressable onPress={onClose} hitSlop={10} style={styles.cancelBtn}>
-            <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
-          </Pressable>
+            <Pressable
+              onPress={onClose}
+              hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
+              style={styles.cancelBtn}
+            >
+              <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* 
@@ -343,7 +366,7 @@ export default function OmniSearchModal({
         <KeyboardAvoidingView
           style={styles.keyboardContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+          keyboardVerticalOffset={0}
         >
           {/* Empty Query Default State: Recent & Trending */}
           {!query.trim() && (
@@ -352,6 +375,7 @@ export default function OmniSearchModal({
               renderItem={() => null}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
+              contentContainerStyle={{ paddingBottom: 32 + resolvedBottomInset }}
               ListHeaderComponent={
                 <View style={styles.defaultStateWrap}>
                   {/* Recent Searches */}
@@ -372,9 +396,9 @@ export default function OmniSearchModal({
                       </View>
 
                       <View style={styles.recentChipsWrap}>
-                        {recentSearches.map((item) => (
+                        {recentSearches.map((term) => (
                           <View
-                            key={item}
+                            key={term}
                             style={[
                               styles.recentChip,
                               {
@@ -384,18 +408,21 @@ export default function OmniSearchModal({
                             ]}
                           >
                             <Pressable
-                              onPress={() => setQuery(item)}
+                              onPress={() => {
+                                setQuery(term)
+                                saveRecent(term)
+                              }}
                               style={styles.recentChipTextWrap}
                             >
                               <Text
                                 style={[styles.recentChipText, { color: colors.textPrimary }]}
                               >
-                                {item}
+                                {term}
                               </Text>
                             </Pressable>
                             <Pressable
-                              onPress={() => removeRecent(item)}
-                              hitSlop={6}
+                              onPress={() => removeRecent(term)}
+                              hitSlop={8}
                               style={styles.recentChipRemove}
                             >
                               <X size={12} color={colors.textMuted} />
@@ -406,12 +433,12 @@ export default function OmniSearchModal({
                     </View>
                   )}
 
-                  {/* Trending Searches */}
+                  {/* Trending Real Estate Searches */}
                   <View style={styles.sectionBlock}>
                     <View style={styles.sectionTitleRow}>
-                      <TrendingUp size={14} color={colors.gold} />
+                      <TrendingUp size={14} color={colors.primary} />
                       <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
-                        SUGJERIME & TRENDET NË KOSOVË
+                        MË TË KËRKUARAT
                       </Text>
                     </View>
 
@@ -449,7 +476,10 @@ export default function OmniSearchModal({
             <FlatList
               data={visibleItems}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.resultsListContent}
+              contentContainerStyle={[
+                styles.resultsListContent,
+                { paddingBottom: 32 + resolvedBottomInset },
+              ]}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               renderItem={({ item }) => {
@@ -604,22 +634,25 @@ export default function OmniSearchModal({
             />
           )}
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  modalRoot: {
     flex: 1,
   },
-  headerBar: {
+  headerContainer: {
+    width: '100%',
+    borderBottomWidth: 0.5,
+    paddingBottom: 10,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10,
-    borderBottomWidth: 0.5,
+    gap: 12,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
@@ -628,8 +661,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     flexShrink: 1,
-    height: 48,
-    borderRadius: 16,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -648,11 +681,13 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelBtn: {
     flexShrink: 0,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    height: 46,
+    paddingHorizontal: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
