@@ -21,10 +21,12 @@ import {
   Menu,
   Settings,
   ShieldCheck,
+  Search,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import LogoutModal from './LogoutModal'
+import OmniSearchModal from './OmniSearchModal'
 import { getAvatarUrl } from '@/lib/avatars'
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
@@ -196,6 +198,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutModalOpen, setLogoutModalOpen] = useState(false)
+  const [isOmniSearchOpen, setIsOmniSearchOpen] = useState(false)
   const realtimeChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
   const userIdRef = useRef<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -205,6 +208,24 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const pathname = usePathname()
   const isAuthPage = pathname === '/register' || pathname === '/login' || pathname === '/forgot-password'
   const unreadChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
+
+  // Global Command+K and '/' shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      const isInput =
+        target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsOmniSearchOpen((prev) => !prev)
+      } else if (e.key === '/' && !isInput) {
+        e.preventDefault()
+        setIsOmniSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Instant synchronous cache restoration on mount (0ms latency on refresh)
   useIsomorphicLayoutEffect(() => {
@@ -697,6 +718,19 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsOmniSearchOpen(true)}
+                className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#cceae8] hover:text-white border border-white/15 transition-all cursor-pointer text-[13.5px] font-medium group"
+                aria-label="Kërko në Bleje Pronën"
+              >
+                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-110 transition-transform" />
+                <span>Kërko</span>
+                <kbd className="hidden xl:inline-flex items-center gap-0.5 text-[10px] font-mono bg-white/15 px-1.5 py-0.5 rounded text-white/80">
+                  ⌘K
+                </kbd>
+              </button>
+
               <Link
                 href="/listings"
                 className={`relative inline-flex items-center h-10 text-[15px] px-3.5 rounded-lg transition-all duration-200 ${
@@ -1003,6 +1037,16 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </div>
               )}
             </div>
+
+            {/* Mobile search button */}
+            <button
+              type="button"
+              onClick={() => setIsOmniSearchOpen(true)}
+              className="lg:hidden relative inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/35 border border-white/20 text-white shadow-sm transition-all cursor-pointer"
+              aria-label="Kërko prona (Cmd+K)"
+            >
+              <Search className="h-4 w-4 text-white" />
+            </button>
 
             {/* Mobile menu button */}
             <button
@@ -1361,6 +1405,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         userName={displayName}
         avatarUrl={profile.avatarUrl}
         onLogoutConfirmed={handleLogout}
+      />
+
+      <OmniSearchModal
+        isOpen={isOmniSearchOpen}
+        onClose={() => setIsOmniSearchOpen(false)}
       />
     </nav>
   )

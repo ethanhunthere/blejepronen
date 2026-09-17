@@ -22,6 +22,7 @@ import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { Logo } from '@/components/Logo'
+import OmniSearchModal from '@/components/OmniSearchModal'
 
 const HOME_CACHE_KEY = '@blejepronen_home_listings_cache_v2'
 
@@ -131,6 +132,7 @@ export default function HomeScreen() {
   const [transactionType, setTransactionType] = useState<'all' | 'shitje' | 'qira'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -284,8 +286,14 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Full-Width Luxury Glassy Search Bar */}
-        <View style={styles.searchBarContainer}>
+        {/* Full-Width Luxury Glassy Omni-Search Bar */}
+        <Pressable
+          style={styles.searchBarContainer}
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.selectionAsync()
+            setIsOmniModalOpen(true)
+          }}
+        >
           <View
             style={[
               styles.searchBar,
@@ -298,14 +306,11 @@ export default function HomeScreen() {
                       ? 'rgba(0, 75, 68, 0.75)'
                       : 'rgba(20, 26, 25, 0.82)'
                     : colors.searchBg,
-                borderColor: isSearchFocused
-                  ? theme === 'green'
-                    ? colors.gold
-                    : colors.primary
-                  : theme === 'white'
-                  ? 'rgba(0, 0, 0, 0.08)'
-                  : 'rgba(255, 255, 255, 0.12)',
-                borderWidth: isSearchFocused ? 1.5 : 0.5,
+                borderColor:
+                  theme === 'white'
+                    ? 'rgba(0, 0, 0, 0.08)'
+                    : 'rgba(255, 255, 255, 0.12)',
+                borderWidth: 0.5,
               },
             ]}
           >
@@ -314,30 +319,22 @@ export default function HomeScreen() {
               tint={colors.blurTint}
               style={StyleSheet.absoluteFill}
             />
-            <Search
-              size={18}
-              color={
-                isSearchFocused
-                  ? theme === 'green'
-                    ? colors.gold
-                    : colors.primary
-                  : colors.textMuted
-              }
-              strokeWidth={2.2}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Qyteti, lagjja ose titulli..."
-              placeholderTextColor={colors.textLight}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              returnKeyType="search"
-            />
+            <Search size={18} color={colors.primary} strokeWidth={2.2} />
+            <Text
+              style={[
+                styles.searchInput,
+                { color: searchQuery ? colors.textPrimary : colors.textLight },
+              ]}
+              numberOfLines={1}
+            >
+              {searchQuery || 'Qyteti, lagjja, agjencia ose prona...'}
+            </Text>
             {searchQuery.length > 0 && (
               <Pressable
-                onPress={() => setSearchQuery('')}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  setSearchQuery('')
+                }}
                 hitSlop={8}
                 style={styles.searchClearBtn}
               >
@@ -345,7 +342,7 @@ export default function HomeScreen() {
               </Pressable>
             )}
           </View>
-        </View>
+        </Pressable>
 
         {/* Apple UISegmentedControl Style Transaction Type Selector (Shitje / Qira) */}
         <View
@@ -514,6 +511,15 @@ export default function HomeScreen() {
           ))
         )}
       </ScrollView>
+
+      <OmniSearchModal
+        visible={isOmniModalOpen}
+        onClose={() => setIsOmniModalOpen(false)}
+        initialQuery={searchQuery}
+        onSelectCity={(city, neighborhood) => {
+          setSearchQuery(neighborhood ? `${neighborhood}, ${city}` : city)
+        }}
+      />
     </SafeAreaView>
   )
 }

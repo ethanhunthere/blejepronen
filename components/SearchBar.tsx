@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search } from 'lucide-react'
+import { Search, Command, ArrowRight } from 'lucide-react'
+import OmniSearchModal from './OmniSearchModal'
 
 interface SearchBarProps {
   className?: string
@@ -22,6 +23,7 @@ function SearchBar({
 }: SearchBarProps) {
   const [value, setValue] = useState('')
   const [typedWord, setTypedWord] = useState('Pronë')
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const wordIndexRef = useRef(0)
   const charIndexRef = useRef(hoverWords[0]?.length || 5)
   const phaseRef = useRef<TypePhase>('pausing')
@@ -64,9 +66,7 @@ function SearchBar({
   }, [runTypewriter])
 
   useEffect(() => {
-    // Start with the first word displayed, then begin lifecycle after brief initial pause
     timerRef.current = setTimeout(() => runTypewriterRef.current(), 1500)
-
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
@@ -75,48 +75,68 @@ function SearchBar({
     }
   }, [])
 
-  const handleSearch = () => {
-    const trimmed = value.trim()
-    if (trimmed) {
-      router.push(`/listings?search=${encodeURIComponent(trimmed)}`)
-    } else {
-      router.push('/listings')
-    }
+  const handleOpenSearch = (initialVal?: string) => {
+    setValue(initialVal || value)
+    setIsModalOpen(true)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSearch()
+    if (e.key === 'Enter') {
+      const trimmed = value.trim()
+      if (trimmed) {
+        router.push(`/listings?search=${encodeURIComponent(trimmed)}`)
+      } else {
+        setIsModalOpen(true)
+      }
+    }
   }
 
   return (
-    <div
-      className={`bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#006459]/30 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto ${className}`}
-    >
-      <Search className="h-4 w-4 text-[#9CA3AF] flex-shrink-0 ml-1" />
-      <input
-        type="text"
-        placeholder={placeholder}
-        aria-label="Kërko prona"
-        className="flex-1 min-w-0 text-[16px] text-[#101828] placeholder:text-[#6B7280] outline-none border-none bg-transparent"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          try { router.prefetch('/listings') } catch {}
-        }}
-      />
-      <button
-        type="button"
-        onClick={handleSearch}
-        onMouseEnter={() => {
-          try { router.prefetch('/listings') } catch {}
-        }}
-        className="flex-shrink-0 min-h-[44px] min-w-[115px] sm:min-w-[145px] bg-[#006459] text-white px-3 sm:px-5 py-2 rounded-full text-xs sm:text-[15px] font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap flex items-center justify-center"
+    <>
+      <div
+        className={`relative bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#006459]/30 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto cursor-text ${className}`}
+        onClick={() => handleOpenSearch(value)}
       >
-        <span>Kërko {typedWord || '\u00A0'}</span>
-        <span className="inline-block w-[1.5px] h-[13px] sm:h-[15px] bg-white/75 ml-1 align-middle animate-pulse" />
-      </button>
-    </div>
+        <Search className="h-4 w-4 text-[#006459] flex-shrink-0 ml-1" />
+        <input
+          type="text"
+          placeholder={placeholder}
+          aria-label="Kërko prona, agjenci, lokacione"
+          className="flex-1 min-w-0 text-[16px] text-[#101828] placeholder:text-[#6B7280] outline-none border-none bg-transparent cursor-pointer"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value)
+            setIsModalOpen(true)
+          }}
+          onFocus={() => handleOpenSearch(value)}
+          onKeyDown={handleKeyDown}
+          readOnly
+        />
+
+        <div className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+          <Command className="h-3 w-3" />
+          <span>K</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenSearch(value)
+          }}
+          className="flex-shrink-0 min-h-[44px] min-w-[115px] sm:min-w-[145px] bg-[#006459] text-white px-3 sm:px-5 py-2 rounded-full text-xs sm:text-[15px] font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap flex items-center justify-center"
+        >
+          <span>Kërko {typedWord || '\u00A0'}</span>
+          <span className="inline-block w-[1.5px] h-[13px] sm:h-[15px] bg-white/75 ml-1 align-middle animate-pulse" />
+        </button>
+      </div>
+
+      <OmniSearchModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialQuery={value}
+      />
+    </>
   )
 }
 
