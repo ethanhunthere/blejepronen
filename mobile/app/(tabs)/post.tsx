@@ -1016,21 +1016,22 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    gap: 16,
+    gap: 18,
     paddingBottom: 120,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
   sectionCard: {
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
     borderWidth: 0.5,
-    gap: 12,
+    gap: 14,
   },
   sectionHeading: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -1039,8 +1040,8 @@ const styles = StyleSheet.create({
   },
   catCard: {
     width: '48%',
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1.5,
   },
   catLabel: {
@@ -1055,16 +1056,16 @@ const styles = StyleSheet.create({
   typeToggle: {
     flexDirection: 'row',
     padding: 4,
-    borderRadius: 14,
+    borderRadius: 16,
   },
   typeOption: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 11,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
   },
   typeOptionText: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontFamily: Fonts.medium,
   },
   inputLabel: {
@@ -1088,10 +1089,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 14,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    fontSize: 14.5,
     fontFamily: Fonts.medium,
   },
   rowInputs: {
@@ -1110,14 +1111,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pillBtn: {
-    width: 44,
-    height: 38,
-    borderRadius: 10,
+    width: 48,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pillBtnText: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontFamily: Fonts.medium,
   },
   featuresWrap: {
@@ -1128,10 +1129,10 @@ const styles = StyleSheet.create({
   featureChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 12,
+    gap: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 13,
   },
   featureChipText: {
     fontSize: 12,
@@ -1190,12 +1191,12 @@ const styles = StyleSheet.create({
   },
   textArea: {
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 12,
-    fontSize: 14,
+    borderRadius: 16,
+    padding: 14,
+    fontSize: 14.5,
     fontFamily: Fonts.regular,
-    minHeight: 120,
-    lineHeight: 20,
+    minHeight: 124,
+    lineHeight: 22,
   },
   helperText: {
     fontSize: 12,
@@ -1208,9 +1209,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   imageThumbContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 14,
+    width: 98,
+    height: 98,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -1242,9 +1243,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   uploadBtn: {
-    width: 96,
-    height: 96,
-    borderRadius: 14,
+    width: 98,
+    height: 98,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     alignItems: 'center',
@@ -1260,8 +1261,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   submitButton: {
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 18,
+    paddingVertical: 17,
     alignItems: 'center',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1283,8 +1284,8 @@ const styles = StyleSheet.create({
   },
   gateCard: {
     alignItems: 'center',
-    padding: 28,
-    borderRadius: 24,
+    padding: 30,
+    borderRadius: 28,
     borderWidth: 0.5,
     maxWidth: 480,
     width: '100%',
@@ -1303,11 +1304,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   gateTitle: {
-    fontSize: 21,
+    fontSize: 22,
     fontFamily: Fonts.extraBold,
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   gateSubtitle: {
     fontSize: 14,
@@ -1322,8 +1323,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   gatePrimaryBtn: {
-    height: 50,
-    borderRadius: 14,
+    height: 52,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1334,12 +1335,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   gatePrimaryBtnText: {
-    fontSize: 15,
+    fontSize: 15.5,
     fontFamily: Fonts.bold,
   },
   gateSecondaryBtn: {
-    height: 50,
-    borderRadius: 14,
+    height: 52,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1347,7 +1348,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   gateSecondaryBtnText: {
-    fontSize: 15,
+    fontSize: 15.5,
     fontFamily: Fonts.semiBold,
   },
 })

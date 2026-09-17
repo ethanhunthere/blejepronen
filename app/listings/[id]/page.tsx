@@ -38,12 +38,16 @@ export const revalidate = 300
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blejepronen.com'
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('sq-AL', {
+const formatPrice = (price?: number | null) => {
+  if (price === undefined || price === null || isNaN(price) || price <= 0) {
+    return 'Me marrëveshje'
+  }
+  return new Intl.NumberFormat('sq-AL', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(price)
+}
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleDateString('sq-AL', {
@@ -344,7 +348,7 @@ export default async function ListingDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F7F7] pb-28 lg:pb-16">
+    <div className="min-h-screen bg-[var(--background)] pb-28 lg:pb-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

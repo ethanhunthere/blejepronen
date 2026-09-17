@@ -137,7 +137,7 @@ export default function RootLayout({
         <header className="bg-[#006459]">
           <Navbar variant="static" />
         </header>
-        <main className="flex-1 relative bg-[#F2F7F7]">{children}</main>
+        <main className="flex-1 relative bg-[var(--background)]">{children}</main>
         <Toaster richColors position="top-center" />
         {/* Footer */}
         <footer className="relative overflow-hidden bg-[linear-gradient(160deg,#005048_0%,#003830_100%)] py-10">
