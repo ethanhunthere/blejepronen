@@ -258,7 +258,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                   { color: theme === 'green' ? colors.gold : '#10B981' },
                 ]}
               >
-                {listing.profiles.account_type === 'company' ? 'Agjenci' : 'Verifikuar'}
+                {listing.profiles?.account_type === 'company' ? 'Agjenci' : 'Verifikuar'}
               </Text>
             </View>
           )}

@@ -69,7 +69,7 @@ export default function ListingDetailScreen() {
           supabase.auth.getUser(),
           supabase
             .from('listings')
-            .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url, account_type)')
+            .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url)')
             .eq('id', id)
             .single(),
           fetchFavoriteIds(),
@@ -77,10 +77,23 @@ export default function ListingDetailScreen() {
 
         setCurrentUser(authRes.data?.user || null)
 
-        if (listingRes.error) {
-          console.warn('Listing detail notice:', listingRes.error.message)
-        } else if (listingRes.data) {
-          setListing(listingRes.data as Listing)
+        let loadedListing: any = listingRes.data
+
+        // Resilient fallback: if the profiles join failed, load the listing row directly
+        if (!loadedListing && listingRes.error) {
+          console.warn('Listing profiles join notice, falling back to base listing:', listingRes.error.message)
+          const { data: fallbackData } = await supabase
+            .from('listings')
+            .select('*')
+            .eq('id', id)
+            .single()
+          if (fallbackData) {
+            loadedListing = fallbackData
+          }
+        }
+
+        if (loadedListing) {
+          setListing(loadedListing as Listing)
         }
 
         if (favs && id in favs) {
