@@ -44,12 +44,7 @@ export default function PostPropertyScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
 
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.10)'
+  const specularBorder = colors.border
 
   // Form State
   const [category, setCategory] = useState<PropertyCategory>('banese')
@@ -418,7 +413,7 @@ export default function PostPropertyScreen() {
   // If user is not authenticated, show clean luxury Auth Gatekeeper
   if (!authChecking && !currentUser) {
     const gateBtnText =
-      theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
+      theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>

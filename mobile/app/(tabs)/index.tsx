@@ -31,6 +31,12 @@ import {
   matchesCategory,
   CATEGORY_ITEMS,
 } from '@/lib/property-filters'
+import {
+  getCachedListings,
+  hasCachedListings,
+  setCachedListings,
+  subscribeCachedListings,
+} from '@/lib/listings-cache'
 
 const HOME_CACHE_KEY = '@blejepronen_home_listings_cache_v2'
 
@@ -41,8 +47,8 @@ export default function HomeScreen() {
   const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTER_STATE)
   const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
-  const [listings, setListings] = useState<Listing[]>([])
-  const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
+  const [loading, setLoading] = useState(() => !hasCachedListings())
   const [refreshing, setRefreshing] = useState(false)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
@@ -54,6 +60,7 @@ export default function HomeScreen() {
           const parsed = JSON.parse(cached)
           if (Array.isArray(parsed) && parsed.length > 0) {
             setListings(parsed)
+            setCachedListings(parsed)
             setLoading(false)
           }
         } catch {}
@@ -82,6 +89,7 @@ export default function HomeScreen() {
       } else if (data) {
         setListings(data as unknown as Listing[])
         if (filters.transactionType === 'all') {
+          setCachedListings(data as unknown as Listing[])
           AsyncStorage.setItem(HOME_CACHE_KEY, JSON.stringify(data)).catch(() => {})
         }
       }
@@ -189,7 +197,12 @@ export default function HomeScreen() {
         */}
         <View style={styles.searchRow}>
           <Pressable
-            style={styles.searchBar}
+            style={[
+              styles.searchBar,
+              {
+                borderColor: colors.searchBorder,
+              },
+            ]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setIsOmniModalOpen(true)
@@ -238,9 +251,7 @@ export default function HomeScreen() {
                 borderColor:
                   activeFiltersCount > 0
                     ? colors.primary
-                    : theme === 'white'
-                    ? 'rgba(0, 0, 0, 0.08)'
-                    : 'rgba(255, 255, 255, 0.12)',
+                    : colors.border,
                 borderWidth: 0.5,
               },
             ]}
@@ -263,7 +274,7 @@ export default function HomeScreen() {
               color={
                 activeFiltersCount > 0
                   ? theme === 'green'
-                    ? '#003E37'
+                    ? '#071C18'
                     : '#FFFFFF'
                   : colors.textPrimary
               }
@@ -271,7 +282,14 @@ export default function HomeScreen() {
             />
             {activeFiltersCount > 0 && (
               <View style={[styles.filterBadge, { backgroundColor: colors.gold }]}>
-                <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+                <Text
+                  style={[
+                    styles.filterBadgeText,
+                    { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                  ]}
+                >
+                  {activeFiltersCount}
+                </Text>
               </View>
             )}
           </Pressable>

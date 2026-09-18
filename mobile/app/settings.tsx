@@ -1351,8 +1351,17 @@ export default function SettingsScreen() {
                     ]}
                     onPress={() => handleThemeSelect('white')}
                   >
-                    <View style={[styles.themeIconCircle, { backgroundColor: '#FFFFFF' }]}>
-                      <Sun size={18} color="#006459" strokeWidth={2.2} />
+                    <View
+                      style={[
+                        styles.themeIconCircle,
+                        {
+                          backgroundColor: '#FFFFFF',
+                          borderWidth: 0.5,
+                          borderColor: 'rgba(15, 23, 42, 0.08)',
+                        },
+                      ]}
+                    >
+                      <Sun size={18} color="#00675B" strokeWidth={2.2} />
                     </View>
                     <Text style={[styles.themeBoxTitle, { color: colors.textPrimary }]}>
                       E Bardhë
@@ -1377,8 +1386,17 @@ export default function SettingsScreen() {
                     ]}
                     onPress={() => handleThemeSelect('green')}
                   >
-                    <View style={[styles.themeIconCircle, { backgroundColor: '#006459' }]}>
-                      <Leaf size={18} color="#C8B882" strokeWidth={2.2} />
+                    <View
+                      style={[
+                        styles.themeIconCircle,
+                        {
+                          backgroundColor: '#071C18',
+                          borderWidth: 0.5,
+                          borderColor: 'rgba(212, 175, 55, 0.30)',
+                        },
+                      ]}
+                    >
+                      <Leaf size={18} color="#D4AF37" strokeWidth={2.2} />
                     </View>
                     <Text style={[styles.themeBoxTitle, { color: colors.textPrimary }]}>
                       E Gjelbër
@@ -1386,7 +1404,7 @@ export default function SettingsScreen() {
                     <Text style={[styles.themeBoxDesc, { color: colors.textMuted }]}>Emerald</Text>
                     {theme === 'green' && (
                       <View style={[styles.themeCheck, { backgroundColor: colors.gold }]}>
-                        <Check size={11} color="#003E37" strokeWidth={3} />
+                        <Check size={11} color="#071C18" strokeWidth={3} />
                       </View>
                     )}
                   </Pressable>

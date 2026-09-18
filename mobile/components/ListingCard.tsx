@@ -58,14 +58,9 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
         styles.card,
         {
           backgroundColor: colors.surface,
-          borderColor:
-            theme === 'white'
-              ? 'rgba(0, 0, 0, 0.08)'
-              : theme === 'green'
-              ? 'rgba(255, 255, 255, 0.12)'
-              : 'rgba(255, 255, 255, 0.10)',
-          shadowColor: theme === 'black' ? '#000' : '#101828',
-          shadowOpacity: theme === 'black' ? 0.35 : 0.07,
+          borderColor: colors.border,
+          shadowColor: theme === 'black' ? '#000' : theme === 'green' ? '#030D0B' : '#0F172A',
+          shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.28 : 0.05,
         },
         pressed && styles.cardPressed,
       ]}
@@ -103,8 +98,20 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
           {/* Featured Gold Badge with authentic Star icon */}
           {listing.is_featured && (
             <View style={[styles.featuredCapsule, { backgroundColor: colors.gold }]}>
-              <Star size={11} color="#003E37" fill="#003E37" strokeWidth={2} />
-              <Text style={styles.featuredCapsuleText}>E Veçuar</Text>
+              <Star
+                size={11}
+                color={theme === 'green' ? colors.chipTextActive : '#3E2A00'}
+                fill={theme === 'green' ? colors.chipTextActive : '#3E2A00'}
+                strokeWidth={2}
+              />
+              <Text
+                style={[
+                  styles.featuredCapsuleText,
+                  { color: theme === 'green' ? colors.chipTextActive : '#3E2A00' },
+                ]}
+              >
+                E Veçuar
+              </Text>
             </View>
           )}
 
@@ -269,10 +276,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
           style={[
             styles.specsModuleRow,
             {
-              borderTopColor:
-                theme === 'white'
-                  ? '#F3F4F6'
-                  : 'rgba(255, 255, 255, 0.08)',
+              borderTopColor: colors.borderSubtle,
             },
           ]}
         >
@@ -281,18 +285,8 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
               style={[
                 styles.specModule,
                 {
-                  backgroundColor:
-                    theme === 'white'
-                      ? '#F4F7F6'
-                      : theme === 'green'
-                      ? 'rgba(0, 48, 42, 0.85)'
-                      : '#1B2422',
-                  borderColor:
-                    theme === 'white'
-                      ? '#E5E7EB'
-                      : theme === 'green'
-                      ? 'rgba(255, 255, 255, 0.12)'
-                      : '#263330',
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
                 },
               ]}
             >
@@ -312,18 +306,8 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
               style={[
                 styles.specModule,
                 {
-                  backgroundColor:
-                    theme === 'white'
-                      ? '#F4F7F6'
-                      : theme === 'green'
-                      ? 'rgba(0, 48, 42, 0.85)'
-                      : '#1B2422',
-                  borderColor:
-                    theme === 'white'
-                      ? '#E5E7EB'
-                      : theme === 'green'
-                      ? 'rgba(255, 255, 255, 0.12)'
-                      : '#263330',
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
                 },
               ]}
             >
@@ -343,18 +327,8 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
               style={[
                 styles.specModule,
                 {
-                  backgroundColor:
-                    theme === 'white'
-                      ? '#F4F7F6'
-                      : theme === 'green'
-                      ? 'rgba(0, 48, 42, 0.85)'
-                      : '#1B2422',
-                  borderColor:
-                    theme === 'white'
-                      ? '#E5E7EB'
-                      : theme === 'green'
-                      ? 'rgba(255, 255, 255, 0.12)'
-                      : '#263330',
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
                 },
               ]}
             >

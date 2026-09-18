@@ -238,7 +238,7 @@ export default function ListingDetailScreen() {
           style={[styles.backBtn, { backgroundColor: colors.primary }]}
           onPress={() => safeBack(router, '/(tabs)/listings')}
         >
-          <Text style={[styles.backBtnText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+          <Text style={[styles.backBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
             Kthehu mbrapa
           </Text>
         </Pressable>
@@ -529,10 +529,7 @@ export default function ListingDetailScreen() {
         style={[
           styles.bottomBarWrapper,
           {
-            borderTopColor:
-              theme === 'white'
-                ? 'rgba(0, 0, 0, 0.08)'
-                : 'rgba(255, 255, 255, 0.12)',
+            borderTopColor: colors.tabBarBorder,
           },
         ]}
       >
@@ -547,9 +544,9 @@ export default function ListingDetailScreen() {
             {
               backgroundColor:
                 theme === 'white'
-                  ? 'rgba(255, 255, 255, 0.65)'
+                  ? 'rgba(255, 255, 255, 0.72)'
                   : theme === 'green'
-                  ? 'rgba(0, 60, 54, 0.70)'
+                  ? 'rgba(7, 28, 24, 0.78)'
                   : 'rgba(12, 17, 16, 0.75)',
             },
           ]}
@@ -580,18 +577,18 @@ export default function ListingDetailScreen() {
                 hitSlop={8}
               >
                 {startingChat ? (
-                  <ActivityIndicator size="small" color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
+                  <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
                 ) : (
                   <>
                     <MessageSquare
                       size={17}
-                      color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                       strokeWidth={2.4}
                     />
                     <Text
                       style={[
                         styles.chatActionBtnText,
-                        { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                       ]}
                       numberOfLines={1}
                       adjustsFontSizeToFit
@@ -617,11 +614,15 @@ export default function ListingDetailScreen() {
                   {
                     backgroundColor:
                       theme === 'white'
-                        ? 'rgba(0, 0, 0, 0.04)'
+                        ? 'rgba(15, 23, 42, 0.04)'
+                        : theme === 'green'
+                        ? 'rgba(212, 175, 55, 0.12)'
                         : 'rgba(255, 255, 255, 0.08)',
                     borderColor:
                       theme === 'white'
-                        ? 'rgba(0, 0, 0, 0.08)'
+                        ? 'rgba(15, 23, 42, 0.08)'
+                        : theme === 'green'
+                        ? 'rgba(212, 175, 55, 0.25)'
                         : 'rgba(255, 255, 255, 0.12)',
                   },
                 ]}

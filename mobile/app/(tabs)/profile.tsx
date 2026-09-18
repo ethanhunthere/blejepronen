@@ -482,14 +482,9 @@ export default function ProfileScreen() {
   const isVerified = emailConfirmed && isProfileComplete
 
   const primaryBtnText =
-    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
+    theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.14)'
-      : 'rgba(255, 255, 255, 0.10)'
+  const specularBorder = colors.border
 
   const rawAvatar =
     dbProfile?.avatar_url ||
@@ -1528,8 +1523,17 @@ export default function ProfileScreen() {
                 onPress={() => handleThemeSelect('white')}
               >
                 <View style={styles.themeOptionTop}>
-                  <View style={[styles.themeIconCircle, { backgroundColor: '#FFFFFF' }]}>
-                    <Sun size={17} color="#006459" strokeWidth={2.2} />
+                  <View
+                    style={[
+                      styles.themeIconCircle,
+                      {
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 0.5,
+                        borderColor: 'rgba(15, 23, 42, 0.08)',
+                      },
+                    ]}
+                  >
+                    <Sun size={17} color="#00675B" strokeWidth={2.2} />
                   </View>
                   {theme === 'white' && (
                     <View style={[styles.themeRadioCheck, { backgroundColor: colors.primary }]}>
@@ -1558,12 +1562,21 @@ export default function ProfileScreen() {
                 onPress={() => handleThemeSelect('green')}
               >
                 <View style={styles.themeOptionTop}>
-                  <View style={[styles.themeIconCircle, { backgroundColor: '#006459' }]}>
-                    <Leaf size={17} color="#C8B882" strokeWidth={2.2} />
+                  <View
+                    style={[
+                      styles.themeIconCircle,
+                      {
+                        backgroundColor: '#071C18',
+                        borderWidth: 0.5,
+                        borderColor: 'rgba(212, 175, 55, 0.30)',
+                      },
+                    ]}
+                  >
+                    <Leaf size={17} color="#D4AF37" strokeWidth={2.2} />
                   </View>
                   {theme === 'green' && (
                     <View style={[styles.themeRadioCheck, { backgroundColor: colors.gold }]}>
-                      <Check size={10} color="#003E37" strokeWidth={3} />
+                      <Check size={10} color="#071C18" strokeWidth={3} />
                     </View>
                   )}
                 </View>

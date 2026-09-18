@@ -10,12 +10,12 @@ interface LogoProps {
 export function Logo({ size = 36 }: LogoProps) {
   const { colors, theme } = useTheme()
 
-  const blejeColor = theme === 'green' ? '#FFFFFF' : theme === 'black' ? '#FFFFFF' : '#006459'
-  const pronenColor = colors.gold // #C8B882
+  const blejeColor = theme === 'green' ? '#FFFFFF' : theme === 'black' ? '#FFFFFF' : colors.primary
+  const pronenColor = colors.gold
 
-  // On white theme: green (#006459) transparent PNG without background
-  // On green theme: white (#FFFFFF) transparent PNG without background
-  // On black theme: white (#FFFFFF) transparent PNG without background
+  // On white theme: green transparent PNG without background
+  // On green theme: white transparent PNG without background
+  // On black theme: white transparent PNG without background
   const logoSource =
     theme === 'white'
       ? require('@/assets/images/logo-teal.png')

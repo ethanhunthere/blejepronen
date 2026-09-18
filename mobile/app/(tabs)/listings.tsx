@@ -30,6 +30,12 @@ import {
   matchesCategory,
   CATEGORY_ITEMS,
 } from '@/lib/property-filters'
+import {
+  getCachedListings,
+  hasCachedListings,
+  setCachedListings,
+  subscribeCachedListings,
+} from '@/lib/listings-cache'
 
 const EXPLORE_CACHE_KEY = '@blejepronen_explore_cache_v2'
 
@@ -55,8 +61,8 @@ export default function ListingsScreen() {
 
   const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
-  const [listings, setListings] = useState<Listing[]>([])
-  const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
+  const [loading, setLoading] = useState(() => !hasCachedListings())
   const [refreshing, setRefreshing] = useState(false)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
@@ -74,20 +80,36 @@ export default function ListingsScreen() {
     }
   }, [params.category, params.type, params.search, params.city, params.neighborhood])
 
-  // Instant local-first disk cache hydration
+  // Instant sync with shared cache & persistent disk fallback
   useEffect(() => {
-    AsyncStorage.getItem(EXPLORE_CACHE_KEY).then((cached) => {
-      if (cached) {
+    const cached = getCachedListings()
+    if (cached.length > 0 && listings.length === 0) {
+      setListings(cached)
+      setLoading(false)
+    }
+
+    const unsubscribe = subscribeCachedListings((fresh) => {
+      if (filters.transactionType === 'all') {
+        setListings(fresh)
+        setLoading(false)
+      }
+    })
+
+    AsyncStorage.getItem(EXPLORE_CACHE_KEY).then((diskData) => {
+      if (diskData && listings.length === 0) {
         try {
-          const parsed = JSON.parse(cached)
+          const parsed = JSON.parse(diskData)
           if (Array.isArray(parsed) && parsed.length > 0) {
             setListings(parsed)
+            setCachedListings(parsed)
             setLoading(false)
           }
         } catch {}
       }
     })
-  }, [])
+
+    return unsubscribe
+  }, [filters.transactionType, listings.length])
 
   const fetchListings = useCallback(async () => {
     try {
@@ -110,6 +132,7 @@ export default function ListingsScreen() {
       } else if (data) {
         setListings(data as unknown as Listing[])
         if (filters.transactionType === 'all') {
+          setCachedListings(data as unknown as Listing[])
           AsyncStorage.setItem(EXPLORE_CACHE_KEY, JSON.stringify(data)).catch(() => {})
         }
       }
@@ -212,7 +235,12 @@ export default function ListingsScreen() {
         */}
         <View style={styles.searchRow}>
           <Pressable
-            style={styles.searchBar}
+            style={[
+              styles.searchBar,
+              {
+                borderColor: colors.searchBorder,
+              },
+            ]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
               setIsOmniModalOpen(true)
@@ -261,9 +289,7 @@ export default function ListingsScreen() {
                 borderColor:
                   activeFiltersCount > 0
                     ? colors.primary
-                    : theme === 'white'
-                    ? 'rgba(0, 0, 0, 0.08)'
-                    : 'rgba(255, 255, 255, 0.12)',
+                    : colors.border,
                 borderWidth: 0.5,
               },
             ]}
@@ -286,7 +312,7 @@ export default function ListingsScreen() {
               color={
                 activeFiltersCount > 0
                   ? theme === 'green'
-                    ? '#003E37'
+                    ? '#071C18'
                     : '#FFFFFF'
                   : colors.textPrimary
               }
@@ -294,7 +320,14 @@ export default function ListingsScreen() {
             />
             {activeFiltersCount > 0 && (
               <View style={[styles.filterBadge, { backgroundColor: colors.gold }]}>
-                <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+                <Text
+                  style={[
+                    styles.filterBadgeText,
+                    { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                  ]}
+                >
+                  {activeFiltersCount}
+                </Text>
               </View>
             )}
           </Pressable>

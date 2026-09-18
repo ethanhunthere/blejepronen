@@ -40,12 +40,16 @@ export function PropertyFilterBar({
           {
             backgroundColor:
               theme === 'white'
-                ? 'rgba(0, 0, 0, 0.05)'
+                ? 'rgba(15, 23, 42, 0.05)'
+                : theme === 'green'
+                ? 'rgba(7, 28, 24, 0.65)'
                 : 'rgba(255, 255, 255, 0.07)',
             borderWidth: 0.5,
             borderColor:
               theme === 'white'
-                ? 'rgba(0, 0, 0, 0.04)'
+                ? 'rgba(15, 23, 42, 0.06)'
+                : theme === 'green'
+                ? 'rgba(212, 175, 55, 0.16)'
                 : 'rgba(255, 255, 255, 0.10)',
           },
         ]}
@@ -63,10 +67,12 @@ export function PropertyFilterBar({
                   borderWidth: 0.5,
                   borderColor:
                     theme === 'white'
-                      ? 'rgba(0, 0, 0, 0.04)'
+                      ? 'rgba(15, 23, 42, 0.06)'
+                      : theme === 'green'
+                      ? 'rgba(212, 175, 55, 0.25)'
                       : 'rgba(255, 255, 255, 0.14)',
-                  shadowColor: '#000',
-                  shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                  shadowColor: theme === 'green' ? '#071C18' : '#000',
+                  shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.25 : 0.07,
                   shadowRadius: 4,
                   elevation: 2,
                 },

@@ -289,14 +289,9 @@ export default function MessagesScreen() {
   }
 
   const primaryBtnText =
-    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
+    theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.10)'
+  const specularBorder = colors.border
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>

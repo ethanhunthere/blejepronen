@@ -42,7 +42,7 @@ function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarIte
             <Text
               style={[
                 styles.unreadBadgeText,
-                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                { color: theme === 'green' ? colors.chipTextActive : '#FFFFFF' },
               ]}
             >
               {badgeCount > 99 ? '99+' : badgeCount}
@@ -73,7 +73,7 @@ function PostTabBarItem({ focused }: { focused: boolean }) {
   const inactiveColor = colors.tabBarInactive
 
   const postBtnBg = theme === 'green' ? colors.gold : colors.primary
-  const postIconColor = theme === 'green' ? '#003E37' : '#FFFFFF'
+  const postIconColor = theme === 'green' ? colors.chipTextActive : '#FFFFFF'
 
   return (
     <View style={styles.tabItemContainer}>
@@ -192,6 +192,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        lazy: false,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
             <BlurView
@@ -205,9 +207,9 @@ export default function TabLayout() {
                 {
                   backgroundColor:
                     theme === 'white'
-                      ? 'rgba(255, 255, 255, 0.45)'
+                      ? 'rgba(255, 255, 255, 0.72)'
                       : theme === 'green'
-                      ? 'rgba(0, 60, 54, 0.65)'
+                      ? 'rgba(7, 28, 24, 0.78)'
                       : 'rgba(12, 17, 16, 0.68)',
                 },
               ]}
@@ -220,18 +222,15 @@ export default function TabLayout() {
           left: 0,
           right: 0,
           backgroundColor: 'transparent',
-          borderTopColor:
-            theme === 'white'
-              ? 'rgba(0, 0, 0, 0.08)'
-              : 'rgba(255, 255, 255, 0.12)',
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 0.5,
           height: tabHeight,
           paddingTop: 6,
           paddingBottom: bottomInset,
           elevation: 0,
-          shadowColor: '#000',
+          shadowColor: theme === 'green' ? '#071C18' : '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: theme === 'black' ? 0.35 : 0.06,
+          shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.25 : 0.05,
           shadowRadius: 10,
         },
         tabBarItemStyle: {
