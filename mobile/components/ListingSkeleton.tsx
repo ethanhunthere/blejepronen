@@ -238,8 +238,8 @@ export function ConversationFeedSkeleton({ count = 5 }: { count?: number }) {
 
 const styles = StyleSheet.create({
   feedContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    width: '100%',
+    paddingTop: 4,
   },
   cardSkeleton: {
     borderRadius: 24,

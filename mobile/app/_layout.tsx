@@ -1,5 +1,10 @@
-import { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import { useEffect, useState, useMemo } from 'react'
+import {
+  Stack,
+  ThemeProvider as NavigationThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+} from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
 import {
@@ -18,6 +23,7 @@ import { BannerProvider } from '@/context/BannerContext'
 import { supabase } from '@/lib/supabase'
 import { callEngine } from '@/lib/calling'
 import { CallScreen } from '@/components/CallScreen'
+import { waitForListingsCacheHydration } from '@/lib/listings-cache'
 
 export { ErrorBoundary } from 'expo-router'
 
@@ -57,19 +63,44 @@ export default function RootLayout() {
 
 function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { colors, theme, isThemeLoaded } = useTheme()
+  const [isCacheHydrated, setIsCacheHydrated] = useState(false)
 
   useEffect(() => {
-    if (fontsLoaded && isThemeLoaded) {
+    waitForListingsCacheHydration().finally(() => {
+      setIsCacheHydrated(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (fontsLoaded && isThemeLoaded && isCacheHydrated) {
       SplashScreen.hideAsync().catch(() => {})
     }
-  }, [fontsLoaded, isThemeLoaded])
+  }, [fontsLoaded, isThemeLoaded, isCacheHydrated])
+
+  const navTheme = useMemo(() => {
+    const isDark = theme !== 'white'
+    const baseTheme = isDark ? DarkTheme : DefaultTheme
+    return {
+      ...baseTheme,
+      dark: isDark,
+      colors: {
+        ...baseTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.textPrimary,
+        border: colors.border,
+        notification: colors.gold,
+      },
+    }
+  }, [theme, colors])
 
   if (!isThemeLoaded) {
     return null
   }
 
   return (
-    <>
+    <NavigationThemeProvider value={navTheme}>
       <StatusBar style={theme === 'white' ? 'dark' : 'light'} />
       <CallGate />
       <Stack
@@ -88,7 +119,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
         <Stack.Screen name="modal" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="+not-found" options={{ headerShown: false }} />
       </Stack>
-    </>
+    </NavigationThemeProvider>
   )
 }
 

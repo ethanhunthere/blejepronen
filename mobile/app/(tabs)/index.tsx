@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
@@ -38,8 +37,6 @@ import {
   subscribeCachedListings,
 } from '@/lib/listings-cache'
 
-const HOME_CACHE_KEY = '@blejepronen_home_listings_cache_v2'
-
 export default function HomeScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
@@ -52,21 +49,23 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
-  // 1. Instant local-first hydration: render in <5ms from disk cache on cold launch
+  // Instant sync with shared cache updates
   useEffect(() => {
-    AsyncStorage.getItem(HOME_CACHE_KEY).then((cached) => {
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setListings(parsed)
-            setCachedListings(parsed)
-            setLoading(false)
-          }
-        } catch {}
+    const cached = getCachedListings()
+    if (cached.length > 0 && listings.length === 0) {
+      setListings(cached)
+      setLoading(false)
+    }
+
+    const unsubscribe = subscribeCachedListings((fresh) => {
+      if (filters.transactionType === 'all') {
+        setListings(fresh)
+        setLoading(false)
       }
     })
-  }, [])
+
+    return unsubscribe
+  }, [filters.transactionType])
 
   const fetchListings = useCallback(async () => {
     try {
@@ -90,7 +89,6 @@ export default function HomeScreen() {
         setListings(data as unknown as Listing[])
         if (filters.transactionType === 'all') {
           setCachedListings(data as unknown as Listing[])
-          AsyncStorage.setItem(HOME_CACHE_KEY, JSON.stringify(data)).catch(() => {})
         }
       }
     } catch (err: any) {

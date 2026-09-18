@@ -193,6 +193,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         lazy: false,
+        freezeOnBlur: false,
+        animation: 'none',
         sceneStyle: { backgroundColor: colors.background },
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>

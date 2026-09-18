@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
 import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
@@ -36,8 +35,6 @@ import {
   setCachedListings,
   subscribeCachedListings,
 } from '@/lib/listings-cache'
-
-const EXPLORE_CACHE_KEY = '@blejepronen_explore_cache_v2'
 
 export default function ListingsScreen() {
   const params = useLocalSearchParams<{
@@ -80,7 +77,7 @@ export default function ListingsScreen() {
     }
   }, [params.category, params.type, params.search, params.city, params.neighborhood])
 
-  // Instant sync with shared cache & persistent disk fallback
+  // Instant sync with shared cache updates
   useEffect(() => {
     const cached = getCachedListings()
     if (cached.length > 0 && listings.length === 0) {
@@ -95,21 +92,8 @@ export default function ListingsScreen() {
       }
     })
 
-    AsyncStorage.getItem(EXPLORE_CACHE_KEY).then((diskData) => {
-      if (diskData && listings.length === 0) {
-        try {
-          const parsed = JSON.parse(diskData)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setListings(parsed)
-            setCachedListings(parsed)
-            setLoading(false)
-          }
-        } catch {}
-      }
-    })
-
     return unsubscribe
-  }, [filters.transactionType, listings.length])
+  }, [filters.transactionType])
 
   const fetchListings = useCallback(async () => {
     try {
@@ -133,7 +117,6 @@ export default function ListingsScreen() {
         setListings(data as unknown as Listing[])
         if (filters.transactionType === 'all') {
           setCachedListings(data as unknown as Listing[])
-          AsyncStorage.setItem(EXPLORE_CACHE_KEY, JSON.stringify(data)).catch(() => {})
         }
       }
     } catch (err: any) {
