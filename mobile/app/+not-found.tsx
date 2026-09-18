@@ -57,13 +57,13 @@ export default function NotFoundScreen() {
           >
             <ArrowLeft
               size={18}
-              color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
               strokeWidth={2.4}
             />
             <Text
               style={[
                 styles.primaryBtnText,
-                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
               ]}
               numberOfLines={1}
               adjustsFontSizeToFit

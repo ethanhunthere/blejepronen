@@ -542,16 +542,11 @@ export default function SettingsScreen() {
   }
 
   // Apple-grade specular styling
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.14)'
-      : 'rgba(255, 255, 255, 0.10)'
+  const specularBorder = colors.border
 
   const brandHighlight = theme === 'green' ? colors.gold : colors.primary
   const primaryBtnText =
-    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
+    theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
   const pwdStrength = getPasswordStrength(newPassword)
 

@@ -922,7 +922,7 @@ export default function PostPropertyScreen() {
                 <Image source={{ uri }} style={styles.imageThumb} />
                 {idx === 0 && (
                   <View style={[styles.coverBadge, { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.coverBadgeText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+                    <Text style={[styles.coverBadgeText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
                       Kryesore
                     </Text>
                   </View>
@@ -967,12 +967,12 @@ export default function PostPropertyScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color={theme === 'green' ? '#003E37' : '#FFFFFF'} />
+            <ActivityIndicator color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
           ) : (
             <Text
               style={[
                 styles.submitButtonText,
-                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
               ]}
             >
               Publiko Pronën Tani

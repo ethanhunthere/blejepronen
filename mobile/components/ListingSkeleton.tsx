@@ -37,9 +37,9 @@ export function SkeletonBox({
 
   const baseBg =
     theme === 'white'
-      ? '#E5E7EB'
+      ? 'rgba(15, 23, 42, 0.06)'
       : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.12)'
+      ? 'rgba(212, 175, 55, 0.12)'
       : 'rgba(255, 255, 255, 0.08)'
 
   return (
@@ -61,12 +61,7 @@ export function SkeletonBox({
 export function ListingCardSkeleton() {
   const { colors, theme } = useTheme()
 
-  const borderColor =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.06)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.10)'
-      : 'rgba(255, 255, 255, 0.08)'
+  const borderColor = colors.border
 
   return (
     <View
@@ -75,8 +70,8 @@ export function ListingCardSkeleton() {
         {
           backgroundColor: colors.surface,
           borderColor,
-          shadowColor: theme === 'black' ? '#000' : '#101828',
-          shadowOpacity: theme === 'black' ? 0.35 : 0.06,
+          shadowColor: theme === 'black' ? '#000' : theme === 'green' ? '#030D0B' : '#0F172A',
+          shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.28 : 0.05,
         },
       ]}
     >
@@ -122,12 +117,7 @@ export function ListingFeedSkeleton({ count = 3 }: { count?: number }) {
 export function ListingDetailSkeleton() {
   const { colors, theme } = useTheme()
 
-  const borderColor =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.06)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.10)'
-      : 'rgba(255, 255, 255, 0.08)'
+  const borderColor = colors.border
 
   return (
     <View style={[styles.detailRoot, { backgroundColor: colors.background }]}>

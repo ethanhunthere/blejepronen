@@ -547,15 +547,10 @@ export default function AuthModalScreen() {
 
   // Theme-specific contrast button text and accent colors
   const primaryBtnText =
-    theme === 'green' ? '#003E37' : theme === 'black' ? '#071A14' : '#FFFFFF'
+    theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
   const brandHighlight = theme === 'green' ? colors.gold : colors.primary
 
-  const specularBorderColor =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.14)'
-      : 'rgba(255, 255, 255, 0.12)'
+  const specularBorderColor = colors.border
 
   return (
     <KeyboardAvoidingView

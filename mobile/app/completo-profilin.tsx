@@ -346,12 +346,7 @@ export default function CompletoProfilinScreen() {
   }
 
   const isDark = theme === 'black' || theme === 'green'
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.16)'
-      : 'rgba(255, 255, 255, 0.12)'
+  const specularBorder = colors.border
 
   if (loadingInitial) {
     return (
@@ -654,7 +649,7 @@ export default function CompletoProfilinScreen() {
                           size={13}
                           color={
                             isSelected
-                              ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                              ? theme === 'green' ? '#071C18' : '#FFFFFF'
                               : colors.textMuted
                           }
                           strokeWidth={2.2}
@@ -664,7 +659,7 @@ export default function CompletoProfilinScreen() {
                             styles.cityChipText,
                             {
                               color: isSelected
-                                ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                                ? theme === 'green' ? '#071C18' : '#FFFFFF'
                                 : colors.textPrimary,
                               fontFamily: isSelected ? Fonts.bold : Fonts.medium,
                             },
@@ -850,7 +845,7 @@ export default function CompletoProfilinScreen() {
                           size={13}
                           color={
                             isSelected
-                              ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                              ? theme === 'green' ? '#071C18' : '#FFFFFF'
                               : colors.textMuted
                           }
                           strokeWidth={2.2}
@@ -860,7 +855,7 @@ export default function CompletoProfilinScreen() {
                             styles.cityChipText,
                             {
                               color: isSelected
-                                ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                                ? theme === 'green' ? '#071C18' : '#FFFFFF'
                                 : colors.textPrimary,
                               fontFamily: isSelected ? Fonts.bold : Fonts.medium,
                             },
@@ -990,19 +985,19 @@ export default function CompletoProfilinScreen() {
               {submitting ? (
                 <ActivityIndicator
                   size="small"
-                  color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                  color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                 />
               ) : (
                 <>
                   <Save
                     size={19}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                     strokeWidth={2.4}
                   />
                   <Text
                     style={[
                       styles.saveButtonText,
-                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                      { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                     ]}
                   >
                     Ruaj Ndryshimet

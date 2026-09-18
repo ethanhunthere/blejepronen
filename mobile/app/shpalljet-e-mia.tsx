@@ -376,12 +376,7 @@ export default function ShpalljetEMiaScreen() {
   const inactiveCount = listings.filter((l) => !Boolean(l.is_active)).length
   const savedCount = savedListings.length
 
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.14)'
-      : 'rgba(255, 255, 255, 0.10)'
+  const specularBorder = colors.border
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
@@ -414,7 +409,7 @@ export default function ShpalljetEMiaScreen() {
           }}
           hitSlop={8}
         >
-          <Plus size={18} color={theme === 'green' ? '#003E37' : '#FFFFFF'} strokeWidth={2.6} />
+          <Plus size={18} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.6} />
         </Pressable>
       </View>
 
@@ -472,7 +467,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       color:
                         filterStatus === 'all'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : colors.textPrimary,
                     },
                   ]}
@@ -485,7 +480,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'all'
-                          ? theme === 'green' ? 'rgba(0,62,55,0.25)' : 'rgba(255,255,255,0.25)'
+                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
                           : colors.surfaceSubtle,
                     },
                   ]}
@@ -496,7 +491,7 @@ export default function ShpalljetEMiaScreen() {
                       {
                         color:
                           filterStatus === 'all'
-                            ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
                             : colors.textSecondary,
                       },
                     ]}
@@ -529,7 +524,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'active'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : '#10B981',
                     },
                   ]}
@@ -540,7 +535,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       color:
                         filterStatus === 'active'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : colors.textPrimary,
                     },
                   ]}
@@ -553,7 +548,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'active'
-                          ? theme === 'green' ? 'rgba(0,62,55,0.25)' : 'rgba(255,255,255,0.25)'
+                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
                           : colors.surfaceSubtle,
                     },
                   ]}
@@ -564,7 +559,7 @@ export default function ShpalljetEMiaScreen() {
                       {
                         color:
                           filterStatus === 'active'
-                            ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
                             : colors.textSecondary,
                       },
                     ]}
@@ -597,7 +592,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'inactive'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : colors.textMuted,
                     },
                   ]}
@@ -608,7 +603,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       color:
                         filterStatus === 'inactive'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : colors.textPrimary,
                     },
                   ]}
@@ -621,7 +616,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'inactive'
-                          ? theme === 'green' ? 'rgba(0,62,55,0.25)' : 'rgba(255,255,255,0.25)'
+                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
                           : colors.surfaceSubtle,
                     },
                   ]}
@@ -632,7 +627,7 @@ export default function ShpalljetEMiaScreen() {
                       {
                         color:
                           filterStatus === 'inactive'
-                            ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
                             : colors.textSecondary,
                       },
                     ]}
@@ -663,10 +658,10 @@ export default function ShpalljetEMiaScreen() {
                   size={13}
                   color={
                     filterStatus === 'saved'
-                      ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                      ? theme === 'green' ? '#071C18' : '#FFFFFF'
                       : colors.textMuted
                   }
-                  fill={filterStatus === 'saved' ? (theme === 'green' ? '#003E37' : '#FFFFFF') : 'none'}
+                  fill={filterStatus === 'saved' ? (theme === 'green' ? '#071C18' : '#FFFFFF') : 'none'}
                   strokeWidth={2.4}
                 />
                 <Text
@@ -675,7 +670,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       color:
                         filterStatus === 'saved'
-                          ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
                           : colors.textPrimary,
                     },
                   ]}
@@ -688,7 +683,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         filterStatus === 'saved'
-                          ? theme === 'green' ? 'rgba(0,62,55,0.25)' : 'rgba(255,255,255,0.25)'
+                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
                           : colors.surfaceSubtle,
                     },
                   ]}
@@ -699,7 +694,7 @@ export default function ShpalljetEMiaScreen() {
                       {
                         color:
                           filterStatus === 'saved'
-                            ? theme === 'green' ? '#003E37' : '#FFFFFF'
+                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
                             : colors.textSecondary,
                       },
                     ]}
@@ -762,13 +757,13 @@ export default function ShpalljetEMiaScreen() {
                 >
                   <Building2
                     size={17}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                     strokeWidth={2.6}
                   />
                   <Text
                     style={[
                       styles.emptyPostBtnText,
-                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                      { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                     ]}
                   >
                     Eksploro Pronat
@@ -803,13 +798,13 @@ export default function ShpalljetEMiaScreen() {
                 >
                   <Plus
                     size={18}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                     strokeWidth={2.6}
                   />
                   <Text
                     style={[
                       styles.emptyPostBtnText,
-                      { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                      { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                     ]}
                   >
                     Posto Pronë të Re
@@ -1232,19 +1227,19 @@ export default function ShpalljetEMiaScreen() {
                 {savingPrice ? (
                   <ActivityIndicator
                     size="small"
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                   />
                 ) : (
                   <>
                     <Check
                       size={17}
-                      color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                       strokeWidth={2.6}
                     />
                     <Text
                       style={[
                         styles.modalSaveBtnText,
-                        { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                       ]}
                     >
                       Ruaj Çmimin

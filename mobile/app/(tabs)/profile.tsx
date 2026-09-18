@@ -673,7 +673,7 @@ export default function ProfileScreen() {
                 >
                   <Camera
                     size={11}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                     strokeWidth={2.4}
                   />
                 </View>
@@ -1142,14 +1142,14 @@ export default function ProfileScreen() {
                       <Text
                         style={[
                           styles.vcTodoPillText,
-                          { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                          { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                         ]}
                       >
                         {row.cta}
                       </Text>
                       <ChevronRight
                         size={12}
-                        color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                         strokeWidth={2.8}
                       />
                     </View>
@@ -1832,7 +1832,7 @@ export default function ProfileScreen() {
                       >
                         <Check
                           size={11}
-                          color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                          color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                           strokeWidth={3}
                         />
                       </View>

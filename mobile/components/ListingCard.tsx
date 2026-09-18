@@ -188,15 +188,15 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 {
                   backgroundColor:
                     theme === 'white'
-                      ? 'rgba(0, 100, 89, 0.08)'
+                      ? 'rgba(0, 103, 91, 0.08)'
                       : theme === 'green'
-                      ? 'rgba(200, 184, 130, 0.18)'
+                      ? 'rgba(212, 175, 55, 0.16)'
                       : 'rgba(52, 211, 153, 0.12)',
                   borderColor:
                     theme === 'white'
-                      ? 'rgba(0, 100, 89, 0.22)'
+                      ? 'rgba(0, 103, 91, 0.22)'
                       : theme === 'green'
-                      ? 'rgba(200, 184, 130, 0.40)'
+                      ? 'rgba(212, 175, 55, 0.35)'
                       : 'rgba(52, 211, 153, 0.3)',
                 },
               ]}
@@ -249,7 +249,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 {
                   backgroundColor:
                     theme === 'green'
-                      ? 'rgba(200, 184, 130, 0.15)'
+                      ? 'rgba(212, 175, 55, 0.16)'
                       : 'rgba(16, 185, 129, 0.12)',
                 },
               ]}
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   featuredCapsuleText: {
-    color: '#003E37',
+    color: '#071C18',
     fontSize: 10.5,
     fontFamily: Fonts.bold,
   },

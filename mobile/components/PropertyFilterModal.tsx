@@ -182,7 +182,7 @@ export function PropertyFilterModal({
                           {
                             color: isSelected
                               ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                               : colors.textSecondary,
                             fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -220,7 +220,7 @@ export function PropertyFilterModal({
                       {
                         color: !draft.city
                           ? theme === 'green'
-                            ? '#003E37'
+                            ? '#071C18'
                             : '#FFFFFF'
                           : colors.textSecondary,
                         fontFamily: !draft.city ? Fonts.bold : Fonts.medium,
@@ -258,7 +258,7 @@ export function PropertyFilterModal({
                           {
                             color: isSelected
                               ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                               : colors.textSecondary,
                             fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -299,7 +299,7 @@ export function PropertyFilterModal({
                         {
                           color: !draft.neighborhood
                             ? theme === 'green'
-                              ? '#003E37'
+                              ? '#071C18'
                               : '#FFFFFF'
                             : colors.textSecondary,
                           fontFamily: !draft.neighborhood ? Fonts.bold : Fonts.medium,
@@ -336,7 +336,7 @@ export function PropertyFilterModal({
                             {
                               color: isSelected
                                 ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                                 : colors.textSecondary,
                               fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -581,7 +581,7 @@ export function PropertyFilterModal({
                           {
                             color: isSelected
                               ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                               : colors.textSecondary,
                             fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -623,7 +623,7 @@ export function PropertyFilterModal({
                           {
                             color: isSelected
                               ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                               : colors.textSecondary,
                             fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -665,7 +665,7 @@ export function PropertyFilterModal({
                           {
                             color: isSelected
                               ? theme === 'green'
-                                ? '#003E37'
+                                ? '#071C18'
                                 : '#FFFFFF'
                               : colors.textSecondary,
                             fontFamily: isSelected ? Fonts.bold : Fonts.medium,
@@ -709,7 +709,13 @@ export function PropertyFilterModal({
                           },
                         ]}
                       >
-                        {isSelected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+                        {isSelected && (
+                          <Check
+                            size={12}
+                            color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                            strokeWidth={3}
+                          />
+                        )}
                       </View>
                       <Text
                         style={[
@@ -803,7 +809,7 @@ export function PropertyFilterModal({
               <Text
                 style={[
                   styles.applyBtnText,
-                  { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                  { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                 ]}
               >
                 Shiko Rezultatet {activeCount > 0 ? `(${activeCount} filtra)` : ''}

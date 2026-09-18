@@ -255,9 +255,9 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
               styles.iconHalo,
               {
                 borderColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.35)' : 'rgba(0, 100, 89, 0.25)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(0, 100, 89, 0.25)',
                 backgroundColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.15)' : 'rgba(0, 100, 89, 0.12)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(0, 100, 89, 0.12)',
               },
             ]}
           >
@@ -269,7 +269,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
             >
               <LogOut
                 size={17}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                 strokeWidth={2.4}
               />
             </View>
@@ -282,9 +282,9 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
               styles.iconHalo,
               {
                 borderColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.35)' : 'rgba(16, 185, 129, 0.25)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(16, 185, 129, 0.25)',
                 backgroundColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(16, 185, 129, 0.12)',
               },
             ]}
           >
@@ -296,7 +296,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
             >
               <CheckCircle2
                 size={18}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                 strokeWidth={2.4}
               />
             </View>
@@ -317,9 +317,9 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
               styles.iconHalo,
               {
                 borderColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.35)' : 'rgba(0, 100, 89, 0.25)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(0, 100, 89, 0.25)',
                 backgroundColor:
-                  theme === 'green' ? 'rgba(200, 184, 130, 0.15)' : 'rgba(0, 100, 89, 0.12)',
+                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(0, 100, 89, 0.12)',
               },
             ]}
           >
@@ -331,7 +331,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
             >
               <Info
                 size={18}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                 strokeWidth={2.4}
               />
             </View>

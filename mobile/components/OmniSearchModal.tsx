@@ -544,12 +544,12 @@ export default function OmniSearchModal({
                               {
                                 backgroundColor:
                                   isAgency
-                                    ? 'rgba(0, 100, 89, 0.14)'
+                                    ? colors.badgeBg
                                     : isAgent
                                     ? 'rgba(59, 130, 246, 0.12)'
                                     : item.badge === 'Në shitje'
-                                    ? 'rgba(16, 185, 129, 0.14)'
-                                    : 'rgba(200, 184, 130, 0.20)',
+                                    ? theme === 'green' ? colors.primaryLight : 'rgba(16, 185, 129, 0.14)'
+                                    : colors.goldLight,
                               },
                             ]}
                           >
@@ -563,7 +563,7 @@ export default function OmniSearchModal({
                                       : isAgent
                                       ? '#3B82F6'
                                       : item.badge === 'Në shitje'
-                                      ? '#10B981'
+                                      ? theme === 'green' ? colors.gold : '#10B981'
                                       : colors.gold,
                                 },
                               ]}

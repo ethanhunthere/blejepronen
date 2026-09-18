@@ -387,12 +387,12 @@ export default function ChatConversationScreen() {
       : colors.surface
     const textColor = isMine
       ? theme === 'green'
-        ? '#003E37'
+        ? '#071C18'
         : '#FFFFFF'
       : colors.textPrimary
     const metaColor = isMine
       ? theme === 'green'
-        ? '#004D40'
+        ? 'rgba(7, 28, 24, 0.75)'
         : 'rgba(255, 255, 255, 0.75)'
       : colors.textMuted
 
@@ -684,7 +684,7 @@ export default function ChatConversationScreen() {
                 color={
                   inputText.trim()
                     ? theme === 'green'
-                      ? '#003E37'
+                      ? '#071C18'
                       : '#FFFFFF'
                     : colors.textLight
                 }

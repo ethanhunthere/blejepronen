@@ -206,20 +206,20 @@ export function CallModal({
             >
               <PhoneCall
                 size={19}
-                color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                 strokeWidth={2.4}
               />
               <View style={styles.appCallTextWrap}>
                 <Text
                   style={[
                     styles.appCallLabel,
-                    { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                    { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                   ]}
                 >
                   Thirr në aplikacion
                 </Text>
                 <Text
-                  style={[styles.appCallSub, { color: theme === 'green' ? 'rgba(0,62,55,0.7)' : 'rgba(255,255,255,0.75)' }]}
+                  style={[styles.appCallSub, { color: theme === 'green' ? 'rgba(7,28,24,0.75)' : 'rgba(255,255,255,0.75)' }]}
                 >
                   Falas · Brenda Bleje Pronën
                 </Text>
@@ -306,7 +306,7 @@ export function CallModal({
                 >
                   <Copy
                     size={19}
-                    color={theme === 'green' ? '#003E37' : '#FFFFFF'}
+                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
                     strokeWidth={2.4}
                   />
                 </View>
@@ -330,7 +330,7 @@ export function CallModal({
                 style={[styles.chatBtn, { backgroundColor: colors.primary }]}
                 onPress={onClose}
               >
-                <Text style={[styles.chatBtnText, { color: theme === 'green' ? '#003E37' : '#FFFFFF' }]}>
+                <Text style={[styles.chatBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
                   Vazhdo në Bisedë
                 </Text>
               </Pressable>

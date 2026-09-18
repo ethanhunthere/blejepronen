@@ -39,6 +39,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-light: var(--brand-light);
+  --color-brand-dark: var(--brand-dark);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -160,6 +166,8 @@
   --brand-foreground: #021F19;
   --brand-light: rgba(52, 211, 153, 0.15);
   --brand-dark: #059669;
+  --gold: #D4AF37;
+  --gold-light: rgba(212, 175, 55, 0.20);
   --background: #000000;
   --foreground: #F9FAFB;
   --card: #0D1311;

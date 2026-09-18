@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   filterBadgeText: {
-    color: '#003E37',
+    color: '#071C18',
     fontSize: 10,
     fontFamily: Fonts.bold,
   },

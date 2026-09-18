@@ -327,7 +327,7 @@ export default function ListingDetailScreen() {
             <Text
               style={[
                 styles.heroTypeBadgeText,
-                { color: theme === 'green' ? '#003E37' : '#FFFFFF' },
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
               ]}
             >
               {listing.type === 'shitje' ? 'NË SHITJE' : 'ME QIRA'}
