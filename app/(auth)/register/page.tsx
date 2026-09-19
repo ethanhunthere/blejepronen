@@ -223,7 +223,7 @@ export default function RegisterPage() {
 
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
 
-  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook' | 'instagram') => {
+  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook') => {
     try {
       setOauthLoading(provider)
       setError('')
@@ -232,7 +232,6 @@ export default function RegisterPage() {
         google: 'Google',
         apple: 'Apple',
         facebook: 'Facebook',
-        instagram: 'Instagram',
       }
       const providerTitle = providerNames[provider] || provider
 
@@ -243,7 +242,7 @@ export default function RegisterPage() {
       } catch {}
 
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
-      const targetProvider = (provider === 'instagram' ? 'facebook' : provider) as
+      const targetProvider = provider as
         | 'google'
         | 'apple'
         | 'facebook'
@@ -293,7 +292,6 @@ export default function RegisterPage() {
           onGoogle={() => handleOAuth('google')}
           onApple={() => handleOAuth('apple')}
           onFacebook={() => handleOAuth('facebook')}
-          onInstagram={() => handleOAuth('instagram')}
           oauthLoading={oauthLoading}
           accountType={accountType}
           onAccountTypeChange={(t) => {
