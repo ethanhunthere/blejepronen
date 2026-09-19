@@ -26,12 +26,8 @@ import {
   Building2,
   RotateCcw,
   CheckCircle2,
-  ShieldCheck,
   FastForward,
   ChevronRight,
-  Heart,
-  MessageSquare,
-  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as WebBrowser from 'expo-web-browser'
@@ -63,6 +59,42 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
       <Path
         fill="#EA4335"
         d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
+      />
+    </Svg>
+  )
+}
+
+// ─── Official Apple vector mark (strictly adheres to Apple HIG) ───
+function AppleLogo({ size = 18, color = '#000000' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 170 170" fill="none">
+      <Path
+        fill={color}
+        d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.7-7.85-12-14.44-6.3-9.67-11.29-20.91-14.96-33.72-3.67-12.81-5.51-24.89-5.51-36.24 0-14.54 3.7-26.68 11.09-36.42 7.39-9.74 16.64-14.77 27.75-15.08 4.79 0 10.15 1.25 16.08 3.75 5.93 2.5 9.77 3.75 11.52 3.75 1.52 0 5.46-1.31 11.83-3.92 6.37-2.61 11.75-3.77 16.14-3.48 12.19.65 22.09 5.37 29.7 14.16-10.67 6.53-15.89 15.46-15.66 26.8.23 8.71 3.59 16.11 10.08 22.21 6.5 6.09 14.16 9.69 22.99 10.78-2.61 7.84-5.87 15.74-9.77 23.71zM119.22 31.84c0-7.18 2.54-13.93 7.63-20.24 5.09-6.32 11.45-10.23 19.09-11.74.22 1.09.33 2.07.33 2.94 0 7.07-2.69 13.9-8.06 20.49-5.38 6.59-11.74 10.37-19.09 11.34-.22-.98-.33-1.89-.33-2.79z"
+      />
+    </Svg>
+  )
+}
+
+// ─── Official Facebook vector mark ───
+function FacebookLogo({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        fill="#1877F2"
+        d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
+      />
+    </Svg>
+  )
+}
+
+// ─── Official Instagram vector mark ───
+function InstagramLogo({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        fill="#E4405F"
+        d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
       />
     </Svg>
   )
@@ -127,7 +159,7 @@ export default function AuthModalScreen() {
 
   // State
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // 60-second OTP Countdown timer
@@ -249,7 +281,7 @@ export default function AuthModalScreen() {
         })
 
         if (!hasCompletedOnboarding) {
-          router.replace('/completo-profilin' as any)
+          router.replace('/completo-profilin' as never)
         } else {
           safeBack(router, '/(tabs)')
         }
@@ -290,20 +322,20 @@ export default function AuthModalScreen() {
         setStep('verify_otp')
         setLoading(false)
       }
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Ndodhi një gabim i papritur gjatë komunikimit.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ndodhi një gabim i papritur gjatë komunikimit.'
+      setErrorMessage(msg)
       setLoading(false)
     }
   }
 
-  // ── Google OAuth: native browser session, Apple-grade flow ───
-  const googleHandledRef = useRef(false)
+  // ── Comprehensive Social & Native OAuth Suite (Google, Apple, Facebook, Instagram) ───
+  const oauthHandledRef = useRef(false)
 
-  // Completes Google login from a callback URL (implicit tokens or PKCE code)
-  const finishGoogleAuth = useCallback(
-    async (urlStr: string) => {
-      if (googleHandledRef.current) return
-      googleHandledRef.current = true
+  const finishOAuth = useCallback(
+    async (urlStr: string, providerTitle: string) => {
+      if (oauthHandledRef.current) return
+      oauthHandledRef.current = true
 
       const hashPart = urlStr.split('#')[1] || ''
       const queryPart = urlStr.split('?')[1] || ''
@@ -321,10 +353,10 @@ export default function AuthModalScreen() {
       const authCode = queryParams.get('code') || hashParams.get('code')
 
       if (!accessToken && !authCode) {
-        googleHandledRef.current = false
+        oauthHandledRef.current = false
         throw new Error(
           oauthError ||
-            'Google nuk u kthye në aplikacion. Kontrolloni URL-në e ridrejtimit te Supabase → Authentication → URL Configuration.'
+            `${providerTitle} nuk u kthye në aplikacion. Kontrolloni URL-në e ridrejtimit te Supabase.`
         )
       }
 
@@ -338,7 +370,7 @@ export default function AuthModalScreen() {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
         if (exchangeError) throw exchangeError
       } else {
-        throw new Error('Nuk u gjetën kredencialet e verifikimit të Google.')
+        throw new Error(`Nuk u gjetën kredencialet e verifikimit të ${providerTitle}.`)
       }
 
       // Fetch the fresh user and mirror the email-login success behavior
@@ -357,13 +389,13 @@ export default function AuthModalScreen() {
       showBanner({
         type: 'success',
         title: 'Mirësevini!',
-        message: `Jeni kyçur me sukses me Google si ${displayName}.`,
+        message: `Jeni kyçur me sukses me ${providerTitle} si ${displayName}.`,
       })
 
-      setGoogleLoading(false)
+      setOauthLoading(null)
 
       if (!meta.onboarding_completed) {
-        router.replace('/completo-profilin' as any)
+        router.replace('/completo-profilin' as never)
       } else {
         safeBack(router, '/(tabs)')
       }
@@ -371,62 +403,73 @@ export default function AuthModalScreen() {
     [router, showBanner]
   )
 
-  const handleGoogleAuth = async () => {
-    if (googleLoading) return
+  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook' | 'instagram') => {
+    if (oauthLoading) return
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setErrorMessage(null)
-    setGoogleLoading(true)
-    googleHandledRef.current = false
+    setOauthLoading(provider)
+    oauthHandledRef.current = false
+
+    const providerNames: Record<string, string> = {
+      google: 'Google',
+      apple: 'Apple',
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+    }
+    const providerTitle = providerNames[provider] || provider
 
     // Safety net: on some iOS / Expo Go combinations the callback arrives as a
     // deep link (re-opening the app) instead of resolving the browser session.
     const linkSub = Linking.addEventListener('url', ({ url }) => {
       if (!url) return
       if (url.includes('access_token=') || url.includes('code=')) {
-        finishGoogleAuth(url).catch((err: any) => {
-          console.warn('Google deep-link notice:', err)
-          setErrorMessage(err?.message || 'Ndodhi një problem gjatë hyrjes me Google.')
-          setGoogleLoading(false)
+        finishOAuth(url, providerTitle).catch((err: unknown) => {
+          console.warn(`${providerTitle} deep-link notice:`, err)
+          const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}.`
+          setErrorMessage(msg)
+          setOauthLoading(null)
         })
       }
     })
 
     try {
-      // Resolves to exp://<host>:8081/--/auth/callback inside Expo Go and to
-      // blejepronen://auth/callback in the standalone iOS/Android build — so the
-      // browser session always returns to THIS app, never to a website.
       const redirectUrl = Linking.createURL('/auth/callback')
+      const supabaseProvider = (provider === 'instagram' ? 'facebook' : provider) as
+        | 'google'
+        | 'apple'
+        | 'facebook'
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: supabaseProvider,
         options: {
           skipBrowserRedirect: true,
           redirectTo: redirectUrl,
+          queryParams: {
+            account_type: accountType,
+          },
         },
       })
 
       if (error || !data?.url) {
         setErrorMessage(
-          error?.message || 'Hyrja me Google nuk është e disponueshme aktualisht.'
+          error?.message || `Hyrja me ${providerTitle} nuk është e disponueshme aktualisht.`
         )
-        setGoogleLoading(false)
+        setOauthLoading(null)
         return
       }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
 
       if (result.type === 'success' && result.url) {
-        await finishGoogleAuth(result.url)
-      } else if (!googleHandledRef.current) {
-        // User dismissed the browser sheet — silent cancel
-        setGoogleLoading(false)
+        await finishOAuth(result.url, providerTitle)
+      } else if (!oauthHandledRef.current) {
+        setOauthLoading(null)
       }
-    } catch (err: any) {
-      console.warn('Google auth notice:', err)
-      setErrorMessage(
-        err?.message || 'Ndodhi një problem gjatë hyrjes me Google. Provoni përsëri.'
-      )
-      setGoogleLoading(false)
+    } catch (err: unknown) {
+      console.warn(`${providerTitle} auth notice:`, err)
+      const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}. Provoni përsëri.`
+      setErrorMessage(msg)
+      setOauthLoading(null)
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       }
@@ -449,7 +492,7 @@ export default function AuthModalScreen() {
       title: 'Verifikoni më vonë',
       message: 'Mund ta verifikoni email-in dhe identitetin tuaj në çdo kohë nga rubrika "Profili".',
     })
-    router.replace('/(tabs)/profile' as any)
+    router.replace('/(tabs)/profile' as never)
   }
 
   // Handle 6-Digit OTP Verification
@@ -505,9 +548,10 @@ export default function AuthModalScreen() {
         message: 'Email-i juaj u konfirmua me sukses. Ju lutem plotësoni profilin tuaj.',
       })
 
-      router.replace('/completo-profilin' as any)
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Gabim gjatë verifikimit të kodit.')
+      router.replace('/completo-profilin' as never)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gabim gjatë verifikimit të kodit.'
+      setErrorMessage(msg)
       setVerifying(false)
     }
   }
@@ -539,7 +583,7 @@ export default function AuthModalScreen() {
       setCanResend(false)
       setResending(false)
       otpInputRef.current?.focus()
-    } catch (err: any) {
+    } catch {
       setErrorMessage('Lidhja me serverin dështoi gjatë ridërgimit.')
       setResending(false)
     }
@@ -549,6 +593,8 @@ export default function AuthModalScreen() {
   const primaryBtnText =
     theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
   const brandHighlight = theme === 'green' ? colors.gold : colors.primary
+  const appleBg = theme === 'white' ? '#000000' : '#FFFFFF'
+  const appleFg = theme === 'white' ? '#FFFFFF' : '#000000'
 
   const specularBorderColor = colors.border
 
@@ -803,59 +849,13 @@ export default function AuthModalScreen() {
           <>
             {/* Centered Brand Emblem & Welcoming Editorial Context */}
             <View style={styles.brandHero}>
-              <Logo size={40} />
+              <Logo size={42} />
               <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                 {heroTitle}
               </Text>
               <Text style={[styles.heroSubtitle, { color: colors.textMuted }]}>
                 {heroSubtitle}
               </Text>
-
-              {/* Editorial Value Proposition Badges */}
-              <View style={styles.benefitsRow}>
-                <View
-                  style={[
-                    styles.benefitPill,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor: specularBorderColor,
-                    },
-                  ]}
-                >
-                  <Heart size={11} color={brandHighlight} strokeWidth={2.4} />
-                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
-                    Ruajtje e pakufizuar
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.benefitPill,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor: specularBorderColor,
-                    },
-                  ]}
-                >
-                  <MessageSquare size={11} color={brandHighlight} strokeWidth={2.4} />
-                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
-                    Biseda të sigurta
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.benefitPill,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor: specularBorderColor,
-                    },
-                  ]}
-                >
-                  <ShieldCheck size={11} color={brandHighlight} strokeWidth={2.4} />
-                  <Text style={[styles.benefitPillText, { color: colors.textSecondary }]}>
-                    Prona të verifikuara
-                  </Text>
-                </View>
-              </View>
             </View>
 
             {/* Apple/Airbnb-Grade Segmented Tab Switcher (Kyçu / Regjistrohu) */}
@@ -956,106 +956,210 @@ export default function AuthModalScreen() {
               </View>
             )}
 
-            {/* Register Mode: Company vs Individual Account Selector */}
-            {activeTab === 'register' && (
-              <View style={styles.accountTypeWrapper}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                  Lloji i llogarisë
-                </Text>
-                <View
+            {/* Dual-Track Persona Architecture Switcher (Individ vs Kompani / Biznes) on BOTH tabs */}
+            <View style={styles.accountTypeWrapper}>
+              <View
+                style={[
+                  styles.accountTypeSelector,
+                  {
+                    backgroundColor:
+                      theme === 'white'
+                        ? 'rgba(0, 0, 0, 0.04)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                    borderColor: specularBorderColor,
+                    borderWidth: 0.5,
+                  },
+                ]}
+              >
+                <Pressable
                   style={[
-                    styles.accountTypeSelector,
-                    {
-                      backgroundColor:
-                        theme === 'white'
-                          ? 'rgba(0, 0, 0, 0.04)'
-                          : 'rgba(255, 255, 255, 0.06)',
-                      borderColor: specularBorderColor,
-                      borderWidth: 0.5,
-                    },
+                    styles.accountTypePill,
+                    accountType === 'individual' && [
+                      styles.accountTypePillActive,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: specularBorderColor,
+                        borderWidth: 0.5,
+                      },
+                    ],
                   ]}
+                  onPress={() => handleAccountTypeChange('individual')}
                 >
-                  <Pressable
+                  <User
+                    size={15}
+                    color={accountType === 'individual' ? brandHighlight : colors.textMuted}
+                    strokeWidth={2.2}
+                  />
+                  <Text
                     style={[
-                      styles.accountTypePill,
-                      accountType === 'individual' && [
-                        styles.accountTypePillActive,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: specularBorderColor,
-                          borderWidth: 0.5,
-                        },
-                      ],
+                      styles.accountTypePillText,
+                      {
+                        color:
+                          accountType === 'individual'
+                            ? colors.textPrimary
+                            : colors.textMuted,
+                        fontFamily:
+                          accountType === 'individual' ? Fonts.bold : Fonts.medium,
+                      },
                     ]}
-                    onPress={() => handleAccountTypeChange('individual')}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                   >
-                    <User
-                      size={15}
-                      color={accountType === 'individual' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2.2}
-                    />
-                    <Text
-                      style={[
-                        styles.accountTypePillText,
-                        {
-                          color:
-                            accountType === 'individual'
-                              ? colors.textPrimary
-                              : colors.textMuted,
-                          fontFamily:
-                            accountType === 'individual' ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                    >
-                      Individual
-                    </Text>
-                  </Pressable>
+                    Individ
+                  </Text>
+                </Pressable>
 
-                  <Pressable
+                <Pressable
+                  style={[
+                    styles.accountTypePill,
+                    accountType === 'company' && [
+                      styles.accountTypePillActive,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: specularBorderColor,
+                        borderWidth: 0.5,
+                      },
+                    ],
+                  ]}
+                  onPress={() => handleAccountTypeChange('company')}
+                >
+                  <Building2
+                    size={15}
+                    color={accountType === 'company' ? brandHighlight : colors.textMuted}
+                    strokeWidth={2.2}
+                  />
+                  <Text
                     style={[
-                      styles.accountTypePill,
-                      accountType === 'company' && [
-                        styles.accountTypePillActive,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: specularBorderColor,
-                          borderWidth: 0.5,
-                        },
-                      ],
+                      styles.accountTypePillText,
+                      {
+                        color:
+                          accountType === 'company'
+                            ? colors.textPrimary
+                            : colors.textMuted,
+                        fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
+                      },
                     ]}
-                    onPress={() => handleAccountTypeChange('company')}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
                   >
-                    <Building2
-                      size={15}
-                      color={accountType === 'company' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2.2}
-                    />
-                    <Text
-                      style={[
-                        styles.accountTypePillText,
-                        {
-                          color:
-                            accountType === 'company'
-                              ? colors.textPrimary
-                              : colors.textMuted,
-                          fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                    >
-                      Agjenci / Kompani
-                    </Text>
-                  </Pressable>
-                </View>
+                    Kompani / Biznes
+                  </Text>
+                </Pressable>
               </View>
-            )}
+            </View>
+
+            {/* ─── Comprehensive Social & Native OAuth Suite ─── */}
+            <View style={styles.oauthSection}>
+              {/* Hero Google Button */}
+              <Pressable
+                style={[
+                  styles.oauthHeroBtn,
+                  { backgroundColor: colors.surface, borderColor: specularBorderColor },
+                  (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                ]}
+                onPress={() => handleOAuth('google')}
+                disabled={!!oauthLoading || loading}
+              >
+                {oauthLoading === 'google' ? (
+                  <ActivityIndicator size="small" color={brandHighlight} />
+                ) : (
+                  <>
+                    <GoogleLogo size={19} />
+                    <Text style={[styles.oauthHeroBtnText, { color: colors.textPrimary }]}>
+                      Vazhdo me Google
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              {/* Instant Reassurance Copy */}
+              <Text style={[styles.oauthReassuranceText, { color: colors.textMuted }]}>
+                ⚡ Pa fjalëkalim dhe pa verifikim me email — hyrje e menjëhershme
+              </Text>
+
+              {/* Apple HIG Button */}
+              <Pressable
+                style={[
+                  styles.appleBtn,
+                  {
+                    backgroundColor: appleBg,
+                    borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : appleBg,
+                  },
+                  (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                ]}
+                onPress={() => handleOAuth('apple')}
+                disabled={!!oauthLoading || loading}
+              >
+                {oauthLoading === 'apple' ? (
+                  <ActivityIndicator size="small" color={appleFg} />
+                ) : (
+                  <>
+                    <AppleLogo size={18} color={appleFg} />
+                    <Text style={[styles.appleBtnText, { color: appleFg }]}>
+                      Vazhdo me Apple
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              {/* Meta Ecosystem (Facebook & Instagram) */}
+              <View style={styles.metaRow}>
+                <Pressable
+                  style={[
+                    styles.metaBtn,
+                    { backgroundColor: colors.surface, borderColor: specularBorderColor },
+                    (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                  ]}
+                  onPress={() => handleOAuth('facebook')}
+                  disabled={!!oauthLoading || loading}
+                >
+                  {oauthLoading === 'facebook' ? (
+                    <ActivityIndicator size="small" color="#1877F2" />
+                  ) : (
+                    <>
+                      <FacebookLogo size={18} />
+                      <Text style={[styles.metaBtnText, { color: colors.textPrimary }]}>
+                        Facebook
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.metaBtn,
+                    { backgroundColor: colors.surface, borderColor: specularBorderColor },
+                    (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                  ]}
+                  onPress={() => handleOAuth('instagram')}
+                  disabled={!!oauthLoading || loading}
+                >
+                  {oauthLoading === 'instagram' ? (
+                    <ActivityIndicator size="small" color="#E4405F" />
+                  ) : (
+                    <>
+                      <InstagramLogo size={18} />
+                      <Text style={[styles.metaBtnText, { color: colors.textPrimary }]}>
+                        Instagram
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.orDividerRow}>
+              <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+              <Text style={[styles.orDividerText, { color: colors.textMuted }]}>
+                ose me email
+              </Text>
+              <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+            </View>
 
             {/* Input Form Fields */}
             <View style={styles.form}>
-              {/* If Company: Emri i Kompanisë */}
+              {/* If Company & Register: Emri i Kompanisë */}
               {activeTab === 'register' && accountType === 'company' && (
                 <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -1091,10 +1195,10 @@ export default function AuthModalScreen() {
                 </View>
               )}
 
-              {/* Email */}
+              {/* Email (dynamically scoped) */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                  {accountType === 'company' && activeTab === 'register'
+                  {accountType === 'company'
                     ? 'Email Zyrtar i Kompanisë *'
                     : 'Email *'}
                 </Text>
@@ -1116,7 +1220,11 @@ export default function AuthModalScreen() {
                   />
                   <TextInput
                     style={[styles.textInput, { color: colors.textPrimary }]}
-                    placeholder="shembull@email.com"
+                    placeholder={
+                      accountType === 'company'
+                        ? 'kompania@biznes.com'
+                        : 'shembull@email.com'
+                    }
                     placeholderTextColor={colors.textLight}
                     value={email}
                     onChangeText={setEmail}
@@ -1184,7 +1292,9 @@ export default function AuthModalScreen() {
                   <View style={styles.submitBtnInner}>
                     <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
                       {activeTab === 'login'
-                        ? 'Kyçu'
+                        ? accountType === 'company'
+                          ? 'Kyçu si Kompani'
+                          : 'Kyçu'
                         : accountType === 'company'
                         ? 'Regjistro Kompaninë'
                         : 'Regjistrohu'}
@@ -1193,40 +1303,6 @@ export default function AuthModalScreen() {
                   </View>
                 )}
               </Pressable>
-
-              {/* ─── Divider + Google OAuth Row ─── */}
-              <View style={styles.googleSection}>
-                <View style={[styles.orDividerRow, { marginBottom: 0 }]}>
-                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-                  <Text style={[styles.orDividerText, { color: colors.textMuted }]}>ose</Text>
-                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-                </View>
-
-                <Pressable
-                  style={[
-                    styles.googleBtn,
-                    { backgroundColor: colors.surface, borderColor: specularBorderColor },
-                    (googleLoading || loading) && styles.submitBtnDisabled,
-                  ]}
-                  onPress={handleGoogleAuth}
-                  disabled={googleLoading || loading}
-                >
-                  {googleLoading ? (
-                    <ActivityIndicator size="small" color={brandHighlight} />
-                  ) : (
-                    <>
-                      <GoogleLogo size={19} />
-                      <Text style={[styles.googleBtnText, { color: colors.textPrimary }]}>
-                        Vazhdo me Google
-                      </Text>
-                    </>
-                  )}
-                </Pressable>
-
-                <Text style={[styles.googleHintText, { color: colors.textMuted }]}>
-                  I shpejtë dhe i sigurt — pa fjalëkalim
-                </Text>
-              </View>
 
               {/* 1-Line Switcher Prompt */}
               <View style={styles.switchPromptRow}>
@@ -1311,34 +1387,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 16,
   },
-  benefitsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    width: '100%',
-    marginTop: 2,
-  },
-  benefitPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 0.5,
-  },
-  benefitPillText: {
-    fontSize: 11.5,
-    fontFamily: Fonts.medium,
-  },
   tabSwitcher: {
     flexDirection: 'row',
     borderRadius: 16,
     padding: 4,
     gap: 6,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   tabBtn: {
     flex: 1,
@@ -1625,12 +1679,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.regular,
   },
-  googleSection: {
-    marginTop: 18,
-    alignItems: 'stretch',
-    gap: 12,
+  oauthSection: {
+    gap: 8,
+    marginBottom: 16,
   },
-  googleBtn: {
+  oauthHeroBtn: {
     height: 50,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1639,14 +1692,49 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 0.5,
   },
-  googleBtnText: {
-    fontSize: 15,
+  oauthHeroBtnText: {
+    fontSize: 14.5,
     fontFamily: Fonts.semiBold,
     letterSpacing: -0.2,
   },
-  googleHintText: {
-    fontSize: 11.5,
-    fontFamily: Fonts.regular,
+  oauthReassuranceText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
     textAlign: 'center',
+    marginTop: 1,
+    marginBottom: 4,
+  },
+  appleBtn: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    borderRadius: 14,
+    borderWidth: 0.5,
+  },
+  appleBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  metaBtn: {
+    flex: 1,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 14,
+    borderWidth: 0.5,
+  },
+  metaBtnText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
   },
 })

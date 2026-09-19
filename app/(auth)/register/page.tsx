@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Mail, Lock, CheckCircle2, RotateCcw, ArrowLeft, Loader2, AlertCircle, User, Building2 } from 'lucide-react'
+import { Mail, Lock, CheckCircle2, RotateCcw, ArrowLeft, Loader2, AlertCircle, Building2 } from 'lucide-react'
 import AuthShell from '@/components/AuthShell'
 import AuthPanel from '@/components/AuthPanel'
 import AuthField from '@/components/AuthField'
@@ -221,18 +221,31 @@ export default function RegisterPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-        skipBrowserRedirect: false,
-        queryParams: {
-          prompt: 'select_account',
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null)
+
+  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook' | 'instagram') => {
+    try {
+      setOauthLoading(provider)
+      setError('')
+      const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
+      const targetProvider = (provider === 'instagram' ? 'facebook' : provider) as
+        | 'google'
+        | 'apple'
+        | 'facebook'
+
+      await supabase.auth.signInWithOAuth({
+        provider: targetProvider,
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+          skipBrowserRedirect: false,
+          queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
         },
-      },
-    })
+      })
+    } catch (err: unknown) {
+      console.error(`${provider} OAuth error:`, err)
+      setError(`Ndodhi një problem gjatë regjistrimit me ${provider}. Provoni përsëri.`)
+      setOauthLoading(null)
+    }
   }
 
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -245,9 +258,23 @@ export default function RegisterPage() {
       {step === 'form' ? (
         <AuthPanel
           title="Krijo llogari"
-          subtitle="Zgjidh profilin tënd për të vazhduar"
+          subtitle={
+            accountType === 'company'
+              ? 'Regjistro agjencinë ose kompaninë tënde'
+              : 'Krijo profilin tënd personal falas'
+          }
           googleLabel="Regjistrohu me Google"
-          onGoogle={handleGoogleLogin}
+          onGoogle={() => handleOAuth('google')}
+          onApple={() => handleOAuth('apple')}
+          onFacebook={() => handleOAuth('facebook')}
+          onInstagram={() => handleOAuth('instagram')}
+          oauthLoading={oauthLoading}
+          accountType={accountType}
+          onAccountTypeChange={(t) => {
+            setAccountType(t)
+            if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }))
+          }}
+          showAccountTypeSelector={true}
           error={error}
           footer={
             <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
@@ -259,48 +286,6 @@ export default function RegisterPage() {
           }
         >
           <form onSubmit={handleRegister} noValidate className="space-y-3 sm:space-y-3.5">
-            {/* Account Type Selector — Individual vs Company */}
-            <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-gray-100/90 border border-gray-200/80 mb-3.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setAccountType('individual')
-                  if (fieldErrors.companyName) setFieldErrors((p) => ({ ...p, companyName: undefined }))
-                }}
-                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-150 cursor-pointer ${
-                  accountType === 'individual'
-                    ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
-                    : 'text-gray-500 hover:text-gray-800 font-semibold'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                  <User className="h-3.5 w-3.5" />
-                  <span>Individual</span>
-                </div>
-                <span className="text-[10px] text-gray-400 font-normal mt-0.5">
-                  Blerës & Pronarë
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setAccountType('company')}
-                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-150 cursor-pointer ${
-                  accountType === 'company'
-                    ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
-                    : 'text-gray-500 hover:text-gray-800 font-semibold'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                  <Building2 className="h-3.5 w-3.5" />
-                  <span>Kompani</span>
-                </div>
-                <span className="text-[10px] text-gray-400 font-normal mt-0.5">
-                  Agjenci & Ndërtues
-                </span>
-              </button>
-            </div>
-
             {/* Extra reassurance hint when Kompani is selected */}
             {accountType === 'company' && (
               <div className="p-2.5 rounded-xl bg-[#006459]/5 border border-[#006459]/20 text-[11.5px] text-[#006459] flex items-center gap-2 animate-in fade-in duration-200">

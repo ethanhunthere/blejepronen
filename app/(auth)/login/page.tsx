@@ -25,11 +25,13 @@ function VerifiedMessage() {
 }
 
 function LoginForm() {
+  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [error, setError] = useState<React.ReactNode>('')
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -42,9 +44,16 @@ function LoginForm() {
 
   const validate = () => {
     const next: { email?: string; password?: string } = {}
-    if (!email.trim()) next.email = 'Email-i është i detyrueshëm.'
-    else if (!EMAIL_RE.test(email.trim())) next.email = 'Shkruaj një email të vlefshëm.'
-    if (!password) next.password = 'Fjalëkalimi është i detyrueshëm.'
+    if (!email.trim()) {
+      next.email = accountType === 'company'
+        ? 'Email-i i kompanisë është i detyrueshëm.'
+        : 'Email-i është i detyrueshëm.'
+    } else if (!EMAIL_RE.test(email.trim())) {
+      next.email = 'Shkruaj një email të vlefshëm.'
+    }
+    if (!password) {
+      next.password = 'Fjalëkalimi është i detyrueshëm.'
+    }
     setFieldErrors(next)
     if (next.email) document.getElementById('email')?.focus()
     else if (next.password) document.getElementById('password')?.focus()
@@ -75,7 +84,7 @@ function LoginForm() {
           } catch {}
 
           const hasCompletedOnboarding = Boolean(user.user_metadata?.onboarding_completed)
-          const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+          const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name) || accountType === 'company'
 
           if (!hasCompletedOnboarding) {
             const { data: profile } = await supabase
@@ -166,30 +175,54 @@ function LoginForm() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-        skipBrowserRedirect: false,
-        queryParams: {
-          prompt: 'select_account',
+  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook' | 'instagram') => {
+    try {
+      setOauthLoading(provider)
+      setError('')
+      const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
+
+      // Meta / Instagram routing
+      const targetProvider = (provider === 'instagram' ? 'facebook' : provider) as
+        | 'google'
+        | 'apple'
+        | 'facebook'
+
+      await supabase.auth.signInWithOAuth({
+        provider: targetProvider,
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+          skipBrowserRedirect: false,
+          queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
         },
-      },
-    })
+      })
+    } catch (err: unknown) {
+      console.error(`${provider} OAuth error:`, err)
+      setError(`Ndodhi një problem me hyrjen përmes ${provider}. Ju lutem provoni përsëri.`)
+      setOauthLoading(null)
+    }
   }
 
   return (
     <AuthShell
       headline="Mirë se erdhe prapë"
-      subline="Gjej shtëpinë tënde të re ose posto pronën tënde brenda pak minutave."
+      subline="Gjej shtëpinë tënde të re ose menaxho pronat e tua me shpejtësi."
     >
       <AuthPanel
         title="Hyr në llogari"
-        subtitle="Futu me email ose Google"
-        googleLabel="Hyr me Google"
-        onGoogle={handleGoogleLogin}
+        subtitle={
+          accountType === 'company'
+            ? 'Kyçu në profilin e biznesit ose agjencisë'
+            : 'Futu me llogarinë tënde personale'
+        }
+        googleLabel="Vazhdo me Google"
+        onGoogle={() => handleOAuth('google')}
+        onApple={() => handleOAuth('apple')}
+        onFacebook={() => handleOAuth('facebook')}
+        onInstagram={() => handleOAuth('instagram')}
+        oauthLoading={oauthLoading}
+        accountType={accountType}
+        onAccountTypeChange={setAccountType}
+        showAccountTypeSelector={true}
         error={error}
         footer={
           <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
@@ -210,9 +243,9 @@ function LoginForm() {
         <form onSubmit={handleLogin} noValidate className="space-y-3 sm:space-y-3.5">
           <AuthField
             id="email"
-            label="Email"
+            label={accountType === 'company' ? 'Email Zyrtar i Kompanisë' : 'Email'}
             type="email"
-            placeholder="emri@email.com"
+            placeholder={accountType === 'company' ? 'zyra@kompania.com' : 'emri@email.com'}
             autoComplete="email"
             icon={<Mail className="h-4 w-4" />}
             value={email}
@@ -258,6 +291,8 @@ function LoginForm() {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Duke hyrë...
               </span>
+            ) : accountType === 'company' ? (
+              'Hyr si Kompani / Biznes'
             ) : (
               'Hyr në llogari'
             )}

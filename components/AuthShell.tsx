@@ -35,9 +35,6 @@ const AuthTealPanel = memo(function AuthTealPanel({
         aria-hidden
         className="relative pointer-events-none select-none px-12 xl:px-14 pt-12 xl:pt-14 shrink-0"
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-semibold mb-4">
-          <span>Platforma #1 e Patundshmërive</span>
-        </div>
         <h2 className="max-w-md text-3xl xl:text-[34px] font-extrabold leading-[1.15] tracking-tight text-white">
           {headline}
         </h2>
