@@ -76,6 +76,7 @@ import {
   isAuthCacheHydrated,
   subscribeAuthCache,
   setSyncProfile,
+  syncAuthSession,
 } from '@/lib/auth-cache'
 
 export default function ProfileScreen() {
@@ -95,18 +96,55 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(() => !isAuthCacheHydrated())
   const [deleting, setDeleting] = useState(false)
 
+  // Imperative ScrollView reference and reset coordination
+  const mainScrollViewRef = useRef<ScrollView>(null)
+  const shouldResetScrollRef = useRef(false)
+
+  /**
+   * Deterministic multi-pass viewport reset to absolute top (y: 0).
+   * Ensures instant deceleration halt, handles React layout reconciliation,
+   * and prevents iOS/Android from clamping scroll offset to the bottom when
+   * authenticated view transitions to guest view.
+   */
+  const resetViewportToTop = useCallback((animated: boolean = false) => {
+    shouldResetScrollRef.current = true
+
+    // Pass 1: Immediate synchronous scroll dispatch (halts any momentum deceleration)
+    mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated })
+
+    // Pass 2: Next animation frame during React commit phase
+    requestAnimationFrame(() => {
+      mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false })
+    })
+
+    // Pass 3: Post-reconciliation microtask after native layout measurement
+    setTimeout(() => {
+      mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false })
+    }, 50)
+
+    // Pass 4: Defensive delay to guarantee top position under heavy UI transitions
+    setTimeout(() => {
+      mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false })
+    }, 150)
+  }, [])
+
   // Synchronize with global auth cache updates
   useEffect(() => {
     const unsubscribeAuth = subscribeAuthCache((state) => {
       if (state.user) {
         setAuthState({ user: state.user, profile: state.profile })
       } else {
-        setAuthState(null)
+        setAuthState((prev) => {
+          if (prev?.user) {
+            resetViewportToTop(false)
+          }
+          return null
+        })
       }
       setLoading(false)
     })
     return unsubscribeAuth
-  }, [])
+  }, [resetViewportToTop])
 
   // Live account metrics (active listings, saved favorites, open conversations)
   const [stats, setStats] = useState({
@@ -122,6 +160,24 @@ export default function ProfileScreen() {
   const currentUser = authState?.user || null
   const dbProfile = authState?.profile || null
   const authResolved = !loading
+
+  // Track previous authenticated user state for scroll reset on auth lifecycle transitions
+  const hasMountedRef = useRef(false)
+  const prevAuthUserRef = useRef<any>(currentUser)
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      prevAuthUserRef.current = currentUser
+      return
+    }
+
+    // When auth state toggles between authenticated and unauthenticated
+    if (Boolean(prevAuthUserRef.current) !== Boolean(currentUser)) {
+      resetViewportToTop(false)
+    }
+    prevAuthUserRef.current = currentUser
+  }, [currentUser, resetViewportToTop])
 
   // Avatar Quick Picker Modal
   const [avatarModalVisible, setAvatarModalVisible] = useState(false)
@@ -229,15 +285,20 @@ export default function ProfileScreen() {
         const profile = await fetchProfile(user)
         setAuthAndProfile(user, profile)
         fetchUserStats(user.id)
-      } else if (!prevUserRef.current) {
-        setAuthState(null)
+      } else if (!user) {
+        setAuthState((prev) => {
+          if (prev?.user) {
+            resetViewportToTop(false)
+          }
+          return null
+        })
       }
     } catch (err) {
       console.warn('Session check notice:', err)
     } finally {
       setLoading(false)
     }
-  }, [setAuthAndProfile, fetchUserStats])
+  }, [setAuthAndProfile, fetchUserStats, resetViewportToTop])
 
   // Auto-refresh profile and stats every time screen gains focus
   useFocusEffect(
@@ -259,7 +320,12 @@ export default function ProfileScreen() {
         setAuthAndProfile(u, profile)
         fetchUserStats(u.id)
       } else {
-        setAuthState(null)
+        setAuthState((prev) => {
+          if (prev?.user) {
+            resetViewportToTop(false)
+          }
+          return null
+        })
       }
     })
 
@@ -267,7 +333,7 @@ export default function ProfileScreen() {
       authListener.subscription.unsubscribe()
       if (resendTimerRef.current) clearInterval(resendTimerRef.current)
     }
-  }, [checkSession, fetchUserStats])
+  }, [checkSession, fetchUserStats, resetViewportToTop])
 
   // Real-time synchronization for profile database changes
   useEffect(() => {
@@ -695,8 +761,21 @@ export default function ProfileScreen() {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
           }
-          await supabase.auth.signOut()
+          // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
+          resetViewportToTop(false)
+          // 2. Synchronously clear in-memory auth cache and local state
+          prevUserRef.current = null
+          syncAuthSession(null)
           setAuthState(null)
+          // 3. Re-dispatch reset to catch synchronous unmount pass
+          resetViewportToTop(false)
+          try {
+            await supabase.auth.signOut()
+          } catch (err) {
+            console.warn('Sign out notice:', err)
+          }
+          // 4. Final verification pass after async signOut
+          resetViewportToTop(false)
           showBanner({
             type: 'logout',
             title: 'Mirupafshim!',
@@ -738,8 +817,17 @@ export default function ProfileScreen() {
                 }
               }
 
-              await supabase.auth.signOut()
+              // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
+              resetViewportToTop(false)
+              prevUserRef.current = null
+              syncAuthSession(null)
               setAuthState(null)
+              try {
+                await supabase.auth.signOut()
+              } catch (err) {
+                console.warn('Sign out notice:', err)
+              }
+              resetViewportToTop(false)
               showBanner({
                 type: 'delete',
                 title: 'Llogaria u Fshi',
@@ -951,12 +1039,20 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView
+        ref={mainScrollViewRef}
         style={styles.container}
         contentContainerStyle={[
           styles.contentContainer,
           { paddingBottom: 110 + bottomInset },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onContentSizeChange={(_w, _h) => {
+          if (shouldResetScrollRef.current) {
+            mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false })
+            shouldResetScrollRef.current = false
+          }
+        }}
       >
         {/* ─── 2. IDENTITY HERO CARD ─── */}
         {!authResolved ? (
