@@ -1257,7 +1257,7 @@ export default function AuthModalScreen() {
                     <TextInput
                       style={[styles.textInput, { color: colors.textPrimary }]}
                       placeholder="psh. Prishtina Real Estate Sh.p.k."
-                      placeholderTextColor={colors.textLight}
+                      placeholderTextColor={colors.placeholder}
                       value={companyName}
                       onChangeText={setCompanyName}
                       onFocus={() => setFocusedField('companyName')}
@@ -1298,7 +1298,7 @@ export default function AuthModalScreen() {
                         ? 'kompania@biznes.com'
                         : 'shembull@email.com'
                     }
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={colors.placeholder}
                     value={email}
                     onChangeText={setEmail}
                     onFocus={() => setFocusedField('email')}
@@ -1332,7 +1332,7 @@ export default function AuthModalScreen() {
                   <TextInput
                     style={[styles.textInput, { color: colors.textPrimary }]}
                     placeholder={activeTab === 'register' ? 'Të paktën 6 karaktere' : 'Fjalëkalimi'}
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={colors.placeholder}
                     value={password}
                     onChangeText={setPassword}
                     onFocus={() => setFocusedField('password')}

@@ -37,6 +37,7 @@ export interface ThemeColors {
   searchBorder: string
   badgeBg: string
   badgeText: string
+  placeholder: string
   glassSurface: string
   glassBorder: string
   glassBorderSubtle: string
@@ -75,6 +76,7 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: 'rgba(15, 23, 42, 0.09)',
     badgeBg: 'rgba(0, 103, 91, 0.09)',
     badgeText: '#00675B',
+    placeholder: 'rgba(15, 23, 42, 0.32)',
     glassSurface: 'rgba(255, 255, 255, 0.88)',
     glassBorder: 'rgba(255, 255, 255, 0.95)',
     glassBorderSubtle: 'rgba(15, 23, 42, 0.06)',
@@ -111,6 +113,7 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: 'rgba(212, 175, 55, 0.24)',
     badgeBg: 'rgba(212, 175, 55, 0.16)',
     badgeText: '#D4AF37',
+    placeholder: 'rgba(255, 255, 255, 0.28)',
     glassSurface: 'rgba(14, 51, 42, 0.82)',
     glassBorder: 'rgba(212, 175, 55, 0.28)',
     glassBorderSubtle: 'rgba(255, 255, 255, 0.10)',
@@ -147,6 +150,7 @@ export const THEMES: Record<ThemeMode, ThemeColors> = {
     searchBorder: 'rgba(255, 255, 255, 0.14)',
     badgeBg: 'rgba(52, 211, 153, 0.15)',
     badgeText: '#2FBF8B',
+    placeholder: 'rgba(255, 255, 255, 0.28)',
     glassSurface: 'rgba(16, 22, 21, 0.85)',
     glassBorder: 'rgba(255, 255, 255, 0.14)',
     glassBorderSubtle: 'rgba(255, 255, 255, 0.07)',

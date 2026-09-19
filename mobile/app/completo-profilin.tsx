@@ -60,12 +60,56 @@ const MAJOR_CITIES = [
   'Durrës',
 ]
 
+const DUMMY_SAMPLES = new Set([
+  'alban',
+  'kelmendi',
+  'alban kelmendi',
+  'p.sh. alban',
+  'p.sh. kelmendi',
+  'alban.kelmendi',
+  '+383 49 123 456',
+  '+38349123456',
+  '+383 38 123 456',
+  '+38338123456',
+  '+383 44 123 456',
+  '+38344123456',
+  '049123456',
+  '038123456',
+  '044123456',
+  'pristina real estate llc',
+  'p.sh. pristina real estate llc',
+  'besnik krasniqi',
+  'p.sh. besnik krasniqi',
+  '811234567',
+  'p.sh. 811234567',
+  'https://agjencia.com',
+  '2018',
+  'p.sh. 2018',
+])
+
+function sanitizeInitial(val?: string | null): string {
+  if (!val || typeof val !== 'string') return ''
+  const trimmed = val.trim()
+  const lower = trimmed.toLowerCase()
+  if (DUMMY_SAMPLES.has(lower)) return ''
+  if (lower.startsWith('p.sh.') || lower.startsWith('psh.')) return ''
+  return trimmed
+}
+
 export default function CompletoProfilinScreen() {
   const router = useRouter()
   const params = useLocalSearchParams<{ from?: string }>()
   const isFromSignup = params.from === 'signup'
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
+
+  // Subtle, faint placeholder color with lowered opacity so placeholders
+  // are visibly distinct from active user input across all themes
+  const placeholderColor =
+    colors.placeholder ||
+    (theme === 'white'
+      ? 'rgba(15, 23, 42, 0.32)'
+      : 'rgba(255, 255, 255, 0.28)')
 
   const insets = useSafeAreaInsets()
   const syncUser = getSyncAuthUser()
@@ -98,33 +142,37 @@ export default function CompletoProfilinScreen() {
     }
   }, [])
 
-  // Individual Fields
+  // Individual Fields - strictly initialized with clean user data or empty strings
   const [firstName, setFirstName] = useState(
-    syncProfile?.first_name || syncUser?.user_metadata?.first_name || ''
+    sanitizeInitial(syncProfile?.first_name || syncUser?.user_metadata?.first_name || '')
   )
   const [lastName, setLastName] = useState(
-    syncProfile?.last_name || syncUser?.user_metadata?.last_name || ''
+    sanitizeInitial(syncProfile?.last_name || syncUser?.user_metadata?.last_name || '')
   )
   const [individualPhone, setIndividualPhone] = useState(
-    syncProfile?.phone || syncUser?.user_metadata?.phone || ''
+    sanitizeInitial(syncProfile?.phone || syncUser?.user_metadata?.phone || '')
   )
   const [individualCity, setIndividualCity] = useState(syncProfile?.city || 'Prishtinë')
-  const [individualBio, setIndividualBio] = useState(syncProfile?.bio || '')
+  const [individualBio, setIndividualBio] = useState(
+    sanitizeInitial(syncProfile?.bio || syncUser?.user_metadata?.bio || '')
+  )
 
-  // Company Fields
+  // Company Fields - strictly initialized with clean user data or empty strings
   const [companyName, setCompanyName] = useState(
-    syncProfile?.company_name || syncUser?.user_metadata?.company_name || ''
+    sanitizeInitial(syncProfile?.company_name || syncUser?.user_metadata?.company_name || '')
   )
   const [companyContactPerson, setCompanyContactPerson] = useState(
-    syncProfile?.contact_person || ''
+    sanitizeInitial(syncProfile?.contact_person || '')
   )
   const [companyPhone, setCompanyPhone] = useState(
-    syncProfile?.phone || syncUser?.user_metadata?.phone || ''
+    sanitizeInitial(syncProfile?.phone || syncUser?.user_metadata?.phone || '')
   )
   const [companyCity, setCompanyCity] = useState(syncProfile?.city || 'Prishtinë')
   const [foundedYear, setFoundedYear] = useState('')
   const [nipt, setNipt] = useState('')
-  const [companyDescription, setCompanyDescription] = useState(syncProfile?.bio || '')
+  const [companyDescription, setCompanyDescription] = useState(
+    sanitizeInitial(syncProfile?.bio || '')
+  )
   const [website, setWebsite] = useState('')
 
   // Errors
@@ -163,14 +211,15 @@ export default function CompletoProfilinScreen() {
           setSelectedAvatar(meta.avatar_url)
         }
 
-        // Prefill Individual
-        const initialFirst =
+        // Prefill Individual (ensuring dummy/sample values are never loaded as active text)
+        const initialFirst = sanitizeInitial(
           profile?.first_name ||
           meta.first_name ||
           meta.given_name ||
           (meta.full_name ? meta.full_name.split(' ')[0] : '') ||
           ''
-        const initialLast =
+        )
+        const initialLast = sanitizeInitial(
           profile?.last_name ||
           meta.last_name ||
           meta.family_name ||
@@ -178,23 +227,24 @@ export default function CompletoProfilinScreen() {
             ? meta.full_name.split(' ').slice(1).join(' ')
             : '') ||
           ''
+        )
         setFirstName(initialFirst)
         setLastName(initialLast)
-        setIndividualPhone(profile?.phone || meta.phone || meta.individual_phone || '')
-        setIndividualBio(meta.bio || meta.individual_bio || '')
-        if (meta.city) setIndividualCity(meta.city)
+        setIndividualPhone(sanitizeInitial(profile?.phone || meta.phone || meta.individual_phone || ''))
+        setIndividualBio(sanitizeInitial(meta.bio || meta.individual_bio || profile?.bio || ''))
+        if (meta.city || profile?.city) setIndividualCity(meta.city || profile?.city)
 
-        // Prefill Company
-        setCompanyName(meta.company_name || (isComp ? profile?.first_name : '') || '')
+        // Prefill Company (ensuring dummy/sample values are never loaded as active text)
+        setCompanyName(sanitizeInitial(meta.company_name || (isComp ? profile?.first_name : '') || ''))
         setCompanyContactPerson(
-          meta.contact_person || (isComp && profile?.last_name !== 'Kompani' ? profile?.last_name : '') || ''
+          sanitizeInitial(meta.contact_person || (isComp && profile?.last_name !== 'Kompani' ? profile?.last_name : '') || '')
         )
-        setCompanyPhone(meta.company_phone || (isComp ? profile?.phone : '') || meta.phone || '')
-        setFoundedYear(meta.founded_year ? String(meta.founded_year) : '')
-        setNipt(meta.nipt || '')
-        setCompanyDescription(meta.company_description || meta.bio || '')
-        setWebsite(meta.website || '')
-        if (meta.city) setCompanyCity(meta.city)
+        setCompanyPhone(sanitizeInitial(meta.company_phone || (isComp ? profile?.phone : '') || meta.phone || ''))
+        setFoundedYear(sanitizeInitial(meta.founded_year ? String(meta.founded_year) : ''))
+        setNipt(sanitizeInitial(meta.nipt || ''))
+        setCompanyDescription(sanitizeInitial(meta.company_description || meta.bio || profile?.bio || ''))
+        setWebsite(sanitizeInitial(meta.website || ''))
+        if (meta.city || profile?.city) setCompanyCity(meta.city || profile?.city)
       } catch (e) {
         console.warn('Load user in completo profilin notice:', e)
       } finally {
@@ -659,7 +709,7 @@ export default function CompletoProfilinScreen() {
               {/* Emri & Mbiemri Row */}
               <View style={styles.rowTwo}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     Emri <Text style={{ color: '#EF4444' }}>*</Text>
                   </Text>
                   <TextInput
@@ -669,6 +719,7 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: errors.firstName ? '#EF4444' : specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={firstName}
@@ -677,7 +728,7 @@ export default function CompletoProfilinScreen() {
                       if (errors.firstName) setErrors((p) => ({ ...p, firstName: '' }))
                     }}
                     placeholder="p.sh. Alban"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                   />
                   {errors.firstName && (
                     <Text style={styles.fieldError}>{errors.firstName}</Text>
@@ -685,7 +736,7 @@ export default function CompletoProfilinScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     Mbiemri <Text style={{ color: '#EF4444' }}>*</Text>
                   </Text>
                   <TextInput
@@ -695,6 +746,7 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: errors.lastName ? '#EF4444' : specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={lastName}
@@ -703,7 +755,7 @@ export default function CompletoProfilinScreen() {
                       if (errors.lastName) setErrors((p) => ({ ...p, lastName: '' }))
                     }}
                     placeholder="p.sh. Kelmendi"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                   />
                   {errors.lastName && (
                     <Text style={styles.fieldError}>{errors.lastName}</Text>
@@ -713,7 +765,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Numri i Telefonit */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Numri i Telefonit / WhatsApp
                 </Text>
                 <View
@@ -727,14 +779,14 @@ export default function CompletoProfilinScreen() {
                 >
                   <Phone size={18} color={colors.textMuted} strokeWidth={2.2} />
                   <TextInput
-                    style={[styles.phoneTextInput, { color: colors.textPrimary }]}
+                    style={[styles.phoneTextInput, { color: colors.textPrimary, opacity: 1 }]}
                     value={individualPhone}
                     onChangeText={(text) => {
                       setIndividualPhone(text)
                       if (errors.phone) setErrors((p) => ({ ...p, phone: '' }))
                     }}
                     placeholder="+383 49 123 456"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                     keyboardType="phone-pad"
                   />
                 </View>
@@ -743,7 +795,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Qyteti */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Qyteti</Text>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>Qyteti</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -800,7 +852,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Bio */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Rreth Meje (Opsionale)
                 </Text>
                 <TextInput
@@ -810,12 +862,13 @@ export default function CompletoProfilinScreen() {
                       backgroundColor: colors.surfaceSubtle,
                       borderColor: specularBorder,
                       color: colors.textPrimary,
+                      opacity: 1,
                     },
                   ]}
                   value={individualBio}
                   onChangeText={setIndividualBio}
                   placeholder="Shkruani një përshkrim të shkurtër për veten ose preferencat tuaja imobiliare..."
-                  placeholderTextColor={colors.textLight}
+                  placeholderTextColor={placeholderColor}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -853,7 +906,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Emri i Kompanisë */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Emri i Kompanisë / Agjencisë <Text style={{ color: '#EF4444' }}>*</Text>
                 </Text>
                 <TextInput
@@ -863,6 +916,7 @@ export default function CompletoProfilinScreen() {
                       backgroundColor: colors.surfaceSubtle,
                       borderColor: errors.companyName ? '#EF4444' : specularBorder,
                       color: colors.textPrimary,
+                      opacity: 1,
                     },
                   ]}
                   value={companyName}
@@ -871,7 +925,7 @@ export default function CompletoProfilinScreen() {
                     if (errors.companyName) setErrors((p) => ({ ...p, companyName: '' }))
                   }}
                   placeholder="p.sh. Pristina Real Estate LLC"
-                  placeholderTextColor={colors.textLight}
+                  placeholderTextColor={placeholderColor}
                 />
                 {errors.companyName && (
                   <Text style={styles.fieldError}>{errors.companyName}</Text>
@@ -881,7 +935,7 @@ export default function CompletoProfilinScreen() {
               {/* Përfaqësuesi & Telefoni Row */}
               <View style={styles.rowTwo}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     Përfaqësuesi <Text style={{ color: '#EF4444' }}>*</Text>
                   </Text>
                   <TextInput
@@ -891,6 +945,7 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: errors.companyContactPerson ? '#EF4444' : specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={companyContactPerson}
@@ -900,7 +955,7 @@ export default function CompletoProfilinScreen() {
                         setErrors((p) => ({ ...p, companyContactPerson: '' }))
                     }}
                     placeholder="p.sh. Besnik Krasniqi"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                   />
                   {errors.companyContactPerson && (
                     <Text style={styles.fieldError}>{errors.companyContactPerson}</Text>
@@ -908,7 +963,7 @@ export default function CompletoProfilinScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     Telefoni Zyrtar <Text style={{ color: '#EF4444' }}>*</Text>
                   </Text>
                   <TextInput
@@ -918,6 +973,7 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: errors.companyPhone ? '#EF4444' : specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={companyPhone}
@@ -926,7 +982,7 @@ export default function CompletoProfilinScreen() {
                       if (errors.companyPhone) setErrors((p) => ({ ...p, companyPhone: '' }))
                     }}
                     placeholder="+383 38 123 456"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                     keyboardType="phone-pad"
                   />
                   {errors.companyPhone && (
@@ -937,7 +993,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Selia / Qyteti */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Qyteti i Selisë
                 </Text>
                 <ScrollView
@@ -997,7 +1053,7 @@ export default function CompletoProfilinScreen() {
               {/* Viti i Themelimit & NIPT Row */}
               <View style={styles.rowTwo}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     Viti i Themelimit
                   </Text>
                   <TextInput
@@ -1007,6 +1063,7 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: errors.foundedYear ? '#EF4444' : specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={foundedYear}
@@ -1015,7 +1072,7 @@ export default function CompletoProfilinScreen() {
                       if (errors.foundedYear) setErrors((p) => ({ ...p, foundedYear: '' }))
                     }}
                     placeholder="p.sh. 2018"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                     keyboardType="numeric"
                     maxLength={4}
                   />
@@ -1025,7 +1082,7 @@ export default function CompletoProfilinScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                     NIPT / Nr. Biznesit
                   </Text>
                   <TextInput
@@ -1035,19 +1092,20 @@ export default function CompletoProfilinScreen() {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: specularBorder,
                         color: colors.textPrimary,
+                        opacity: 1,
                       },
                     ]}
                     value={nipt}
                     onChangeText={setNipt}
                     placeholder="p.sh. 811234567"
-                    placeholderTextColor={colors.textLight}
+                    placeholderTextColor={placeholderColor}
                   />
                 </View>
               </View>
 
               {/* Website */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Faqja e Internetit / Website (Opsionale)
                 </Text>
                 <TextInput
@@ -1057,12 +1115,13 @@ export default function CompletoProfilinScreen() {
                       backgroundColor: colors.surfaceSubtle,
                       borderColor: specularBorder,
                       color: colors.textPrimary,
+                      opacity: 1,
                     },
                   ]}
                   value={website}
                   onChangeText={setWebsite}
                   placeholder="https://agjencia.com"
-                  placeholderTextColor={colors.textLight}
+                  placeholderTextColor={placeholderColor}
                   keyboardType="url"
                   autoCapitalize="none"
                 />
@@ -1070,7 +1129,7 @@ export default function CompletoProfilinScreen() {
 
               {/* Përshkrimi i Kompanisë */}
               <View style={styles.fieldWrap}>
-                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary, opacity: 1 }]}>
                   Përshkrimi i Agjencisë
                 </Text>
                 <TextInput
@@ -1080,12 +1139,13 @@ export default function CompletoProfilinScreen() {
                       backgroundColor: colors.surfaceSubtle,
                       borderColor: specularBorder,
                       color: colors.textPrimary,
+                      opacity: 1,
                     },
                   ]}
                   value={companyDescription}
                   onChangeText={setCompanyDescription}
                   placeholder="Prezantoni shërbimet tuaja, përvojën në treg dhe zonat ku operoni..."
-                  placeholderTextColor={colors.textLight}
+                  placeholderTextColor={placeholderColor}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -1305,6 +1365,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontFamily: Fonts.bold,
+    opacity: 1,
   },
   textInput: {
     height: 52,
@@ -1313,6 +1374,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 14.5,
     fontFamily: Fonts.medium,
+    opacity: 1,
   },
   phoneInputWrap: {
     height: 52,
@@ -1322,11 +1384,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
+    opacity: 1,
   },
   phoneTextInput: {
     flex: 1,
     fontSize: 14,
     fontFamily: Fonts.medium,
+    opacity: 1,
   },
   textArea: {
     minHeight: 80,
@@ -1336,6 +1400,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     fontFamily: Fonts.medium,
+    opacity: 1,
   },
   fieldError: {
     fontSize: 11,
@@ -1377,10 +1442,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
+    opacity: 1,
   },
   saveButtonText: {
     fontSize: 15,
     fontFamily: Fonts.bold,
+    opacity: 1,
   },
   secondaryButton: {
     height: 40,

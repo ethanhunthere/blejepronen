@@ -74,6 +74,47 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
   }
 }
 
+const DUMMY_SAMPLES = new Set([
+  'alban',
+  'kelmendi',
+  'alban kelmendi',
+  'p.sh. alban',
+  'p.sh. kelmendi',
+  'alban.kelmendi',
+  '+383 49 123 456',
+  '+38349123456',
+  '+383 38 123 456',
+  '+38338123456',
+  '+383 44 123 456',
+  '+38344123456',
+  '049123456',
+  '038123456',
+  '044123456',
+  'agron berisha',
+  'p.sh. agron berisha',
+  'elite real estate',
+  'p.sh. elite real estate',
+  'pristina real estate llc',
+  'p.sh. pristina real estate llc',
+  'besnik krasniqi',
+  'p.sh. besnik krasniqi',
+  '811234567',
+  'p.sh. 811234567',
+  'https://agjencia.com',
+  'https://kompania.com',
+  '2018',
+  'p.sh. 2018',
+])
+
+function sanitizeInitial(val?: string | null): string {
+  if (!val || typeof val !== 'string') return ''
+  const trimmed = val.trim()
+  const lower = trimmed.toLowerCase()
+  if (DUMMY_SAMPLES.has(lower)) return ''
+  if (lower.startsWith('p.sh.') || lower.startsWith('psh.')) return ''
+  return trimmed
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
   const [loading, setLoading] = useState(true)
@@ -217,24 +258,27 @@ export default function SettingsPage() {
 
       setIsEmailVerified(verified)
 
-      // Populate Individual Fields safely (never overwritten by company exploration)
-      const indFirst =
+      // Populate Individual Fields safely (never overwritten by company exploration, and never prefilled with dummy samples)
+      const indFirst = sanitizeInitial(
         meta.individual_first_name ||
         (!isComp ? prof?.first_name : '') ||
         (!isComp && meta.first_name ? meta.first_name : '') ||
         ''
-      const indLast =
+      )
+      const indLast = sanitizeInitial(
         meta.individual_last_name ||
         (!isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
         (!isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
         ''
-      const indPhone =
+      )
+      const indPhone = sanitizeInitial(
         meta.individual_phone ||
         (!isComp ? prof?.phone : '') ||
         (!isComp && meta.phone ? meta.phone : '') ||
         ''
+      )
       const indEmail = meta.individual_email || activeUser.email || ''
-      const indBio = meta.individual_bio || (!isComp ? meta.bio : '') || ''
+      const indBio = sanitizeInitial(meta.individual_bio || (!isComp ? meta.bio : '') || '')
 
       setIndividualFirstName(indFirst)
       setIndividualLastName(indLast)
@@ -242,37 +286,41 @@ export default function SettingsPage() {
       setIndividualEmail(indEmail)
       setIndividualBio(indBio)
 
-      // Populate Company Fields safely (never overwritten by individual exploration)
-      const compName =
+      // Populate Company Fields safely (never overwritten by individual exploration, and never prefilled with dummy samples)
+      const compName = sanitizeInitial(
         meta.company_name ||
         (isComp ? prof?.first_name : '') ||
         (isComp && meta.first_name ? meta.first_name : '') ||
         ''
-      const compContact =
+      )
+      const compContact = sanitizeInitial(
         meta.contact_person ||
         (isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
         (isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
         ''
-      const compPhone =
+      )
+      const compPhone = sanitizeInitial(
         meta.company_phone ||
         (isComp ? prof?.phone : '') ||
         (isComp && meta.phone ? meta.phone : '') ||
         ''
+      )
       const compEmail = meta.company_email || ''
-      const compDesc =
+      const compDesc = sanitizeInitial(
         meta.company_description ||
         (isComp ? meta.bio : '') ||
         ''
+      )
 
       setCompanyName(compName)
       setCompanyContactPerson(compContact)
       setCompanyPhone(compPhone)
       setCompanyEmail(compEmail)
       setCompanyDescription(compDesc)
-      if (meta.founded_year) setFoundedYear(String(meta.founded_year))
-      if (meta.nipt) setNipt(meta.nipt)
-      if (meta.office_address) setOfficeAddress(meta.office_address)
-      if (meta.website) setWebsite(meta.website)
+      if (meta.founded_year) setFoundedYear(sanitizeInitial(String(meta.founded_year)))
+      if (meta.nipt) setNipt(sanitizeInitial(meta.nipt))
+      if (meta.office_address) setOfficeAddress(sanitizeInitial(meta.office_address))
+      if (meta.website) setWebsite(sanitizeInitial(meta.website))
 
       // Common fields
       if (meta.city) setCity(meta.city)
