@@ -1,36 +1,37 @@
-import React from 'react'
-import { View, Text, StyleSheet, Platform } from 'react-native'
+import React, { memo } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { useTheme, Fonts } from '@/constants/theme'
+import {
+  LOGO_TEAL_DATA_URI,
+  LOGO_WHITE_DATA_URI,
+} from '@/assets/brand/logo-data'
 
 interface LogoProps {
   size?: number
 }
 
-export function Logo({ size = 36 }: LogoProps) {
+export const Logo = memo(function Logo({ size = 36 }: LogoProps) {
   const { colors, theme } = useTheme()
 
   const blejeColor = theme === 'green' ? '#FFFFFF' : theme === 'black' ? '#FFFFFF' : colors.primary
   const pronenColor = colors.gold
 
-  // On white theme: green transparent PNG without background
-  // On green theme: white transparent PNG without background
-  // On black theme: white transparent PNG without background
-  const logoSource =
-    theme === 'white'
-      ? require('@/assets/images/logo-teal.png')
-      : require('@/assets/images/logo-white.png')
-
+  // Inlined Base64 Data URI: 100% memory-resident in JS bundle.
+  // 0ms network latency, zero Metro HTTP dev-server requests, immune to tunnel latency.
+  const logoDataUri = theme === 'white' ? LOGO_TEAL_DATA_URI : LOGO_WHITE_DATA_URI
   const fontSize = Math.max(16, Math.round(size * 0.58))
 
   return (
     <View style={styles.container}>
-      {/* Official Graphical Brand Logo Emblem - Transparent PNG with No Background */}
+      {/* Official Graphical Brand Logo Emblem - Hardware-accelerated native layer binding (0ms first frame) */}
       <Image
-        source={logoSource}
+        source={{ uri: logoDataUri }}
         style={{ width: size, height: size }}
         contentFit="contain"
-        transition={100}
+        priority="high"
+        cachePolicy="memory"
+        transition={0}
       />
 
       <View style={styles.textContainer}>
@@ -45,7 +46,7 @@ export function Logo({ size = 36 }: LogoProps) {
       </View>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

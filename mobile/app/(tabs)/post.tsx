@@ -10,9 +10,15 @@ import {
   Platform,
   Alert,
   Image,
+  KeyboardAvoidingView,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import {
+  getSyncAuthUser,
+  isAuthCacheHydrated,
+  subscribeAuthCache,
+} from '@/lib/auth-cache'
 import {
   PlusCircle,
   FileText,
@@ -69,35 +75,21 @@ export default function PostPropertyScreen() {
   const [undoDescription, setUndoDescription] = useState<string | null>(null)
   const { showBanner } = useBanner()
   const [images, setImages] = useState<string[]>([])
+  const insets = useSafeAreaInsets()
+  const syncUser = getSyncAuthUser()
+  const [currentUser, setCurrentUser] = useState<any>(() => syncUser)
+  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated())
   const [loading, setLoading] = useState(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [authChecking, setAuthChecking] = useState(true)
   const [focusedField, setFocusedField] = useState<
     'title' | 'description' | 'price' | 'area' | 'address' | null
   >(null)
 
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setCurrentUser(user || null)
-      } catch (err) {
-        console.warn('Post screen auth notice:', err)
-      } finally {
-        setAuthChecking(false)
-      }
-    }
-    checkAuth()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null)
+    const unsub = subscribeAuthCache((state) => {
+      setCurrentUser(state.user)
+      setAuthChecking(false)
     })
-
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
+    return unsub
   }, [])
 
   const activeCategory = CATEGORIES[category]
@@ -291,19 +283,39 @@ export default function PostPropertyScreen() {
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Vëmendje', 'Ju lutemi shkruani një titull për pronën.')
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      showBanner({
+        type: 'error',
+        title: 'Mungon Titulli',
+        message: 'Ju lutemi shkruani një titull për pronën.',
+      })
       return
     }
     if (!price || isNaN(Number(price))) {
-      Alert.alert('Vëmendje', 'Ju lutemi vendosni një çmim të vlefshëm.')
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      showBanner({
+        type: 'error',
+        title: 'Çmimi i Pavlefshëm',
+        message: 'Ju lutemi vendosni një çmim të vlefshëm për pronën.',
+      })
       return
     }
     if (!area || isNaN(Number(area))) {
-      Alert.alert('Vëmendje', 'Ju lutemi vendosni sipërfaqen e pronës.')
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      showBanner({
+        type: 'error',
+        title: 'Sipërfaqja Mungon',
+        message: 'Ju lutemi vendosni sipërfaqen e pronës në m².',
+      })
       return
     }
     if (!description.trim()) {
-      Alert.alert('Vëmendje', 'Ju lutemi plotësoni përshkrimin e pronës.')
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+      showBanner({
+        type: 'error',
+        title: 'Përshkrimi Mungon',
+        message: 'Ju lutemi plotësoni përshkrimin e pronës.',
+      })
       return
     }
 
@@ -400,11 +412,21 @@ export default function PostPropertyScreen() {
       setNeighborhood('')
       setAddress('')
 
-      Alert.alert('Urime!', 'Prona juaj u postua me sukses në Bleje Pronën.', [
-        { text: 'Në rregull', onPress: () => router.push('/listings' as any) },
-      ])
+      showBanner({
+        type: 'success',
+        title: 'Prona u Publikua!',
+        message: 'Prona juaj u postua me sukses në Bleje Pronën.',
+      })
+      router.push('/listings' as any)
     } catch (err: any) {
-      Alert.alert('Gabim', err.message || 'Ndodhi një problem gjatë postimit.')
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      }
+      showBanner({
+        type: 'error',
+        title: 'Dështoi Postimi',
+        message: err.message || 'Ndodhi një problem gjatë postimit.',
+      })
     } finally {
       setLoading(false)
     }
@@ -416,7 +438,7 @@ export default function PostPropertyScreen() {
       theme === 'green' ? '#071C18' : theme === 'black' ? '#071A14' : '#FFFFFF'
 
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Posto Pronë</Text>
         </View>
@@ -461,12 +483,16 @@ export default function PostPropertyScreen() {
             </View>
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Posto Pronë të Re</Text>
@@ -980,7 +1006,8 @@ export default function PostPropertyScreen() {
           )}
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -1083,10 +1110,10 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   input: {
+    height: 52,
     borderWidth: 1,
     borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 13,
     fontSize: 14.5,
     fontFamily: Fonts.medium,
   },
@@ -1107,7 +1134,7 @@ const styles = StyleSheet.create({
   },
   pillBtn: {
     width: 48,
-    height: 42,
+    height: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

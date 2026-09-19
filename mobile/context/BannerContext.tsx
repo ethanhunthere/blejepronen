@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useRef, useCallback } from 'react'
 import {
   View,
   Text,
@@ -50,10 +50,9 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets()
 
   const [banner, setBanner] = useState<BannerOptions | null>(null)
-  const translateY = useRef(new Animated.Value(-160)).current
+  const translateY = useRef(new Animated.Value(-120)).current
   const opacity = useRef(new Animated.Value(0)).current
-  const scale = useRef(new Animated.Value(0.92)).current
-  const progressAnim = useRef(new Animated.Value(1)).current
+  const scale = useRef(new Animated.Value(0.94)).current
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const hideBanner = useCallback(() => {
@@ -64,18 +63,18 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
 
     Animated.parallel([
       Animated.timing(translateY, {
-        toValue: -160,
-        duration: 260,
+        toValue: -120,
+        duration: 220,
         useNativeDriver: true,
       }),
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 220,
+        duration: 180,
         useNativeDriver: true,
       }),
       Animated.timing(scale, {
-        toValue: 0.92,
-        duration: 260,
+        toValue: 0.94,
+        duration: 220,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -120,45 +119,37 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      translateY.setValue(-160)
+      translateY.setValue(-120)
       opacity.setValue(0)
-      scale.setValue(0.92)
-      progressAnim.setValue(1)
+      scale.setValue(0.94)
 
       const duration = options.duration || (options.type === 'delete' ? 4500 : 3800)
 
       Animated.parallel([
         Animated.spring(translateY, {
           toValue: 0,
-          friction: 8,
-          tension: 55,
+          friction: 9.5,
+          tension: 65,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 200,
+          duration: 180,
           useNativeDriver: true,
         }),
         Animated.spring(scale, {
           toValue: 1,
-          friction: 8,
-          tension: 55,
+          friction: 9.5,
+          tension: 65,
           useNativeDriver: true,
         }),
       ]).start()
-
-      // Progress bar animation
-      Animated.timing(progressAnim, {
-        toValue: 0,
-        duration: duration,
-        useNativeDriver: false,
-      }).start()
 
       timerRef.current = setTimeout(() => {
         hideBanner()
       }, duration)
     },
-    [translateY, opacity, scale, progressAnim, hideBanner]
+    [translateY, opacity, scale, hideBanner]
   )
 
   const panResponder = useRef(
@@ -177,7 +168,8 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         } else {
           Animated.spring(translateY, {
             toValue: 0,
-            friction: 7,
+            friction: 8,
+            tension: 60,
             useNativeDriver: true,
           }).start()
         }
@@ -185,7 +177,8 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
     })
   ).current
 
-  const topPosition = insets.top > 0 ? insets.top + 6 : 14
+  // Optimal Dynamic Island & notch clearance
+  const topPosition = Math.max(insets.top + 8, 16)
 
   // Badge metadata based on banner type
   const getBadgeMeta = () => {
@@ -195,40 +188,40 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         return {
           label: 'LLOGARIA U FSHI',
           accent: '#EF4444',
-          bg: 'rgba(239, 68, 68, 0.14)',
-          border: 'rgba(239, 68, 68, 0.35)',
+          bg: theme === 'white' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.16)',
+          border: 'rgba(239, 68, 68, 0.30)',
           icon: ShieldAlert,
         }
       case 'logout':
         return {
           label: 'SESIONI U MBYLL',
           accent: theme === 'green' ? colors.gold : colors.primary,
-          bg: theme === 'green' ? 'rgba(200, 184, 130, 0.18)' : 'rgba(0, 100, 89, 0.12)',
-          border: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : 'rgba(0, 100, 89, 0.25)',
+          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 100, 89, 0.10)',
+          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 100, 89, 0.22)',
           icon: LogOut,
         }
       case 'success':
         return {
           label: 'VEPRIMI U KRYE',
           accent: theme === 'green' ? colors.gold : '#10B981',
-          bg: theme === 'green' ? 'rgba(200, 184, 130, 0.18)' : 'rgba(16, 185, 129, 0.12)',
-          border: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : 'rgba(16, 185, 129, 0.25)',
+          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(16, 185, 129, 0.10)',
+          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(16, 185, 129, 0.22)',
           icon: ShieldCheck,
         }
       case 'error':
         return {
           label: 'VËREJTJE E SISTEMIT',
           accent: '#EF4444',
-          bg: 'rgba(239, 68, 68, 0.14)',
-          border: 'rgba(239, 68, 68, 0.35)',
+          bg: theme === 'white' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.16)',
+          border: 'rgba(239, 68, 68, 0.30)',
           icon: AlertCircle,
         }
       default:
         return {
           label: 'NJOFTIM',
           accent: theme === 'green' ? colors.gold : colors.primary,
-          bg: theme === 'green' ? 'rgba(200, 184, 130, 0.18)' : 'rgba(0, 100, 89, 0.12)',
-          border: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : 'rgba(0, 100, 89, 0.25)',
+          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 100, 89, 0.10)',
+          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 100, 89, 0.22)',
           icon: Info,
         }
     }
@@ -242,295 +235,274 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
     switch (banner.type) {
       case 'delete':
         return (
-          <View style={[styles.iconHalo, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.14)' }]}>
-            <View style={[styles.iconInner, { backgroundColor: '#EF4444' }]}>
-              <Trash2 size={18} color="#FFFFFF" strokeWidth={2.4} />
-            </View>
+          <View style={[styles.iconBox, { backgroundColor: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
+            <Trash2 size={18} color="#FFFFFF" strokeWidth={2.2} />
           </View>
         )
       case 'logout':
         return (
           <View
             style={[
-              styles.iconHalo,
+              styles.iconBox,
               {
-                borderColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(0, 100, 89, 0.25)',
-                backgroundColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(0, 100, 89, 0.12)',
+                backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 100, 89, 0.3)',
               },
             ]}
           >
-            <View
-              style={[
-                styles.iconInner,
-                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-              ]}
-            >
-              <LogOut
-                size={17}
-                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                strokeWidth={2.4}
-              />
-            </View>
+            <LogOut
+              size={17}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.2}
+            />
           </View>
         )
       case 'success':
         return (
           <View
             style={[
-              styles.iconHalo,
+              styles.iconBox,
               {
-                borderColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(16, 185, 129, 0.25)',
-                backgroundColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                backgroundColor: theme === 'green' ? colors.gold : '#10B981',
+                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(16, 185, 129, 0.3)',
               },
             ]}
           >
-            <View
-              style={[
-                styles.iconInner,
-                { backgroundColor: theme === 'green' ? colors.gold : '#10B981' },
-              ]}
-            >
-              <CheckCircle2
-                size={18}
-                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                strokeWidth={2.4}
-              />
-            </View>
+            <CheckCircle2
+              size={18}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.4}
+            />
           </View>
         )
       case 'error':
         return (
-          <View style={[styles.iconHalo, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.14)' }]}>
-            <View style={[styles.iconInner, { backgroundColor: '#EF4444' }]}>
-              <AlertCircle size={18} color="#FFFFFF" strokeWidth={2.4} />
-            </View>
+          <View style={[styles.iconBox, { backgroundColor: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
+            <AlertCircle size={18} color="#FFFFFF" strokeWidth={2.2} />
           </View>
         )
       default:
         return (
           <View
             style={[
-              styles.iconHalo,
+              styles.iconBox,
               {
-                borderColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : 'rgba(0, 100, 89, 0.25)',
-                backgroundColor:
-                  theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(0, 100, 89, 0.12)',
+                backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 100, 89, 0.3)',
               },
             ]}
           >
-            <View
-              style={[
-                styles.iconInner,
-                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-              ]}
-            >
-              <Info
-                size={18}
-                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                strokeWidth={2.4}
-              />
-            </View>
+            <Info
+              size={18}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.2}
+            />
           </View>
         )
     }
   }
 
-  // Apple frosted glass styling
   const isDark = theme === 'black' || theme === 'green'
 
   const cardBackdrop =
     theme === 'white'
-      ? 'rgba(255, 255, 255, 0.88)'
+      ? 'rgba(255, 255, 255, 0.94)'
       : theme === 'green'
-      ? 'rgba(0, 52, 47, 0.88)'
-      : 'rgba(18, 24, 23, 0.90)'
+      ? 'rgba(4, 28, 24, 0.95)'
+      : 'rgba(16, 20, 20, 0.95)'
 
   const specularBorderColor =
     banner?.type === 'delete'
-      ? 'rgba(239, 68, 68, 0.38)'
+      ? 'rgba(239, 68, 68, 0.35)'
+      : banner?.type === 'error'
+      ? 'rgba(239, 68, 68, 0.30)'
       : banner?.type === 'logout'
       ? theme === 'green'
-        ? 'rgba(200, 184, 130, 0.45)'
-        : 'rgba(0, 100, 89, 0.35)'
+        ? 'rgba(212, 175, 55, 0.35)'
+        : 'rgba(0, 100, 89, 0.25)'
       : theme === 'white'
-      ? 'rgba(0, 0, 0, 0.12)'
-      : 'rgba(255, 255, 255, 0.22)'
+      ? 'rgba(0, 0, 0, 0.08)'
+      : theme === 'green'
+      ? 'rgba(212, 175, 55, 0.32)'
+      : 'rgba(255, 255, 255, 0.12)'
+
+  const specularHighlightColor =
+    banner?.type === 'delete'
+      ? 'rgba(239, 68, 68, 0.30)'
+      : isDark
+      ? theme === 'green'
+        ? 'rgba(212, 175, 55, 0.20)'
+        : 'rgba(255, 255, 255, 0.16)'
+      : 'rgba(255, 255, 255, 0.90)'
 
   return (
     <BannerContext.Provider value={{ showBanner, hideBanner }}>
       {children}
 
-      {banner && (
-        <Animated.View
-          {...panResponder.panHandlers}
-          style={[
-            styles.bannerContainer,
-            {
-              top: topPosition,
-              transform: [{ translateY }, { scale }],
-              opacity,
-            },
-          ]}
-        >
-          <Pressable onPress={hideBanner} style={styles.bannerPressable}>
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          styles.portalRoot,
+        ]}
+        pointerEvents="box-none"
+      >
+        {banner && (
+          <Animated.View
+            style={[
+              styles.bannerPositioner,
+              {
+                top: topPosition,
+                transform: [{ translateY }, { scale }],
+                opacity,
+              },
+            ]}
+            pointerEvents="box-none"
+          >
             <View
-              style={[
-                styles.bannerCard,
-                {
-                  backgroundColor: cardBackdrop,
-                  borderColor: specularBorderColor,
-                },
-              ]}
+              {...panResponder.panHandlers}
+              style={styles.bannerCenterWrapper}
+              pointerEvents="auto"
             >
-              {/* Apple Frosted Glass Blur */}
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 95 : 100}
-                tint={isDark ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
-              />
-
-              {/* Top Specular Hairline Highlight (Apple Glass Physics) */}
-              <View
-                style={[
-                  styles.specularHighlight,
+              <Pressable
+                onPress={hideBanner}
+                style={({ pressed }) => [
+                  styles.bannerCard,
                   {
-                    backgroundColor:
-                      banner.type === 'delete'
-                        ? 'rgba(239, 68, 68, 0.35)'
-                        : isDark
-                        ? 'rgba(255, 255, 255, 0.22)'
-                        : 'rgba(255, 255, 255, 0.75)',
+                    backgroundColor: cardBackdrop,
+                    borderColor: specularBorderColor,
+                    transform: [{ scale: pressed ? 0.985 : 1 }],
                   },
                 ]}
-              />
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
+                {/* Frosted Glass Blur */}
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 85 : 100}
+                  tint={isDark ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
 
-              {/* Main Content Row */}
-              <View style={styles.mainRow}>
-                {/* Icon Halo */}
-                {renderIcon()}
-
-                {/* Text Block */}
-                <View style={styles.textContainer}>
-                  {badgeMeta && (
-                    <View style={styles.badgeRow}>
-                      <View
-                        style={[
-                          styles.badgePill,
-                          {
-                            backgroundColor: badgeMeta.bg,
-                            borderColor: badgeMeta.border,
-                          },
-                        ]}
-                      >
-                        <badgeMeta.icon size={10} color={badgeMeta.accent} strokeWidth={2.6} />
-                        <Text style={[styles.badgeText, { color: badgeMeta.accent }]}>
-                          {badgeMeta.label}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {banner.title}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.message,
-                      {
-                        color:
-                          theme === 'green'
-                            ? 'rgba(255, 255, 255, 0.88)'
-                            : colors.textSecondary,
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {banner.message}
-                  </Text>
-                </View>
-
-                {/* Dismiss Touch Area */}
-                <Pressable
-                  onPress={hideBanner}
+                {/* Top Specular Hairline Highlight (Authentic Optical Refraction) */}
+                <View
                   style={[
-                    styles.closeBtn,
-                    {
-                      backgroundColor:
-                        isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.05)',
-                    },
-                  ]}
-                  hitSlop={8}
-                >
-                  <X
-                    size={14}
-                    color={isDark ? 'rgba(255, 255, 255, 0.75)' : colors.textMuted}
-                    strokeWidth={2.4}
-                  />
-                </Pressable>
-              </View>
-
-              {/* Apple Auto-Dismiss Countdown Bar */}
-              <View style={styles.progressBarTrack}>
-                <Animated.View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      backgroundColor:
-                        banner.type === 'delete'
-                          ? '#EF4444'
-                          : banner.type === 'logout'
-                          ? theme === 'green' ? colors.gold : colors.primary
-                          : banner.type === 'success'
-                          ? theme === 'green' ? colors.gold : '#10B981'
-                          : colors.primary,
-                      width: progressAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0%', '100%'],
-                      }),
-                    },
+                    styles.specularHighlight,
+                    { backgroundColor: specularHighlightColor },
                   ]}
                 />
-              </View>
+
+                {/* Main Content Row */}
+                <View style={styles.mainRow}>
+                  {renderIcon()}
+
+                  {/* Text Block */}
+                  <View style={styles.textContainer}>
+                    {badgeMeta && (
+                      <View style={styles.badgeRow}>
+                        <View
+                          style={[
+                            styles.badgePill,
+                            {
+                              backgroundColor: badgeMeta.bg,
+                              borderColor: badgeMeta.border,
+                            },
+                          ]}
+                        >
+                          <badgeMeta.icon size={10} color={badgeMeta.accent} strokeWidth={2.6} />
+                          <Text style={[styles.badgeText, { color: badgeMeta.accent }]}>
+                            {badgeMeta.label}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {banner.title}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.message,
+                        {
+                          color:
+                            theme === 'green'
+                              ? 'rgba(255, 255, 255, 0.82)'
+                              : colors.textSecondary,
+                        },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {banner.message}
+                    </Text>
+                  </View>
+
+                  {/* Tactile Close Touchpoint */}
+                  <Pressable
+                    onPress={hideBanner}
+                    style={[
+                      styles.closeBtn,
+                      {
+                        backgroundColor:
+                          isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                        borderColor:
+                          isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Mbyll njoftimin"
+                  >
+                    <X
+                      size={13}
+                      color={isDark ? 'rgba(255, 255, 255, 0.70)' : colors.textMuted}
+                      strokeWidth={2.4}
+                    />
+                  </Pressable>
+                </View>
+              </Pressable>
             </View>
-          </Pressable>
-        </Animated.View>
-      )}
+          </Animated.View>
+        )}
+      </View>
     </BannerContext.Provider>
   )
 }
 
 const styles = StyleSheet.create({
-  bannerContainer: {
+  portalRoot: {
     position: 'absolute',
-    left: 14,
-    right: 14,
-    zIndex: 9999,
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.22,
-    shadowRadius: 22,
-    elevation: 12,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999999,
+    elevation: 999999,
   },
-  bannerPressable: {
+  bannerPositioner: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  bannerCenterWrapper: {
     width: '100%',
     maxWidth: 500,
+    alignSelf: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 20,
   },
   bannerCard: {
     width: '100%',
-    borderRadius: 24,
-    borderWidth: 1,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     position: 'relative',
   },
   specularHighlight: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     width: '100%',
     position: 'absolute',
     top: 0,
@@ -540,37 +512,30 @@ const styles = StyleSheet.create({
   },
   mainRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-    gap: 13,
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingTop: 13,
+    paddingBottom: 13,
+    gap: 12,
   },
-  iconHalo: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 1,
-  },
-  iconInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
   },
   textContainer: {
     flex: 1,
-    gap: 3,
+    gap: 2.5,
     paddingRight: 4,
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   badgePill: {
     flexDirection: 'row',
@@ -578,18 +543,19 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 10,
-    borderWidth: 0.5,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   badgeText: {
-    fontSize: 9.5,
-    fontFamily: Fonts.extraBold,
-    letterSpacing: 0.6,
+    fontSize: 9,
+    fontFamily: Fonts.bold,
+    letterSpacing: 0.5,
   },
   title: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
+    lineHeight: 18.5,
   },
   message: {
     fontSize: 12.5,
@@ -597,21 +563,12 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   closeBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-  },
-  progressBarTrack: {
-    height: 2.5,
-    width: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 1.5,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
   },
 })

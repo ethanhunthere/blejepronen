@@ -14,7 +14,7 @@ import { Image } from 'expo-image'
 import { Mic, MicOff, Phone, PhoneOff } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { Fonts } from '@/constants/theme'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { callEngine, type CallState } from '@/lib/calling'
 
 /**
@@ -60,7 +60,7 @@ export function CallScreen() {
   const ringing = state.status === 'outgoing' || state.status === 'incoming'
   const connecting = state.status === 'connecting'
 
-  // Soft heartbeat glow while ringing
+  // Hairline ripple ring while ringing — no filled glow halo
   useEffect(() => {
     if (!ringing) {
       pulse.setValue(1)
@@ -130,14 +130,17 @@ export function CallScreen() {
           <View style={styles.identity}>
             <Animated.View
               style={[
-                styles.avatarGlow,
-                { transform: [{ scale: pulse }], opacity: ringing ? 0.5 : 0.22 },
+                styles.avatarRing,
+                { transform: [{ scale: pulse }], opacity: ringing ? 0.55 : 0 },
               ]}
             />
             <Image
-              source={{ uri: getAvatarUri(peer.avatarUrl) }}
+              source={getAvatarSource(peer.avatarUrl)}
               style={styles.avatar}
               contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              transition={0}
             />
             <Text style={styles.name} numberOfLines={2}>
               {peer.name}
@@ -203,13 +206,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 18,
   },
-  avatarGlow: {
+  avatarRing: {
     position: 'absolute',
     top: -28,
     width: 216,
     height: 216,
     borderRadius: 108,
-    backgroundColor: '#00806B',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   avatar: {
     width: 160,

@@ -11,7 +11,7 @@
  * Deep links (?filter=saved) are still honoured for cold starts.
  */
 
-export type ShpalljetFilterIntent = 'all' | 'active' | 'inactive' | 'saved'
+export type ShpalljetFilterIntent = 'all' | 'active' | 'sold' | 'inactive' | 'saved'
 
 let pendingShpalljetFilter: ShpalljetFilterIntent | null = null
 

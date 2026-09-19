@@ -8,7 +8,7 @@ interface LogoProps {
 export function Logo({ variant = 'navbar', className }: LogoProps) {
   if (variant === 'navbar') {
     return (
-      <div className={`${className || 'h-8'}`}>
+      <div className={`${className || 'h-9 sm:h-10'}`}>
         <Image
           src="/logo-icon.png"
           alt="Bleje Pronën"

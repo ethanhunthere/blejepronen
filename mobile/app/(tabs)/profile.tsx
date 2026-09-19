@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Linking,
   KeyboardAvoidingView,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import {
@@ -49,16 +49,34 @@ import {
   PhoneCall,
   Layers,
   Camera,
+  Image as ImageIcon,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
 import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
-import { BLEJE_AVATARS, DEFAULT_AVATAR, getAvatarUri } from '@/lib/avatars'
+import {
+  BLEJE_AVATARS,
+  DEFAULT_AVATAR,
+  getAvatarUri,
+  getAvatarSource,
+  persistUserAvatar,
+  pickAvatarFromGallery,
+  takeAvatarWithCamera,
+  uploadCustomAvatar,
+  subscribeAvatarChange,
+} from '@/lib/avatars'
 import { playThemeSound, playSuccessSound, playTapSound } from '@/lib/sound'
 import { requestShpalljetFilter } from '@/lib/nav-intent'
 import { fetchFavoriteIds } from '@/lib/favorites'
+import {
+  getSyncAuthUser,
+  getSyncProfile,
+  isAuthCacheHydrated,
+  subscribeAuthCache,
+  setSyncProfile,
+} from '@/lib/auth-cache'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -66,12 +84,29 @@ export default function ProfileScreen() {
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
 
-  // SINGLE atomic auth state — user + profile always set together to prevent
-  // any intermediate render where a Google avatar could flash before the DB
-  // avatar loads. This is the root-cause fix for the avatar flash.
-  const [authState, setAuthState] = useState<{ user: any; profile: any } | null>(null)
-  const [loading, setLoading] = useState(true)
+  const syncUser = getSyncAuthUser()
+  const syncProfile = getSyncProfile()
+  const [authState, setAuthState] = useState<{ user: any; profile: any } | null>(() => {
+    if (syncUser) {
+      return { user: syncUser, profile: syncProfile }
+    }
+    return null
+  })
+  const [loading, setLoading] = useState(() => !isAuthCacheHydrated())
   const [deleting, setDeleting] = useState(false)
+
+  // Synchronize with global auth cache updates
+  useEffect(() => {
+    const unsubscribeAuth = subscribeAuthCache((state) => {
+      if (state.user) {
+        setAuthState({ user: state.user, profile: state.profile })
+      } else {
+        setAuthState(null)
+      }
+      setLoading(false)
+    })
+    return unsubscribeAuth
+  }, [])
 
   // Live account metrics (active listings, saved favorites, open conversations)
   const [stats, setStats] = useState({
@@ -91,6 +126,41 @@ export default function ProfileScreen() {
   // Avatar Quick Picker Modal
   const [avatarModalVisible, setAvatarModalVisible] = useState(false)
   const [updatingAvatar, setUpdatingAvatar] = useState(false)
+  const [avatarCacheBuster, setAvatarCacheBuster] = useState<number | undefined>(undefined)
+
+  const rawAvatar =
+    dbProfile?.avatar_url ||
+    currentUser?.user_metadata?.avatar_url ||
+    currentUser?.user_metadata?.avatarUrl ||
+    null
+  const avatarSource = useMemo(
+    () => getAvatarSource(rawAvatar, avatarCacheBuster),
+    [rawAvatar, avatarCacheBuster]
+  )
+  const avatarUri = useMemo(
+    () => getAvatarUri(rawAvatar, avatarCacheBuster),
+    [rawAvatar, avatarCacheBuster]
+  )
+
+  // Real-time synchronization for avatar changes across screens
+  useEffect(() => {
+    const unsubscribe = subscribeAvatarChange((newAvatarUrl) => {
+      setAvatarCacheBuster(Date.now())
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: newAvatarUrl, avatarUrl: newAvatarUrl },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: newAvatarUrl } : prev.profile,
+        }
+      })
+    })
+    return () => {
+      unsubscribe()
+    }
+  }, [])
 
   // Account Verification Modal & OTP
   const [verifyModalVisible, setVerifyModalVisible] = useState(false)
@@ -199,43 +269,289 @@ export default function ProfileScreen() {
     }
   }, [checkSession, fetchUserStats])
 
-  // Instant 1-tap quick avatar changer
-  const handleSelectAvatarQuick = async (newAvatarUrl: string) => {
+  // Instant 1-tap preset avatar selector
+  const handleSelectAvatarPreset = async (newAvatarUrl: string) => {
     if (!currentUser) return
+    if (updatingAvatar) return
+
+    setAvatarModalVisible(false)
+
     playSuccessSound()
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     }
     setUpdatingAvatar(true)
 
+    const previousAvatar = rawAvatar
+    const newBuster = Date.now()
+    setAvatarCacheBuster(newBuster)
+
     // Immediate optimistic UI update
     setAuthState((prev) => {
       if (!prev) return prev
       return {
-        user: { ...prev.user, user_metadata: { ...prev.user?.user_metadata, avatar_url: newAvatarUrl } },
-        profile: { ...prev.profile, avatar_url: newAvatarUrl },
+        user: {
+          ...prev.user,
+          user_metadata: { ...prev.user?.user_metadata, avatar_url: newAvatarUrl, avatarUrl: newAvatarUrl },
+        },
+        profile: prev.profile ? { ...prev.profile, avatar_url: newAvatarUrl } : prev.profile,
       }
     })
-    setAvatarModalVisible(false)
 
     try {
-      await Promise.all([
-        supabase.auth.updateUser({
-          data: { avatar_url: newAvatarUrl },
-        }),
-        supabase.from('profiles').upsert({
-          id: currentUser.id,
-          avatar_url: newAvatarUrl,
-        }),
-      ])
+      await persistUserAvatar({
+        userId: currentUser.id,
+        avatarUrl: newAvatarUrl,
+        userMetadata: currentUser.user_metadata,
+        existingProfile: dbProfile,
+      })
 
       showBanner({
         type: 'success',
         title: 'Avatari u Përditësua!',
         message: 'Avatari juaj i ri është aktiv menjëherë në të gjithë platformën.',
       })
-    } catch (err) {
-      console.warn('Quick avatar update notice:', err)
+    } catch (err: any) {
+      console.error('Preset avatar update error:', err)
+      // Rollback optimistic update
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: previousAvatar, avatarUrl: previousAvatar },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: previousAvatar } : prev.profile,
+        }
+      })
+      showBanner({
+        type: 'error',
+        title: 'Dështoi Përditësimi',
+        message: err?.message || 'Ndodhi një gabim gjatë ruajtjes së avatarit. Ju lutemi provoni përsëri.',
+      })
+    } finally {
+      setUpdatingAvatar(false)
+    }
+  }
+
+  // Alias for backward compatibility
+  const handleSelectAvatarQuick = handleSelectAvatarPreset
+
+  // Pick Custom Avatar from Gallery (Native 1:1 Aspect Ratio Cropping & Hardware Acceleration)
+  const handlePickCustomAvatar = async () => {
+    if (!currentUser) return
+    if (updatingAvatar) return
+
+    const previousAvatar = rawAvatar
+
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync()
+    }
+
+    // 1. Immediately dismiss modal so iOS/Android view controllers can transition cleanly
+    setAvatarModalVisible(false)
+
+    // Give native UIViewController 120ms to complete dismissal animation
+    await new Promise((resolve) => setTimeout(resolve, 120))
+
+    try {
+      const asset = await pickAvatarFromGallery()
+      if (!asset) return
+
+      setUpdatingAvatar(true)
+
+      // 2. Hardware-accelerated native downsampling in ~15ms
+      const { optimizeAvatarImage } = await import('@/lib/avatars')
+      let localOptimizedUri = asset.uri
+      try {
+        const opt = await optimizeAvatarImage(asset.uri, asset.width, asset.height)
+        localOptimizedUri = opt.uri
+      } catch (optErr) {
+        console.warn('Native optimize fallback:', optErr)
+      }
+
+      const newBuster = Date.now()
+      setAvatarCacheBuster(newBuster)
+
+      // 3. Immediate Frame 0 optimistic preview with optimized local file (<50ms!)
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: localOptimizedUri, avatarUrl: localOptimizedUri },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: localOptimizedUri } : prev.profile,
+        }
+      })
+
+      // Sync in-memory auth-cache immediately for global instant reflection
+      try {
+        const { getSyncProfile, setSyncProfile } = await import('@/lib/auth-cache')
+        const current = getSyncProfile()
+        if (current) {
+          setSyncProfile({ ...current, avatar_url: localOptimizedUri })
+        }
+      } catch {}
+
+      // 4. Background upload of the ~35KB optimized image
+      const uploadRes = await uploadCustomAvatar({
+        userId: currentUser.id,
+        asset: { ...asset, uri: localOptimizedUri },
+        userMetadata: currentUser.user_metadata,
+        existingProfile: dbProfile,
+      })
+
+      playSuccessSound()
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+
+      // 5. Seamlessly sync state with permanent remote URL
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: uploadRes.avatarUrl, avatarUrl: uploadRes.avatarUrl },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: uploadRes.avatarUrl } : prev.profile,
+        }
+      })
+
+      showBanner({
+        type: 'success',
+        title: 'Fotoja u Ngarkua!',
+        message: 'Fotoja juaj e re e profilit u ruajt me sukses.',
+      })
+    } catch (err: any) {
+      console.error('Pick custom avatar error:', err)
+      // Rollback optimistic state
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: previousAvatar, avatarUrl: previousAvatar },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: previousAvatar } : prev.profile,
+        }
+      })
+      showBanner({
+        type: 'error',
+        title: 'Dështoi Ngarkimi',
+        message: err?.message || 'Ndodhi një gabim gjatë ngarkimit të fotos. Ju lutemi provoni përsëri.',
+      })
+    } finally {
+      setUpdatingAvatar(false)
+    }
+  }
+
+  // Take Custom Avatar with Camera (Native 1:1 Aspect Ratio Cropping & Hardware Acceleration)
+  const handleTakeCustomAvatar = async () => {
+    if (!currentUser) return
+    if (updatingAvatar) return
+
+    const previousAvatar = rawAvatar
+
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync()
+    }
+
+    // 1. Immediately dismiss modal so camera intent/view controller can launch smoothly
+    setAvatarModalVisible(false)
+
+    // Give native window 120ms to complete dismissal
+    await new Promise((resolve) => setTimeout(resolve, 120))
+
+    try {
+      const asset = await takeAvatarWithCamera()
+      if (!asset) return
+
+      setUpdatingAvatar(true)
+
+      // 2. Hardware-accelerated native downsampling in ~15ms
+      const { optimizeAvatarImage } = await import('@/lib/avatars')
+      let localOptimizedUri = asset.uri
+      try {
+        const opt = await optimizeAvatarImage(asset.uri, asset.width, asset.height)
+        localOptimizedUri = opt.uri
+      } catch (optErr) {
+        console.warn('Native optimize fallback:', optErr)
+      }
+
+      const newBuster = Date.now()
+      setAvatarCacheBuster(newBuster)
+
+      // 3. Immediate Frame 0 optimistic preview with captured image (<50ms!)
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: localOptimizedUri, avatarUrl: localOptimizedUri },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: localOptimizedUri } : prev.profile,
+        }
+      })
+
+      // Sync in-memory auth-cache immediately for global instant reflection
+      try {
+        const { getSyncProfile, setSyncProfile } = await import('@/lib/auth-cache')
+        const current = getSyncProfile()
+        if (current) {
+          setSyncProfile({ ...current, avatar_url: localOptimizedUri })
+        }
+      } catch {}
+
+      // 4. Background upload of the ~35KB optimized image
+      const uploadRes = await uploadCustomAvatar({
+        userId: currentUser.id,
+        asset: { ...asset, uri: localOptimizedUri },
+        userMetadata: currentUser.user_metadata,
+        existingProfile: dbProfile,
+      })
+
+      playSuccessSound()
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      }
+
+      // 5. Permanent remote URL sync
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: uploadRes.avatarUrl, avatarUrl: uploadRes.avatarUrl },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: uploadRes.avatarUrl } : prev.profile,
+        }
+      })
+
+      showBanner({
+        type: 'success',
+        title: 'Fotoja u Ngarkua!',
+        message: 'Fotoja juaj e re e profilit u ruajt me sukses.',
+      })
+    } catch (err: any) {
+      console.error('Take custom avatar error:', err)
+      // Rollback optimistic state
+      setAuthState((prev) => {
+        if (!prev) return prev
+        return {
+          user: {
+            ...prev.user,
+            user_metadata: { ...prev.user?.user_metadata, avatar_url: previousAvatar, avatarUrl: previousAvatar },
+          },
+          profile: prev.profile ? { ...prev.profile, avatar_url: previousAvatar } : prev.profile,
+        }
+      })
+      showBanner({
+        type: 'error',
+        title: 'Dështoi Fotoja',
+        message: err?.message || 'Ndodhi një gabim gjatë realizimit të fotos. Ju lutemi provoni përsëri.',
+      })
     } finally {
       setUpdatingAvatar(false)
     }
@@ -486,13 +802,6 @@ export default function ProfileScreen() {
 
   const specularBorder = colors.border
 
-  const rawAvatar =
-    dbProfile?.avatar_url ||
-    currentUser?.user_metadata?.avatar_url ||
-    currentUser?.user_metadata?.avatarUrl ||
-    null
-  const avatarUri = getAvatarUri(rawAvatar)
-
   // ─── Verification Center Rows ─────────────────────────────────────────
   const vcMeta = (currentUser?.user_metadata || {}) as Record<string, any>
   const vcEmailDone = emailConfirmed
@@ -567,7 +876,7 @@ export default function ProfileScreen() {
   const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'ios' ? 24 : 16)
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* ─── 1. TOP HEADER BAR ─── */}
       <View style={styles.header}>
         <View style={styles.headerTitleWrap}>
@@ -656,12 +965,21 @@ export default function ProfileScreen() {
                 }}
               >
                 <Image
-                  key={`avatar-${avatarUri}-${rawAvatar || ''}`}
-                  source={{ uri: avatarUri }}
+                  source={avatarSource}
                   style={styles.heroAvatarImg}
                   contentFit="cover"
-                  transition={150}
+                  cachePolicy="memory-disk"
+                  priority="high"
+                  transition={0}
                 />
+                {updatingAvatar && (
+                  <View style={styles.heroAvatarLoadingOverlay}>
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === 'green' ? colors.gold : colors.primary}
+                    />
+                  </View>
+                )}
                 <View
                   style={[
                     styles.avatarEditBadge,
@@ -1749,7 +2067,9 @@ export default function ProfileScreen() {
         visible={avatarModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setAvatarModalVisible(false)}
+        onRequestClose={() => {
+          if (!updatingAvatar) setAvatarModalVisible(false)
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1757,7 +2077,9 @@ export default function ProfileScreen() {
         >
           <Pressable
             style={styles.modalDismissArea}
-            onPress={() => setAvatarModalVisible(false)}
+            onPress={() => {
+              if (!updatingAvatar) setAvatarModalVisible(false)
+            }}
           />
           <View
             style={[
@@ -1774,10 +2096,10 @@ export default function ProfileScreen() {
             <View style={styles.sheetHeaderRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
-                  Zgjidh Avataron Zyrtar
+                  Fotoja e Profilit
                 </Text>
                 <Text style={[styles.sheetSubtitle, { color: colors.textMuted }]}>
-                  20 avatarë me cilësi të lartë të Bleje Pronën
+                  Zgjidhni foto nga galeria, bëni foto, ose zgjidhni avatar zyrtar
                 </Text>
               </View>
               <Pressable
@@ -1785,8 +2107,11 @@ export default function ProfileScreen() {
                   styles.sheetCloseBtn,
                   { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
                 ]}
-                onPress={() => setAvatarModalVisible(false)}
+                onPress={() => {
+                  if (!updatingAvatar) setAvatarModalVisible(false)
+                }}
                 hitSlop={8}
+                disabled={updatingAvatar}
               >
                 <X size={17} color={colors.textSecondary} />
               </Pressable>
@@ -1794,52 +2119,205 @@ export default function ProfileScreen() {
 
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.avatarGridWrap}
+              contentContainerStyle={styles.avatarSheetScrollContent}
             >
-              {BLEJE_AVATARS.map((av) => {
-                const isSelected =
-                  rawAvatar === av.url ||
-                  avatarUri.endsWith(av.url) ||
-                  (rawAvatar && rawAvatar.includes(`avatar-${av.id}.png`))
-                return (
-                  <Pressable
-                    key={av.id}
+              {/* Active Avatar Spotlight Card */}
+              <View
+                style={[
+                  styles.avatarSpotlightCard,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+              >
+                <View style={styles.avatarSpotlightLeft}>
+                  <View
                     style={[
-                      styles.avatarGridItem,
-                      isSelected && [
-                        styles.avatarGridItemSelected,
-                        {
-                          borderColor: theme === 'green' ? colors.gold : colors.primary,
-                        },
-                      ],
+                      styles.avatarSpotlightRing,
+                      {
+                        borderColor: theme === 'green' ? colors.gold : colors.primary,
+                      },
                     ]}
-                    onPress={() => handleSelectAvatarQuick(av.url)}
                   >
                     <Image
-                      source={{ uri: `https://blejepronen.com${av.url}` }}
-                      style={styles.avatarGridImg}
+                      source={avatarSource}
+                      style={styles.avatarSpotlightImg}
                       contentFit="cover"
-                      transition={150}
+                      cachePolicy="memory-disk"
+                      priority="high"
+                      transition={0}
                     />
-                    {isSelected && (
-                      <View
-                        style={[
-                          styles.avatarGridCheck,
-                          {
-                            backgroundColor: theme === 'green' ? colors.gold : colors.primary,
-                          },
-                        ]}
-                      >
-                        <Check
-                          size={11}
-                          color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                          strokeWidth={3}
+                    {updatingAvatar && (
+                      <View style={styles.avatarSpotlightLoadingOverlay}>
+                        <ActivityIndicator
+                          size="small"
+                          color={theme === 'green' ? colors.gold : colors.primary}
                         />
                       </View>
                     )}
-                  </Pressable>
-                )
-              })}
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 14 }}>
+                    <Text
+                      style={[styles.avatarSpotlightName, { color: colors.textPrimary }]}
+                      numberOfLines={1}
+                    >
+                      {displayName}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.avatarSpotlightStatus,
+                        {
+                          color: updatingAvatar
+                            ? theme === 'green'
+                              ? colors.gold
+                              : colors.primary
+                            : colors.textMuted,
+                        },
+                      ]}
+                    >
+                      {updatingAvatar ? 'Duke përditësuar foton...' : 'Fotoja juaj aktive e profilit'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Native Actions: Gallery & Camera */}
+              <View style={styles.avatarActionsRow}>
+                <Pressable
+                  style={[
+                    styles.avatarActionCard,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                    updatingAvatar && { opacity: 0.6 },
+                  ]}
+                  onPress={handlePickCustomAvatar}
+                  disabled={updatingAvatar}
+                >
+                  <View
+                    style={[
+                      styles.avatarActionIconWrap,
+                      {
+                        backgroundColor:
+                          theme === 'green'
+                            ? 'rgba(212, 175, 55, 0.15)'
+                            : 'rgba(16, 185, 129, 0.12)',
+                      },
+                    ]}
+                  >
+                    <ImageIcon
+                      size={20}
+                      color={theme === 'green' ? colors.gold : colors.primary}
+                      strokeWidth={2.2}
+                    />
+                  </View>
+                  <Text style={[styles.avatarActionTitle, { color: colors.textPrimary }]}>
+                    Zgjidh nga Galeria
+                  </Text>
+                  <Text style={[styles.avatarActionDesc, { color: colors.textMuted }]}>
+                    Pritje 1:1 katrore
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.avatarActionCard,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                    updatingAvatar && { opacity: 0.6 },
+                  ]}
+                  onPress={handleTakeCustomAvatar}
+                  disabled={updatingAvatar}
+                >
+                  <View
+                    style={[
+                      styles.avatarActionIconWrap,
+                      {
+                        backgroundColor:
+                          theme === 'green'
+                            ? 'rgba(212, 175, 55, 0.15)'
+                            : 'rgba(59, 130, 246, 0.12)',
+                      },
+                    ]}
+                  >
+                    <Camera
+                      size={20}
+                      color={theme === 'green' ? colors.gold : '#3B82F6'}
+                      strokeWidth={2.2}
+                    />
+                  </View>
+                  <Text style={[styles.avatarActionTitle, { color: colors.textPrimary }]}>
+                    Bëj një Foto
+                  </Text>
+                  <Text style={[styles.avatarActionDesc, { color: colors.textMuted }]}>
+                    Kamera e telefonit
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Section Divider */}
+              <View style={styles.avatarSectionDividerRow}>
+                <View style={[styles.avatarDividerLine, { backgroundColor: colors.border }]} />
+                <Text style={[styles.avatarDividerText, { color: colors.textMuted }]}>
+                  OSE ZGJIDH AVATAR ZYRTAR (20)
+                </Text>
+                <View style={[styles.avatarDividerLine, { backgroundColor: colors.border }]} />
+              </View>
+
+              {/* Preset Avatars Grid */}
+              <View style={styles.avatarGridWrap}>
+                {BLEJE_AVATARS.map((av) => {
+                  const isSelected =
+                    rawAvatar === av.url ||
+                    (typeof rawAvatar === 'string' && rawAvatar.includes(`avatar-${av.id}.png`))
+                  return (
+                    <Pressable
+                      key={av.id}
+                      style={[
+                        styles.avatarGridItem,
+                        isSelected && [
+                          styles.avatarGridItemSelected,
+                          {
+                            borderColor: theme === 'green' ? colors.gold : colors.primary,
+                          },
+                        ],
+                        updatingAvatar && { opacity: 0.7 },
+                      ]}
+                      onPress={() => handleSelectAvatarPreset(av.url)}
+                      disabled={updatingAvatar}
+                    >
+                      <Image
+                        source={av.source}
+                        style={styles.avatarGridImg}
+                        contentFit="cover"
+                        priority="high"
+                        cachePolicy="memory-disk"
+                        transition={0}
+                      />
+                      {isSelected && (
+                        <View
+                          style={[
+                            styles.avatarGridCheck,
+                            {
+                              backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                            },
+                          ]}
+                        >
+                          <Check
+                            size={11}
+                            color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                            strokeWidth={3}
+                          />
+                        </View>
+                      )}
+                    </Pressable>
+                  )
+                })}
+              </View>
             </ScrollView>
 
             <View style={styles.sheetFooterWrap}>
@@ -2064,7 +2542,7 @@ export default function ProfileScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -2098,8 +2576,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headerSettingsBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2144,6 +2622,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     overflow: 'visible',
+  },
+  heroAvatarLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
   },
   heroAvatarImg: {
     width: 66,
@@ -2229,8 +2719,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   heroAvatarQuickBtn: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     borderWidth: 0.5,
     alignItems: 'center',
@@ -2723,19 +3213,120 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0.5,
     borderRightWidth: 0.5,
     paddingTop: 12,
-    maxHeight: '80%',
+    maxHeight: '86%',
     maxWidth: 540,
     width: '100%',
     alignSelf: 'center',
+  },
+  avatarSheetScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 20,
+  },
+  avatarSpotlightCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  avatarSpotlightLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarSpotlightRing: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2.5,
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  avatarSpotlightImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 26,
+  },
+  avatarSpotlightLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarSpotlightName: {
+    fontSize: 15.5,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+  },
+  avatarSpotlightStatus: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+  avatarActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 18,
+  },
+  avatarActionCard: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarActionIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarActionTitle: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+  },
+  avatarActionDesc: {
+    fontSize: 11,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  avatarSectionDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  avatarDividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  avatarDividerText: {
+    fontSize: 10,
+    fontFamily: Fonts.bold,
+    letterSpacing: 0.8,
   },
   avatarGridWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
     gap: 12,
+    paddingBottom: 8,
   },
   avatarGridItem: {
     width: '22%',
@@ -2806,8 +3397,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   verifyIconBox: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2842,7 +3433,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   confirmOtpActionBtn: {
-    height: 46,
+    height: 48,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',

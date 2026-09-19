@@ -9,9 +9,14 @@ import {
   Platform,
   TextInput,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
+import {
+  getSyncAuthUser,
+  isAuthCacheHydrated,
+  subscribeAuthCache,
+} from '@/lib/auth-cache'
 import {
   MessageSquare,
   ShieldCheck,
@@ -31,7 +36,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound } from '@/lib/sound'
 import { ConversationFeedSkeleton } from '@/components/ListingSkeleton'
@@ -60,12 +65,25 @@ export default function MessagesScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
   const [activeTab, setActiveTab] = useState<TabMode>('chats')
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const insets = useSafeAreaInsets()
+  const syncUser = getSyncAuthUser()
+  const [currentUser, setCurrentUser] = useState<any>(() => syncUser)
   const [conversations, setConversations] = useState<ConversationItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !isAuthCacheHydrated() && !!syncUser)
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState<FilterChip>('all')
+
+  useEffect(() => {
+    const unsub = subscribeAuthCache((state) => {
+      setCurrentUser(state.user)
+      if (!state.user) {
+        setConversations([])
+        setLoading(false)
+      }
+    })
+    return unsub
+  }, [])
 
   // Contact Action Sheet State
   const [contactSheet, setContactSheet] = useState<{
@@ -294,7 +312,7 @@ export default function MessagesScreen() {
   const specularBorder = colors.border
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
@@ -608,10 +626,12 @@ export default function MessagesScreen() {
                       {/* Avatar */}
                       <View style={styles.avatarWrapper}>
                         <Image
-                          source={{ uri: avatarUri }}
+                          source={getAvatarSource(item.counterpart_avatar || item.listing_image)}
                           style={styles.convoAvatar}
                           contentFit="cover"
-                          transition={200}
+                          cachePolicy="memory-disk"
+                          priority="high"
+                          transition={0}
                         />
                       </View>
 
@@ -770,7 +790,14 @@ export default function MessagesScreen() {
                       ]}
                       onPress={() => openContactSheet(contact)}
                     >
-                      <Image source={{ uri: avatarUri }} style={styles.contactAvatar} contentFit="cover" />
+                      <Image
+                        source={getAvatarSource(contact.counterpart_avatar || contact.listing_image)}
+                        style={styles.contactAvatar}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        priority="high"
+                        transition={0}
+                      />
 
                       <View style={styles.contactInfoCol}>
                         <View style={styles.contactNameRow}>
@@ -838,7 +865,7 @@ export default function MessagesScreen() {
         counterpartUserId={contactSheet.userId}
         conversationId={contactSheet.conversationId}
       />
-    </SafeAreaView>
+    </View>
   )
 }
 

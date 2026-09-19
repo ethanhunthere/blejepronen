@@ -1,5 +1,34 @@
 import { supabase } from './supabase'
 
+const API_TIMEOUT_MS = 15000
+const API_RETRIES = 2
+
+/**
+ * fetch with a hard timeout and retry-on-network-failure (never retries on an
+ * HTTP response, so OTP/verification calls cannot double-fire server-side).
+ * Throws a human Albanian message when the device simply cannot reach us.
+ */
+async function resilientFetch(url: string, init?: RequestInit): Promise<Response> {
+  let lastError: unknown = null
+  for (let attempt = 0; attempt <= API_RETRIES; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal })
+      clearTimeout(timer)
+      return res
+    } catch (e) {
+      clearTimeout(timer)
+      lastError = e
+      if (attempt < API_RETRIES) {
+        await new Promise((r) => setTimeout(r, 400 * 2 ** attempt))
+      }
+    }
+  }
+  void lastError
+  throw new Error('Lidhja me serverin dështoi. Kontrollo internetin dhe provo përsëri.')
+}
+
 export const API_BASE_URL = 'https://blejepronen.com'
 
 export interface SignupParams {
@@ -31,7 +60,7 @@ export interface ApiResponse<T = any> {
  */
 export async function apiSignUp(params: SignupParams): Promise<ApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/signup`, {
+    const res = await resilientFetch(`${API_BASE_URL}/api/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +103,7 @@ export async function apiSignUp(params: SignupParams): Promise<ApiResponse> {
  */
 export async function apiVerifyOtp(params: VerifyOtpParams): Promise<ApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/verify-otp`, {
+    const res = await resilientFetch(`${API_BASE_URL}/api/verify-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +141,7 @@ export async function apiVerifyOtp(params: VerifyOtpParams): Promise<ApiResponse
  */
 export async function apiResendCode(email: string): Promise<ApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/resend-code`, {
+    const res = await resilientFetch(`${API_BASE_URL}/api/resend-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -149,7 +178,7 @@ export async function apiResendCode(email: string): Promise<ApiResponse> {
  */
 export async function apiDeleteAccount(accessToken: string): Promise<ApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/account/delete`, {
+    const res = await resilientFetch(`${API_BASE_URL}/api/account/delete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -257,7 +286,7 @@ export async function apiSaveProfileSettings(
   accessToken: string
 ): Promise<ApiResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/profile/save`, {
+    const res = await resilientFetch(`${API_BASE_URL}/api/profile/save`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -266,11 +295,11 @@ export async function apiSaveProfileSettings(
       body: JSON.stringify(payload),
     })
 
-    const data = await res.json()
-    if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data || !data.success) {
       return {
         success: false,
-        error: data.message || data.error || 'Dështoi ruajtja e cilësimeve.',
+        error: data?.message || data?.error || 'Dështoi ruajtja e cilësimeve.',
       }
     }
 

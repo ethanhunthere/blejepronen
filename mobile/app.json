@@ -6,12 +6,30 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "blejepronen",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#006459",
+    "splash": {
+      "image": "./assets/images/splash-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#006459"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.blejepronen.app"
+      "bundleIdentifier": "com.blejepronen.app",
+      "backgroundColor": "#006459",
+      "splash": {
+        "image": "./assets/images/splash-logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#006459"
+      }
     },
     "android": {
+      "backgroundColor": "#006459",
+      "splash": {
+        "image": "./assets/images/splash-logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#006459"
+      },
       "adaptiveIcon": {
         "backgroundColor": "#006459",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -38,14 +56,30 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-logo.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#006459"
+          "backgroundColor": "#006459",
+          "dark": {
+            "image": "./assets/images/splash-logo.png",
+            "backgroundColor": "#006459"
+          }
         }
       ],
-      ["@config-plugins/react-native-webrtc", {
-        "microphonePermission": "Bleje Pronën ju lejon të telefononi direk në aplikacion me shitësin/blerësin (thirrje zanore falas)."
-      }]
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "microphonePermission": "Bleje Pronën ju lejon të telefononi direk në aplikacion me shitësin/blerësin (thirrje zanore falas)."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Bleje Pronën përdor galerinë tuaj për të shtuar fotot e banesës dhe foton e profilit.",
+          "cameraPermission": "Bleje Pronën përdor kamerën për të fotografuar banesën që po postoni."
+        }
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

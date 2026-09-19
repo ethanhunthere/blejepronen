@@ -11,8 +11,15 @@ import {
   KeyboardAvoidingView,
   Dimensions,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
+import {
+  getSyncAuthUser,
+  getSyncProfile,
+  setSyncAuthUser,
+  setSyncProfile,
+} from '@/lib/auth-cache'
+import { playSuccessSound } from '@/lib/sound'
 import { BlurView } from 'expo-blur'
 import {
   User,
@@ -34,7 +41,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
-import { DEFAULT_AVATAR } from '@/lib/avatars'
+import { DEFAULT_AVATAR, subscribeAvatarChange } from '@/lib/avatars'
 import { apiSaveProfileSettings, ProfileSettingsPayload } from '@/lib/api'
 import { safeBack } from '@/lib/navigation'
 
@@ -60,32 +67,64 @@ export default function CompletoProfilinScreen() {
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
 
-  const [loadingInitial, setLoadingInitial] = useState(true)
+  const insets = useSafeAreaInsets()
+  const syncUser = getSyncAuthUser()
+  const syncProfile = getSyncProfile()
+
+  const [loadingInitial, setLoadingInitial] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<any>(syncUser)
   const [accessToken, setAccessToken] = useState<string>('')
 
   // Account Type
-  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
+  const [accountType, setAccountType] = useState<'individual' | 'company'>(
+    syncProfile?.account_type === 'company' || syncUser?.user_metadata?.account_type === 'company'
+      ? 'company'
+      : 'individual'
+  )
 
   // Avatar
-  const [selectedAvatar, setSelectedAvatar] = useState<string>(DEFAULT_AVATAR)
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(
+    syncProfile?.avatar_url || syncUser?.user_metadata?.avatar_url || DEFAULT_AVATAR
+  )
+
+  // Real-time synchronization for avatar changes across screens
+  useEffect(() => {
+    const unsubscribe = subscribeAvatarChange((newAvatarUrl) => {
+      setSelectedAvatar(newAvatarUrl)
+    })
+    return () => {
+      unsubscribe()
+    }
+  }, [])
 
   // Individual Fields
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [individualPhone, setIndividualPhone] = useState('')
-  const [individualCity, setIndividualCity] = useState('Prishtinë')
-  const [individualBio, setIndividualBio] = useState('')
+  const [firstName, setFirstName] = useState(
+    syncProfile?.first_name || syncUser?.user_metadata?.first_name || ''
+  )
+  const [lastName, setLastName] = useState(
+    syncProfile?.last_name || syncUser?.user_metadata?.last_name || ''
+  )
+  const [individualPhone, setIndividualPhone] = useState(
+    syncProfile?.phone || syncUser?.user_metadata?.phone || ''
+  )
+  const [individualCity, setIndividualCity] = useState(syncProfile?.city || 'Prishtinë')
+  const [individualBio, setIndividualBio] = useState(syncProfile?.bio || '')
 
   // Company Fields
-  const [companyName, setCompanyName] = useState('')
-  const [companyContactPerson, setCompanyContactPerson] = useState('')
-  const [companyPhone, setCompanyPhone] = useState('')
-  const [companyCity, setCompanyCity] = useState('Prishtinë')
+  const [companyName, setCompanyName] = useState(
+    syncProfile?.company_name || syncUser?.user_metadata?.company_name || ''
+  )
+  const [companyContactPerson, setCompanyContactPerson] = useState(
+    syncProfile?.contact_person || ''
+  )
+  const [companyPhone, setCompanyPhone] = useState(
+    syncProfile?.phone || syncUser?.user_metadata?.phone || ''
+  )
+  const [companyCity, setCompanyCity] = useState(syncProfile?.city || 'Prishtinë')
   const [foundedYear, setFoundedYear] = useState('')
   const [nipt, setNipt] = useState('')
-  const [companyDescription, setCompanyDescription] = useState('')
+  const [companyDescription, setCompanyDescription] = useState(syncProfile?.bio || '')
   const [website, setWebsite] = useState('')
 
   // Errors
@@ -232,101 +271,187 @@ export default function CompletoProfilinScreen() {
     }
 
     try {
-      const isCompany = accountType === 'company'
+      // 1. Fetch freshest user & session from Supabase client
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      const payload: ProfileSettingsPayload = {
-        isCompany,
-        accountType,
-        avatarUrl: selectedAvatar,
-        city: isCompany ? companyCity : individualCity,
-        emailVerified: true,
-
-        // Individual fields
-        individualFirstName: isCompany ? undefined : firstName.trim(),
-        individualLastName: isCompany ? undefined : lastName.trim(),
-        individualPhone: isCompany ? undefined : individualPhone.trim(),
-        individualBio: isCompany ? undefined : individualBio.trim(),
-
-        // Company fields
-        companyName: isCompany ? companyName.trim() : undefined,
-        companyContactPerson: isCompany ? companyContactPerson.trim() : undefined,
-        companyPhone: isCompany ? companyPhone.trim() : undefined,
-        companyDescription: isCompany ? companyDescription.trim() : undefined,
-        foundedYear: isCompany ? foundedYear.trim() : undefined,
-        nipt: isCompany ? nipt.trim() : undefined,
-        website: isCompany ? website.trim() : undefined,
-
-        // Unified top-level helpers
-        firstName: isCompany ? companyName.trim() : firstName.trim(),
-        lastName: isCompany ? companyContactPerson.trim() : lastName.trim(),
-        phone: isCompany ? companyPhone.trim() : individualPhone.trim(),
-        bio: isCompany ? companyDescription.trim() : individualBio.trim(),
+      let activeUser: any = session?.user
+      if (!activeUser) {
+        const userRes = await supabase.auth.getUser()
+        activeUser = userRes.data.user
       }
 
-      const res = await apiSaveProfileSettings(payload, accessToken)
-
-      if (!res.success) {
+      if (!activeUser) {
         showBanner({
           type: 'error',
-          title: 'Ruajtja Dështoi',
-          message: res.error || 'Ju lutem kontrolloni të dhënat dhe provoni përsëri.',
+          title: 'Sesioni ka Skaduar',
+          message: 'Ju lutemi kyçuni përsëri për të ruajtur ndryshimet.',
         })
-        setSubmitting(false)
+        router.replace('/modal')
         return
       }
 
-      // Direct local update to Supabase auth session & profiles table for zero latency sync
-      if (currentUser?.id) {
-        try {
-          await supabase.auth.updateUser({
-            data: {
-              account_type: isCompany ? 'company' : 'individual',
-              is_company: isCompany,
-              avatar_url: selectedAvatar,
-              first_name: isCompany ? companyName.trim() : firstName.trim(),
-              last_name: isCompany ? companyContactPerson.trim() : lastName.trim(),
-              company_name: isCompany ? companyName.trim() : undefined,
-              contact_person: isCompany ? companyContactPerson.trim() : undefined,
-              phone: isCompany ? companyPhone.trim() : individualPhone.trim(),
-              city: isCompany ? companyCity : individualCity,
-              onboarding_completed: true,
-              email_verified: true,
-            },
-          })
+      const isCompany = accountType === 'company'
+      const activeFirstName = (isCompany ? companyName.trim() : firstName.trim()) || 'Përdorues'
+      const activeLastName =
+        (isCompany ? (companyContactPerson.trim() || 'Kompani') : lastName.trim()) || 'Përdorues'
+      const activePhone = isCompany ? companyPhone.trim() : individualPhone.trim()
+      const activeCity = isCompany ? companyCity : individualCity
+      const activeBio = isCompany ? companyDescription.trim() : individualBio.trim()
 
-          await supabase.from('profiles').upsert({
-            id: currentUser.id,
-            first_name: isCompany ? companyName.trim() : firstName.trim(),
-            last_name: isCompany ? companyContactPerson.trim() : lastName.trim(),
-            phone: isCompany ? companyPhone.trim() : individualPhone.trim(),
-            avatar_url: selectedAvatar,
+      // 2. Authoritative Supabase Auth Metadata Update
+      const { data: authUpdateData, error: authUpdateError } = await supabase.auth.updateUser({
+        data: {
+          account_type: isCompany ? 'company' : 'individual',
+          is_company: isCompany,
+          avatar_url: selectedAvatar,
+          first_name: activeFirstName,
+          last_name: activeLastName,
+          company_name: isCompany ? companyName.trim() : undefined,
+          contact_person: isCompany ? companyContactPerson.trim() : undefined,
+          phone: activePhone,
+          city: activeCity,
+          bio: activeBio,
+          individual_first_name: isCompany ? undefined : firstName.trim(),
+          individual_last_name: isCompany ? undefined : lastName.trim(),
+          individual_phone: isCompany ? undefined : individualPhone.trim(),
+          individual_bio: isCompany ? undefined : individualBio.trim(),
+          company_phone: isCompany ? companyPhone.trim() : undefined,
+          company_description: isCompany ? companyDescription.trim() : undefined,
+          founded_year: isCompany ? foundedYear.trim() : undefined,
+          nipt: isCompany ? nipt.trim() : undefined,
+          website: isCompany ? website.trim() : undefined,
+          onboarding_completed: true,
+        },
+      })
+
+      if (authUpdateError) {
+        console.error('Supabase auth update error:', authUpdateError)
+        throw new Error(authUpdateError.message || 'Dështoi përditësimi i të dhënave në llogari.')
+      }
+
+      // 3. Authoritative Supabase `profiles` Table Update
+      const now = new Date().toISOString()
+      const updatedProfileRow = {
+        first_name: activeFirstName,
+        last_name: activeLastName,
+        phone: activePhone,
+        avatar_url: selectedAvatar,
+        updated_at: now,
+      }
+
+      // Direct UPDATE first (preserves existing columns like email, email_verified, created_at)
+      const { data: updateData, error: updateError } = await supabase
+        .from('profiles')
+        .update(updatedProfileRow)
+        .eq('id', activeUser.id)
+        .select()
+
+      if (updateError || !updateData || updateData.length === 0) {
+        // Fallback to UPSERT if row does not exist yet
+        const { error: upsertError } = await supabase.from('profiles').upsert(
+          {
+            id: activeUser.id,
+            ...updatedProfileRow,
+            email: activeUser.email || undefined,
             email_verified: true,
-          })
-        } catch (localSyncErr) {
-          console.warn('Local Supabase sync notice in completo-profilin:', localSyncErr)
+          },
+          { onConflict: 'id' }
+        )
+
+        if (upsertError) {
+          console.error('Supabase profiles upsert error:', upsertError)
+          throw new Error(upsertError.message || 'Dështoi ruajtja e profilit në databazë.')
         }
+      }
+
+      // 4. Instant Global Auth Cache Hydration for 0ms multi-screen sync
+      const freshUser = authUpdateData?.user || activeUser
+      const freshProfile = {
+        ...(syncProfile || {}),
+        id: activeUser.id,
+        first_name: activeFirstName,
+        last_name: activeLastName,
+        phone: activePhone,
+        avatar_url: selectedAvatar,
+        account_type: isCompany ? 'company' : 'individual',
+        is_company: isCompany,
+        city: activeCity,
+        bio: activeBio,
+        company_name: isCompany ? companyName.trim() : undefined,
+        contact_person: isCompany ? companyContactPerson.trim() : undefined,
+      }
+
+      setSyncAuthUser(freshUser)
+      setSyncProfile(freshProfile)
+
+      // 5. Concurrently sync with Next.js web backend (non-blocking)
+      const token = session?.access_token || accessToken
+      if (token) {
+        const payload: ProfileSettingsPayload = {
+          isCompany,
+          accountType,
+          avatarUrl: selectedAvatar,
+          city: activeCity,
+          emailVerified: true,
+          individualFirstName: isCompany ? undefined : firstName.trim(),
+          individualLastName: isCompany ? undefined : lastName.trim(),
+          individualPhone: isCompany ? undefined : individualPhone.trim(),
+          individualBio: isCompany ? undefined : individualBio.trim(),
+          companyName: isCompany ? companyName.trim() : undefined,
+          companyContactPerson: isCompany ? companyContactPerson.trim() : undefined,
+          companyPhone: isCompany ? companyPhone.trim() : undefined,
+          companyDescription: isCompany ? companyDescription.trim() : undefined,
+          foundedYear: isCompany ? foundedYear.trim() : undefined,
+          nipt: isCompany ? nipt.trim() : undefined,
+          website: isCompany ? website.trim() : undefined,
+          firstName: activeFirstName,
+          lastName: activeLastName,
+          phone: activePhone,
+          bio: activeBio,
+        }
+
+        apiSaveProfileSettings(payload, token)
+          .then((res) => {
+            if (!res.success) {
+              console.warn('Background web sync notice:', res.error)
+            }
+          })
+          .catch((e) => {
+            console.warn('Background web sync catch:', e)
+          })
+      }
+
+      // 6. Tactile haptic & sound confirmation
+      playSuccessSound()
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       }
 
       showBanner({
         type: 'success',
         title: 'Ndryshimet u Ruajtën!',
         message: isCompany
-          ? `Të dhënat e agjencisë "${companyName}" u përditësuan me sukses!`
+          ? `Të dhënat e agjencisë "${companyName.trim()}" u përditësuan me sukses!`
           : `Të dhënat tuaja të profilit u përditësuan me sukses!`,
       })
 
-      // Navigate back or to tabs
+      // 7. Fluid safe navigation back to profile
       if (isFromSignup) {
         router.replace('/(tabs)/profile')
       } else {
         safeBack(router, '/(tabs)/profile')
       }
     } catch (err: any) {
-      console.error('Save profile completion exception:', err)
+      console.error('Save profile exception in completo-profilin:', err)
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      }
       showBanner({
         type: 'error',
-        title: 'Gabim i Papritur',
-        message: 'Ndodhi një gabim gjatë ruajtjes. Provoni përsëri.',
+        title: 'Ruajtja Dështoi',
+        message: err?.message || 'Ndodhi një gabim gjatë ruajtjes së të dhënave. Provoni përsëri.',
       })
     } finally {
       setSubmitting(false)
@@ -360,7 +485,7 @@ export default function CompletoProfilinScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1016,7 +1141,7 @@ export default function CompletoProfilinScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -1182,20 +1307,20 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
   },
   textInput: {
-    height: 48,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 14,
+    paddingHorizontal: 16,
+    fontSize: 14.5,
     fontFamily: Fonts.medium,
   },
   phoneInputWrap: {
-    height: 48,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     gap: 10,
   },
   phoneTextInput: {

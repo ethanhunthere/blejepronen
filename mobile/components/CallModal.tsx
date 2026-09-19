@@ -22,7 +22,7 @@ import {
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { callEngine } from '@/lib/calling'
 import { PhoneCall } from 'lucide-react-native'
@@ -132,6 +132,7 @@ export function CallModal({
       visible={visible}
       animationType="slide"
       transparent={true}
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -162,7 +163,14 @@ export function CallModal({
           {/* Contact Identity */}
           <View style={styles.identitySection}>
             <View style={[styles.avatarWrap, { borderColor: colors.border }]}>
-              <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" />
+              <Image
+                source={getAvatarSource(counterpartAvatar)}
+                style={styles.avatar}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={0}
+              />
             </View>
 
             <View style={styles.nameRow}>

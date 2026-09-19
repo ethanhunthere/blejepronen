@@ -13,13 +13,11 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
-import { playHeartSound, playUnlikeSound } from '@/lib/sound'
 import {
   ArrowLeft,
-  Heart,
   MapPin,
   Maximize2,
   BedDouble,
@@ -36,10 +34,13 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarSource, getAvatarUri } from '@/lib/avatars'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingDetailSkeleton } from '@/components/ListingSkeleton'
 import { safeBack } from '@/lib/navigation'
+import { getCachedListingById } from '@/lib/listings-cache'
+import { getSyncAuthUser } from '@/lib/auth-cache'
+import { FavoriteButton } from '@/components/FavoriteButton'
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -47,9 +48,11 @@ export default function ListingDetailScreen() {
   const { colors, theme } = useTheme()
   const { width: windowWidth } = useWindowDimensions()
 
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [listing, setListing] = useState<Listing | null>(null)
-  const [loading, setLoading] = useState(true)
+  const insets = useSafeAreaInsets()
+  const cachedListing = id ? getCachedListingById(id) : null
+  const [currentUser, setCurrentUser] = useState<any>(() => getSyncAuthUser())
+  const [listing, setListing] = useState<Listing | null>(() => cachedListing)
+  const [loading, setLoading] = useState(() => !cachedListing)
   const [isFavorite, setIsFavorite] = useState(false)
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [startingChat, setStartingChat] = useState(false)
@@ -63,7 +66,9 @@ export default function ListingDetailScreen() {
     async function fetchDetails() {
       if (!id) return
       try {
-        setLoading(true)
+        if (!cachedListing) {
+          setLoading(true)
+        }
 
         // Concurrently fetch auth user, listing details, and favorites in parallel (single network waterfall)
         const [authRes, listingRes, favs] = await Promise.all([
@@ -122,12 +127,6 @@ export default function ListingDetailScreen() {
 
     favPendingRef.current = true
     const wasFavorite = isFavorite
-    if (wasFavorite) {
-      playUnlikeSound()
-    } else {
-      playHeartSound()
-    }
-    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
     // Optimistic update, revert if the DB write fails (offline/guest)
     setIsFavorite(!wasFavorite)
@@ -224,15 +223,15 @@ export default function ListingDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <ListingDetailSkeleton />
-      </SafeAreaView>
+      </View>
     )
   }
 
   if (!listing) {
     return (
-      <SafeAreaView style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.centerContainer, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={[styles.notFoundTitle, { color: colors.textPrimary }]}>Prona nuk u gjet</Text>
         <Pressable
           style={[styles.backBtn, { backgroundColor: colors.primary }]}
@@ -242,7 +241,7 @@ export default function ListingDetailScreen() {
             Kthehu mbrapa
           </Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     )
   }
 
@@ -254,7 +253,7 @@ export default function ListingDetailScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       {/* Floating Top Nav Bar */}
-      <SafeAreaView style={styles.floatingNavSafeArea} edges={['top']}>
+      <View style={[styles.floatingNavSafeArea, { paddingTop: insets.top }]}>
         <View style={styles.floatingNav}>
           <Pressable style={styles.navIconBtn} onPress={() => safeBack(router, '/(tabs)/listings')} hitSlop={8}>
             <BlurView
@@ -266,22 +265,17 @@ export default function ListingDetailScreen() {
           </Pressable>
 
           <View style={styles.navRight}>
-            <Pressable style={styles.navIconBtn} onPress={handleFavoriteToggle} hitSlop={8}>
-              <BlurView
-                intensity={Platform.OS === 'ios' ? (isFavorite ? 85 : 70) : 100}
-                tint={isFavorite ? 'light' : 'dark'}
-                style={StyleSheet.absoluteFill}
-              />
-              <Heart
-                size={20}
-                color={isFavorite ? '#EF4444' : '#FFFFFF'}
-                fill={isFavorite ? '#EF4444' : 'transparent'}
-                strokeWidth={2.2}
-              />
-            </Pressable>
+            <FavoriteButton
+              isFavorite={isFavorite}
+              onToggle={handleFavoriteToggle}
+              canToggle={() => !!currentUser}
+              size={42}
+              iconSize={20}
+              variant="dark"
+            />
           </View>
         </View>
-      </SafeAreaView>
+      </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Fullwidth Image Slider */}
@@ -303,7 +297,8 @@ export default function ListingDetailScreen() {
               <Image
                 key={i}
                 source={{ uri: img }}
-                style={[styles.galleryImage, { width: windowWidth }]}
+                recyclingKey={`gallery-${i}`}
+                style={[styles.galleryImage, { width: windowWidth, backgroundColor: colors.surfaceSubtle }]}
                 contentFit="cover"
                 priority={i === 0 ? 'high' : 'normal'}
                 cachePolicy="memory-disk"
@@ -497,7 +492,14 @@ export default function ListingDetailScreen() {
           <View style={[styles.sellerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
               {seller?.avatar_url ? (
-                <Image source={{ uri: getAvatarUri(seller.avatar_url) }} style={styles.sellerAvatarImg} contentFit="cover" />
+                <Image
+                  source={getAvatarSource(seller.avatar_url)}
+                  style={[styles.sellerAvatarImg, { backgroundColor: colors.surfaceSubtle }]}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  priority="high"
+                  transition={0}
+                />
               ) : (
                 <Text style={[styles.sellerAvatarInitials, { color: colors.primary }]}>
                   {(seller?.first_name?.[0] || 'P').toUpperCase()}
@@ -551,9 +553,8 @@ export default function ListingDetailScreen() {
             },
           ]}
         />
-        <SafeAreaView
-          style={styles.bottomBarSafeArea}
-          edges={['bottom']}
+        <View
+          style={[styles.bottomBarSafeArea, { paddingBottom: insets.bottom }]}
         >
           {currentUser?.id === listing.user_id ? (
             <View style={styles.ownerNoticeBar}>
@@ -640,7 +641,7 @@ export default function ListingDetailScreen() {
               </Pressable>
             </View>
           )}
-        </SafeAreaView>
+        </View>
       </View>
     </View>
   )

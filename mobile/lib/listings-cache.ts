@@ -100,6 +100,21 @@ export function setCachedListings(data: Listing[]) {
   AsyncStorage.setItem(SHARED_LISTINGS_CACHE_KEY, JSON.stringify(data)).catch(() => {})
 }
 
+export function getCachedListingById(id: string): Listing | null {
+  if (!id) return null
+  return inMemoryListings.find((l) => l.id === id) || null
+}
+
+export function updateCachedListing(updated: Listing) {
+  if (!updated?.id) return
+  const idx = inMemoryListings.findIndex((l) => l.id === updated.id)
+  if (idx >= 0) {
+    inMemoryListings[idx] = { ...inMemoryListings[idx], ...updated }
+    subscribers.forEach((fn) => fn([...inMemoryListings]))
+    AsyncStorage.setItem(SHARED_LISTINGS_CACHE_KEY, JSON.stringify(inMemoryListings)).catch(() => {})
+  }
+}
+
 export function subscribeCachedListings(fn: (listings: Listing[]) => void) {
   subscribers.add(fn)
   return () => {

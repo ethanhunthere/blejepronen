@@ -41,7 +41,7 @@ import {
   TRENDING_SEARCHES,
   executeMobileOmniSearch,
 } from '@/lib/omni-search'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 
 const ASYNC_RECENT_KEY = '@blejepronen_recent_searches'
 const MAX_RECENT = 6
@@ -513,9 +513,12 @@ export default function OmniSearchModal({
                     >
                       {item.imageUrl ? (
                         <Image
-                          source={{ uri: getAvatarUri(item.imageUrl) }}
+                          source={getAvatarSource(item.imageUrl)}
                           style={styles.itemThumbImg}
                           contentFit="cover"
+                          cachePolicy="memory-disk"
+                          priority="high"
+                          transition={0}
                         />
                       ) : isLocation ? (
                         <MapPin size={22} color={colors.primary} />

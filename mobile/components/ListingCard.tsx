@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
-import { MapPin, BedDouble, Maximize2, Layers, Heart, Star, Camera, Building2, ShieldCheck } from 'lucide-react-native'
+import { MapPin, BedDouble, Maximize2, Layers, Star, Camera, Building2, ShieldCheck } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
-
-import { playHeartSound, playUnlikeSound } from '@/lib/sound'
+import { FavoriteButton } from '@/components/FavoriteButton'
 
 interface ListingCardProps {
   listing: Listing
@@ -27,21 +26,9 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
   const router = useRouter()
   const { colors, theme } = useTheme()
 
-  const handleFavoritePress = React.useCallback(
-    (e: any) => {
-      e.stopPropagation?.()
-      if (isFavorite) {
-        playUnlikeSound()
-      } else {
-        playHeartSound()
-      }
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-      }
-      onToggleFavorite?.(listing.id)
-    },
-    [isFavorite, listing.id, onToggleFavorite]
-  )
+  const handleFavoritePress = React.useCallback(() => {
+    onToggleFavorite?.(listing.id)
+  }, [listing.id, onToggleFavorite])
 
   const mainImage =
     listing.images && listing.images.length > 0
@@ -73,7 +60,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
       <View style={[styles.imageContainer, { backgroundColor: colors.surfaceSubtle }]}>
         <Image
           source={{ uri: mainImage }}
-          style={styles.image}
+          style={[styles.image, { backgroundColor: colors.surfaceSubtle }]}
           contentFit="cover"
           transition={150}
           priority="normal"
@@ -118,26 +105,13 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
           <View style={{ flex: 1 }} />
 
           {/* Luxury Circular Frosted Glass Favorite Button */}
-          <Pressable
-            style={[
-              styles.favoriteBtn,
-              isFavorite && styles.favoriteBtnActive,
-            ]}
-            onPress={handleFavoritePress}
-            hitSlop={10}
-          >
-            <BlurView
-              intensity={Platform.OS === 'ios' ? (isFavorite ? 85 : 70) : 100}
-              tint={isFavorite ? 'light' : 'dark'}
-              style={StyleSheet.absoluteFill}
-            />
-            <Heart
-              size={18}
-              color={isFavorite ? '#EF4444' : '#FFFFFF'}
-              fill={isFavorite ? '#EF4444' : 'transparent'}
-              strokeWidth={2.2}
-            />
-          </Pressable>
+          <FavoriteButton
+            isFavorite={isFavorite}
+            onToggle={handleFavoritePress}
+            size={36}
+            iconSize={18}
+            variant="light"
+          />
         </View>
 
         {/* Bottom Image Photo Counter Badge */}
@@ -403,7 +377,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.32)',
     paddingHorizontal: 12,
-    paddingVertical: 5.5,
+    paddingVertical: 6,
     borderRadius: 20,
     overflow: 'hidden',
   },
@@ -437,9 +411,9 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255, 255, 255, 0.92)',
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderColor: 'rgba(15, 23, 42, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -458,7 +432,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.28)',
     paddingHorizontal: 8,
-    paddingVertical: 4.5,
+    paddingVertical: 4,
     borderRadius: 12,
     overflow: 'hidden',
   },

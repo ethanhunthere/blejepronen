@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   Pressable,
   RefreshControl,
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
 import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
@@ -46,6 +46,7 @@ export default function ListingsScreen() {
   }>()
 
   const { colors, theme } = useTheme()
+  const insets = useSafeAreaInsets()
 
   const [filters, setFilters] = useState<PropertyFilterState>(() => ({
     ...DEFAULT_FILTER_STATE,
@@ -189,7 +190,7 @@ export default function ListingsScreen() {
   const activeFiltersCount = countActiveFilters(filters)
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Eksploro Pronat</Text>
@@ -198,7 +199,20 @@ export default function ListingsScreen() {
         </Text>
       </View>
 
-      <ScrollView
+      <FlatList
+        data={displayedListings}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ListingCard
+            listing={item}
+            isFavorite={!!favorites[item.id]}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        )}
+        initialNumToRender={6}
+        windowSize={5}
+        maxToRenderPerBatch={5}
+        removeClippedSubviews
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -211,7 +225,7 @@ export default function ListingsScreen() {
             progressBackgroundColor={colors.surface}
           />
         }
-      >
+        ListHeaderComponent={<>
         {/* 
           Search & Filter Row:
           Identical design, bounded flex constraints, zero keyboard overflow
@@ -389,17 +403,9 @@ export default function ListingsScreen() {
               </Text>
             </Pressable>
           </View>
-        ) : (
-          displayedListings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              isFavorite={!!favorites[listing.id]}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))
-        )}
-      </ScrollView>
+        ) : null}
+        </>}
+      />
 
       {/* Multi-Entity Omni-Search Modal */}
       <OmniSearchModal
@@ -426,7 +432,7 @@ export default function ListingsScreen() {
         filters={filters}
         onApply={(updated) => setFilters(updated)}
       />
-    </SafeAreaView>
+    </View>
   )
 }
 

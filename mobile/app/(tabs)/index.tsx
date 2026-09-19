@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   Pressable,
   RefreshControl,
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
@@ -37,9 +37,18 @@ import {
   subscribeCachedListings,
 } from '@/lib/listings-cache'
 
+const TopBarHeader = React.memo(function TopBarHeader() {
+  return (
+    <View style={styles.header}>
+      <Logo size={36} />
+    </View>
+  )
+})
+
 export default function HomeScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const insets = useSafeAreaInsets()
 
   const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTER_STATE)
   const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
@@ -169,13 +178,24 @@ export default function HomeScreen() {
   const activeFiltersCount = countActiveFilters(filters)
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Top Bar Header with Official Logo */}
-      <View style={styles.header}>
-        <Logo size={34} />
-      </View>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      {/* Top Bar Header with Official Logo - Isolated and Memoized */}
+      <TopBarHeader />
 
-      <ScrollView
+      <FlatList
+        data={filteredListings}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ListingCard
+            listing={item}
+            isFavorite={!!favorites[item.id]}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        )}
+        initialNumToRender={6}
+        windowSize={5}
+        maxToRenderPerBatch={5}
+        removeClippedSubviews
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -188,7 +208,7 @@ export default function HomeScreen() {
             progressBackgroundColor={colors.surface}
           />
         }
-      >
+        ListHeaderComponent={<>
         {/* 
           Search & Filter Bar Row:
           Bounded flex constraints, fluid on any screen size with zero overflow
@@ -375,17 +395,9 @@ export default function HomeScreen() {
               </Text>
             </Pressable>
           </View>
-        ) : (
-          filteredListings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              isFavorite={!!favorites[listing.id]}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))
-        )}
-      </ScrollView>
+        ) : null}
+        </>}
+      />
 
       {/* Multi-Entity Omni-Search Modal */}
       <OmniSearchModal
@@ -412,7 +424,7 @@ export default function HomeScreen() {
         filters={filters}
         onApply={(updated) => setFilters(updated)}
       />
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -435,6 +447,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
     paddingBottom: 10,
+    minHeight: 52,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

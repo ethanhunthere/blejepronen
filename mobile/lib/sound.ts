@@ -27,27 +27,31 @@ function playWebAudio(key: keyof typeof SFX_DATA): void {
  * Joyful double chime and heartbeat tactile haptic for saving/hearting a property.
  * Mimics authentic Apple iOS / Airbnb bookmark feedback.
  */
-export function playHeartSound(): void {
+export function playHeartSound(withHaptics = false): void {
   playWebAudio('like')
-  try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    setTimeout(() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    }, 90)
-  } catch {
-    // Non-blocking
+  if (withHaptics) {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      }, 90)
+    } catch {
+      // Non-blocking
+    }
   }
 }
 
 /**
  * Subtle muted tick when removing from saved/favorites.
  */
-export function playUnlikeSound(): void {
+export function playUnlikeSound(withHaptics = false): void {
   playWebAudio('unlike')
-  try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-  } catch {
-    // Non-blocking
+  if (withHaptics) {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    } catch {
+      // Non-blocking
+    }
   }
 }
 

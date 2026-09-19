@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -13,9 +13,12 @@ import {
   TextInput,
   Share,
   KeyboardAvoidingView,
+  useWindowDimensions,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
+import { getSyncAuthUser, isAuthCacheHydrated } from '@/lib/auth-cache'
+import { getCachedListings } from '@/lib/listings-cache'
 import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
 import {
@@ -33,6 +36,7 @@ import {
   Maximize2,
   LogIn,
   SlidersHorizontal,
+  Search,
   X,
   Check,
   AlertTriangle,
@@ -54,23 +58,64 @@ import {
 } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
 
-type FilterStatus = 'all' | 'active' | 'inactive' | 'saved'
+type MainTab = 'all' | 'saved'
+type SubFilter = 'all' | 'active' | 'sold' | 'inactive'
 
 export default function ShpalljetEMiaScreen() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
 
-    // Deep-link support: /shpalljet-e-mia?filter=saved
-  const searchParams = useLocalSearchParams<{ filter?: string }>()
-  const initialFilter: FilterStatus =
-    searchParams.filter === 'saved' ? 'saved' : 'all'
+  // Responsive spatial metrics benchmarking Apple / Linear / Stripe
+  const isCompact = width < 375
+  const isTablet = width >= 768
+  const maxContentWidth = isTablet ? 720 : 680
+  const responsivePadding = isCompact ? 12 : isTablet ? 24 : 16
+  const bottomInset = Math.max(insets.bottom + 28, 48)
 
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  // Fluid 16:9 cover image with responsive min/max clamps
+  const cardWidth = Math.min(width, maxContentWidth) - responsivePadding * 2
+  const coverHeight = Math.round(Math.min(Math.max(cardWidth * 0.54, 180), 280))
+
+  // Deep-link support: /shpalljet-e-mia?filter=saved
+  const searchParams = useLocalSearchParams<{ filter?: string }>()
+  const initialMainTab: MainTab = searchParams.filter === 'saved' ? 'saved' : 'all'
+  const initialSubFilter: SubFilter =
+    searchParams.filter === 'active'
+      ? 'active'
+      : searchParams.filter === 'sold' || searchParams.filter === 'shitur'
+      ? 'sold'
+      : searchParams.filter === 'inactive'
+      ? 'inactive'
+      : 'all'
+
+  const syncUser = getSyncAuthUser()
+  const initialUserListings = syncUser
+    ? getCachedListings().filter((l) => l.user_id === syncUser.id)
+    : []
+
+  const [currentUser, setCurrentUser] = useState<any>(syncUser)
+  const [loading, setLoading] = useState(!syncUser ? false : initialUserListings.length === 0)
   const [refreshing, setRefreshing] = useState(false)
-  const [listings, setListings] = useState<Listing[]>([])
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>(initialFilter)
+  const [listings, setListings] = useState<Listing[]>(initialUserListings)
+  const [mainTab, setMainTab] = useState<MainTab>(initialMainTab)
+  const [subFilter, setSubFilter] = useState<SubFilter>(initialSubFilter)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Robust status classification helpers (handles true, false, and legacy null/undefined in DB)
+  const isListingSold = useCallback((l: Listing) => {
+    return l.condition === 'shitur' || (l as any).status === 'shitur'
+  }, [])
+
+  const isListingActive = useCallback((l: Listing) => {
+    return l.is_active !== false && l.condition !== 'shitur' && (l as any).status !== 'shitur'
+  }, [])
+
+  const isListingInactive = useCallback((l: Listing) => {
+    return l.is_active === false && l.condition !== 'shitur' && (l as any).status !== 'shitur'
+  }, [])
 
   // Të Ruajturat (Saved listings) — DB-backed via Supabase `favorites`
   const [savedListings, setSavedListings] = useState<Listing[]>([])
@@ -149,13 +194,26 @@ export default function ShpalljetEMiaScreen() {
     }
   }, [currentUser, fetchUserListings, fetchSavedListings])
 
-  const handleFilterChange = (status: FilterStatus) => {
-    if (filterStatus === status) return
+  const handleMainTabChange = (tab: MainTab) => {
+    if (mainTab === tab) {
+      if (tab === 'all' && subFilter !== 'all') {
+        playTapSound()
+        if (Platform.OS !== 'web') Haptics.selectionAsync()
+        setSubFilter('all')
+      }
+      return
+    }
     playTapSound()
     if (Platform.OS !== 'web') Haptics.selectionAsync()
-    setFilterStatus(status)
-    // Always refresh saved listings when entering the tab — stay fresh
-    if (status === 'saved') fetchSavedListings()
+    setMainTab(tab)
+    if (tab === 'saved') fetchSavedListings()
+  }
+
+  const handleSubFilterChange = (status: SubFilter) => {
+    if (subFilter === status) return
+    playTapSound()
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+    setSubFilter(status)
   }
 
   /**
@@ -168,13 +226,38 @@ export default function ShpalljetEMiaScreen() {
     useCallback(() => {
       const intent = consumeShpalljetFilter()
       const fromParam: ShpalljetFilterIntent | null =
-        searchParams.filter === 'saved' ? 'saved' : null
+        searchParams.filter === 'saved'
+          ? 'saved'
+          : searchParams.filter === 'active'
+          ? 'active'
+          : searchParams.filter === 'sold' || searchParams.filter === 'shitur'
+          ? 'sold'
+          : searchParams.filter === 'inactive'
+          ? 'inactive'
+          : searchParams.filter === 'all'
+          ? 'all'
+          : null
       const target = intent ?? fromParam
-      if (!target) return
 
-      setFilterStatus(target)
-      if (target === 'saved') fetchSavedListings()
-    }, [searchParams.filter, fetchSavedListings])
+      if (target === 'saved') {
+        setMainTab('saved')
+        fetchSavedListings()
+      } else if (target) {
+        setMainTab('all')
+        if (target === 'active' || target === 'sold' || target === 'inactive') {
+          setSubFilter(target)
+        } else {
+          setSubFilter('all')
+        }
+      }
+
+      // Re-sync user's listings and saved items when screen gains focus
+      const user = getSyncAuthUser()
+      if (user) {
+        fetchUserListings(user.id)
+        fetchSavedListings()
+      }
+    }, [searchParams.filter, fetchUserListings, fetchSavedListings])
   )
 
   // ─── Remove a listing from Të Ruajturat (heart off) ───
@@ -203,15 +286,17 @@ export default function ShpalljetEMiaScreen() {
     }
   }
 
-  // Toggle Active/Inactive Status
+  // Toggle Active/Sold Status
   const handleToggleStatus = async (item: Listing) => {
-    const nextStatus = !item.is_active
+    const active = isListingActive(item)
+    const nextActive = !active
+    const nextCondition = nextActive ? 'e-re' : 'shitur'
     setActionBusyId(item.id)
 
     try {
       const { error } = await supabase
         .from('listings')
-        .update({ is_active: nextStatus })
+        .update({ is_active: nextActive, condition: nextCondition })
         .eq('id', item.id)
 
       if (error) {
@@ -220,7 +305,9 @@ export default function ShpalljetEMiaScreen() {
       }
 
       setListings((prev) =>
-        prev.map((l) => (l.id === item.id ? { ...l, is_active: nextStatus } : l))
+        prev.map((l) =>
+          l.id === item.id ? { ...l, is_active: nextActive, condition: nextCondition } : l
+        )
       )
 
       playSuccessSound()
@@ -230,10 +317,10 @@ export default function ShpalljetEMiaScreen() {
 
       showBanner({
         type: 'success',
-        title: nextStatus ? 'Shpallja u Aktivizua' : 'Shpallja u Çaktivizua',
-        message: nextStatus
+        title: nextActive ? 'Shpallja u Aktivizua' : 'Shpallja u Shënua si e Shitur',
+        message: nextActive
           ? `Prona "${item.title}" tani është aktive dhe shfaqet për blerësit.`
-          : `Prona "${item.title}" u shënua si e shitur / joaktive.`,
+          : `Prona "${item.title}" u shënua me sukses si e shitur.`,
       })
     } catch (err: any) {
       Alert.alert('Gabim', err?.message || 'Ndodhi një problem gjatë përditësimit.')
@@ -362,61 +449,103 @@ export default function ShpalljetEMiaScreen() {
     return new Intl.NumberFormat('de-DE').format(val) + ' €'
   }
 
-  // Filtered Listings
-  const filteredListings =
-    filterStatus === 'saved'
-      ? savedListings
-      : listings.filter((l) => {
-          if (filterStatus === 'active') return Boolean(l.is_active)
-          if (filterStatus === 'inactive') return !Boolean(l.is_active)
-          return true
-        })
+  // Filtered Listings with reactive memoization
+  const filteredListings = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
 
-  const activeCount = listings.filter((l) => Boolean(l.is_active)).length
-  const inactiveCount = listings.filter((l) => !Boolean(l.is_active)).length
+    if (mainTab === 'saved') {
+      if (!q) return savedListings
+      return savedListings.filter(
+        (l) =>
+          l.title?.toLowerCase().includes(q) ||
+          l.city?.toLowerCase().includes(q) ||
+          (l.neighborhood && l.neighborhood.toLowerCase().includes(q)) ||
+          l.type?.toLowerCase().includes(q)
+      )
+    }
+
+    return listings.filter((l) => {
+      // 1. Status Filter
+      if (subFilter === 'active' && !isListingActive(l)) return false
+      if (subFilter === 'sold' && !isListingSold(l)) return false
+      if (subFilter === 'inactive' && !isListingInactive(l)) return false
+
+      // 2. Keyword Search Query
+      if (q) {
+        const matches =
+          l.title?.toLowerCase().includes(q) ||
+          l.city?.toLowerCase().includes(q) ||
+          (l.neighborhood && l.neighborhood.toLowerCase().includes(q)) ||
+          l.type?.toLowerCase().includes(q)
+        if (!matches) return false
+      }
+
+      return true
+    })
+  }, [mainTab, savedListings, listings, subFilter, searchQuery, isListingActive, isListingSold, isListingInactive])
+
+  const allCount = listings.length
+  const activeCount = useMemo(() => listings.filter(isListingActive).length, [listings, isListingActive])
+  const soldCount = useMemo(() => listings.filter(isListingSold).length, [listings, isListingSold])
+  const inactiveCount = useMemo(() => listings.filter(isListingInactive).length, [listings, isListingInactive])
   const savedCount = savedListings.length
 
   const specularBorder = colors.border
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Navigation Header */}
-      <View style={[styles.navHeader, { borderBottomColor: specularBorder }]}>
-        <Pressable
-          style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: specularBorder }]}
-          onPress={() => safeBack(router, '/(tabs)/profile')}
-          hitSlop={8}
-        >
-          <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />
-        </Pressable>
+      <View style={[styles.navHeaderOuter, { borderBottomColor: specularBorder, backgroundColor: colors.background }]}>
+        <View style={[styles.navHeaderInner, { maxWidth: maxContentWidth, paddingHorizontal: responsivePadding }]}>
+          <Pressable
+            style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: specularBorder }]}
+            onPress={() => safeBack(router, '/(tabs)/profile')}
+            hitSlop={8}
+          >
+            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.4} />
+          </Pressable>
 
-        <View style={styles.navTitleWrap}>
-          <Text style={[styles.navTitle, { color: colors.textPrimary }]}>Shpalljet e Mia</Text>
-          <Text style={[styles.navSubtitle, { color: colors.textMuted }]}>
-            {listings.length} {listings.length === 1 ? 'pronë e postuar' : 'prona të postuara'}
-          </Text>
+          <View style={styles.navTitleWrap}>
+            <Text style={[styles.navTitle, isCompact && { fontSize: 16 }, { color: colors.textPrimary }]}>
+              Shpalljet e Mia
+            </Text>
+            <Text style={[styles.navSubtitle, isCompact && { fontSize: 11 }, { color: colors.textMuted }]}>
+              {mainTab === 'saved'
+                ? `${savedCount} ${savedCount === 1 ? 'pronë e ruajtur' : 'prona të ruajtura'}`
+                : `${activeCount} aktive • ${soldCount} të shitura • ${inactiveCount} jo aktive`}
+            </Text>
+          </View>
+
+          <Pressable
+            style={[
+              styles.addPostBtn,
+              { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/post' as any)
+            }}
+            hitSlop={8}
+          >
+            <Plus size={18} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.6} />
+          </Pressable>
         </View>
-
-        <Pressable
-          style={[
-            styles.addPostBtn,
-            { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-          ]}
-          onPress={() => {
-            playTapSound()
-            if (Platform.OS !== 'web') Haptics.selectionAsync()
-            router.push('/post' as any)
-          }}
-          hitSlop={8}
-        >
-          <Plus size={18} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.6} />
-        </Pressable>
       </View>
 
       {/* Guest Mode Protection */}
       {!currentUser && !loading ? (
         <View style={styles.guestContainer}>
-          <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <View
+            style={[
+              styles.guestCard,
+              {
+                maxWidth: Math.min(width - 32, 440),
+                backgroundColor: colors.surface,
+                borderColor: specularBorder,
+              },
+            ]}
+          >
             <View style={[styles.guestIconCircle, { backgroundColor: colors.primaryLight }]}>
               <Building2 size={36} color={colors.primary} strokeWidth={2.2} />
             </View>
@@ -437,279 +566,638 @@ export default function ShpalljetEMiaScreen() {
         </View>
       ) : (
         <>
-          {/* Apple Segmented Filter Bar */}
-          <View style={[styles.filterBar, { borderBottomColor: specularBorder }]}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterPillsContainer}
-            >
-              {/* All */}
-              <Pressable
+          {/* Apple-grade Hierarchical Filter Section */}
+          <View style={[styles.filterBarOuter, { borderBottomColor: specularBorder, backgroundColor: colors.background }]}>
+            <View style={[styles.filterBarInner, { maxWidth: maxContentWidth, paddingHorizontal: responsivePadding }]}>
+              {/* Top Level Segments: Left = "Të Gjitha", Right = "Të Ruajturat" */}
+              <View
                 style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor:
-                      filterStatus === 'all'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : colors.surface,
-                    borderColor:
-                      filterStatus === 'all'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : specularBorder,
-                  },
+                  styles.topSegmentTrack,
+                  isCompact && { padding: 3, gap: 4 },
+                  { backgroundColor: colors.surface, borderColor: specularBorder },
                 ]}
-                onPress={() => handleFilterChange('all')}
               >
-                <Text
+                {/* Left: Të Gjitha */}
+                <Pressable
                   style={[
-                    styles.filterPillText,
-                    {
-                      color:
-                        filterStatus === 'all'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : colors.textPrimary,
-                    },
+                    styles.topSegmentTab,
+                    isCompact && { paddingVertical: 8, paddingHorizontal: 6, gap: 5 },
+                    mainTab === 'all' && [
+                      styles.topSegmentTabActive,
+                      {
+                        backgroundColor:
+                          theme === 'green' ? colors.gold : colors.primary,
+                      },
+                    ],
                   ]}
+                  onPress={() => handleMainTabChange('all')}
                 >
-                  Të Gjitha
-                </Text>
-                <View
-                  style={[
-                    styles.counterBadge,
-                    {
-                      backgroundColor:
-                        filterStatus === 'all'
-                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
-                          : colors.surfaceSubtle,
-                    },
-                  ]}
-                >
+                  <Building2
+                    size={isCompact ? 14 : 15}
+                    color={
+                      mainTab === 'all'
+                        ? theme === 'green'
+                          ? '#071C18'
+                          : '#FFFFFF'
+                        : colors.textSecondary
+                    }
+                    strokeWidth={2.4}
+                  />
                   <Text
                     style={[
-                      styles.counterBadgeText,
+                      styles.topSegmentTabText,
+                      isCompact && { fontSize: 12.5 },
                       {
                         color:
-                          filterStatus === 'all'
-                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                            : colors.textSecondary,
+                          mainTab === 'all'
+                            ? theme === 'green'
+                              ? '#071C18'
+                              : '#FFFFFF'
+                            : colors.textPrimary,
                       },
                     ]}
                   >
-                    {listings.length}
+                    Të Gjitha
                   </Text>
-                </View>
-              </Pressable>
+                  <View
+                    style={[
+                      styles.segmentCounterBadge,
+                      isCompact && { paddingHorizontal: 5, paddingVertical: 1 },
+                      {
+                        backgroundColor:
+                          mainTab === 'all'
+                            ? theme === 'green'
+                              ? 'rgba(7,28,24,0.25)'
+                              : 'rgba(255,255,255,0.25)'
+                            : colors.surfaceSubtle,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentCounterBadgeText,
+                        isCompact && { fontSize: 11 },
+                        {
+                          color:
+                            mainTab === 'all'
+                              ? theme === 'green'
+                                ? '#071C18'
+                                : '#FFFFFF'
+                              : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {listings.length}
+                    </Text>
+                  </View>
+                </Pressable>
 
-              {/* Active */}
-              <Pressable
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor:
-                      filterStatus === 'active'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : colors.surface,
-                    borderColor:
-                      filterStatus === 'active'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : specularBorder,
-                  },
-                ]}
-                onPress={() => handleFilterChange('active')}
-              >
-                <View
+                {/* Right: Të Ruajturat */}
+                <Pressable
                   style={[
-                    styles.statusDot,
-                    {
-                      backgroundColor:
-                        filterStatus === 'active'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : '#10B981',
-                    },
+                    styles.topSegmentTab,
+                    isCompact && { paddingVertical: 8, paddingHorizontal: 6, gap: 5 },
+                    mainTab === 'saved' && [
+                      styles.topSegmentTabActive,
+                      {
+                        backgroundColor:
+                          theme === 'green' ? colors.gold : colors.primary,
+                      },
+                    ],
                   ]}
-                />
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    {
-                      color:
-                        filterStatus === 'active'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : colors.textPrimary,
-                    },
-                  ]}
+                  onPress={() => handleMainTabChange('saved')}
                 >
-                  Aktive
-                </Text>
-                <View
-                  style={[
-                    styles.counterBadge,
-                    {
-                      backgroundColor:
-                        filterStatus === 'active'
-                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
-                          : colors.surfaceSubtle,
-                    },
-                  ]}
-                >
+                  <Bookmark
+                    size={isCompact ? 14 : 15}
+                    color={
+                      mainTab === 'saved'
+                        ? theme === 'green'
+                          ? '#071C18'
+                          : '#FFFFFF'
+                        : colors.textSecondary
+                    }
+                    fill={
+                      mainTab === 'saved'
+                        ? theme === 'green'
+                          ? '#071C18'
+                          : '#FFFFFF'
+                        : 'none'
+                    }
+                    strokeWidth={2.4}
+                  />
                   <Text
                     style={[
-                      styles.counterBadgeText,
+                      styles.topSegmentTabText,
+                      isCompact && { fontSize: 12.5 },
                       {
                         color:
-                          filterStatus === 'active'
-                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                            : colors.textSecondary,
+                          mainTab === 'saved'
+                            ? theme === 'green'
+                              ? '#071C18'
+                              : '#FFFFFF'
+                            : colors.textPrimary,
                       },
                     ]}
                   >
-                    {activeCount}
+                    Të Ruajturat
                   </Text>
-                </View>
-              </Pressable>
+                  <View
+                    style={[
+                      styles.segmentCounterBadge,
+                      isCompact && { paddingHorizontal: 5, paddingVertical: 1 },
+                      {
+                        backgroundColor:
+                          mainTab === 'saved'
+                            ? theme === 'green'
+                              ? 'rgba(7,28,24,0.25)'
+                              : 'rgba(255,255,255,0.25)'
+                            : colors.surfaceSubtle,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentCounterBadgeText,
+                        isCompact && { fontSize: 11 },
+                        {
+                          color:
+                            mainTab === 'saved'
+                              ? theme === 'green'
+                                ? '#071C18'
+                                : '#FFFFFF'
+                              : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {savedCount}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
 
-              {/* Inactive */}
-              <Pressable
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor:
-                      filterStatus === 'inactive'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : colors.surface,
-                    borderColor:
-                      filterStatus === 'inactive'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : specularBorder,
-                  },
-                ]}
-                onPress={() => handleFilterChange('inactive')}
-              >
-                <View
-                  style={[
-                    styles.statusDot,
-                    {
-                      backgroundColor:
-                        filterStatus === 'inactive'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : colors.textMuted,
-                    },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    {
-                      color:
-                        filterStatus === 'inactive'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : colors.textPrimary,
-                    },
-                  ]}
-                >
-                  Shitur / Joaktive
-                </Text>
-                <View
-                  style={[
-                    styles.counterBadge,
-                    {
-                      backgroundColor:
-                        filterStatus === 'inactive'
-                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
-                          : colors.surfaceSubtle,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.counterBadgeText,
-                      {
-                        color:
-                          filterStatus === 'inactive'
-                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                            : colors.textSecondary,
-                      },
-                    ]}
+              {/* Child Sub-Filters Section: Below "Të Gjitha" */}
+              {mainTab === 'all' ? (
+                <View style={styles.childFiltersSection}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[styles.childPillsScrollContainer, isCompact && { gap: 6 }]}
                   >
-                    {inactiveCount}
-                  </Text>
-                </View>
-              </Pressable>
+                    {/* Pill 1: Të gjitha */}
+                    <Pressable
+                      style={[
+                        styles.childFilterPill,
+                        isCompact && { paddingVertical: 7, paddingHorizontal: 9, gap: 5 },
+                        subFilter === 'all'
+                          ? [
+                              styles.childFilterPillActive,
+                              {
+                                backgroundColor:
+                                  theme === 'green'
+                                    ? 'rgba(212,168,83,0.18)'
+                                    : theme === 'black'
+                                    ? 'rgba(255,255,255,0.14)'
+                                    : 'rgba(0, 100, 89, 0.10)',
+                                borderColor:
+                                  theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary,
+                              },
+                            ]
+                          : [
+                              styles.childFilterPillInactive,
+                              {
+                                backgroundColor: colors.surface,
+                                borderColor: specularBorder,
+                              },
+                            ],
+                      ]}
+                      onPress={() => handleSubFilterChange('all')}
+                    >
+                      <SlidersHorizontal
+                        size={isCompact ? 11 : 12}
+                        color={
+                          subFilter === 'all'
+                            ? theme === 'green'
+                              ? colors.gold
+                              : colors.primary
+                            : colors.textSecondary
+                        }
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        style={[
+                          styles.childFilterPillText,
+                          isCompact && { fontSize: 11 },
+                          {
+                            color:
+                              subFilter === 'all'
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.textPrimary,
+                          },
+                        ]}
+                      >
+                        Të gjitha
+                      </Text>
+                      <View
+                        style={[
+                          styles.childCounterBadge,
+                          isCompact && { paddingHorizontal: 4.5, paddingVertical: 1 },
+                          {
+                            backgroundColor:
+                              subFilter === 'all'
+                                ? theme === 'green'
+                                  ? 'rgba(212,168,83,0.25)'
+                                  : theme === 'black'
+                                  ? 'rgba(255,255,255,0.22)'
+                                  : 'rgba(0, 100, 89, 0.16)'
+                                : colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.childCounterBadgeText,
+                            isCompact && { fontSize: 10 },
+                            {
+                              color:
+                                subFilter === 'all'
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {allCount}
+                        </Text>
+                      </View>
+                    </Pressable>
 
-              {/* Saved — Të Ruajturat */}
-              <Pressable
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor:
-                      filterStatus === 'saved'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : colors.surface,
-                    borderColor:
-                      filterStatus === 'saved'
-                        ? theme === 'green' ? colors.gold : colors.primary
-                        : specularBorder,
-                  },
-                ]}
-                onPress={() => handleFilterChange('saved')}
-              >
-                <Bookmark
-                  size={13}
-                  color={
-                    filterStatus === 'saved'
-                      ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                      : colors.textMuted
-                  }
-                  fill={filterStatus === 'saved' ? (theme === 'green' ? '#071C18' : '#FFFFFF') : 'none'}
-                  strokeWidth={2.4}
-                />
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    {
-                      color:
-                        filterStatus === 'saved'
-                          ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                          : colors.textPrimary,
-                    },
-                  ]}
-                >
-                  Të Ruajturat
-                </Text>
-                <View
-                  style={[
-                    styles.counterBadge,
-                    {
-                      backgroundColor:
-                        filterStatus === 'saved'
-                          ? theme === 'green' ? 'rgba(7,28,24,0.25)' : 'rgba(255,255,255,0.25)'
-                          : colors.surfaceSubtle,
-                    },
-                  ]}
-                >
-                  <Text
+                    {/* Pill 2: Aktive */}
+                    <Pressable
+                      style={[
+                        styles.childFilterPill,
+                        isCompact && { paddingVertical: 7, paddingHorizontal: 9, gap: 5 },
+                        subFilter === 'active'
+                          ? [
+                              styles.childFilterPillActive,
+                              {
+                                backgroundColor:
+                                  theme === 'green'
+                                    ? 'rgba(212,168,83,0.18)'
+                                    : theme === 'black'
+                                    ? 'rgba(255,255,255,0.14)'
+                                    : 'rgba(0, 100, 89, 0.10)',
+                                borderColor:
+                                  theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary,
+                              },
+                            ]
+                          : [
+                              styles.childFilterPillInactive,
+                              {
+                                backgroundColor: colors.surface,
+                                borderColor: specularBorder,
+                              },
+                            ],
+                      ]}
+                      onPress={() => handleSubFilterChange('active')}
+                    >
+                      <Text
+                        style={[
+                          styles.childFilterPillText,
+                          isCompact && { fontSize: 11 },
+                          {
+                            color:
+                              subFilter === 'active'
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.textPrimary,
+                          },
+                        ]}
+                      >
+                        Aktive
+                      </Text>
+                      <View
+                        style={[
+                          styles.childCounterBadge,
+                          isCompact && { paddingHorizontal: 4.5, paddingVertical: 1 },
+                          {
+                            backgroundColor:
+                              subFilter === 'active'
+                                ? theme === 'green'
+                                  ? 'rgba(212,168,83,0.25)'
+                                  : theme === 'black'
+                                  ? 'rgba(255,255,255,0.22)'
+                                  : 'rgba(0, 100, 89, 0.16)'
+                                : colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.childCounterBadgeText,
+                            isCompact && { fontSize: 10 },
+                            {
+                              color:
+                                subFilter === 'active'
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {activeCount}
+                        </Text>
+                      </View>
+                    </Pressable>
+
+                    {/* Pill 3: Të shitura */}
+                    <Pressable
+                      style={[
+                        styles.childFilterPill,
+                        isCompact && { paddingVertical: 7, paddingHorizontal: 9, gap: 5 },
+                        subFilter === 'sold'
+                          ? [
+                              styles.childFilterPillActive,
+                              {
+                                backgroundColor:
+                                  theme === 'green'
+                                    ? 'rgba(212,168,83,0.18)'
+                                    : theme === 'black'
+                                    ? 'rgba(255,255,255,0.14)'
+                                    : 'rgba(0, 100, 89, 0.10)',
+                                borderColor:
+                                  theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary,
+                              },
+                            ]
+                          : [
+                              styles.childFilterPillInactive,
+                              {
+                                backgroundColor: colors.surface,
+                                borderColor: specularBorder,
+                              },
+                            ],
+                      ]}
+                      onPress={() => handleSubFilterChange('sold')}
+                    >
+                      <Text
+                        style={[
+                          styles.childFilterPillText,
+                          isCompact && { fontSize: 11 },
+                          {
+                            color:
+                              subFilter === 'sold'
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.textPrimary,
+                          },
+                        ]}
+                      >
+                        Të shitura
+                      </Text>
+                      <View
+                        style={[
+                          styles.childCounterBadge,
+                          isCompact && { paddingHorizontal: 4.5, paddingVertical: 1 },
+                          {
+                            backgroundColor:
+                              subFilter === 'sold'
+                                ? theme === 'green'
+                                  ? 'rgba(212,168,83,0.25)'
+                                  : theme === 'black'
+                                  ? 'rgba(255,255,255,0.22)'
+                                  : 'rgba(0, 100, 89, 0.16)'
+                                : colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.childCounterBadgeText,
+                            isCompact && { fontSize: 10 },
+                            {
+                              color:
+                                subFilter === 'sold'
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {soldCount}
+                        </Text>
+                      </View>
+                    </Pressable>
+
+                    {/* Pill 4: Jo aktive */}
+                    <Pressable
+                      style={[
+                        styles.childFilterPill,
+                        isCompact && { paddingVertical: 7, paddingHorizontal: 9, gap: 5 },
+                        subFilter === 'inactive'
+                          ? [
+                              styles.childFilterPillActive,
+                              {
+                                backgroundColor:
+                                  theme === 'green'
+                                    ? 'rgba(212,168,83,0.18)'
+                                    : theme === 'black'
+                                    ? 'rgba(255,255,255,0.14)'
+                                    : 'rgba(0, 100, 89, 0.10)',
+                                borderColor:
+                                  theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary,
+                              },
+                            ]
+                          : [
+                              styles.childFilterPillInactive,
+                              {
+                                backgroundColor: colors.surface,
+                                borderColor: specularBorder,
+                              },
+                            ],
+                      ]}
+                      onPress={() => handleSubFilterChange('inactive')}
+                    >
+                      <Text
+                        style={[
+                          styles.childFilterPillText,
+                          isCompact && { fontSize: 11 },
+                          {
+                            color:
+                              subFilter === 'inactive'
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.textPrimary,
+                          },
+                        ]}
+                      >
+                        Jo aktive
+                      </Text>
+                      <View
+                        style={[
+                          styles.childCounterBadge,
+                          isCompact && { paddingHorizontal: 4.5, paddingVertical: 1 },
+                          {
+                            backgroundColor:
+                              subFilter === 'inactive'
+                                ? theme === 'green'
+                                  ? 'rgba(212,168,83,0.25)'
+                                  : theme === 'black'
+                                  ? 'rgba(255,255,255,0.22)'
+                                  : 'rgba(0, 100, 89, 0.16)'
+                                : colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.childCounterBadgeText,
+                            isCompact && { fontSize: 10 },
+                            {
+                              color:
+                                subFilter === 'inactive'
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.textSecondary,
+                            },
+                          ]}
+                        >
+                          {inactiveCount}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </ScrollView>
+
+                  {/* Instant In-Screen Search Bar */}
+                  {listings.length > 0 && (
+                    <View
+                      style={[
+                        styles.searchBarContainer,
+                        {
+                          backgroundColor: colors.surfaceSubtle,
+                          borderColor: specularBorder,
+                        },
+                      ]}
+                    >
+                      <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
+                      <TextInput
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Kërko me titull, qytet ose lagje..."
+                        placeholderTextColor={colors.textMuted}
+                        style={[styles.searchInput, { color: colors.textPrimary }]}
+                        returnKeyType="search"
+                        clearButtonMode="never"
+                        autoCorrect={false}
+                      />
+                      {searchQuery.length > 0 && (
+                        <Pressable
+                          onPress={() => {
+                            playTapSound()
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setSearchQuery('')
+                          }}
+                          style={styles.searchClearBtn}
+                          hitSlop={8}
+                        >
+                          <X size={13} color={colors.textMuted} strokeWidth={2.4} />
+                        </Pressable>
+                      )}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.childFiltersSection}>
+                  <View
                     style={[
-                      styles.counterBadgeText,
+                      styles.savedNoticeBadge,
                       {
-                        color:
-                          filterStatus === 'saved'
-                            ? theme === 'green' ? '#071C18' : '#FFFFFF'
-                            : colors.textSecondary,
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: specularBorder,
                       },
                     ]}
                   >
-                    {savedCount}
-                  </Text>
+                    <Bookmark
+                      size={12}
+                      color={theme === 'green' ? colors.gold : colors.primary}
+                      fill={theme === 'green' ? colors.gold : colors.primary}
+                    />
+                    <Text style={[styles.savedNoticeText, { color: colors.textSecondary }]}>
+                      {savedCount === 1
+                        ? '1 pronë e ruajtur në llogari'
+                        : `${savedCount} prona të ruajtura në llogari`}
+                    </Text>
+                  </View>
+
+                  {/* Instant In-Screen Search Bar for Saved */}
+                  {savedListings.length > 0 && (
+                    <View
+                      style={[
+                        styles.searchBarContainer,
+                        {
+                          backgroundColor: colors.surfaceSubtle,
+                          borderColor: specularBorder,
+                          marginTop: 4,
+                        },
+                      ]}
+                    >
+                      <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
+                      <TextInput
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Kërko në pronat e ruajtura..."
+                        placeholderTextColor={colors.textMuted}
+                        style={[styles.searchInput, { color: colors.textPrimary }]}
+                        returnKeyType="search"
+                        clearButtonMode="never"
+                        autoCorrect={false}
+                      />
+                      {searchQuery.length > 0 && (
+                        <Pressable
+                          onPress={() => {
+                            playTapSound()
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setSearchQuery('')
+                          }}
+                          style={styles.searchClearBtn}
+                          hitSlop={8}
+                        >
+                          <X size={13} color={colors.textMuted} strokeWidth={2.4} />
+                        </Pressable>
+                      )}
+                    </View>
+                  )}
                 </View>
-              </Pressable>
-            </ScrollView>
+              )}
+            </View>
           </View>
 
           {/* Listings List */}
           <ScrollView
             style={styles.container}
-            contentContainerStyle={styles.contentContainer}
+            contentContainerStyle={[
+              styles.contentContainer,
+              {
+                maxWidth: maxContentWidth,
+                paddingHorizontal: responsivePadding,
+                paddingBottom: bottomInset,
+              },
+            ]}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -726,49 +1214,87 @@ export default function ShpalljetEMiaScreen() {
                   Po ngarkojmë shpalljet tuaja...
                 </Text>
               </View>
-            ) : filterStatus === 'saved' && loadingSaved ? (
+            ) : mainTab === 'saved' && loadingSaved ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                   Po ngarkojmë pronat e ruajtura...
                 </Text>
               </View>
-            ) : filterStatus === 'saved' && filteredListings.length === 0 ? (
+            ) : mainTab === 'saved' && filteredListings.length === 0 ? (
               <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
                   <Bookmark size={38} color={colors.primary} strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  Nuk keni prona të ruajtura
+                  {searchQuery.trim().length > 0
+                    ? 'Nuk u gjet asnjë pronë'
+                    : 'Nuk keni prona të ruajtura'}
                 </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  Shtypni zemrën në çdo pronë për ta ruajtur këtu dhe për ta gjetur shpejt më vonë.
-                </Text>
-                <Pressable
+                <Text
                   style={[
-                    styles.emptyPostBtn,
-                    { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                    styles.emptySubtitle,
+                    { maxWidth: Math.min(width - 64, 440) },
+                    { color: colors.textMuted },
                   ]}
-                  onPress={() => {
-                    playTapSound()
-                    if (Platform.OS !== 'web') Haptics.selectionAsync()
-                    router.push('/(tabs)/listings' as any)
-                  }}
                 >
-                  <Building2
-                    size={17}
-                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                    strokeWidth={2.6}
-                  />
-                  <Text
+                  {searchQuery.trim().length > 0
+                    ? `Nuk u gjet asnjë pronë e ruajtur me kërkimin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
+                    : 'Shtypni zemrën në çdo pronë për ta ruajtur këtu dhe për ta gjetur shpejt më vonë.'}
+                </Text>
+                {searchQuery.trim().length > 0 ? (
+                  <Pressable
                     style={[
-                      styles.emptyPostBtnText,
-                      { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      styles.emptyPostBtn,
+                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
                     ]}
+                    onPress={() => {
+                      playTapSound()
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      setSearchQuery('')
+                    }}
                   >
-                    Eksploro Pronat
-                  </Text>
-                </Pressable>
+                    <X
+                      size={17}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.6}
+                    />
+                    <Text
+                      style={[
+                        styles.emptyPostBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                    >
+                      Pastro Kërkimin
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[
+                      styles.emptyPostBtn,
+                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                    ]}
+                    onPress={() => {
+                      playTapSound()
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      router.push('/(tabs)/listings' as any)
+                    }}
+                  >
+                    <Building2
+                      size={17}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.6}
+                    />
+                    <Text
+                      style={[
+                        styles.emptyPostBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                    >
+                      Eksploro Pronat
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             ) : filteredListings.length === 0 ? (
               <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
@@ -776,43 +1302,115 @@ export default function ShpalljetEMiaScreen() {
                   <Building2 size={38} color={colors.primary} strokeWidth={2.2} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  {filterStatus === 'all'
+                  {searchQuery.trim().length > 0
+                    ? 'Nuk u gjet asnjë shpallje'
+                    : subFilter === 'all'
                     ? 'Nuk keni asnjë shpallje ende'
-                    : filterStatus === 'active'
+                    : subFilter === 'active'
                     ? 'Nuk keni shpallje aktive për momentin'
-                    : 'Nuk keni shpallje të mbyllura apo të shitura'}
+                    : subFilter === 'sold'
+                    ? 'Nuk keni shpallje të shënuara si të shitura'
+                    : 'Nuk keni shpallje jo aktive'}
                 </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  Postoni pronën tuaj falas brenda pak minutave dhe gjeni blerës të verifikuar në treg.
-                </Text>
-                <Pressable
+                <Text
                   style={[
-                    styles.emptyPostBtn,
-                    { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                    styles.emptySubtitle,
+                    { maxWidth: Math.min(width - 64, 440) },
+                    { color: colors.textMuted },
                   ]}
-                  onPress={() => {
-                    playTapSound()
-                    if (Platform.OS !== 'web') Haptics.selectionAsync()
-                    router.push('/post' as any)
-                  }}
                 >
-                  <Plus
-                    size={18}
-                    color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                    strokeWidth={2.6}
-                  />
-                  <Text
+                  {searchQuery.trim().length > 0
+                    ? `Nuk u gjet asnjë shpallje me termin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
+                    : subFilter === 'all'
+                    ? 'Postoni pronën tuaj falas brenda pak minutave dhe gjeni blerës të verifikuar në treg.'
+                    : subFilter === 'active'
+                    ? 'Të gjitha shpalljet tuaja janë shënuar si të shitura ose jo aktive.'
+                    : subFilter === 'sold'
+                    ? 'Asnjë shpallje nuk është shënuar si e shitur ende.'
+                    : 'Aktualisht nuk keni asnjë shpallje jo aktive në llogarinë tuaj.'}
+                </Text>
+                {searchQuery.trim().length > 0 ? (
+                  <Pressable
                     style={[
-                      styles.emptyPostBtnText,
-                      { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      styles.emptyPostBtn,
+                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
                     ]}
+                    onPress={() => {
+                      playTapSound()
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      setSearchQuery('')
+                    }}
                   >
-                    Posto Pronë të Re
-                  </Text>
-                </Pressable>
+                    <X
+                      size={17}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.6}
+                    />
+                    <Text
+                      style={[
+                        styles.emptyPostBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                    >
+                      Pastro Kërkimin
+                    </Text>
+                  </Pressable>
+                ) : subFilter !== 'all' ? (
+                  <Pressable
+                    style={[
+                      styles.emptyPostBtn,
+                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                    ]}
+                    onPress={() => {
+                      playTapSound()
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      handleSubFilterChange('all')
+                    }}
+                  >
+                    <SlidersHorizontal
+                      size={17}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.6}
+                    />
+                    <Text
+                      style={[
+                        styles.emptyPostBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                    >
+                      Shfaq të Gjitha ({listings.length})
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[
+                      styles.emptyPostBtn,
+                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                    ]}
+                    onPress={() => {
+                      playTapSound()
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      router.push('/post' as any)
+                    }}
+                  >
+                    <Plus
+                      size={18}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.6}
+                    />
+                    <Text
+                      style={[
+                        styles.emptyPostBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                    >
+                      Posto Pronë të Re
+                    </Text>
+                  </Pressable>
+                )}
               </View>
-            ) : filterStatus === 'saved' ? (
-              savedListings.map((item) => {
+            ) : mainTab === 'saved' ? (
+              filteredListings.map((item) => {
                 const mainImage =
                   item.images && item.images.length > 0
                     ? item.images[0]
@@ -828,7 +1426,7 @@ export default function ShpalljetEMiaScreen() {
                   >
                     {/* Cover */}
                     <Pressable
-                      style={styles.cardCover}
+                      style={[styles.cardCover, { height: coverHeight }]}
                       onPress={() => router.push(`/listings/${item.id}` as any)}
                     >
                       <Image
@@ -863,7 +1461,7 @@ export default function ShpalljetEMiaScreen() {
                           tint="dark"
                           style={StyleSheet.absoluteFill}
                         />
-                        <Text style={styles.coverPriceText}>{formatPrice(item.price)}</Text>
+                        <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
                       </View>
                     </Pressable>
 
@@ -882,20 +1480,20 @@ export default function ShpalljetEMiaScreen() {
                         </Text>
                       </View>
 
-                      <View style={styles.cardFeaturesRow}>
+                      <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
                         {item.rooms ? (
-                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
-                            <BedDouble size={14} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                            <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
                               {item.rooms} dhoma
                             </Text>
                           </View>
                         ) : null}
 
                         {item.area_m2 ? (
-                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Maximize2 size={13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                            <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
                               {item.area_m2} m²
                             </Text>
                           </View>
@@ -904,10 +1502,17 @@ export default function ShpalljetEMiaScreen() {
                     </View>
 
                     {/* Actions: Unsave + View */}
-                    <View style={[styles.cardActionGrid, { borderTopColor: specularBorder }]}>
+                    <View
+                      style={[
+                        styles.cardActionGrid,
+                        isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
+                        { borderTopColor: specularBorder },
+                      ]}
+                    >
                       <Pressable
                         style={[
                           styles.actionBtn,
+                          isCompact && { height: 36, paddingHorizontal: 6 },
                           {
                             backgroundColor:
                               theme === 'white' ? '#FEF2F2' : 'rgba(239, 68, 68, 0.12)',
@@ -915,18 +1520,25 @@ export default function ShpalljetEMiaScreen() {
                         ]}
                         onPress={() => handleUnsave(item)}
                       >
-                        <HeartOff size={15} color="#EF4444" strokeWidth={2.2} />
-                        <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>
-                          Hiq nga Të Ruajturat
+                        <HeartOff size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
+                        <Text
+                          style={[styles.actionBtnText, isCompact && { fontSize: 11.5 }, { color: '#EF4444' }]}
+                          numberOfLines={1}
+                        >
+                          {isCompact ? 'Hiq Ruajtjen' : 'Hiq nga Të Ruajturat'}
                         </Text>
                       </Pressable>
 
                       <Pressable
-                        style={[styles.actionSquareBtn, { backgroundColor: colors.surfaceSubtle }]}
+                        style={[
+                          styles.actionSquareBtn,
+                          isCompact && { width: 36, height: 36 },
+                          { backgroundColor: colors.surfaceSubtle },
+                        ]}
                         onPress={() => router.push(`/listings/${item.id}` as any)}
                         hitSlop={6}
                       >
-                        <Eye size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                        <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
                       </Pressable>
                     </View>
                   </View>
@@ -935,6 +1547,8 @@ export default function ShpalljetEMiaScreen() {
             ) : (
               filteredListings.map((item) => {
                 const isBusy = actionBusyId === item.id
+                const active = isListingActive(item)
+                const isSold = isListingSold(item)
                 const mainImage =
                   item.images && item.images.length > 0
                     ? item.images[0]
@@ -950,7 +1564,7 @@ export default function ShpalljetEMiaScreen() {
                   >
                     {/* Top Media & Preview Banner */}
                     <Pressable
-                      style={styles.cardCover}
+                      style={[styles.cardCover, { height: coverHeight }]}
                       onPress={() => router.push(`/listings/${item.id}` as any)}
                     >
                       <Image
@@ -982,20 +1596,16 @@ export default function ShpalljetEMiaScreen() {
                           style={[
                             styles.statusPill,
                             {
-                              backgroundColor: item.is_active
+                              backgroundColor: isSold
+                                ? 'rgba(15, 23, 42, 0.88)'
+                                : active
                                 ? 'rgba(16, 185, 129, 0.92)'
                                 : 'rgba(107, 114, 128, 0.90)',
                             },
                           ]}
                         >
-                          <View
-                            style={[
-                              styles.statusPillDot,
-                              { backgroundColor: item.is_active ? '#FFFFFF' : '#D1D5DB' },
-                            ]}
-                          />
                           <Text style={styles.statusPillText}>
-                            {item.is_active ? 'Aktiv' : 'E Shitur / Joaktive'}
+                            {isSold ? 'E Shitur' : active ? 'Aktiv' : 'Jo aktive'}
                           </Text>
                         </View>
                       </View>
@@ -1007,17 +1617,19 @@ export default function ShpalljetEMiaScreen() {
                           tint="dark"
                           style={StyleSheet.absoluteFill}
                         />
-                        <Text style={styles.coverPriceText}>{formatPrice(item.price)}</Text>
+                        <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
                         <Pressable
-                          style={styles.coverEditPriceBtn}
+                          style={[styles.coverEditPriceBtn, isCompact && { paddingHorizontal: 7, paddingVertical: 3.5 }]}
                           onPress={(e) => {
                             e.stopPropagation()
                             openPriceModal(item)
                           }}
                           hitSlop={6}
                         >
-                          <Tag size={13} color="#FFFFFF" strokeWidth={2.4} />
-                          <Text style={styles.coverEditPriceBtnText}>Ndrysho Çmimin</Text>
+                          <Tag size={isCompact ? 12 : 13} color="#FFFFFF" strokeWidth={2.4} />
+                          <Text style={[styles.coverEditPriceBtnText, isCompact && { fontSize: 10.5 }]}>
+                            {isCompact ? 'Ndrysho' : 'Ndrysho Çmimin'}
+                          </Text>
                         </Pressable>
                       </View>
                     </Pressable>
@@ -1037,29 +1649,29 @@ export default function ShpalljetEMiaScreen() {
                         </Text>
                       </View>
 
-                      <View style={styles.cardFeaturesRow}>
+                      <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
                         {item.rooms ? (
-                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
-                            <BedDouble size={14} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                            <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
                               {item.rooms} dhoma
                             </Text>
                           </View>
                         ) : null}
 
                         {item.area_m2 ? (
-                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Maximize2 size={13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                            <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
                               {item.area_m2} m²
                             </Text>
                           </View>
                         ) : null}
 
                         {item.floor !== undefined && item.floor !== null ? (
-                          <View style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Building2 size={13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>
+                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                            <Building2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
                               Kati {item.floor}
                             </Text>
                           </View>
@@ -1068,13 +1680,20 @@ export default function ShpalljetEMiaScreen() {
                     </View>
 
                     {/* Bottom Action Controls (Apple Glass Grid) */}
-                    <View style={[styles.cardActionGrid, { borderTopColor: specularBorder }]}>
+                    <View
+                      style={[
+                        styles.cardActionGrid,
+                        isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
+                        { borderTopColor: specularBorder },
+                      ]}
+                    >
                       {/* 1. Toggle Active / Inactive */}
                       <Pressable
                         style={[
                           styles.actionBtn,
+                          isCompact && { height: 36, paddingHorizontal: 6 },
                           {
-                            backgroundColor: item.is_active
+                            backgroundColor: active
                               ? theme === 'white'
                                 ? '#FEF2F2'
                                 : 'rgba(239, 68, 68, 0.12)'
@@ -1088,17 +1707,31 @@ export default function ShpalljetEMiaScreen() {
                       >
                         {isBusy ? (
                           <ActivityIndicator size="small" color={colors.primary} />
-                        ) : item.is_active ? (
+                        ) : active ? (
                           <>
-                            <XCircle size={15} color="#EF4444" strokeWidth={2.2} />
-                            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>
-                              Shëno si të Shitur
+                            <XCircle size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
+                            <Text
+                              style={[
+                                styles.actionBtnText,
+                                isCompact && { fontSize: 11.5 },
+                                { color: '#EF4444' },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {isCompact ? 'Shëno Shitur' : 'Shëno si të Shitur'}
                             </Text>
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 size={15} color="#10B981" strokeWidth={2.2} />
-                            <Text style={[styles.actionBtnText, { color: '#10B981' }]}>
+                            <CheckCircle2 size={isCompact ? 14 : 15} color="#10B981" strokeWidth={2.2} />
+                            <Text
+                              style={[
+                                styles.actionBtnText,
+                                isCompact && { fontSize: 11.5 },
+                                { color: '#10B981' },
+                              ]}
+                              numberOfLines={1}
+                            >
                               Rikthe Aktiv
                             </Text>
                           </>
@@ -1107,26 +1740,35 @@ export default function ShpalljetEMiaScreen() {
 
                       {/* 2. Share */}
                       <Pressable
-                        style={[styles.actionSquareBtn, { backgroundColor: colors.surfaceSubtle }]}
+                        style={[
+                          styles.actionSquareBtn,
+                          isCompact && { width: 36, height: 36 },
+                          { backgroundColor: colors.surfaceSubtle },
+                        ]}
                         onPress={() => handleShare(item)}
                         hitSlop={6}
                       >
-                        <Share2 size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                        <Share2 size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
                       </Pressable>
 
                       {/* 3. View Details */}
                       <Pressable
-                        style={[styles.actionSquareBtn, { backgroundColor: colors.surfaceSubtle }]}
+                        style={[
+                          styles.actionSquareBtn,
+                          isCompact && { width: 36, height: 36 },
+                          { backgroundColor: colors.surfaceSubtle },
+                        ]}
                         onPress={() => router.push(`/listings/${item.id}` as any)}
                         hitSlop={6}
                       >
-                        <Eye size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                        <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
                       </Pressable>
 
                       {/* 4. Delete */}
                       <Pressable
                         style={[
                           styles.actionSquareBtn,
+                          isCompact && { width: 36, height: 36 },
                           {
                             backgroundColor:
                               theme === 'white' ? '#FEE2E2' : 'rgba(239, 68, 68, 0.18)',
@@ -1136,7 +1778,7 @@ export default function ShpalljetEMiaScreen() {
                         disabled={isBusy}
                         hitSlop={6}
                       >
-                        <Trash2 size={16} color="#EF4444" strokeWidth={2.2} />
+                        <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
                       </Pressable>
                     </View>
                   </View>
@@ -1251,7 +1893,7 @@ export default function ShpalljetEMiaScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -1259,16 +1901,17 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  navHeader: {
+  navHeaderOuter: {
+    width: '100%',
+    borderBottomWidth: 0.5,
+  },
+  navHeaderInner: {
+    width: '100%',
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    maxWidth: 680,
-    width: '100%',
-    alignSelf: 'center',
   },
   backBtn: {
     width: 40,
@@ -1350,56 +1993,136 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.bold,
   },
-  filterBar: {
+  filterBarOuter: {
+    width: '100%',
     borderBottomWidth: 0.5,
-    paddingVertical: 10,
-    maxWidth: 680,
+  },
+  filterBarInner: {
     width: '100%',
     alignSelf: 'center',
+    paddingVertical: 12,
   },
-  filterPillsContainer: {
-    paddingHorizontal: 16,
-    gap: 8,
-    flexDirection: 'row',
-  },
-  filterPill: {
+  topSegmentTrack: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    padding: 4,
+    borderRadius: 15,
     borderWidth: 1,
     gap: 6,
   },
-  filterPillText: {
-    fontSize: 13,
+  topSegmentTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 11,
+    gap: 7,
+  },
+  topSegmentTabActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  topSegmentTabText: {
+    fontSize: 13.5,
     fontFamily: Fonts.bold,
   },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  counterBadge: {
-    paddingHorizontal: 6,
+  segmentCounterBadge: {
+    paddingHorizontal: 6.5,
     paddingVertical: 1.5,
+    borderRadius: 9,
+  },
+  segmentCounterBadgeText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.bold,
+  },
+  childFiltersSection: {
+    marginTop: 10,
+    gap: 8,
+  },
+  childPillsScrollContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  childFilterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7.5,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  childFilterPillActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  childFilterPillInactive: {},
+  childFilterPillText: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+  childCounterBadge: {
+    paddingHorizontal: 5.5,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+  },
+  childCounterBadgeText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.bold,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+    paddingVertical: 0,
+  },
+  searchClearBtn: {
+    padding: 4,
     borderRadius: 10,
   },
-  counterBadgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
+  savedNoticeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    gap: 6,
+    alignSelf: 'flex-start',
+  },
+  savedNoticeText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
   },
   container: {
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 40,
-    gap: 16,
-    maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
+    paddingTop: 14,
+    gap: 16,
   },
   loadingContainer: {
     paddingVertical: 60,
@@ -1412,7 +2135,7 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     alignItems: 'center',
-    padding: 30,
+    padding: 26,
     borderRadius: 24,
     borderWidth: 0.5,
     gap: 12,
@@ -1436,7 +2159,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
-    maxWidth: 280,
   },
   emptyPostBtn: {
     flexDirection: 'row',
@@ -1493,15 +2215,9 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
+    paddingHorizontal: 9.5,
     paddingVertical: 4,
     borderRadius: 12,
-  },
-  statusPillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   statusPillText: {
     color: '#FFFFFF',

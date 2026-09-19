@@ -82,7 +82,7 @@ function PostTabBarItem({ focused }: { focused: boolean }) {
           styles.postButton,
           {
             backgroundColor: postBtnBg,
-            shadowColor: postBtnBg,
+            shadowColor: '#000',
           },
           focused && styles.postButtonActive,
         ]}
@@ -187,111 +187,118 @@ export default function TabLayout() {
   const tabHeight = 56 + bottomInset
 
   return (
-    <Tabs
-      detachInactiveScreens={false}
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        lazy: false,
-        freezeOnBlur: false,
-        animation: 'none',
-        sceneStyle: { backgroundColor: colors.background },
-        tabBarBackground: () => (
-          <View style={StyleSheet.absoluteFill}>
-            <BlurView
-              intensity={Platform.OS === 'ios' ? 88 : 100}
-              tint={colors.blurTint}
-              style={StyleSheet.absoluteFill}
-            />
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor:
-                    theme === 'white'
-                      ? 'rgba(255, 255, 255, 0.72)'
-                      : theme === 'green'
-                      ? 'rgba(7, 28, 24, 0.78)'
-                      : 'rgba(12, 17, 16, 0.68)',
-                },
-              ]}
-            />
-          </View>
-        ),
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: 'transparent',
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 0.5,
-          height: tabHeight,
-          paddingTop: 6,
-          paddingBottom: bottomInset,
-          elevation: 0,
-          shadowColor: theme === 'green' ? '#071C18' : '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.25 : 0.05,
-          shadowRadius: 10,
-        },
-        tabBarItemStyle: {
-          height: 52,
-          justifyContent: 'center',
-          alignItems: 'center',
-          paddingVertical: 0,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Kërko',
-          tabBarIcon: ({ focused }) => (
-            <TabBarItemContent icon={Search} title="Kërko" focused={focused} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Tabs
+        detachInactiveScreens={false}
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: false,
+          lazy: false,
+          freezeOnBlur: false,
+          animation: 'none',
+          sceneStyle: { backgroundColor: colors.background },
+          tabBarBackground: () => (
+            <View style={StyleSheet.absoluteFill}>
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 88 : 100}
+                tint={colors.blurTint}
+                style={StyleSheet.absoluteFill}
+              />
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor:
+                      theme === 'white'
+                        ? 'rgba(255, 255, 255, 0.72)'
+                        : theme === 'green'
+                        ? 'rgba(7, 28, 24, 0.78)'
+                        : 'rgba(12, 17, 16, 0.68)',
+                  },
+                ]}
+              />
+            </View>
           ),
+          tabBarStyle: {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'transparent',
+            borderTopColor: colors.tabBarBorder,
+            borderTopWidth: 0.5,
+            height: tabHeight,
+            paddingTop: 6,
+            paddingBottom: bottomInset,
+            elevation: 0,
+            shadowColor: theme === 'green' ? '#071C18' : '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.25 : 0.05,
+            shadowRadius: 10,
+          },
+          tabBarItemStyle: {
+            height: 52,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingVertical: 0,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="listings"
-        options={{
-          title: 'Pronat',
-          tabBarIcon: ({ focused }) => (
-            <TabBarItemContent icon={Building2} title="Pronat" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="post"
-        options={{
-          title: 'Posto',
-          tabBarIcon: ({ focused }) => <PostTabBarItem focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: 'Mesazhe',
-          tabBarIcon: ({ focused }) => (
-            <TabBarItemContent
-              icon={MessageSquare}
-              title="Mesazhe"
-              focused={focused}
-              badgeCount={unreadCount}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profili',
-          tabBarIcon: ({ focused }) => (
-            <TabBarItemContent icon={User} title="Profili" focused={focused} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            lazy: false,
+            title: 'Kërko',
+            tabBarIcon: ({ focused }) => (
+              <TabBarItemContent icon={Search} title="Kërko" focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="listings"
+          options={{
+            lazy: false,
+            title: 'Pronat',
+            tabBarIcon: ({ focused }) => (
+              <TabBarItemContent icon={Building2} title="Pronat" focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="post"
+          options={{
+            lazy: false,
+            title: 'Posto',
+            tabBarIcon: ({ focused }) => <PostTabBarItem focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="messages"
+          options={{
+            lazy: false,
+            title: 'Mesazhe',
+            tabBarIcon: ({ focused }) => (
+              <TabBarItemContent
+                icon={MessageSquare}
+                title="Mesazhe"
+                focused={focused}
+                badgeCount={unreadCount}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            lazy: false,
+            title: 'Profili',
+            tabBarIcon: ({ focused }) => (
+              <TabBarItemContent icon={User} title="Profili" focused={focused} />
+            ),
+          }}
+        />
+      </Tabs>
+    </View>
   )
 }
 

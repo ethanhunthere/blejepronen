@@ -16,6 +16,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
+import { getSyncAuthUser } from '@/lib/auth-cache'
 import {
   ArrowLeft,
   Phone,
@@ -38,7 +39,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
-import { getAvatarUri } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
@@ -84,7 +85,8 @@ export default function ChatConversationScreen() {
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const syncUser = getSyncAuthUser()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(() => syncUser?.id || null)
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
   const [listing, setListing] = useState<ListingPreview | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
@@ -455,7 +457,7 @@ export default function ChatConversationScreen() {
       : 'rgba(255, 255, 255, 0.10)'
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* 1. Clean Apple iMessage Header */}
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <Pressable
@@ -470,9 +472,12 @@ export default function ChatConversationScreen() {
 
         <View style={styles.headerProfile}>
           <Image
-            source={{ uri: counterpartAvatar }}
+            source={getAvatarSource(otherUser?.avatar_url)}
             style={styles.headerAvatar}
             contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="high"
+            transition={0}
           />
 
           <View style={styles.headerInfo}>
@@ -772,7 +777,7 @@ export default function ChatConversationScreen() {
         counterpartUserId={otherUser?.id ?? null}
         conversationId={id}
       />
-    </SafeAreaView>
+    </View>
   )
 }
 

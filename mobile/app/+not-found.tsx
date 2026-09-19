@@ -1,16 +1,17 @@
 import React from 'react'
 import { StyleSheet, View, Text, Pressable } from 'react-native'
 import { Link, Stack, useRouter } from 'expo-router'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Compass, ArrowLeft } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 
 export default function NotFoundScreen() {
   const { colors, theme } = useTheme()
+  const insets = useSafeAreaInsets()
   const router = useRouter()
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <View style={[styles.safe, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View
@@ -73,7 +74,7 @@ export default function NotFoundScreen() {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   )
 }
 
