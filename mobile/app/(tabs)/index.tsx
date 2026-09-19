@@ -36,6 +36,7 @@ import {
   setCachedListings,
   subscribeCachedListings,
 } from '@/lib/listings-cache'
+import { getSyncAuthUser } from '@/lib/auth-cache'
 
 const TopBarHeader = React.memo(function TopBarHeader() {
   return (
@@ -135,9 +136,7 @@ export default function HomeScreen() {
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = getSyncAuthUser()
       if (!user) {
         router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
         return

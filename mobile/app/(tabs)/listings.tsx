@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -35,6 +35,7 @@ import {
   setCachedListings,
   subscribeCachedListings,
 } from '@/lib/listings-cache'
+import { getSyncAuthUser } from '@/lib/auth-cache'
 
 export default function ListingsScreen() {
   const params = useLocalSearchParams<{
@@ -47,6 +48,7 @@ export default function ListingsScreen() {
 
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
+  const router = useRouter()
 
   const [filters, setFilters] = useState<PropertyFilterState>(() => ({
     ...DEFAULT_FILTER_STATE,
@@ -155,6 +157,12 @@ export default function ListingsScreen() {
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
+      const user = getSyncAuthUser()
+      if (!user) {
+        router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+        return
+      }
+
       const wasFavorite = !!favorites[id]
       setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
 
@@ -163,7 +171,7 @@ export default function ListingsScreen() {
         setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
       }
     },
-    [favorites]
+    [favorites, router]
   )
 
   // Compute category counts

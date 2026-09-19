@@ -831,7 +831,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                                   sizes="48px"
                                   className="object-cover"
                                 />
-                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">

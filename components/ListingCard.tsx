@@ -144,11 +144,6 @@ const ListingCard = React.memo(function ListingCard({
                   e.stopPropagation()
                   onToggleFavorite?.(listing.id)
                 }}
-                onTouchEnd={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onToggleFavorite?.(listing.id)
-                }}
                 className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
               >
                 <Heart

@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
-  Image,
   KeyboardAvoidingView,
 } from 'react-native'
+import { Image } from 'expo-image'
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import {
@@ -24,6 +25,7 @@ import {
   FileText,
   RotateCcw,
   Camera,
+  Image as ImageIcon,
   X,
   Check,
   ShieldCheck,
@@ -251,23 +253,67 @@ export default function PostPropertyScreen() {
     }
   }
 
-  const pickImages = async () => {
+  const pickImagesFromGallery = async () => {
+    if (images.length >= 10) {
+      Alert.alert('Limiti i fotove', 'Mund të ngarkoni deri në 10 fotografi për çdo pronë.')
+      return
+    }
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Leje e nevojshme', 'Ju lutemi lejoni aksesin tek fotot.')
+      Alert.alert('Leje e nevojshme', 'Ju lutemi lejoni aksesin tek fotot në cilësimet e telefonit.')
       return
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
-      quality: 0.8,
+      quality: 0.9,
       selectionLimit: 10 - images.length,
+      base64: false,
+      exif: false,
     })
 
     if (!result.canceled && result.assets) {
       const newUris = result.assets.map((a) => a.uri)
       setImages((prev) => [...prev, ...newUris].slice(0, 10))
+    }
+  }
+
+  const takeImageWithCamera = async () => {
+    if (images.length >= 10) {
+      Alert.alert('Limiti i fotove', 'Mund të ngarkoni deri në 10 fotografi për çdo pronë.')
+      return
+    }
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Leje e nevojshme', 'Ju lutemi lejoni aksesin tek kamera në cilësimet e telefonit.')
+      return
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.9,
+      base64: false,
+      exif: false,
+    })
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newUri = result.assets[0].uri
+      setImages((prev) => [...prev, newUri].slice(0, 10))
+    }
+  }
+
+  const pickImages = pickImagesFromGallery
+
+  const optimizeListingImage = async (uri: string): Promise<string> => {
+    try {
+      const manip = await manipulateAsync(
+        uri,
+        [{ resize: { width: 1600 } }], // Keeps aspect ratio, max width 1600px
+        { compress: 0.80, format: SaveFormat.JPEG }
+      )
+      return manip.uri
+    } catch {
+      return uri
     }
   }
 
@@ -340,7 +386,7 @@ export default function PostPropertyScreen() {
         return
       }
 
-      // Upload local device images to Supabase Storage concurrently
+      // Upload local device images to Supabase Storage concurrently with hardware-accelerated downsampling
       let uploadedImageUrls: string[] = []
       if (images.length > 0) {
         uploadedImageUrls = await Promise.all(
@@ -349,27 +395,29 @@ export default function PostPropertyScreen() {
               return imgUri
             }
             try {
-              const ext = imgUri.split('.').pop()?.toLowerCase() || 'jpg'
-              const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+              const optimizedUri = await optimizeListingImage(imgUri)
+              const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
               const path = `${user.id}/${filename}`
 
-              const response = await fetch(imgUri)
-              const blob = await response.blob()
+              const response = await fetch(optimizedUri)
+              const arrayBuffer = await response.arrayBuffer()
+              const binaryData = new Uint8Array(arrayBuffer)
 
-              const { error: uploadError } = await supabase.storage.from('listings').upload(path, blob, {
-                contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}`,
+              const { error: uploadError } = await supabase.storage.from('listings').upload(path, binaryData, {
+                contentType: 'image/jpeg',
                 cacheControl: '31536000, immutable',
+                upsert: true,
               })
 
               if (uploadError) {
-                console.warn('Image upload error:', uploadError.message)
+                console.warn('Listing photo upload error:', uploadError.message)
                 return imgUri
               }
 
               const { data: publicData } = supabase.storage.from('listings').getPublicUrl(path)
               return publicData.publicUrl
             } catch (uploadEx: any) {
-              console.warn('Image upload exception:', uploadEx?.message || uploadEx)
+              console.warn('Listing photo upload exception:', uploadEx?.message || uploadEx)
               return imgUri
             }
           })
@@ -964,20 +1012,43 @@ export default function PostPropertyScreen() {
             ))}
 
             {images.length < 10 && (
-              <Pressable
-                style={[
-                  styles.uploadBtn,
-                  {
-                    borderColor: colors.primary,
-                    backgroundColor: colors.badgeBg,
-                  },
-                ]}
-                onPress={pickImages}
-              >
-                <Camera size={24} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.uploadBtnText, { color: colors.primary }]}>Shto Foto</Text>
-                <Text style={[styles.uploadBtnCount, { color: colors.textMuted }]}>{images.length}/10</Text>
-              </Pressable>
+              <View style={styles.uploadButtonsGroup}>
+                <Pressable
+                  style={[
+                    styles.uploadBtnChoice,
+                    {
+                      borderColor: theme === 'green' ? colors.gold : colors.primary,
+                      backgroundColor: colors.badgeBg,
+                    },
+                  ]}
+                  onPress={pickImagesFromGallery}
+                  hitSlop={6}
+                >
+                  <ImageIcon size={22} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.2} />
+                  <Text style={[styles.uploadBtnText, { color: theme === 'green' ? colors.gold : colors.primary }]}>
+                    Nga Galeria
+                  </Text>
+                  <Text style={[styles.uploadBtnCount, { color: colors.textMuted }]}>{images.length}/10</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.uploadBtnChoice,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.surfaceSubtle,
+                    },
+                  ]}
+                  onPress={takeImageWithCamera}
+                  hitSlop={6}
+                >
+                  <Camera size={22} color={colors.textPrimary} strokeWidth={2.2} />
+                  <Text style={[styles.uploadBtnText, { color: colors.textPrimary }]}>
+                    Bëj Foto
+                  </Text>
+                  <Text style={[styles.uploadBtnCount, { color: colors.textMuted }]}>Kamera</Text>
+                </Pressable>
+              </View>
             )}
           </View>
         </View>
@@ -1255,31 +1326,39 @@ const styles = StyleSheet.create({
   },
   removeImageBtn: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    top: 5,
+    right: 5,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.68)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  uploadBtn: {
-    width: 98,
-    height: 98,
+  uploadButtonsGroup: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 6,
+  },
+  uploadBtnChoice: {
+    flex: 1,
+    height: 92,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    paddingHorizontal: 8,
   },
   uploadBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: Fonts.bold,
   },
   uploadBtnCount: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontFamily: Fonts.medium,
   },
   submitButton: {

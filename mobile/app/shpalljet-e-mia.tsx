@@ -591,6 +591,7 @@ export default function ShpalljetEMiaScreen() {
                     ],
                   ]}
                   onPress={() => handleMainTabChange('all')}
+                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                 >
                   <Building2
                     size={isCompact ? 14 : 15}
@@ -666,6 +667,7 @@ export default function ShpalljetEMiaScreen() {
                     ],
                   ]}
                   onPress={() => handleMainTabChange('saved')}
+                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                 >
                   <Bookmark
                     size={isCompact ? 14 : 15}
@@ -773,6 +775,7 @@ export default function ShpalljetEMiaScreen() {
                             ],
                       ]}
                       onPress={() => handleSubFilterChange('all')}
+                      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
                       <SlidersHorizontal
                         size={isCompact ? 11 : 12}
@@ -866,6 +869,7 @@ export default function ShpalljetEMiaScreen() {
                             ],
                       ]}
                       onPress={() => handleSubFilterChange('active')}
+                      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
                       <Text
                         style={[
@@ -948,6 +952,7 @@ export default function ShpalljetEMiaScreen() {
                             ],
                       ]}
                       onPress={() => handleSubFilterChange('sold')}
+                      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
                       <Text
                         style={[
@@ -1030,6 +1035,7 @@ export default function ShpalljetEMiaScreen() {
                             ],
                       ]}
                       onPress={() => handleSubFilterChange('inactive')}
+                      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
                       <Text
                         style={[
@@ -1605,7 +1611,7 @@ export default function ShpalljetEMiaScreen() {
                           ]}
                         >
                           <Text style={styles.statusPillText}>
-                            {isSold ? 'E Shitur' : active ? 'Aktiv' : 'Jo aktive'}
+                            {isSold ? 'E Shitur' : active ? 'Aktive' : 'Jo aktive'}
                           </Text>
                         </View>
                       </View>
