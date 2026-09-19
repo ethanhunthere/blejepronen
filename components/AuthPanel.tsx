@@ -25,11 +25,24 @@ export function GoogleIcon({ className = 'h-4 w-4 shrink-0' }: { className?: str
   )
 }
 
-export function AppleIcon({ className = 'h-4 w-4 shrink-0' }: { className?: string }) {
+export function AppleIcon({
+  className = 'h-4 w-4 shrink-0',
+  dark = false,
+}: {
+  className?: string
+  dark?: boolean
+}) {
+  const isDark = dark || className.includes('text-black') || className.includes('text-neutral-900')
   return (
-    <svg className={className} viewBox="0 0 170 170" fill="currentColor">
-      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.7-7.85-12-14.44-6.3-9.67-11.29-20.91-14.96-33.72-3.67-12.81-5.51-24.89-5.51-36.24 0-14.54 3.7-26.68 11.09-36.42 7.39-9.74 16.64-14.77 27.75-15.08 4.79 0 10.15 1.25 16.08 3.75 5.93 2.5 9.77 3.75 11.52 3.75 1.52 0 5.46-1.31 11.83-3.92 6.37-2.61 11.75-3.77 16.14-3.48 12.19.65 22.09 5.37 29.7 14.16-10.67 6.53-15.89 15.46-15.66 26.8.23 8.71 3.59 16.11 10.08 22.21 6.5 6.09 14.16 9.69 22.99 10.78-2.61 7.84-5.87 15.74-9.77 23.71zM119.22 31.84c0-7.18 2.54-13.93 7.63-20.24 5.09-6.32 11.45-10.23 19.09-11.74.22 1.09.33 2.07.33 2.94 0 7.07-2.69 13.9-8.06 20.49-5.38 6.59-11.74 10.37-19.09 11.34-.22-.98-.33-1.89-.33-2.79z" />
-    </svg>
+    <img
+      src={isDark ? '/brand/apple-logo-black.png' : '/brand/apple-logo-white.png'}
+      alt="Apple"
+      className={`${className} object-contain`}
+      width={16}
+      height={16}
+      loading="eager"
+      decoding="async"
+    />
   )
 }
 
