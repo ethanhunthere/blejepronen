@@ -282,11 +282,8 @@ export default function AuthModalScreen() {
           message: `Jeni kyçur me sukses si ${displayName}.`,
         })
 
-        if (!hasCompletedOnboarding) {
-          router.replace('/completo-profilin' as never)
-        } else {
-          safeBack(router, '/(tabs)')
-        }
+        // Route successful logins directly into the app
+        safeBack(router, '/(tabs)')
       } else {
         // Register flow: only email, password for individuals; companyName, email, password for companies
         const res = await apiSignUp({
@@ -331,7 +328,25 @@ export default function AuthModalScreen() {
     }
   }
 
-  // ── Comprehensive Social & Native OAuth Suite (Google, Apple, Facebook, Instagram) ───
+  // Helper to silently swallow user-cancelled OAuth actions
+  const isOAuthCancellation = (errorText?: string | null) => {
+    if (!errorText) return false
+    const lower = errorText.toLowerCase()
+    return (
+      lower.includes('cancel') ||
+      lower.includes('dismiss') ||
+      lower.includes('access_denied') ||
+      lower.includes('user denied') ||
+      lower.includes('popup_closed') ||
+      lower.includes('closed by user') ||
+      lower.includes('operation couldn’t be completed') ||
+      lower.includes('operation couldn\'t be completed') ||
+      lower.includes('user cancelled') ||
+      lower.includes('user canceled')
+    )
+  }
+
+  // ── Comprehensive Social & Native OAuth Suite (Apple, Google, Facebook) ───
   const oauthHandledRef = useRef(false)
 
   const finishOAuth = useCallback(
@@ -349,6 +364,12 @@ export default function AuthModalScreen() {
         queryParams.get('error_description') ||
         hashParams.get('error') ||
         queryParams.get('error')
+
+      if (isOAuthCancellation(oauthError)) {
+        oauthHandledRef.current = false
+        setOauthLoading(null)
+        return
+      }
 
       const accessToken = hashParams.get('access_token') || queryParams.get('access_token')
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
@@ -440,11 +461,8 @@ export default function AuthModalScreen() {
 
       setOauthLoading(null)
 
-      if (!meta.onboarding_completed) {
-        router.replace('/completo-profilin' as never)
-      } else {
-        safeBack(router, '/(tabs)')
-      }
+      // Route directly into the app
+      safeBack(router, '/(tabs)')
     },
     [router, showBanner]
   )
@@ -473,8 +491,13 @@ export default function AuthModalScreen() {
       if (!url) return
       if (url.includes('access_token=') || url.includes('code=')) {
         finishOAuth(url, providerTitle).catch((err: unknown) => {
-          console.warn(`${providerTitle} deep-link notice:`, err)
           const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}.`
+          if (isOAuthCancellation(msg)) {
+            oauthHandledRef.current = false
+            setOauthLoading(null)
+            return
+          }
+          console.warn(`${providerTitle} deep-link notice:`, err)
           setErrorMessage(msg)
           setOauthLoading(null)
         })
@@ -524,12 +547,19 @@ export default function AuthModalScreen() {
 
       if (result.type === 'success' && result.url) {
         await finishOAuth(result.url, providerTitle)
-      } else if (!oauthHandledRef.current) {
+      } else {
+        // User cancelled, closed or dismissed the sheet
+        oauthHandledRef.current = false
         setOauthLoading(null)
       }
     } catch (err: unknown) {
-      console.warn(`${providerTitle} auth notice:`, err)
       const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}.`
+      if (isOAuthCancellation(msg)) {
+        oauthHandledRef.current = false
+        setOauthLoading(null)
+        return
+      }
+      console.warn(`${providerTitle} auth notice:`, err)
       if (msg.toLowerCase().includes('provider is not enabled')) {
         showBanner({
           type: 'info',
@@ -692,234 +722,244 @@ export default function AuthModalScreen() {
       >
         {/* ================= STEP 2: VERIFY EMAIL CODE (OTP) ================= */}
         {step === 'verify_otp' ? (
-          <View style={styles.verifyStepWrapper}>
-            {/* Back Button */}
-            <Pressable
-              style={styles.backBtn}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
-                setStep('auth')
-              }}
-              hitSlop={8}
-            >
-              <ArrowLeft size={14} color={brandHighlight} strokeWidth={2.4} />
-              <Text style={[styles.backBtnText, { color: brandHighlight }]}>Kthehu mbrapa</Text>
-            </Pressable>
+          <View
+            style={[
+              styles.authCard,
+              {
+                backgroundColor: theme === 'white' ? '#FFFFFF' : colors.surface,
+                borderColor: specularBorderColor,
+              },
+            ]}
+          >
+            <View style={styles.verifyStepWrapper}>
+              {/* Back Button */}
+              <Pressable
+                style={styles.backBtn}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setStep('auth')
+                }}
+                hitSlop={8}
+              >
+                <ArrowLeft size={14} color={brandHighlight} strokeWidth={2.4} />
+                <Text style={[styles.backBtnText, { color: brandHighlight }]}>Kthehu mbrapa</Text>
+              </Pressable>
 
-            {/* Verification Header Icon */}
-            <View
-              style={[
-                styles.verifyIconBadge,
-                {
-                  backgroundColor:
-                    theme === 'green'
-                      ? 'rgba(200, 184, 130, 0.18)'
-                      : 'rgba(0, 100, 89, 0.10)',
-                },
-              ]}
-            >
-              <Mail size={24} color={brandHighlight} strokeWidth={2.2} />
-            </View>
-
-            <Text style={[styles.verifyTitle, { color: colors.textPrimary }]}>
-              Verifiko Email-in
-            </Text>
-            <Text style={[styles.verifySubtitle, { color: colors.textMuted }]}>
-              Shkruani kodin 6-shifror të dërguar në{' '}
-              <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>
-                {email.trim()}
-              </Text>
-            </Text>
-
-            {/* Error Message */}
-            {errorMessage && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{errorMessage}</Text>
+              {/* Verification Header Icon */}
+              <View
+                style={[
+                  styles.verifyIconBadge,
+                  {
+                    backgroundColor:
+                      theme === 'green'
+                        ? 'rgba(200, 184, 130, 0.18)'
+                        : 'rgba(0, 100, 89, 0.10)',
+                  },
+                ]}
+              >
+                <Mail size={24} color={brandHighlight} strokeWidth={2.2} />
               </View>
-            )}
 
-            {/* 6-Digit OTP Interactive Panel */}
-            <View style={styles.otpInteractiveContainer}>
-              <View style={styles.otpBoxesRow} pointerEvents="none">
-                {[0, 1, 2, 3, 4, 5].map((idx) => {
-                  const char = otpCode[idx] || ''
-                  const isCurrent = otpCode.length === idx
-                  return (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.otpBox,
-                        {
-                          backgroundColor:
-                            theme === 'white'
-                              ? '#FFFFFF'
-                              : theme === 'green'
-                              ? 'rgba(0, 77, 69, 0.45)'
-                              : 'rgba(255, 255, 255, 0.06)',
-                          borderColor: isCurrent
-                            ? brandHighlight
-                            : char
-                            ? colors.primary
-                            : specularBorderColor,
-                          borderWidth: isCurrent ? 2 : 1,
-                        },
-                      ]}
-                    >
-                      <Text
+              <Text style={[styles.verifyTitle, { color: colors.textPrimary }]}>
+                Verifiko Email-in
+              </Text>
+              <Text style={[styles.verifySubtitle, { color: colors.textMuted }]}>
+                Shkruani kodin 6-shifror të dërguar në{' '}
+                <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>
+                  {email.trim()}
+                </Text>
+              </Text>
+
+              {/* Error Message */}
+              {errorMessage && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              )}
+
+              {/* 6-Digit OTP Interactive Panel */}
+              <View style={styles.otpInteractiveContainer}>
+                <View style={styles.otpBoxesRow} pointerEvents="none">
+                  {[0, 1, 2, 3, 4, 5].map((idx) => {
+                    const char = otpCode[idx] || ''
+                    const isCurrent = otpCode.length === idx
+                    return (
+                      <View
+                        key={idx}
                         style={[
-                          styles.otpBoxChar,
+                          styles.otpBox,
                           {
-                            color: char
-                              ? colors.textPrimary
-                              : isCurrent
+                            backgroundColor:
+                              theme === 'white'
+                                ? '#FFFFFF'
+                                : theme === 'green'
+                                ? 'rgba(0, 77, 69, 0.45)'
+                                : 'rgba(255, 255, 255, 0.06)',
+                            borderColor: isCurrent
                               ? brandHighlight
-                              : colors.textLight,
+                              : char
+                              ? colors.primary
+                              : specularBorderColor,
+                            borderWidth: isCurrent ? 2 : 1,
                           },
                         ]}
                       >
-                        {char || (isCurrent ? '•' : '–')}
-                      </Text>
-                    </View>
-                  )
-                })}
+                        <Text
+                          style={[
+                            styles.otpBoxChar,
+                            {
+                              color: char
+                                ? colors.textPrimary
+                                : isCurrent
+                                ? brandHighlight
+                                : colors.textLight,
+                            },
+                          ]}
+                        >
+                          {char || (isCurrent ? '•' : '–')}
+                        </Text>
+                      </View>
+                    )
+                  })}
+                </View>
+
+                {/* Stretched direct input over entire box row for 100% reliable tap detection */}
+                <TextInput
+                  ref={otpInputRef}
+                  style={styles.otpDirectInput}
+                  value={otpCode}
+                  onChangeText={(val) => {
+                    const cleaned = val.replace(/[^0-9]/g, '').slice(0, 6)
+                    setOtpCode(cleaned)
+                    setErrorMessage(null)
+                    if (cleaned.length === 6) {
+                      handleVerifyOtp(cleaned)
+                    }
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  textContentType="oneTimeCode"
+                  autoFocus
+                  caretHidden={true}
+                />
               </View>
 
-              {/* Stretched direct input over entire box row for 100% reliable tap detection */}
-              <TextInput
-                ref={otpInputRef}
-                style={styles.otpDirectInput}
-                value={otpCode}
-                onChangeText={(val) => {
-                  const cleaned = val.replace(/[^0-9]/g, '').slice(0, 6)
-                  setOtpCode(cleaned)
-                  setErrorMessage(null)
-                  if (cleaned.length === 6) {
-                    handleVerifyOtp(cleaned)
-                  }
-                }}
-                keyboardType="number-pad"
-                maxLength={6}
-                textContentType="oneTimeCode"
-                autoFocus
-                caretHidden={true}
-              />
-            </View>
-
-            {/* Clear OTP quick action */}
-            {otpCode.length > 0 && (
-              <Pressable
-                style={styles.clearOtpBtn}
-                onPress={() => {
-                  setOtpCode('')
-                  otpInputRef.current?.focus()
-                  if (Platform.OS !== 'web') Haptics.selectionAsync()
-                }}
-                hitSlop={10}
-              >
-                <Text style={[styles.clearOtpText, { color: colors.textMuted }]}>
-                  Pastro kodin ({otpCode.length}/6)
-                </Text>
-              </Pressable>
-            )}
-
-            {/* Verify Button */}
-            <Pressable
-              style={[
-                styles.submitBtn,
-                styles.verifySubmitBtn,
-                {
-                  backgroundColor: brandHighlight,
-                  opacity: verifying ? 0.75 : 1,
-                },
-              ]}
-              onPress={() => handleVerifyOtp()}
-              disabled={verifying}
-              hitSlop={8}
-            >
-              {verifying ? (
-                <View style={styles.submitBtnInner}>
-                  <ActivityIndicator color={primaryBtnText} size="small" />
-                  <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
-                    Duke verifikuar...
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.submitBtnInner}>
-                  <CheckCircle2 size={16} color={primaryBtnText} strokeWidth={2.4} />
-                  <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
-                    Konfirmo Kodin
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-
-            {/* Resend Section */}
-            <View style={styles.resendSection}>
-              {canResend ? (
+              {/* Clear OTP quick action */}
+              {otpCode.length > 0 && (
                 <Pressable
-                  style={[
-                    styles.resendBtn,
-                    { backgroundColor: colors.surfaceSubtle, borderColor: specularBorderColor },
-                  ]}
-                  onPress={handleResendOtp}
-                  disabled={resending}
+                  style={styles.clearOtpBtn}
+                  onPress={() => {
+                    setOtpCode('')
+                    otpInputRef.current?.focus()
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  }}
+                  hitSlop={10}
                 >
-                  {resending ? (
-                    <ActivityIndicator size="small" color={brandHighlight} />
-                  ) : (
-                    <>
-                      <RotateCcw size={13} color={brandHighlight} strokeWidth={2.2} />
-                      <Text style={[styles.resendBtnText, { color: brandHighlight }]}>
-                        Ridërgo kodin me email
-                      </Text>
-                    </>
-                  )}
-                </Pressable>
-              ) : (
-                <Text style={[styles.countdownText, { color: colors.textMuted }]}>
-                  Mund të kërkoni një kod të ri pas{' '}
-                  <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>
-                    {countdown}s
+                  <Text style={[styles.clearOtpText, { color: colors.textMuted }]}>
+                    Pastro kodin ({otpCode.length}/6)
                   </Text>
-                </Text>
+                </Pressable>
               )}
-            </View>
 
-            {/* Skip for now Escape Hatch */}
-            <View style={styles.skipSection}>
-              <View style={styles.orDividerRow}>
-                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-                <Text style={[styles.orDividerText, { color: colors.textMuted }]}>ose</Text>
-                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-              </View>
-
+              {/* Verify Button */}
               <Pressable
                 style={[
-                  styles.skipBtn,
-                  { borderColor: specularBorderColor, backgroundColor: colors.surfaceSubtle },
+                  styles.submitBtn,
+                  styles.verifySubmitBtn,
+                  {
+                    backgroundColor: brandHighlight,
+                    opacity: verifying ? 0.75 : 1,
+                  },
                 ]}
-                onPress={handleSkipVerification}
-                hitSlop={6}
+                onPress={() => handleVerifyOtp()}
+                disabled={verifying}
+                hitSlop={8}
               >
-                <FastForward size={14} color={colors.textSecondary} strokeWidth={2.2} />
-                <View style={styles.skipBtnTextGroup}>
-                  <Text style={[styles.skipBtnText, { color: colors.textPrimary }]}>
-                    Kalo për tani
-                  </Text>
-                  <Text style={[styles.skipBtnSubtext, { color: colors.textMuted }]}>
-                    Verifikoni më vonë nga rubrika «Profili»
-                  </Text>
-                </View>
-                <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
+                {verifying ? (
+                  <View style={styles.submitBtnInner}>
+                    <ActivityIndicator color={primaryBtnText} size="small" />
+                    <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                      Duke verifikuar...
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.submitBtnInner}>
+                    <CheckCircle2 size={16} color={primaryBtnText} strokeWidth={2.4} />
+                    <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                      Konfirmo Kodin
+                    </Text>
+                  </View>
+                )}
               </Pressable>
+
+              {/* Resend Section */}
+              <View style={styles.resendSection}>
+                {canResend ? (
+                  <Pressable
+                    style={[
+                      styles.resendBtn,
+                      { backgroundColor: colors.surfaceSubtle, borderColor: specularBorderColor },
+                    ]}
+                    onPress={handleResendOtp}
+                    disabled={resending}
+                  >
+                    {resending ? (
+                      <ActivityIndicator size="small" color={brandHighlight} />
+                    ) : (
+                      <>
+                        <RotateCcw size={13} color={brandHighlight} strokeWidth={2.2} />
+                        <Text style={[styles.resendBtnText, { color: brandHighlight }]}>
+                          Ridërgo kodin me email
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                ) : (
+                  <Text style={[styles.countdownText, { color: colors.textMuted }]}>
+                    Mund të kërkoni një kod të ri pas{' '}
+                    <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>
+                      {countdown}s
+                    </Text>
+                  </Text>
+                )}
+              </View>
+
+              {/* Skip for now Escape Hatch */}
+              <View style={styles.skipSection}>
+                <View style={styles.orDividerRow}>
+                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                  <Text style={[styles.orDividerText, { color: colors.textMuted }]}>ose</Text>
+                  <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                </View>
+
+                <Pressable
+                  style={[
+                    styles.skipBtn,
+                    { borderColor: specularBorderColor, backgroundColor: colors.surfaceSubtle },
+                  ]}
+                  onPress={handleSkipVerification}
+                  hitSlop={6}
+                >
+                  <FastForward size={14} color={colors.textSecondary} strokeWidth={2.2} />
+                  <View style={styles.skipBtnTextGroup}>
+                    <Text style={[styles.skipBtnText, { color: colors.textPrimary }]}>
+                      Kalo për tani
+                    </Text>
+                    <Text style={[styles.skipBtnSubtext, { color: colors.textMuted }]}>
+                      Verifikoni më vonë nga rubrika «Profili»
+                    </Text>
+                  </View>
+                  <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
+                </Pressable>
+              </View>
             </View>
           </View>
         ) : (
           /* ================= STEP 1: AUTH (LOGIN & REGISTER) ================= */
           <>
-            {/* Centered Compact Brand Emblem & Title */}
+            {/* Centered Brand Emblem & Header with crisp typography */}
             <View style={styles.brandHero}>
-              <Logo size={28} />
+              <Logo size={30} />
               <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                 {heroTitle}
               </Text>
@@ -928,107 +968,20 @@ export default function AuthModalScreen() {
               </Text>
             </View>
 
-            {/* Compact Segmented Tab Switcher (Kyçu / Regjistrohu) */}
+            {/* Modern Polished Card Container */}
             <View
               style={[
-                styles.tabSwitcher,
+                styles.authCard,
                 {
-                  backgroundColor:
-                    theme === 'white'
-                      ? 'rgba(0, 0, 0, 0.05)'
-                      : 'rgba(255, 255, 255, 0.07)',
+                  backgroundColor: theme === 'white' ? '#FFFFFF' : colors.surface,
                   borderColor: specularBorderColor,
-                  borderWidth: 0.5,
                 },
               ]}
             >
-              <Pressable
-                style={[
-                  styles.tabBtn,
-                  activeTab === 'login' && [
-                    styles.tabBtnActive,
-                    {
-                      backgroundColor: colors.surface,
-                      borderWidth: 0.5,
-                      borderColor: specularBorderColor,
-                      shadowColor: '#000',
-                      shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                      shadowRadius: 3,
-                      elevation: 2,
-                    },
-                  ],
-                ]}
-                onPress={() => handleTabChange('login')}
-              >
-                <LogIn
-                  size={14}
-                  color={activeTab === 'login' ? brandHighlight : colors.textMuted}
-                  strokeWidth={activeTab === 'login' ? 2.5 : 2}
-                />
-                <Text
-                  style={[
-                    styles.tabBtnText,
-                    {
-                      color: activeTab === 'login' ? colors.textPrimary : colors.textMuted,
-                      fontFamily: activeTab === 'login' ? Fonts.bold : Fonts.medium,
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  Kyçu
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.tabBtn,
-                  activeTab === 'register' && [
-                    styles.tabBtnActive,
-                    {
-                      backgroundColor: colors.surface,
-                      borderWidth: 0.5,
-                      borderColor: specularBorderColor,
-                      shadowColor: '#000',
-                      shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                      shadowRadius: 3,
-                      elevation: 2,
-                    },
-                  ],
-                ]}
-                onPress={() => handleTabChange('register')}
-              >
-                <UserPlus
-                  size={14}
-                  color={activeTab === 'register' ? brandHighlight : colors.textMuted}
-                  strokeWidth={activeTab === 'register' ? 2.5 : 2}
-                />
-                <Text
-                  style={[
-                    styles.tabBtnText,
-                    {
-                      color: activeTab === 'register' ? colors.textPrimary : colors.textMuted,
-                      fontFamily: activeTab === 'register' ? Fonts.bold : Fonts.medium,
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  Regjistrohu
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Error Alert */}
-            {errorMessage && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            )}
-
-            {/* Dual-Track Persona Switcher (Individ vs Kompani / Biznes) */}
-            <View style={styles.accountTypeWrapper}>
+              {/* Segmented Tab Switcher (Kyçu / Regjistrohu) */}
               <View
                 style={[
-                  styles.accountTypeSelector,
+                  styles.tabSwitcher,
                   {
                     backgroundColor:
                       theme === 'white'
@@ -1041,168 +994,310 @@ export default function AuthModalScreen() {
               >
                 <Pressable
                   style={[
-                    styles.accountTypePill,
-                    accountType === 'individual' && [
-                      styles.accountTypePillActive,
+                    styles.tabBtn,
+                    activeTab === 'login' && [
+                      styles.tabBtnActive,
                       {
                         backgroundColor: colors.surface,
-                        borderColor: specularBorderColor,
                         borderWidth: 0.5,
+                        borderColor: specularBorderColor,
+                        shadowColor: '#000',
+                        shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                        shadowRadius: 3,
+                        elevation: 2,
                       },
                     ],
                   ]}
-                  onPress={() => handleAccountTypeChange('individual')}
+                  onPress={() => handleTabChange('login')}
                 >
-                  <User
-                    size={13}
-                    color={accountType === 'individual' ? brandHighlight : colors.textMuted}
-                    strokeWidth={2.2}
+                  <LogIn
+                    size={14}
+                    color={activeTab === 'login' ? brandHighlight : colors.textMuted}
+                    strokeWidth={activeTab === 'login' ? 2.5 : 2}
                   />
                   <Text
                     style={[
-                      styles.accountTypePillText,
+                      styles.tabBtnText,
                       {
-                        color:
-                          accountType === 'individual'
-                            ? colors.textPrimary
-                            : colors.textMuted,
-                        fontFamily:
-                          accountType === 'individual' ? Fonts.bold : Fonts.medium,
+                        color: activeTab === 'login' ? colors.textPrimary : colors.textMuted,
+                        fontFamily: activeTab === 'login' ? Fonts.bold : Fonts.medium,
                       },
                     ]}
                     numberOfLines={1}
                   >
-                    Individ
+                    Kyçu
                   </Text>
                 </Pressable>
 
                 <Pressable
                   style={[
-                    styles.accountTypePill,
-                    accountType === 'company' && [
-                      styles.accountTypePillActive,
+                    styles.tabBtn,
+                    activeTab === 'register' && [
+                      styles.tabBtnActive,
                       {
                         backgroundColor: colors.surface,
-                        borderColor: specularBorderColor,
                         borderWidth: 0.5,
+                        borderColor: specularBorderColor,
+                        shadowColor: '#000',
+                        shadowOpacity: theme === 'black' ? 0.35 : 0.08,
+                        shadowRadius: 3,
+                        elevation: 2,
                       },
                     ],
                   ]}
-                  onPress={() => handleAccountTypeChange('company')}
+                  onPress={() => handleTabChange('register')}
                 >
-                  <Building2
-                    size={13}
-                    color={accountType === 'company' ? brandHighlight : colors.textMuted}
-                    strokeWidth={2.2}
+                  <UserPlus
+                    size={14}
+                    color={activeTab === 'register' ? brandHighlight : colors.textMuted}
+                    strokeWidth={activeTab === 'register' ? 2.5 : 2}
                   />
                   <Text
                     style={[
-                      styles.accountTypePillText,
+                      styles.tabBtnText,
                       {
-                        color:
-                          accountType === 'company'
-                            ? colors.textPrimary
-                            : colors.textMuted,
-                        fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
+                        color: activeTab === 'register' ? colors.textPrimary : colors.textMuted,
+                        fontFamily: activeTab === 'register' ? Fonts.bold : Fonts.medium,
                       },
                     ]}
                     numberOfLines={1}
                   >
-                    Kompani / Biznes
+                    Regjistrohu
                   </Text>
                 </Pressable>
               </View>
-            </View>
 
-            {/* ─── High-Density Social & Native OAuth Suite ─── */}
-            <View style={styles.oauthSection}>
-              {/* Primary 1-Tap Google Button */}
-              <Pressable
-                style={[
-                  styles.oauthHeroBtn,
-                  { backgroundColor: colors.surface, borderColor: specularBorderColor },
-                  (!!oauthLoading || loading) && styles.submitBtnDisabled,
-                ]}
-                onPress={() => handleOAuth('google')}
-                disabled={!!oauthLoading || loading}
-              >
-                {oauthLoading === 'google' ? (
-                  <ActivityIndicator size="small" color={brandHighlight} />
-                ) : (
-                  <>
-                    <GoogleLogo size={18} />
-                    <Text style={[styles.oauthHeroBtnText, { color: colors.textPrimary }]}>
-                      Vazhdo me Google
+              {/* Error Alert */}
+              {errorMessage && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              )}
+
+              {/* Dual-Track Persona Switcher (Individ vs Kompani / Biznes) */}
+              <View style={styles.accountTypeWrapper}>
+                <View
+                  style={[
+                    styles.accountTypeSelector,
+                    {
+                      backgroundColor:
+                        theme === 'white'
+                          ? 'rgba(0, 0, 0, 0.035)'
+                          : 'rgba(255, 255, 255, 0.05)',
+                      borderColor: specularBorderColor,
+                      borderWidth: 0.5,
+                    },
+                  ]}
+                >
+                  <Pressable
+                    style={[
+                      styles.accountTypePill,
+                      accountType === 'individual' && [
+                        styles.accountTypePillActive,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: specularBorderColor,
+                          borderWidth: 0.5,
+                        },
+                      ],
+                    ]}
+                    onPress={() => handleAccountTypeChange('individual')}
+                  >
+                    <User
+                      size={13}
+                      color={accountType === 'individual' ? brandHighlight : colors.textMuted}
+                      strokeWidth={2.2}
+                    />
+                    <Text
+                      style={[
+                        styles.accountTypePillText,
+                        {
+                          color:
+                            accountType === 'individual'
+                              ? colors.textPrimary
+                              : colors.textMuted,
+                          fontFamily:
+                            accountType === 'individual' ? Fonts.bold : Fonts.medium,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Individ
                     </Text>
-                  </>
-                )}
-              </Pressable>
+                  </Pressable>
 
-              {/* Secondary OAuth 2-Column Grid: Apple, Facebook */}
-              <View style={styles.secondaryOauthRow}>
+                  <Pressable
+                    style={[
+                      styles.accountTypePill,
+                      accountType === 'company' && [
+                        styles.accountTypePillActive,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: specularBorderColor,
+                          borderWidth: 0.5,
+                        },
+                      ],
+                    ]}
+                    onPress={() => handleAccountTypeChange('company')}
+                  >
+                    <Building2
+                      size={13}
+                      color={accountType === 'company' ? brandHighlight : colors.textMuted}
+                      strokeWidth={2.2}
+                    />
+                    <Text
+                      style={[
+                        styles.accountTypePillText,
+                        {
+                          color:
+                            accountType === 'company'
+                              ? colors.textPrimary
+                              : colors.textMuted,
+                          fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Kompani / Biznes
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* ─── Branded, Evenly Spaced 3-Button Social Auth Row (Apple, Google, Facebook) ─── */}
+              <View style={styles.socialAuthRow}>
+                {/* Apple */}
                 <Pressable
                   style={[
-                    styles.secondaryOauthBtn,
+                    styles.socialAuthBtn,
                     {
                       backgroundColor: appleBg,
-                      borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : appleBg,
+                      borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.35)' : appleBg,
                     },
                     (!!oauthLoading || loading) && styles.submitBtnDisabled,
                   ]}
                   onPress={() => handleOAuth('apple')}
                   disabled={!!oauthLoading || loading}
+                  hitSlop={4}
                 >
                   {oauthLoading === 'apple' ? (
                     <ActivityIndicator size="small" color={appleFg} />
                   ) : (
-                    <>
+                    <View style={styles.socialBtnInner}>
                       <AppleLogo size={15} color={appleFg} />
-                      <Text style={[styles.secondaryOauthBtnText, { color: appleFg }]}>
+                      <Text style={[styles.socialAuthBtnText, { color: appleFg }]}>
                         Apple
                       </Text>
-                    </>
+                    </View>
                   )}
                 </Pressable>
 
+                {/* Google */}
                 <Pressable
                   style={[
-                    styles.secondaryOauthBtn,
-                    { backgroundColor: colors.surface, borderColor: specularBorderColor },
+                    styles.socialAuthBtn,
+                    {
+                      backgroundColor: theme === 'white' ? '#FFFFFF' : colors.surfaceSubtle,
+                      borderColor: specularBorderColor,
+                    },
+                    (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                  ]}
+                  onPress={() => handleOAuth('google')}
+                  disabled={!!oauthLoading || loading}
+                  hitSlop={4}
+                >
+                  {oauthLoading === 'google' ? (
+                    <ActivityIndicator size="small" color={brandHighlight} />
+                  ) : (
+                    <View style={styles.socialBtnInner}>
+                      <GoogleLogo size={15} />
+                      <Text style={[styles.socialAuthBtnText, { color: colors.textPrimary }]}>
+                        Google
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+
+                {/* Facebook */}
+                <Pressable
+                  style={[
+                    styles.socialAuthBtn,
+                    {
+                      backgroundColor: theme === 'white' ? '#FFFFFF' : colors.surfaceSubtle,
+                      borderColor: theme === 'white' ? 'rgba(24, 119, 242, 0.25)' : specularBorderColor,
+                    },
                     (!!oauthLoading || loading) && styles.submitBtnDisabled,
                   ]}
                   onPress={() => handleOAuth('facebook')}
                   disabled={!!oauthLoading || loading}
+                  hitSlop={4}
                 >
                   {oauthLoading === 'facebook' ? (
                     <ActivityIndicator size="small" color="#1877F2" />
                   ) : (
-                    <>
+                    <View style={styles.socialBtnInner}>
                       <FacebookLogo size={15} />
-                      <Text style={[styles.secondaryOauthBtnText, { color: colors.textPrimary }]}>
+                      <Text style={[styles.socialAuthBtnText, { color: '#1877F2' }]}>
                         Facebook
                       </Text>
-                    </>
+                    </View>
                   )}
                 </Pressable>
               </View>
-            </View>
 
-            {/* Divider */}
-            <View style={styles.orDividerRow}>
-              <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-              <Text style={[styles.orDividerText, { color: colors.textMuted }]}>
-                ose me email
-              </Text>
-              <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
-            </View>
+              {/* Divider */}
+              <View style={styles.orDividerRow}>
+                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+                <Text style={[styles.orDividerText, { color: colors.textMuted }]}>
+                  ose me email
+                </Text>
+                <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
+              </View>
 
-            {/* Input Form Fields */}
-            <View style={styles.form}>
-              {/* If Company & Register: Emri i Kompanisë */}
-              {activeTab === 'register' && accountType === 'company' && (
+              {/* Input Form Fields */}
+              <View style={styles.form}>
+                {/* If Company & Register: Emri i Kompanisë */}
+                {activeTab === 'register' && accountType === 'company' && (
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                      Emri i Kompanisë ose Agjencisë *
+                    </Text>
+                    <View
+                      style={[
+                        styles.inputField,
+                        {
+                          backgroundColor: colors.surfaceSubtle,
+                          borderColor:
+                            focusedField === 'companyName' ? brandHighlight : specularBorderColor,
+                          borderWidth: focusedField === 'companyName' ? 1.5 : 0.5,
+                        },
+                      ]}
+                    >
+                      <Building2
+                        size={16}
+                        color={focusedField === 'companyName' ? brandHighlight : colors.textMuted}
+                        strokeWidth={2}
+                      />
+                      <TextInput
+                        style={[styles.textInput, { color: colors.textPrimary }]}
+                        placeholder="psh. Prishtina Real Estate Sh.p.k."
+                        placeholderTextColor={colors.placeholder}
+                        value={companyName}
+                        onChangeText={setCompanyName}
+                        onFocus={() => setFocusedField('companyName')}
+                        onBlur={() => setFocusedField(null)}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {/* Email */}
                 <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                    Emri i Kompanisë ose Agjencisë *
+                    {accountType === 'company'
+                      ? 'Email Zyrtar i Kompanisë *'
+                      : 'Email *'}
                   </Text>
                   <View
                     style={[
@@ -1210,152 +1305,121 @@ export default function AuthModalScreen() {
                       {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor:
-                          focusedField === 'companyName' ? brandHighlight : specularBorderColor,
-                        borderWidth: focusedField === 'companyName' ? 1.5 : 0.5,
+                          focusedField === 'email' ? brandHighlight : specularBorderColor,
+                        borderWidth: focusedField === 'email' ? 1.5 : 0.5,
                       },
                     ]}
                   >
-                    <Building2
+                    <Mail
                       size={16}
-                      color={focusedField === 'companyName' ? brandHighlight : colors.textMuted}
+                      color={focusedField === 'email' ? brandHighlight : colors.textMuted}
                       strokeWidth={2}
                     />
                     <TextInput
                       style={[styles.textInput, { color: colors.textPrimary }]}
-                      placeholder="psh. Prishtina Real Estate Sh.p.k."
+                      placeholder={
+                        accountType === 'company'
+                          ? 'kompania@biznes.com'
+                          : 'shembull@email.com'
+                      }
                       placeholderTextColor={colors.placeholder}
-                      value={companyName}
-                      onChangeText={setCompanyName}
-                      onFocus={() => setFocusedField('companyName')}
+                      value={email}
+                      onChangeText={setEmail}
+                      onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField(null)}
-                      autoCapitalize="words"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
                     />
                   </View>
                 </View>
-              )}
 
-              {/* Email */}
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                  {accountType === 'company'
-                    ? 'Email Zyrtar i Kompanisë *'
-                    : 'Email *'}
-                </Text>
-                <View
-                  style={[
-                    styles.inputField,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor:
-                        focusedField === 'email' ? brandHighlight : specularBorderColor,
-                      borderWidth: focusedField === 'email' ? 1.5 : 0.5,
-                    },
-                  ]}
-                >
-                  <Mail
-                    size={16}
-                    color={focusedField === 'email' ? brandHighlight : colors.textMuted}
-                    strokeWidth={2}
-                  />
-                  <TextInput
-                    style={[styles.textInput, { color: colors.textPrimary }]}
-                    placeholder={
-                      accountType === 'company'
-                        ? 'kompania@biznes.com'
-                        : 'shembull@email.com'
-                    }
-                    placeholderTextColor={colors.placeholder}
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                {/* Password */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Fjalëkalimi *</Text>
+                  <View
+                    style={[
+                      styles.inputField,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor:
+                          focusedField === 'password' ? brandHighlight : specularBorderColor,
+                        borderWidth: focusedField === 'password' ? 1.5 : 0.5,
+                      },
+                    ]}
+                  >
+                    <Lock
+                      size={16}
+                      color={focusedField === 'password' ? brandHighlight : colors.textMuted}
+                      strokeWidth={2}
+                    />
+                    <TextInput
+                      style={[styles.textInput, { color: colors.textPrimary }]}
+                      placeholder={activeTab === 'register' ? 'Të paktën 6 karaktere' : 'Fjalëkalimi'}
+                      placeholderTextColor={colors.placeholder}
+                      value={password}
+                      onChangeText={setPassword}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField(null)}
+                      secureTextEntry={!showPassword}
+                    />
+                    <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={10}>
+                      {showPassword ? (
+                        <EyeOff size={16} color={colors.textMuted} />
+                      ) : (
+                        <Eye size={16} color={colors.textMuted} />
+                      )}
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
 
-              {/* Password */}
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Fjalëkalimi *</Text>
-                <View
+                {/* Primary Action Button with Loading Spinner */}
+                <Pressable
                   style={[
-                    styles.inputField,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor:
-                        focusedField === 'password' ? brandHighlight : specularBorderColor,
-                      borderWidth: focusedField === 'password' ? 1.5 : 0.5,
-                    },
+                    styles.submitBtn,
+                    { backgroundColor: brandHighlight },
+                    (loading || !!oauthLoading) && styles.submitBtnDisabled,
                   ]}
+                  onPress={handleAuthSubmit}
+                  disabled={loading || !!oauthLoading}
                 >
-                  <Lock
-                    size={16}
-                    color={focusedField === 'password' ? brandHighlight : colors.textMuted}
-                    strokeWidth={2}
-                  />
-                  <TextInput
-                    style={[styles.textInput, { color: colors.textPrimary }]}
-                    placeholder={activeTab === 'register' ? 'Të paktën 6 karaktere' : 'Fjalëkalimi'}
-                    placeholderTextColor={colors.placeholder}
-                    value={password}
-                    onChangeText={setPassword}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    secureTextEntry={!showPassword}
-                  />
-                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={10}>
-                    {showPassword ? (
-                      <EyeOff size={16} color={colors.textMuted} />
-                    ) : (
-                      <Eye size={16} color={colors.textMuted} />
-                    )}
+                  {loading ? (
+                    <View style={styles.submitBtnInner}>
+                      <ActivityIndicator color={primaryBtnText} size="small" />
+                      <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                        {activeTab === 'login' ? 'Duke u kyçur...' : 'Duke u regjistruar...'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.submitBtnInner}>
+                      <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
+                        {activeTab === 'login'
+                          ? accountType === 'company'
+                            ? 'Kyçu si Kompani'
+                            : 'Kyçu në Llogari'
+                          : accountType === 'company'
+                          ? 'Regjistro Kompaninë'
+                          : 'Krijo Llogari'}
+                      </Text>
+                      <ArrowRight size={16} color={primaryBtnText} strokeWidth={2.4} />
+                    </View>
+                  )}
+                </Pressable>
+
+                {/* 1-Line Switcher Prompt */}
+                <View style={styles.switchPromptRow}>
+                  <Text style={[styles.switchPromptText, { color: colors.textMuted }]}>
+                    {activeTab === 'login' ? 'Nuk keni llogari?' : 'Keni tashmë llogari?'}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
+                    hitSlop={8}
+                  >
+                    <Text style={[styles.switchActionText, { color: brandHighlight }]}>
+                      {activeTab === 'login' ? 'Regjistrohu falas' : 'Kyçu këtu'}
+                    </Text>
                   </Pressable>
                 </View>
-              </View>
-
-              {/* Primary Action Button */}
-              <Pressable
-                style={[
-                  styles.submitBtn,
-                  { backgroundColor: brandHighlight },
-                  loading && styles.submitBtnDisabled,
-                ]}
-                onPress={handleAuthSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={primaryBtnText} size="small" />
-                ) : (
-                  <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
-                      {activeTab === 'login'
-                        ? accountType === 'company'
-                          ? 'Kyçu si Kompani'
-                          : 'Kyçu'
-                        : accountType === 'company'
-                        ? 'Regjistro Kompaninë'
-                        : 'Regjistrohu'}
-                    </Text>
-                    <ArrowRight size={16} color={primaryBtnText} strokeWidth={2.4} />
-                  </View>
-                )}
-              </Pressable>
-
-              {/* 1-Line Switcher Prompt */}
-              <View style={styles.switchPromptRow}>
-                <Text style={[styles.switchPromptText, { color: colors.textMuted }]}>
-                  {activeTab === 'login' ? 'Nuk keni llogari?' : 'Keni tashmë llogari?'}
-                </Text>
-                <Pressable
-                  onPress={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
-                  hitSlop={8}
-                >
-                  <Text style={[styles.switchActionText, { color: brandHighlight }]}>
-                    {activeTab === 'login' ? 'Regjistrohu' : 'Kyçu'}
-                  </Text>
-                </Pressable>
               </View>
             </View>
           </>
@@ -1405,37 +1469,50 @@ const styles = StyleSheet.create({
   brandHero: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 12,
   },
   heroTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: Fonts.extraBold,
     letterSpacing: -0.4,
-    lineHeight: 23,
+    lineHeight: 25,
     textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 2,
+    marginTop: 8,
+    marginBottom: 3,
   },
   heroSubtitle: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 16,
-    maxWidth: 300,
+    lineHeight: 17,
+    maxWidth: 310,
     alignSelf: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  authCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+    width: '100%',
+    marginBottom: 16,
   },
   tabSwitcher: {
     flexDirection: 'row',
     borderRadius: 12,
     padding: 3,
     gap: 4,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   tabBtn: {
     flex: 1,
-    height: 34,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1451,7 +1528,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   accountTypeWrapper: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   accountTypeSelector: {
     flexDirection: 'row',
@@ -1483,7 +1560,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: 10,
     borderWidth: 0.5,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
@@ -1494,40 +1571,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
-  oauthSection: {
-    gap: 6,
-    marginBottom: 4,
-  },
-  oauthHeroBtn: {
-    height: 38,
+  socialAuthRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
-    borderRadius: 11,
-    borderWidth: 0.5,
+    marginVertical: 4,
   },
-  oauthHeroBtnText: {
-    fontSize: 13.5,
-    fontFamily: Fonts.semiBold,
-    letterSpacing: -0.2,
-  },
-  secondaryOauthRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  secondaryOauthBtn: {
+  socialAuthBtn: {
     flex: 1,
-    height: 34,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  socialBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    borderRadius: 10,
-    borderWidth: 0.5,
+    gap: 6,
   },
-  secondaryOauthBtnText: {
-    fontSize: 11.5,
+  socialAuthBtnText: {
+    fontSize: 12.5,
     fontFamily: Fonts.semiBold,
     letterSpacing: -0.1,
   },
@@ -1536,7 +1606,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'stretch',
     gap: 10,
-    marginVertical: 8,
+    marginVertical: 10,
   },
   orDividerLine: {
     flex: 1,
@@ -1548,10 +1618,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   form: {
-    gap: 8,
+    gap: 9,
   },
   inputGroup: {
-    gap: 3,
+    gap: 3.5,
   },
   inputLabel: {
     fontSize: 11.5,
@@ -1561,9 +1631,9 @@ const styles = StyleSheet.create({
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 11,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 40,
+    height: 42,
     gap: 8,
   },
   textInput: {
@@ -1572,11 +1642,11 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   submitBtn: {
-    height: 42,
-    borderRadius: 11,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
+    marginTop: 8,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 5,
@@ -1600,7 +1670,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    marginTop: 6,
+    marginTop: 8,
     paddingVertical: 3,
   },
   switchPromptText: {

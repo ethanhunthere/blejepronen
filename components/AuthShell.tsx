@@ -60,13 +60,13 @@ export default function AuthShell({
       {/* Marker consumed by globals.css to hide the site footer on auth screens */}
       <span data-auth-page hidden />
 
-      {/* Left: white panel with the form (55% — optically reads ~60/40 because
+      {/* Left: subtle soft background with the floating card (55% — optically reads ~60/40 because
           the white field carries less visual mass than the globe-filled teal) */}
-      <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-white px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
-        <div className="w-full max-w-[400px] my-auto py-3 sm:py-6 flex flex-col justify-center shrink-0">
+      <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-slate-50/60 px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
+        <div className="w-full max-w-[420px] my-auto py-5 sm:py-8 flex flex-col justify-center shrink-0">
           <Link
             href="/"
-            className="mb-3 sm:mb-4 inline-flex items-center gap-2 transition-opacity hover:opacity-85 self-start"
+            className="mb-3.5 sm:mb-4 inline-flex items-center gap-2 transition-opacity hover:opacity-85 self-start"
           >
             <Image
               src="/logo-teal.png"

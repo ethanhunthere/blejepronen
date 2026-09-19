@@ -24,6 +24,19 @@ function VerifiedMessage() {
   )
 }
 
+const isOAuthCancel = (errText?: string | null) => {
+  if (!errText) return false
+  const lower = errText.toLowerCase()
+  return (
+    lower.includes('cancel') ||
+    lower.includes('dismiss') ||
+    lower.includes('popup_closed') ||
+    lower.includes('access_denied') ||
+    lower.includes('user closed') ||
+    lower.includes('window closed')
+  )
+}
+
 function LoginForm() {
   const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [email, setEmail] = useState('')
@@ -33,6 +46,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
@@ -100,7 +114,8 @@ function LoginForm() {
           }
         }
 
-        router.replace('/')
+        const nextUrl = searchParams.get('redirect') || searchParams.get('next') || '/'
+        router.replace(nextUrl)
         return
       }
 
@@ -210,6 +225,10 @@ function LoginForm() {
       })
 
       if (oauthErr) {
+        if (isOAuthCancel(oauthErr.message)) {
+          setOauthLoading(null)
+          return
+        }
         const msg = oauthErr.message?.toLowerCase() || ''
         if (msg.includes('provider is not enabled') || (oauthErr as any).code === 400 || (oauthErr as any).status === 400) {
           setError(`Hyrja përmes ${providerTitle} po përgatitet në sistem. Mund të kyçeni menjëherë me Google ose me email.`)
@@ -220,6 +239,11 @@ function LoginForm() {
         return
       }
     } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      if (isOAuthCancel(errMsg)) {
+        setOauthLoading(null)
+        return
+      }
       console.error(`${provider} OAuth error:`, err)
       setError(`Hyrja përmes këtij opsioni po aktivizohet. Përdorni Google ose email për hyrje të menjëhershme.`)
       setOauthLoading(null)
@@ -238,7 +262,7 @@ function LoginForm() {
             ? 'Kyçu në profilin e biznesit ose agjencisë'
             : 'Futu me llogarinë tënde personale'
         }
-        googleLabel="Vazhdo me Google"
+        googleLabel="Google"
         onGoogle={() => handleOAuth('google')}
         onApple={() => handleOAuth('apple')}
         onFacebook={() => handleOAuth('facebook')}
@@ -307,7 +331,7 @@ function LoginForm() {
           <button
             type="submit"
             className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#006459]/20 hover:shadow-md hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={loading}
+            disabled={loading || !!oauthLoading}
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -327,5 +351,9 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return <LoginForm />
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
 }
