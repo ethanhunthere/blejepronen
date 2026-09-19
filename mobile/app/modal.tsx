@@ -39,6 +39,8 @@ import { Logo } from '@/components/Logo'
 import { apiSignUp, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { useBanner } from '@/context/BannerContext'
 import { safeBack } from '@/lib/navigation'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { syncAuthSession } from '@/lib/auth-cache'
 
 // ─── Official multi-color Google "G" emblem (vector, crisp at any size) ───
 function GoogleLogo({ size = 18 }: { size?: number }) {
@@ -114,25 +116,25 @@ export default function AuthModalScreen() {
 
   const heroTitle = useMemo(() => {
     if (params.title) return params.title
-    if (params.reason === 'favorite') return 'Ruani pronat tuaja të preferuara'
-    if (params.reason === 'chat') return 'Bisedoni me shitësin drejtpërdrejt'
-    if (params.reason === 'post') return 'Publikoni pronën tuaj në treg'
-    return activeTab === 'login' ? 'Mirësevini në Bleje Pronën' : 'Krijoni llogarinë tuaj falas'
+    if (params.reason === 'favorite') return 'Ruani të preferuarat'
+    if (params.reason === 'chat') return 'Bisedoni me shitësin'
+    if (params.reason === 'post') return 'Publikoni pronë'
+    return activeTab === 'login' ? 'Mirësevini në Bleje Pronën' : 'Krijoni llogarinë tuaj'
   }, [params.title, params.reason, activeTab])
 
   const heroSubtitle = useMemo(() => {
     if (params.reason === 'favorite') {
-      return 'Kyçuni për të ruajtur banesa, shtëpi dhe vila, dhe për t’i gjetur ato në çdo kohë nga të gjitha pajisjet tuaja.'
+      return 'Ruani dhe sinkronizoni pronat në çdo pajisje.'
     }
     if (params.reason === 'chat') {
-      return 'Dërgoni mesazhe të menjëhershme dhe merrni përgjigje të shpejta nga agjencitë dhe pronarët e verifikuar.'
+      return 'Bisedoni direkt me pronarët dhe agjencitë.'
     }
     if (params.reason === 'post') {
-      return 'Arritni mijëra blerës dhe qiramarrës potencialë në Kosovë, Shqipëri dhe Diasporë brenda pak minutave.'
+      return 'Arritni mijëra blerës potencialë shpejt.'
     }
     return activeTab === 'login'
-      ? 'Hyni në llogarinë tuaj për të menaxhuar kërkimet, bisedat dhe ofertat e fundit.'
-      : 'Bashkohuni me platformën më moderne të pasurive të patundshme në Kosovë dhe rajon.'
+      ? 'Hyni për të menaxhuar kërkimet dhe njoftimet.'
+      : 'Regjistrohuni falas brenda pak sekondave.'
   }, [params.reason, activeTab])
 
   // Account Type: 'individual' | 'company'
@@ -265,6 +267,18 @@ export default function AuthModalScreen() {
           return
         }
 
+        // Fetch fresh profile and hydrate in-memory auth-cache immediately
+        let freshProfile: any = null
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle()
+          freshProfile = prof
+        } catch {}
+        syncAuthSession(data.user, freshProfile)
+
         const meta = data.user?.user_metadata || {}
         const hasCompletedOnboarding = Boolean(meta.onboarding_completed)
 
@@ -378,6 +392,50 @@ export default function AuthModalScreen() {
         data: { user },
       } = await supabase.auth.getUser()
 
+      if (user) {
+        // Read saved pending persona
+        let targetAccountType: string | null = null
+        try {
+          targetAccountType = await AsyncStorage.getItem('@blejepronen_pending_persona')
+          await AsyncStorage.removeItem('@blejepronen_pending_persona')
+        } catch {}
+
+        if (targetAccountType === 'company') {
+          try {
+            await supabase
+              .from('profiles')
+              .update({ account_type: 'company', email_verified: true })
+              .eq('id', user.id)
+
+            await supabase.auth.updateUser({
+              data: { account_type: 'company' },
+            })
+          } catch (e) {
+            console.warn('Persist company persona notice:', e)
+          }
+        } else {
+          try {
+            await supabase
+              .from('profiles')
+              .update({ email_verified: true })
+              .eq('id', user.id)
+          } catch {}
+        }
+
+        // Fetch fresh profile and hydrate in-memory cache immediately
+        let freshProfile: any = null
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle()
+          freshProfile = prof
+        } catch {}
+
+        syncAuthSession(user, freshProfile)
+      }
+
       const meta = user?.user_metadata || {}
       const displayName =
         meta.full_name ||
@@ -418,8 +476,12 @@ export default function AuthModalScreen() {
     }
     const providerTitle = providerNames[provider] || provider
 
-    // Safety net: on some iOS / Expo Go combinations the callback arrives as a
-    // deep link (re-opening the app) instead of resolving the browser session.
+    // Persist persona before starting OAuth
+    try {
+      await AsyncStorage.setItem('@blejepronen_pending_persona', accountType)
+    } catch {}
+
+    // Safety net: deep-link listener
     const linkSub = Linking.addEventListener('url', ({ url }) => {
       if (!url) return
       if (url.includes('access_token=') || url.includes('code=')) {
@@ -451,9 +513,22 @@ export default function AuthModalScreen() {
       })
 
       if (error || !data?.url) {
-        setErrorMessage(
-          error?.message || `Hyrja me ${providerTitle} nuk është e disponueshme aktualisht.`
-        )
+        const msg = error?.message?.toLowerCase() || ''
+        if (
+          msg.includes('provider is not enabled') ||
+          (error as any)?.code === 400 ||
+          (error as any)?.status === 400
+        ) {
+          showBanner({
+            type: 'info',
+            title: `${providerTitle} po përgatitet`,
+            message: `Hyrja përmes ${providerTitle} po aktivizohet në sistem. Mund të kyçeni menjëherë me Google ose me email pa asnjë vonesë!`,
+          })
+        } else {
+          setErrorMessage(
+            error?.message || `Hyrja me ${providerTitle} nuk është e disponueshme aktualisht.`
+          )
+        }
         setOauthLoading(null)
         return
       }
@@ -467,8 +542,16 @@ export default function AuthModalScreen() {
       }
     } catch (err: unknown) {
       console.warn(`${providerTitle} auth notice:`, err)
-      const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}. Provoni përsëri.`
-      setErrorMessage(msg)
+      const msg = err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}.`
+      if (msg.toLowerCase().includes('provider is not enabled')) {
+        showBanner({
+          type: 'info',
+          title: `${providerTitle} po përgatitet`,
+          message: `Hyrja përmes ${providerTitle} po aktivizohet në sistem. Mund të kyçeni menjëherë me Google ose me email pa asnjë vonesë!`,
+        })
+      } else {
+        setErrorMessage(msg)
+      }
       setOauthLoading(null)
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
@@ -632,7 +715,7 @@ export default function AuthModalScreen() {
               }}
               hitSlop={8}
             >
-              <ArrowLeft size={16} color={brandHighlight} strokeWidth={2.4} />
+              <ArrowLeft size={14} color={brandHighlight} strokeWidth={2.4} />
               <Text style={[styles.backBtnText, { color: brandHighlight }]}>Kthehu mbrapa</Text>
             </Pressable>
 
@@ -643,19 +726,19 @@ export default function AuthModalScreen() {
                 {
                   backgroundColor:
                     theme === 'green'
-                      ? 'rgba(200, 184, 130, 0.20)'
-                      : 'rgba(0, 100, 89, 0.12)',
+                      ? 'rgba(200, 184, 130, 0.18)'
+                      : 'rgba(0, 100, 89, 0.10)',
                 },
               ]}
             >
-              <Mail size={32} color={brandHighlight} strokeWidth={2.2} />
+              <Mail size={24} color={brandHighlight} strokeWidth={2.2} />
             </View>
 
             <Text style={[styles.verifyTitle, { color: colors.textPrimary }]}>
               Verifiko Email-in
             </Text>
             <Text style={[styles.verifySubtitle, { color: colors.textMuted }]}>
-              Kemi dërguar kodin 6-shifror të verifikimit në:{'\n'}
+              Shkruani kodin 6-shifror të dërguar në{' '}
               <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>
                 {email.trim()}
               </Text>
@@ -752,7 +835,7 @@ export default function AuthModalScreen() {
               </Pressable>
             )}
 
-            {/* Verify Button - High-Affordance & Instant Responsive Tap Target */}
+            {/* Verify Button */}
             <Pressable
               style={[
                 styles.submitBtn,
@@ -775,7 +858,7 @@ export default function AuthModalScreen() {
                 </View>
               ) : (
                 <View style={styles.submitBtnInner}>
-                  <CheckCircle2 size={19} color={primaryBtnText} strokeWidth={2.4} />
+                  <CheckCircle2 size={16} color={primaryBtnText} strokeWidth={2.4} />
                   <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
                     Konfirmo Kodin
                   </Text>
@@ -798,7 +881,7 @@ export default function AuthModalScreen() {
                     <ActivityIndicator size="small" color={brandHighlight} />
                   ) : (
                     <>
-                      <RotateCcw size={15} color={brandHighlight} strokeWidth={2.2} />
+                      <RotateCcw size={13} color={brandHighlight} strokeWidth={2.2} />
                       <Text style={[styles.resendBtnText, { color: brandHighlight }]}>
                         Ridërgo kodin me email
                       </Text>
@@ -815,7 +898,7 @@ export default function AuthModalScreen() {
               )}
             </View>
 
-            {/* Apple-Grade "Skip for now" Escape Hatch */}
+            {/* Skip for now Escape Hatch */}
             <View style={styles.skipSection}>
               <View style={styles.orDividerRow}>
                 <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
@@ -831,25 +914,25 @@ export default function AuthModalScreen() {
                 onPress={handleSkipVerification}
                 hitSlop={6}
               >
-                <FastForward size={16} color={colors.textSecondary} strokeWidth={2.2} />
+                <FastForward size={14} color={colors.textSecondary} strokeWidth={2.2} />
                 <View style={styles.skipBtnTextGroup}>
                   <Text style={[styles.skipBtnText, { color: colors.textPrimary }]}>
                     Kalo për tani
                   </Text>
                   <Text style={[styles.skipBtnSubtext, { color: colors.textMuted }]}>
-                    Verifikoni më vonë, nga skedari «Profili»
+                    Verifikoni më vonë nga rubrika «Profili»
                   </Text>
                 </View>
-                <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
+                <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
               </Pressable>
             </View>
           </View>
         ) : (
           /* ================= STEP 1: AUTH (LOGIN & REGISTER) ================= */
           <>
-            {/* Centered Brand Emblem & Welcoming Editorial Context */}
+            {/* Centered Compact Brand Emblem & Title */}
             <View style={styles.brandHero}>
-              <Logo size={42} />
+              <Logo size={28} />
               <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                 {heroTitle}
               </Text>
@@ -858,7 +941,7 @@ export default function AuthModalScreen() {
               </Text>
             </View>
 
-            {/* Apple/Airbnb-Grade Segmented Tab Switcher (Kyçu / Regjistrohu) */}
+            {/* Compact Segmented Tab Switcher (Kyçu / Regjistrohu) */}
             <View
               style={[
                 styles.tabSwitcher,
@@ -883,7 +966,7 @@ export default function AuthModalScreen() {
                       borderColor: specularBorderColor,
                       shadowColor: '#000',
                       shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                      shadowRadius: 5,
+                      shadowRadius: 3,
                       elevation: 2,
                     },
                   ],
@@ -891,7 +974,7 @@ export default function AuthModalScreen() {
                 onPress={() => handleTabChange('login')}
               >
                 <LogIn
-                  size={16}
+                  size={14}
                   color={activeTab === 'login' ? brandHighlight : colors.textMuted}
                   strokeWidth={activeTab === 'login' ? 2.5 : 2}
                 />
@@ -904,7 +987,6 @@ export default function AuthModalScreen() {
                     },
                   ]}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
                 >
                   Kyçu
                 </Text>
@@ -921,7 +1003,7 @@ export default function AuthModalScreen() {
                       borderColor: specularBorderColor,
                       shadowColor: '#000',
                       shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                      shadowRadius: 5,
+                      shadowRadius: 3,
                       elevation: 2,
                     },
                   ],
@@ -929,7 +1011,7 @@ export default function AuthModalScreen() {
                 onPress={() => handleTabChange('register')}
               >
                 <UserPlus
-                  size={16}
+                  size={14}
                   color={activeTab === 'register' ? brandHighlight : colors.textMuted}
                   strokeWidth={activeTab === 'register' ? 2.5 : 2}
                 />
@@ -942,7 +1024,6 @@ export default function AuthModalScreen() {
                     },
                   ]}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
                 >
                   Regjistrohu
                 </Text>
@@ -956,7 +1037,7 @@ export default function AuthModalScreen() {
               </View>
             )}
 
-            {/* Dual-Track Persona Architecture Switcher (Individ vs Kompani / Biznes) on BOTH tabs */}
+            {/* Dual-Track Persona Switcher (Individ vs Kompani / Biznes) */}
             <View style={styles.accountTypeWrapper}>
               <View
                 style={[
@@ -986,7 +1067,7 @@ export default function AuthModalScreen() {
                   onPress={() => handleAccountTypeChange('individual')}
                 >
                   <User
-                    size={15}
+                    size={13}
                     color={accountType === 'individual' ? brandHighlight : colors.textMuted}
                     strokeWidth={2.2}
                   />
@@ -1003,7 +1084,6 @@ export default function AuthModalScreen() {
                       },
                     ]}
                     numberOfLines={1}
-                    adjustsFontSizeToFit
                   >
                     Individ
                   </Text>
@@ -1024,7 +1104,7 @@ export default function AuthModalScreen() {
                   onPress={() => handleAccountTypeChange('company')}
                 >
                   <Building2
-                    size={15}
+                    size={13}
                     color={accountType === 'company' ? brandHighlight : colors.textMuted}
                     strokeWidth={2.2}
                   />
@@ -1040,7 +1120,6 @@ export default function AuthModalScreen() {
                       },
                     ]}
                     numberOfLines={1}
-                    adjustsFontSizeToFit
                   >
                     Kompani / Biznes
                   </Text>
@@ -1048,9 +1127,9 @@ export default function AuthModalScreen() {
               </View>
             </View>
 
-            {/* ─── Comprehensive Social & Native OAuth Suite ─── */}
+            {/* ─── High-Density Social & Native OAuth Suite ─── */}
             <View style={styles.oauthSection}>
-              {/* Hero Google Button */}
+              {/* Primary 1-Tap Google Button */}
               <Pressable
                 style={[
                   styles.oauthHeroBtn,
@@ -1064,7 +1143,7 @@ export default function AuthModalScreen() {
                   <ActivityIndicator size="small" color={brandHighlight} />
                 ) : (
                   <>
-                    <GoogleLogo size={19} />
+                    <GoogleLogo size={18} />
                     <Text style={[styles.oauthHeroBtnText, { color: colors.textPrimary }]}>
                       Vazhdo me Google
                     </Text>
@@ -1072,41 +1151,35 @@ export default function AuthModalScreen() {
                 )}
               </Pressable>
 
-              {/* Instant Reassurance Copy */}
-              <Text style={[styles.oauthReassuranceText, { color: colors.textMuted }]}>
-                ⚡ Pa fjalëkalim dhe pa verifikim me email — hyrje e menjëhershme
-              </Text>
-
-              {/* Apple HIG Button */}
-              <Pressable
-                style={[
-                  styles.appleBtn,
-                  {
-                    backgroundColor: appleBg,
-                    borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : appleBg,
-                  },
-                  (!!oauthLoading || loading) && styles.submitBtnDisabled,
-                ]}
-                onPress={() => handleOAuth('apple')}
-                disabled={!!oauthLoading || loading}
-              >
-                {oauthLoading === 'apple' ? (
-                  <ActivityIndicator size="small" color={appleFg} />
-                ) : (
-                  <>
-                    <AppleLogo size={18} color={appleFg} />
-                    <Text style={[styles.appleBtnText, { color: appleFg }]}>
-                      Vazhdo me Apple
-                    </Text>
-                  </>
-                )}
-              </Pressable>
-
-              {/* Meta Ecosystem (Facebook & Instagram) */}
-              <View style={styles.metaRow}>
+              {/* Secondary OAuth 3-Column Grid: Apple, Facebook, Instagram */}
+              <View style={styles.secondaryOauthRow}>
                 <Pressable
                   style={[
-                    styles.metaBtn,
+                    styles.secondaryOauthBtn,
+                    {
+                      backgroundColor: appleBg,
+                      borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.3)' : appleBg,
+                    },
+                    (!!oauthLoading || loading) && styles.submitBtnDisabled,
+                  ]}
+                  onPress={() => handleOAuth('apple')}
+                  disabled={!!oauthLoading || loading}
+                >
+                  {oauthLoading === 'apple' ? (
+                    <ActivityIndicator size="small" color={appleFg} />
+                  ) : (
+                    <>
+                      <AppleLogo size={15} color={appleFg} />
+                      <Text style={[styles.secondaryOauthBtnText, { color: appleFg }]}>
+                        Apple
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.secondaryOauthBtn,
                     { backgroundColor: colors.surface, borderColor: specularBorderColor },
                     (!!oauthLoading || loading) && styles.submitBtnDisabled,
                   ]}
@@ -1117,8 +1190,8 @@ export default function AuthModalScreen() {
                     <ActivityIndicator size="small" color="#1877F2" />
                   ) : (
                     <>
-                      <FacebookLogo size={18} />
-                      <Text style={[styles.metaBtnText, { color: colors.textPrimary }]}>
+                      <FacebookLogo size={15} />
+                      <Text style={[styles.secondaryOauthBtnText, { color: colors.textPrimary }]}>
                         Facebook
                       </Text>
                     </>
@@ -1127,7 +1200,7 @@ export default function AuthModalScreen() {
 
                 <Pressable
                   style={[
-                    styles.metaBtn,
+                    styles.secondaryOauthBtn,
                     { backgroundColor: colors.surface, borderColor: specularBorderColor },
                     (!!oauthLoading || loading) && styles.submitBtnDisabled,
                   ]}
@@ -1138,8 +1211,8 @@ export default function AuthModalScreen() {
                     <ActivityIndicator size="small" color="#E4405F" />
                   ) : (
                     <>
-                      <InstagramLogo size={18} />
-                      <Text style={[styles.metaBtnText, { color: colors.textPrimary }]}>
+                      <InstagramLogo size={15} />
+                      <Text style={[styles.secondaryOauthBtnText, { color: colors.textPrimary }]}>
                         Instagram
                       </Text>
                     </>
@@ -1177,7 +1250,7 @@ export default function AuthModalScreen() {
                     ]}
                   >
                     <Building2
-                      size={18}
+                      size={16}
                       color={focusedField === 'companyName' ? brandHighlight : colors.textMuted}
                       strokeWidth={2}
                     />
@@ -1195,7 +1268,7 @@ export default function AuthModalScreen() {
                 </View>
               )}
 
-              {/* Email (dynamically scoped) */}
+              {/* Email */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                   {accountType === 'company'
@@ -1214,7 +1287,7 @@ export default function AuthModalScreen() {
                   ]}
                 >
                   <Mail
-                    size={18}
+                    size={16}
                     color={focusedField === 'email' ? brandHighlight : colors.textMuted}
                     strokeWidth={2}
                   />
@@ -1252,7 +1325,7 @@ export default function AuthModalScreen() {
                   ]}
                 >
                   <Lock
-                    size={18}
+                    size={16}
                     color={focusedField === 'password' ? brandHighlight : colors.textMuted}
                     strokeWidth={2}
                   />
@@ -1268,9 +1341,9 @@ export default function AuthModalScreen() {
                   />
                   <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={10}>
                     {showPassword ? (
-                      <EyeOff size={18} color={colors.textMuted} />
+                      <EyeOff size={16} color={colors.textMuted} />
                     ) : (
-                      <Eye size={18} color={colors.textMuted} />
+                      <Eye size={16} color={colors.textMuted} />
                     )}
                   </Pressable>
                 </View>
@@ -1287,7 +1360,7 @@ export default function AuthModalScreen() {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color={primaryBtnText} />
+                  <ActivityIndicator color={primaryBtnText} size="small" />
                 ) : (
                   <View style={styles.submitBtnInner}>
                     <Text style={[styles.submitBtnText, { color: primaryBtnText }]}>
@@ -1299,7 +1372,7 @@ export default function AuthModalScreen() {
                         ? 'Regjistro Kompaninë'
                         : 'Regjistrohu'}
                     </Text>
-                    <ArrowRight size={18} color={primaryBtnText} strokeWidth={2.4} />
+                    <ArrowRight size={16} color={primaryBtnText} strokeWidth={2.4} />
                   </View>
                 )}
               </Pressable>
@@ -1332,164 +1405,216 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingTop: 8,
+    paddingBottom: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    maxWidth: 480,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
   },
   dragHandle: {
-    width: 38,
+    width: 36,
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
     marginHorizontal: 'auto',
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 48,
-    maxWidth: 480,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 24,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
   },
   brandHero: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
-    marginBottom: 20,
-  },
-  heroTitle: {
-    fontSize: 21,
-    fontFamily: Fonts.extraBold,
-    letterSpacing: -0.5,
-    lineHeight: 27,
-    textAlign: 'center',
-    marginTop: 12,
+    marginTop: 2,
     marginBottom: 8,
   },
+  heroTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.4,
+    lineHeight: 23,
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 2,
+  },
   heroSubtitle: {
-    fontSize: 13.5,
+    fontSize: 12,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 21,
-    maxWidth: 330,
+    lineHeight: 16,
+    maxWidth: 300,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   tabSwitcher: {
     flexDirection: 'row',
-    borderRadius: 16,
-    padding: 4,
-    gap: 6,
-    marginBottom: 20,
+    borderRadius: 12,
+    padding: 3,
+    gap: 4,
+    marginBottom: 8,
   },
   tabBtn: {
     flex: 1,
-    height: 48,
+    height: 34,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    gap: 8,
+    borderRadius: 9,
+    gap: 6,
   },
   tabBtnActive: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
     elevation: 2,
   },
   tabBtnText: {
-    fontSize: 14.5,
+    fontSize: 13,
   },
   accountTypeWrapper: {
-    marginBottom: 20,
-    gap: 8,
+    marginBottom: 8,
   },
   accountTypeSelector: {
     flexDirection: 'row',
-    borderRadius: 14,
-    padding: 4,
-    gap: 6,
+    borderRadius: 10,
+    padding: 3,
+    gap: 4,
   },
   accountTypePill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 11,
-    gap: 6,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 5,
   },
   accountTypePillActive: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
   accountTypePillText: {
-    fontSize: 12.5,
+    fontSize: 11.5,
   },
   errorContainer: {
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginBottom: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginBottom: 8,
     borderWidth: 0.5,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorText: {
     color: '#EF4444',
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.medium,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
+  },
+  oauthSection: {
+    gap: 6,
+    marginBottom: 4,
+  },
+  oauthHeroBtn: {
+    height: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 11,
+    borderWidth: 0.5,
+  },
+  oauthHeroBtnText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+  },
+  secondaryOauthRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  secondaryOauthBtn: {
+    flex: 1,
+    height: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: 10,
+    borderWidth: 0.5,
+  },
+  secondaryOauthBtnText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.1,
+  },
+  orDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 10,
+    marginVertical: 8,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 0.5,
+  },
+  orDividerText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.2,
   },
   form: {
-    gap: 16,
-  },
-  inputGroup: {
     gap: 8,
   },
+  inputGroup: {
+    gap: 3,
+  },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 11.5,
     fontFamily: Fonts.semiBold,
     letterSpacing: 0.1,
   },
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
-    gap: 12,
+    borderRadius: 11,
+    paddingHorizontal: 12,
+    height: 40,
+    gap: 8,
   },
   textInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13.5,
     fontFamily: Fonts.medium,
   },
   submitBtn: {
-    height: 52,
-    borderRadius: 16,
+    height: 42,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 2,
   },
   submitBtnDisabled: {
     opacity: 0.6,
@@ -1498,91 +1623,91 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
   submitBtnText: {
-    fontSize: 15.5,
+    fontSize: 14,
     fontFamily: Fonts.bold,
   },
   switchPromptRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: 10,
-    paddingVertical: 6,
+    gap: 5,
+    marginTop: 6,
+    paddingVertical: 3,
   },
   switchPromptText: {
-    fontSize: 13.5,
+    fontSize: 12,
     fontFamily: Fonts.regular,
   },
   switchActionText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.bold,
   },
 
   // OTP Verification View Styles
   verifyStepWrapper: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 4,
   },
   backBtn: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 16,
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+    marginBottom: 8,
   },
   backBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.semiBold,
   },
   verifyIconBadge: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-  },
-  verifyTitle: {
-    fontSize: 22,
-    fontFamily: Fonts.extraBold,
-    letterSpacing: -0.4,
-    textAlign: 'center',
     marginBottom: 8,
   },
+  verifyTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
   verifySubtitle: {
-    fontSize: 13.5,
+    fontSize: 12,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-    maxWidth: 300,
+    lineHeight: 17,
+    marginBottom: 14,
+    maxWidth: 290,
   },
   otpBoxesRow: {
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 320,
     alignSelf: 'center',
   },
   otpBox: {
     flex: 1,
-    maxWidth: 46,
-    minWidth: 36,
-    height: 52,
-    borderRadius: 12,
+    maxWidth: 42,
+    minWidth: 32,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   otpBoxChar: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: Fonts.bold,
   },
   otpInteractiveContainer: {
@@ -1590,7 +1715,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   otpDirectInput: {
     position: 'absolute',
@@ -1604,66 +1729,51 @@ const styles = StyleSheet.create({
   },
   clearOtpBtn: {
     alignSelf: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 8,
   },
   clearOtpText: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: Fonts.medium,
   },
   verifySubmitBtn: {
-    marginTop: 6,
+    marginTop: 4,
   },
   resendSection: {
-    marginTop: 20,
+    marginTop: 12,
     alignItems: 'center',
   },
   resendBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 0.5,
   },
   resendBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.bold,
   },
   countdownText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: Fonts.regular,
   },
   skipSection: {
-    marginTop: 18,
+    marginTop: 10,
     alignItems: 'center',
-  },
-  orDividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    gap: 12,
-    marginBottom: 14,
-  },
-  orDividerLine: {
-    flex: 1,
-    height: 0.5,
-  },
-  orDividerText: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-    letterSpacing: 0.4,
+    width: '100%',
   },
   skipBtn: {
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderRadius: 16,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
     borderWidth: 0.5,
   },
   skipBtnTextGroup: {
@@ -1671,70 +1781,12 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   skipBtnText: {
-    fontSize: 14.5,
+    fontSize: 13,
     fontFamily: Fonts.semiBold,
     letterSpacing: -0.2,
   },
   skipBtnSubtext: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-  },
-  oauthSection: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  oauthHeroBtn: {
-    height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    borderRadius: 14,
-    borderWidth: 0.5,
-  },
-  oauthHeroBtnText: {
-    fontSize: 14.5,
-    fontFamily: Fonts.semiBold,
-    letterSpacing: -0.2,
-  },
-  oauthReassuranceText: {
     fontSize: 11,
-    fontFamily: Fonts.medium,
-    textAlign: 'center',
-    marginTop: 1,
-    marginBottom: 4,
-  },
-  appleBtn: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 9,
-    borderRadius: 14,
-    borderWidth: 0.5,
-  },
-  appleBtnText: {
-    fontSize: 14,
-    fontFamily: Fonts.semiBold,
-    letterSpacing: -0.2,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  metaBtn: {
-    flex: 1,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 14,
-    borderWidth: 0.5,
-  },
-  metaBtnText: {
-    fontSize: 13.5,
-    fontFamily: Fonts.semiBold,
-    letterSpacing: -0.2,
+    fontFamily: Fonts.regular,
   },
 })

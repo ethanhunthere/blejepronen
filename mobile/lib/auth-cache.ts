@@ -168,9 +168,31 @@ export function setSyncAuthUser(user: any) {
   ).catch(() => {})
 }
 
+export function syncAuthSession(user: any, profile?: any) {
+  inMemoryUser = user
+  if (profile !== undefined) {
+    inMemoryProfile = profile
+  }
+  isHydrated = true
+  notifySubscribers()
+  if (user) {
+    AsyncStorage.setItem(
+      AUTH_CACHE_KEY,
+      JSON.stringify({ user, profile: inMemoryProfile })
+    ).catch(() => {})
+    if (!profile) {
+      fetchFreshProfile(user.id).catch(() => {})
+    }
+  } else {
+    inMemoryProfile = null
+    AsyncStorage.removeItem(AUTH_CACHE_KEY).catch(() => {})
+  }
+}
+
 export function subscribeAuthCache(fn: (state: CachedAuthState) => void) {
   subscribers.add(fn)
   return () => {
     subscribers.delete(fn)
   }
 }
+

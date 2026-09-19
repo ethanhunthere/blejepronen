@@ -179,15 +179,29 @@ function LoginForm() {
     try {
       setOauthLoading(provider)
       setError('')
+
+      const providerNames: Record<string, string> = {
+        google: 'Google',
+        apple: 'Apple',
+        facebook: 'Facebook',
+        instagram: 'Instagram',
+      }
+      const providerTitle = providerNames[provider] || provider
+
+      // Persist persona selection across OAuth boundary
+      try {
+        document.cookie = `blejepronen_persona=${accountType}; path=/; max-age=600; SameSite=Lax`
+        localStorage.setItem('blejepronen_persona', accountType)
+      } catch {}
+
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
 
-      // Meta / Instagram routing
       const targetProvider = (provider === 'instagram' ? 'facebook' : provider) as
         | 'google'
         | 'apple'
         | 'facebook'
 
-      await supabase.auth.signInWithOAuth({
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: targetProvider,
         options: {
           redirectTo: `${origin}/auth/callback`,
@@ -195,9 +209,20 @@ function LoginForm() {
           queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
         },
       })
+
+      if (oauthErr) {
+        const msg = oauthErr.message?.toLowerCase() || ''
+        if (msg.includes('provider is not enabled') || (oauthErr as any).code === 400 || (oauthErr as any).status === 400) {
+          setError(`Hyrja përmes ${providerTitle} po përgatitet në sistem. Mund të kyçeni menjëherë me Google ose me email.`)
+        } else {
+          setError(oauthErr.message || `Ndodhi një problem me hyrjen përmes ${providerTitle}.`)
+        }
+        setOauthLoading(null)
+        return
+      }
     } catch (err: unknown) {
       console.error(`${provider} OAuth error:`, err)
-      setError(`Ndodhi një problem me hyrjen përmes ${provider}. Ju lutem provoni përsëri.`)
+      setError(`Hyrja përmes këtij opsioni po aktivizohet. Përdorni Google ose email për hyrje të menjëhershme.`)
       setOauthLoading(null)
     }
   }
@@ -240,7 +265,7 @@ function LoginForm() {
           <VerifiedMessage />
         </Suspense>
 
-        <form onSubmit={handleLogin} noValidate className="space-y-3 sm:space-y-3.5">
+        <form onSubmit={handleLogin} noValidate className="space-y-2.5 sm:space-y-3">
           <AuthField
             id="email"
             label={accountType === 'company' ? 'Email Zyrtar i Kompanisë' : 'Email'}
@@ -267,7 +292,7 @@ function LoginForm() {
             topRight={
               <Link
                 href="/forgot-password"
-                className="font-medium text-[12px] text-[#006459] hover:underline"
+                className="font-medium text-[11.5px] text-[#006459] hover:underline"
               >
                 Keni harruar fjalëkalimin?
               </Link>
@@ -283,7 +308,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#006459]/20 hover:shadow-md hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (

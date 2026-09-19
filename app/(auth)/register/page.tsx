@@ -227,13 +227,28 @@ export default function RegisterPage() {
     try {
       setOauthLoading(provider)
       setError('')
+
+      const providerNames: Record<string, string> = {
+        google: 'Google',
+        apple: 'Apple',
+        facebook: 'Facebook',
+        instagram: 'Instagram',
+      }
+      const providerTitle = providerNames[provider] || provider
+
+      // Persist persona selection across OAuth boundary
+      try {
+        document.cookie = `blejepronen_persona=${accountType}; path=/; max-age=600; SameSite=Lax`
+        localStorage.setItem('blejepronen_persona', accountType)
+      } catch {}
+
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
       const targetProvider = (provider === 'instagram' ? 'facebook' : provider) as
         | 'google'
         | 'apple'
         | 'facebook'
 
-      await supabase.auth.signInWithOAuth({
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: targetProvider,
         options: {
           redirectTo: `${origin}/auth/callback`,
@@ -241,9 +256,20 @@ export default function RegisterPage() {
           queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
         },
       })
+
+      if (oauthErr) {
+        const msg = oauthErr.message?.toLowerCase() || ''
+        if (msg.includes('provider is not enabled') || (oauthErr as any).code === 400 || (oauthErr as any).status === 400) {
+          setError(`Regjistrimi përmes ${providerTitle} po përgatitet në sistem. Mund të regjistroheni menjëherë me Google ose me email.`)
+        } else {
+          setError(oauthErr.message || `Ndodhi një problem gjatë regjistrimit me ${providerTitle}.`)
+        }
+        setOauthLoading(null)
+        return
+      }
     } catch (err: unknown) {
       console.error(`${provider} OAuth error:`, err)
-      setError(`Ndodhi një problem gjatë regjistrimit me ${provider}. Provoni përsëri.`)
+      setError(`Regjistrimi përmes këtij opsioni po aktivizohet. Përdorni Google ose email për hyrje të menjëhershme.`)
       setOauthLoading(null)
     }
   }
@@ -285,11 +311,11 @@ export default function RegisterPage() {
             </div>
           }
         >
-          <form onSubmit={handleRegister} noValidate className="space-y-3 sm:space-y-3.5">
+          <form onSubmit={handleRegister} noValidate className="space-y-2.5 sm:space-y-3">
             {/* Extra reassurance hint when Kompani is selected */}
             {accountType === 'company' && (
-              <div className="p-2.5 rounded-xl bg-[#006459]/5 border border-[#006459]/20 text-[11.5px] text-[#006459] flex items-center gap-2 animate-in fade-in duration-200">
-                <Building2 className="h-4 w-4 shrink-0 text-[#006459]" />
+              <div className="p-2 rounded-xl bg-[#006459]/5 border border-[#006459]/20 text-[11px] text-[#006459] flex items-center gap-1.5 animate-in fade-in duration-200">
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-[#006459]" />
                 <span>
                   Llogaria e kompanisë pajiset me profil agjencie dhe etiketë zyrtare në të gjitha pronat.
                 </span>
@@ -345,11 +371,11 @@ export default function RegisterPage() {
               helperText={
                 password.length > 0 ? (
                   password.length >= 6 ? (
-                    <span className="text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                    <span className="text-emerald-600 font-medium flex items-center gap-1 mt-0.5 text-[11px]">
                       <CheckCircle2 className="h-3 w-3" /> Fjalëkalimi plotëson kriteret
                     </span>
                   ) : (
-                    <span className="text-amber-600 font-medium flex items-center gap-1 mt-1">
+                    <span className="text-amber-600 font-medium flex items-center gap-1 mt-0.5 text-[11px]">
                       <AlertCircle className="h-3 w-3" /> Duhen të paktën 6 karaktere
                     </span>
                   )
@@ -359,7 +385,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#006459]/20 hover:shadow-md hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -372,7 +398,7 @@ export default function RegisterPage() {
               )}
             </button>
 
-            <p className="text-[11px] text-gray-500 text-center leading-relaxed pt-1">
+            <p className="text-[10.5px] text-gray-500 text-center leading-normal pt-0.5">
               Duke u regjistruar, ju pranoni{' '}
               <Link href="/kushtet" className="text-gray-700 underline hover:text-[#006459]">
                 Kushtet e Përdorimit
@@ -388,7 +414,7 @@ export default function RegisterPage() {
       ) : (
         <div className="w-full">
           {/* Professional Success Banner */}
-          <div className="mb-4 p-3 rounded-2xl bg-[#006459]/10 border border-[#006459]/25 text-[#006459] text-xs sm:text-[13px] flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="mb-3 p-2.5 rounded-xl bg-[#006459]/10 border border-[#006459]/25 text-[#006459] text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
             <CheckCircle2 className="h-4 w-4 text-[#006459] shrink-0 mt-0.5" />
             <div className="leading-snug">
               <p className="font-bold text-[#006459]">Kodi i verifikimit u dërgua me sukses!</p>
@@ -398,14 +424,14 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-[27px] font-black leading-tight tracking-tight text-[#101828]">
+          <h1 className="text-xl sm:text-2xl font-black leading-tight tracking-tight text-[#101828]">
             Verifiko email-in
           </h1>
-          <p className="mt-1.5 text-xs sm:text-[13.5px] text-gray-500">
+          <p className="mt-1 text-xs text-gray-500">
             Vendos kodin 6-shifror për të aktivizuar llogarinë
           </p>
 
-          <div className="mt-5">
+          <div className="mt-3.5">
             {error && (
               <Alert
                 variant="destructive"

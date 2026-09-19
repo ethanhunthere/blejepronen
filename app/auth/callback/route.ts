@@ -76,14 +76,47 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
+      // 1. Retrieve persona saved prior to OAuth redirect
+      const personaCookie = cookieStore.get('blejepronen_persona')?.value
+      const targetAccountType = personaCookie === 'company' ? 'company' : personaCookie === 'individual' ? 'individual' : null
+
+      if (targetAccountType) {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ account_type: targetAccountType, email_verified: true })
+            .eq('id', user.id)
+
+          await supabase.auth.updateUser({
+            data: { account_type: targetAccountType }
+          })
+        } catch (updateErr) {
+          console.warn('Profile persona sync error on callback:', updateErr)
+        }
+      } else {
+        // Ensure social OAuth users have email_verified true by default
+        try {
+          await supabase
+            .from('profiles')
+            .update({ email_verified: true })
+            .eq('id', user.id)
+        } catch {}
+      }
+
+      // 2. Query updated profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, email_verified')
+        .select('first_name, email_verified, account_type')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (!profile?.first_name || !profile?.email_verified) {
-        const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+      // Clear the temporary persona cookie
+      try {
+        cookieStore.delete('blejepronen_persona')
+      } catch {}
+
+      if (!profile?.first_name) {
+        const isComp = profile?.account_type === 'company' || user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
         const targetRoute = isComp ? '/completo-profilin-company' : '/completo-profilin-fast'
         const redirectRes = NextResponse.redirect(`${origin}${targetRoute}`)
         response.cookies.getAll().forEach(cookie => {

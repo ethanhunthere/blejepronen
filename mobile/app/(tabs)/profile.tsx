@@ -269,6 +269,41 @@ export default function ProfileScreen() {
     }
   }, [checkSession, fetchUserStats])
 
+  // Real-time synchronization for profile database changes
+  useEffect(() => {
+    if (!currentUser?.id) return
+
+    const channel = supabase
+      .channel(`profile_realtime_${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${currentUser.id}`,
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new === 'object') {
+            const updatedProfile = payload.new as any
+            setSyncProfile(updatedProfile)
+            setAuthState((prev) => {
+              if (!prev) return prev
+              return {
+                ...prev,
+                profile: { ...prev.profile, ...updatedProfile },
+              }
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentUser?.id])
+
   // Instant 1-tap preset avatar selector
   const handleSelectAvatarPreset = async (newAvatarUrl: string) => {
     if (!currentUser) return
