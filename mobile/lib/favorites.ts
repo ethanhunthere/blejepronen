@@ -37,6 +37,11 @@ async function backgroundRevalidateFavorites(userId: string) {
   }
 }
 
+export function clearFavoritesCache() {
+  inMemoryFavorites = {}
+  AsyncStorage.removeItem(FAVORITES_CACHE_KEY).catch(() => {})
+}
+
 export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
   // 1. Instant 0ms in-memory cache return
   if (inMemoryFavorites !== null) {

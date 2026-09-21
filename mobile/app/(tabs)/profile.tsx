@@ -69,7 +69,7 @@ import {
 } from '@/lib/avatars'
 import { playThemeSound, playSuccessSound, playTapSound } from '@/lib/sound'
 import { requestShpalljetFilter } from '@/lib/nav-intent'
-import { fetchFavoriteIds } from '@/lib/favorites'
+import { fetchFavoriteIds, clearFavoritesCache } from '@/lib/favorites'
 import {
   getSyncAuthUser,
   getSyncProfile,
@@ -77,7 +77,10 @@ import {
   subscribeAuthCache,
   setSyncProfile,
   syncAuthSession,
+  isLogoutInProgress,
+  performAtomicLogout,
 } from '@/lib/auth-cache'
+import { createSafeChannel } from '@/lib/realtime'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -275,14 +278,27 @@ export default function ProfileScreen() {
   }, [])
 
   const checkSession = useCallback(async () => {
+    if (isLogoutInProgress()) {
+      setAuthState(null)
+      setLoading(false)
+      return
+    }
+
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession()
+
+      if (isLogoutInProgress()) {
+        setAuthState(null)
+        return
+      }
+
       const user = session?.user || null
 
       if (user) {
         const profile = await fetchProfile(user)
+        if (isLogoutInProgress()) return
         setAuthAndProfile(user, profile)
         fetchUserStats(user.id)
       } else if (!user) {
@@ -300,23 +316,30 @@ export default function ProfileScreen() {
     }
   }, [setAuthAndProfile, fetchUserStats, resetViewportToTop])
 
-  // Auto-refresh profile and stats every time screen gains focus
+  // Auto-refresh profile and stats when screen gains focus
   useFocusEffect(
     useCallback(() => {
+      if (isLogoutInProgress()) return
       checkSession()
-      if (currentUser?.id) {
-        fetchUserStats(currentUser.id)
+      const syncU = getSyncAuthUser()
+      if (syncU?.id) {
+        fetchUserStats(syncU.id)
       }
-    }, [checkSession, fetchUserStats, currentUser?.id])
+    }, [checkSession, fetchUserStats])
   )
 
   useEffect(() => {
     checkSession()
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (isLogoutInProgress()) {
+        setAuthState(null)
+        return
+      }
       const u = session?.user || null
       if (u) {
         const profile = await fetchProfile(u)
+        if (isLogoutInProgress()) return
         setAuthAndProfile(u, profile)
         fetchUserStats(u.id)
       } else {
@@ -330,7 +353,7 @@ export default function ProfileScreen() {
     })
 
     return () => {
-      authListener.subscription.unsubscribe()
+      authListener?.subscription?.unsubscribe()
       if (resendTimerRef.current) clearInterval(resendTimerRef.current)
     }
   }, [checkSession, fetchUserStats, resetViewportToTop])
@@ -339,34 +362,38 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!currentUser?.id) return
 
-    const channel = supabase
-      .channel(`profile_realtime_${currentUser.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${currentUser.id}`,
-        },
-        (payload) => {
-          if (payload.new && typeof payload.new === 'object') {
-            const updatedProfile = payload.new as any
-            setSyncProfile(updatedProfile)
-            setAuthState((prev) => {
-              if (!prev) return prev
-              return {
-                ...prev,
-                profile: { ...prev.profile, ...updatedProfile },
-              }
-            })
+    let channel: any = null
+    try {
+      channel = createSafeChannel(`profile_realtime_${currentUser.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${currentUser.id}`,
+          },
+          (payload) => {
+            if (payload.new && typeof payload.new === 'object') {
+              const updatedProfile = payload.new as any
+              setSyncProfile(updatedProfile)
+              setAuthState((prev) => {
+                if (!prev) return prev
+                return {
+                  ...prev,
+                  profile: { ...prev.profile, ...updatedProfile },
+                }
+              })
+            }
           }
-        }
-      )
-      .subscribe()
+        )
+        .subscribe()
+    } catch (e) {
+      console.warn('Profile realtime notice:', e)
+    }
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) supabase.removeChannel(channel)
     }
   }, [currentUser?.id])
 
@@ -763,18 +790,14 @@ export default function ProfileScreen() {
           }
           // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
           resetViewportToTop(false)
-          // 2. Synchronously clear in-memory auth cache and local state
+          // 2. Synchronously nullify local state, stats, and query caches
           prevUserRef.current = null
-          syncAuthSession(null)
+          setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
           setAuthState(null)
-          // 3. Re-dispatch reset to catch synchronous unmount pass
-          resetViewportToTop(false)
-          try {
-            await supabase.auth.signOut()
-          } catch (err) {
-            console.warn('Sign out notice:', err)
-          }
-          // 4. Final verification pass after async signOut
+          clearFavoritesCache()
+          // 3. Run atomic logout (locks auth listeners, purges caches, and signs out in a single pass)
+          await performAtomicLogout()
+          // 4. Final verification pass
           resetViewportToTop(false)
           showBanner({
             type: 'logout',
@@ -820,13 +843,10 @@ export default function ProfileScreen() {
               // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
               resetViewportToTop(false)
               prevUserRef.current = null
-              syncAuthSession(null)
+              setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
               setAuthState(null)
-              try {
-                await supabase.auth.signOut()
-              } catch (err) {
-                console.warn('Sign out notice:', err)
-              }
+              clearFavoritesCache()
+              await performAtomicLogout()
               resetViewportToTop(false)
               showBanner({
                 type: 'delete',

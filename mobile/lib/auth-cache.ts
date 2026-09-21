@@ -118,8 +118,15 @@ async function fetchFreshProfile(userId: string) {
 // Kick off hydration immediately upon bundle evaluation
 waitForAuthCacheHydration().catch(() => {})
 
+let isLoggingOut = false
+
+export function isLogoutInProgress(): boolean {
+  return isLoggingOut
+}
+
 // Listen to Supabase auth state changes globally
 supabase.auth.onAuthStateChange(async (event, session) => {
+  if (isLoggingOut) return
   if (session?.user) {
     inMemoryUser = session.user
     notifySubscribers()
@@ -193,6 +200,46 @@ export function subscribeAuthCache(fn: (state: CachedAuthState) => void) {
   subscribers.add(fn)
   return () => {
     subscribers.delete(fn)
+  }
+}
+
+/**
+ * Performs a 100% atomic logout:
+ * 1. Immediately locks auth re-evaluation (`isLoggingOut = true`)
+ * 2. Synchronously nullifies in-memory cache and dispatches to all subscribers
+ * 3. Immediately wipes persistent auth & favorites storage
+ * 4. Awaits Supabase signOut while suppressing any spurious resurrecting events
+ * 5. Guarantees single-frame clean transition to the guest/unauthenticated state
+ */
+export async function performAtomicLogout(): Promise<void> {
+  if (isLoggingOut) return
+  isLoggingOut = true
+
+  try {
+    // 1. Synchronously nullify in-memory state
+    inMemoryUser = null
+    inMemoryProfile = null
+    isHydrated = true
+
+    // 2. Synchronously notify all subscribers (Profile, Tabs, Messages, etc.) in a single frame
+    notifySubscribers()
+
+    // 3. Purge storage caches immediately
+    await AsyncStorage.multiRemove([
+      AUTH_CACHE_KEY,
+      '@blejepronen_favs_map_v2',
+    ]).catch(() => {})
+
+    // 4. Perform Supabase signOut
+    await supabase.auth.signOut().catch((err) => {
+      console.warn('Atomic logout Supabase signOut notice:', err)
+    })
+  } finally {
+    // 5. Ensure in-memory state remains clean and release lock
+    inMemoryUser = null
+    inMemoryProfile = null
+    isLoggingOut = false
+    notifySubscribers()
   }
 }
 
