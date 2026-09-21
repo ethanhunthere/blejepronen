@@ -149,6 +149,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+          <Stack.Screen name="search" options={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="listings/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="messages/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />

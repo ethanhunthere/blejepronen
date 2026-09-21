@@ -18,7 +18,6 @@ import { supabase, Listing } from '@/lib/supabase'
 import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
-import OmniSearchModal from '@/components/OmniSearchModal'
 import { PropertyFilterBar } from '@/components/PropertyFilterBar'
 import { PropertyFilterModal } from '@/components/PropertyFilterModal'
 import {
@@ -59,7 +58,6 @@ export default function ListingsScreen() {
     neighborhood: params.neighborhood || '',
   }))
 
-  const [isOmniModalOpen, setIsOmniModalOpen] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
   const [loading, setLoading] = useState(() => !hasCachedListings())
@@ -248,7 +246,10 @@ export default function ListingsScreen() {
             ]}
             onPress={() => {
               if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setIsOmniModalOpen(true)
+              router.push({
+                pathname: '/search' as any,
+                params: filters.searchQuery ? { initialQuery: filters.searchQuery } : {},
+              })
             }}
           >
             <BlurView
@@ -415,23 +416,6 @@ export default function ListingsScreen() {
         </>}
       />
 
-      {/* Multi-Entity Omni-Search Modal */}
-      <OmniSearchModal
-        visible={isOmniModalOpen}
-        onClose={() => setIsOmniModalOpen(false)}
-        initialQuery={filters.searchQuery}
-        onSelectCity={(city, neighborhood) => {
-          setFilters((prev) => ({
-            ...prev,
-            city,
-            neighborhood: neighborhood || '',
-            searchQuery: neighborhood ? `${neighborhood}, ${city}` : city,
-          }))
-        }}
-        onSelectQuery={(q) => {
-          setFilters((prev) => ({ ...prev, searchQuery: q }))
-        }}
-      />
 
       {/* Comprehensive Property Filter Modal */}
       <PropertyFilterModal

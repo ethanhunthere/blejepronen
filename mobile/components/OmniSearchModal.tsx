@@ -47,7 +47,15 @@ import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 const ASYNC_RECENT_KEY = '@blejepronen_recent_searches'
 const MAX_RECENT = 6
 
-interface OmniSearchModalProps {
+export interface OmniSearchContentProps {
+  initialQuery?: string
+  onClose?: () => void
+  onSelectCity?: (city: string, neighborhood?: string) => void
+  onSelectQuery?: (query: string) => void
+  isStackScreen?: boolean
+}
+
+export interface OmniSearchModalProps {
   visible: boolean
   onClose: () => void
   initialQuery?: string
@@ -55,13 +63,13 @@ interface OmniSearchModalProps {
   onSelectQuery?: (query: string) => void
 }
 
-export default function OmniSearchModal({
-  visible,
-  onClose,
+export function OmniSearchContent({
   initialQuery = '',
+  onClose,
   onSelectCity,
   onSelectQuery,
-}: OmniSearchModalProps) {
+  isStackScreen = false,
+}: OmniSearchContentProps) {
   const router = useRouter()
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
@@ -102,13 +110,14 @@ export default function OmniSearchModal({
     loadRecent()
   }, [])
 
-  // Auto-focus when modal appears
+  // Auto-focus when mounted or initialQuery changes
   useEffect(() => {
-    if (visible) {
+    if (initialQuery !== undefined) {
       setQuery(initialQuery)
-      setTimeout(() => inputRef.current?.focus(), 120)
     }
-  }, [visible, initialQuery])
+    const timer = setTimeout(() => inputRef.current?.focus(), 120)
+    return () => clearTimeout(timer)
+  }, [initialQuery])
 
   // Save to recent searches
   const saveRecent = useCallback(async (searchTerm: string) => {
@@ -229,51 +238,112 @@ export default function OmniSearchModal({
     return results.flat
   }, [results, activeTab])
 
+  const handleCancel = useCallback(() => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync()
+    if (onClose) {
+      onClose()
+    } else if (isStackScreen) {
+      if (router.canGoBack()) {
+        router.back()
+      } else {
+        router.replace('/(tabs)' as any)
+      }
+    }
+  }, [onClose, isStackScreen, router])
+
   // Handle entity press
   const handleItemPress = useCallback(
     (item: OmniResultItem) => {
       if (Platform.OS !== 'web') Haptics.selectionAsync()
       saveRecent(query || item.title)
-      onClose()
 
-      if (item.entityType === 'listing') {
-        router.push({
-          pathname: '/listings/[id]',
-          params: { id: item.id },
-        })
-      } else if (item.entityType === 'location') {
-        if (onSelectCity && item.payload?.city) {
-          onSelectCity(item.payload.city, item.payload.neighborhood)
-        } else if (onSelectQuery) {
-          onSelectQuery(item.payload?.neighborhood ? `${item.payload.neighborhood}, ${item.payload.city}` : item.payload?.city || item.title)
-        } else {
+      if (isStackScreen) {
+        // Direct native stack transitions:
+        // Push directly onto the native navigation stack in a single, fluid native frame.
+        // Zero intermediate screen flash, zero pop-then-push anti-patterns!
+        if (item.entityType === 'listing') {
           router.push({
-            pathname: '/(tabs)/listings' as any,
-            params: { city: item.payload?.city, neighborhood: item.payload?.neighborhood },
+            pathname: '/listings/[id]',
+            params: { id: item.id },
+          })
+        } else if (item.entityType === 'location') {
+          if (onSelectCity && item.payload?.city) {
+            onSelectCity(item.payload.city, item.payload.neighborhood)
+          } else if (onSelectQuery) {
+            onSelectQuery(item.payload?.neighborhood ? `${item.payload.neighborhood}, ${item.payload.city}` : item.payload?.city || item.title)
+          } else {
+            router.replace({
+              pathname: '/(tabs)/listings' as any,
+              params: { city: item.payload?.city, neighborhood: item.payload?.neighborhood },
+            })
+          }
+        } else if (
+          item.entityType === 'agency' ||
+          item.entityType === 'agent' ||
+          (item as any).entityType === 'user' ||
+          (item as any).entityType === 'company' ||
+          item.targetUrl?.startsWith('/profili/') ||
+          item.targetUrl?.startsWith('/profile/')
+        ) {
+          let targetId = item.id
+          if (item.targetUrl?.includes('/profili/') || item.targetUrl?.includes('/profile/')) {
+            const parts = item.targetUrl.split('/')
+            const candidate = parts[parts.length - 1]?.split('?')[0]
+            if (candidate) targetId = candidate
+          }
+
+          router.push({
+            pathname: '/profili/[id]',
+            params: { id: targetId },
           })
         }
-      } else if (
-        item.entityType === 'agency' ||
-        item.entityType === 'agent' ||
-        (item as any).entityType === 'user' ||
-        (item as any).entityType === 'company' ||
-        item.targetUrl?.startsWith('/profili/') ||
-        item.targetUrl?.startsWith('/profile/')
-      ) {
-        let targetId = item.id
-        if (item.targetUrl?.includes('/profili/') || item.targetUrl?.includes('/profile/')) {
-          const parts = item.targetUrl.split('/')
-          const candidate = parts[parts.length - 1]?.split('?')[0]
-          if (candidate) targetId = candidate
+      } else {
+        // Modal mode fallback:
+        // Push route FIRST so navigation lifecycle initiates cleanly,
+        // then gracefully dismiss the modal to avoid unpainted flash.
+        if (item.entityType === 'listing') {
+          router.push({
+            pathname: '/listings/[id]',
+            params: { id: item.id },
+          })
+        } else if (item.entityType === 'location') {
+          if (onSelectCity && item.payload?.city) {
+            onSelectCity(item.payload.city, item.payload.neighborhood)
+          } else if (onSelectQuery) {
+            onSelectQuery(item.payload?.neighborhood ? `${item.payload.neighborhood}, ${item.payload.city}` : item.payload?.city || item.title)
+          } else {
+            router.push({
+              pathname: '/(tabs)/listings' as any,
+              params: { city: item.payload?.city, neighborhood: item.payload?.neighborhood },
+            })
+          }
+        } else if (
+          item.entityType === 'agency' ||
+          item.entityType === 'agent' ||
+          (item as any).entityType === 'user' ||
+          (item as any).entityType === 'company' ||
+          item.targetUrl?.startsWith('/profili/') ||
+          item.targetUrl?.startsWith('/profile/')
+        ) {
+          let targetId = item.id
+          if (item.targetUrl?.includes('/profili/') || item.targetUrl?.includes('/profile/')) {
+            const parts = item.targetUrl.split('/')
+            const candidate = parts[parts.length - 1]?.split('?')[0]
+            if (candidate) targetId = candidate
+          }
+
+          router.push({
+            pathname: '/profili/[id]',
+            params: { id: targetId },
+          })
         }
 
-        router.push({
-          pathname: '/profili/[id]',
-          params: { id: targetId },
-        })
+        setTimeout(() => {
+          onClose?.()
+        }, 80)
       }
     },
-    [query, saveRecent, onClose, router, onSelectCity, onSelectQuery]
+    [query, saveRecent, onClose, router, onSelectCity, onSelectQuery, isStackScreen]
   )
 
   const formatPrice = (price?: number | null) => {
@@ -282,79 +352,87 @@ export default function OmniSearchModal({
   }
 
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      presentationStyle="fullScreen"
-      statusBarTranslucent={true}
-      onRequestClose={onClose}
-    >
+    <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
       <ExpoStatusBar style={theme === 'white' ? 'dark' : 'light'} />
-      <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
-        {/* 
-          ROCK-SOLID TOP HEADER BAR
-          Pinned securely OUTSIDE KeyboardAvoidingView so it NEVER overflows or pushes off-screen.
-          Dynamic safe-area paddingTop ensures full clearance from Dynamic Island, notches, and status bars.
-        */}
-        <View
-          style={[
-            styles.headerContainer,
-            {
-              backgroundColor: colors.background,
-              borderBottomColor: colors.border,
-              paddingTop: headerPaddingTop,
-            },
-          ]}
-        >
-          <View style={styles.headerRow}>
-            <View
+      {/* 
+        ROCK-SOLID TOP HEADER BAR
+        Pinned securely OUTSIDE KeyboardAvoidingView so it NEVER overflows or pushes off-screen.
+        Dynamic safe-area paddingTop ensures full clearance from Dynamic Island, notches, and status bars.
+      */}
+      <View
+        style={[
+          styles.headerContainer,
+          {
+            backgroundColor: colors.background,
+            borderBottomColor: colors.border,
+            paddingTop: headerPaddingTop,
+          },
+        ]}
+      >
+        <View style={styles.headerRow}>
+          <View
+            style={[
+              styles.inputWrapper,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Search size={18} color={colors.primary} strokeWidth={2.2} />
+            <TextInput
+              ref={inputRef}
               style={[
-                styles.inputWrapper,
+                styles.textInput,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  color: colors.textPrimary,
                 },
               ]}
-            >
-              <Search size={18} color={colors.primary} strokeWidth={2.2} />
-              <TextInput
-                ref={inputRef}
-                style={[
-                  styles.textInput,
-                  {
-                    color: colors.textPrimary,
-                  },
-                ]}
-                placeholder="Kërko prona, agjenci, llogari, qytet..."
-                placeholderTextColor={colors.textLight}
-                value={query}
-                onChangeText={handleQueryChange}
-                returnKeyType="search"
-                autoCapitalize="none"
-                autoCorrect={false}
-                clearButtonMode="never"
-              />
-              {loading && <ActivityIndicator size="small" color={colors.primary} />}
-              {query.length > 0 && !loading && (
-                <Pressable
-                  onPress={() => setQuery('')}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  style={styles.clearBtn}
-                >
-                  <X size={15} color={colors.textMuted} />
-                </Pressable>
-              )}
-            </View>
-
-            <Pressable
-              onPress={onClose}
-              hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
-              style={styles.cancelBtn}
-            >
-              <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
-            </Pressable>
+              placeholder="Kërko prona, agjenci, llogari, qytet..."
+              placeholderTextColor={colors.textLight}
+              value={query}
+              onChangeText={handleQueryChange}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+                if (query.trim()) {
+                  if (isStackScreen) {
+                    router.replace({
+                      pathname: '/(tabs)/listings' as any,
+                      params: { search: query.trim() },
+                    })
+                  } else {
+                    if (onSelectQuery) {
+                      onSelectQuery(query.trim())
+                    }
+                    onClose?.()
+                  }
+                }
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="never"
+            />
+            {loading && <ActivityIndicator size="small" color={colors.primary} />}
+            {query.length > 0 && !loading && (
+              <Pressable
+                onPress={() => setQuery('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.clearBtn}
+              >
+                <X size={15} color={colors.textMuted} />
+              </Pressable>
+            )}
           </View>
+
+          <Pressable
+            onPress={handleCancel}
+            hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
+            style={styles.cancelBtn}
+          >
+            <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
+          </Pressable>
         </View>
+      </View>
 
         {/* 
           Category Selector Tabs:
@@ -722,6 +800,35 @@ export default function OmniSearchModal({
             />
           )}
         </KeyboardAvoidingView>
+      </View>
+  )
+}
+
+export default function OmniSearchModal({
+  visible,
+  onClose,
+  initialQuery = '',
+  onSelectCity,
+  onSelectQuery,
+}: OmniSearchModalProps) {
+  const { colors } = useTheme()
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      presentationStyle="fullScreen"
+      statusBarTranslucent={true}
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <OmniSearchContent
+          initialQuery={initialQuery}
+          onClose={onClose}
+          onSelectCity={onSelectCity}
+          onSelectQuery={onSelectQuery}
+          isStackScreen={false}
+        />
       </View>
     </Modal>
   )
