@@ -57,7 +57,7 @@ import {
   playUnlikeSound,
 } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
-import { SubFilterNavigationBar } from '@/components/SubFilterNavigationBar'
+import { SubFilterNavigationBar, type SubFilterCounts } from '@/components/SubFilterNavigationBar'
 
 type MainTab = 'all' | 'saved'
 type SubFilter = 'all' | 'active' | 'sold' | 'inactive'
@@ -195,27 +195,24 @@ export default function ShpalljetEMiaScreen() {
     }
   }, [currentUser, fetchUserListings, fetchSavedListings])
 
-  const handleMainTabChange = (tab: MainTab) => {
-    if (mainTab === tab) {
-      if (tab === 'all' && subFilter !== 'all') {
-        playTapSound()
-        if (Platform.OS !== 'web') Haptics.selectionAsync()
-        setSubFilter('all')
-      }
-      return
-    }
+  const handleMainTabChange = useCallback((tab: MainTab) => {
     playTapSound()
     if (Platform.OS !== 'web') Haptics.selectionAsync()
-    setMainTab(tab)
-    if (tab === 'saved') fetchSavedListings()
-  }
+    setMainTab((prev) => {
+      if (prev === tab) {
+        if (tab === 'all') setSubFilter('all')
+        return prev
+      }
+      if (tab === 'saved') fetchSavedListings()
+      return tab
+    })
+  }, [fetchSavedListings])
 
-  const handleSubFilterChange = (status: SubFilter) => {
-    if (subFilter === status) return
+  const handleSubFilterChange = useCallback((status: SubFilter) => {
     playTapSound()
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setSubFilter(status)
-  }
+  }, [])
 
   /**
    * Apply an explicit navigation intent / deep link whenever this screen gains
@@ -491,6 +488,13 @@ export default function ShpalljetEMiaScreen() {
   const inactiveCount = useMemo(() => listings.filter(isListingInactive).length, [listings, isListingInactive])
   const savedCount = savedListings.length
 
+  const subFilterCounts = useMemo<SubFilterCounts>(() => ({
+    all: allCount,
+    active: activeCount,
+    sold: soldCount,
+    inactive: inactiveCount,
+  }), [allCount, activeCount, soldCount, inactiveCount])
+
   const specularBorder = colors.border
 
   return (
@@ -739,121 +743,127 @@ export default function ShpalljetEMiaScreen() {
               </View>
 
               {/* Child Sub-Filters Section: Below "Të Gjitha" */}
-              {mainTab === 'all' ? (
-                <View style={styles.childFiltersSection}>
-                  <SubFilterNavigationBar
-                    activeFilter={subFilter}
-                    onChangeFilter={handleSubFilterChange}
-                    counts={{
-                      all: allCount,
-                      active: activeCount,
-                      sold: soldCount,
-                      inactive: inactiveCount,
-                    }}
-                    isCompact={isCompact}
-                  />
+              <View
+                style={[
+                  styles.childFiltersSection,
+                  mainTab !== 'all' && styles.hiddenTabContent,
+                ]}
+                pointerEvents={mainTab === 'all' ? 'auto' : 'none'}
+              >
+                <SubFilterNavigationBar
+                  activeFilter={subFilter}
+                  onChangeFilter={handleSubFilterChange}
+                  counts={subFilterCounts}
+                  isCompact={isCompact}
+                />
 
-                  {/* Instant In-Screen Search Bar */}
-                  {listings.length > 0 && (
-                    <View
-                      style={[
-                        styles.searchBarContainer,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                        },
-                      ]}
-                    >
-                      <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
-                      <TextInput
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholder="Kërko me titull, qytet ose lagje..."
-                        placeholderTextColor={colors.textMuted}
-                        style={[styles.searchInput, { color: colors.textPrimary }]}
-                        returnKeyType="search"
-                        clearButtonMode="never"
-                        autoCorrect={false}
-                      />
-                      {searchQuery.length > 0 && (
-                        <Pressable
-                          onPress={() => {
-                            playTapSound()
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setSearchQuery('')
-                          }}
-                          style={styles.searchClearBtn}
-                          hitSlop={8}
-                        >
-                          <X size={13} color={colors.textMuted} strokeWidth={2.4} />
-                        </Pressable>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <View style={styles.childFiltersSection}>
+                {/* Instant In-Screen Search Bar */}
+                {listings.length > 0 && (
                   <View
                     style={[
-                      styles.savedNoticeBadge,
+                      styles.searchBarContainer,
                       {
                         backgroundColor: colors.surfaceSubtle,
                         borderColor: specularBorder,
                       },
                     ]}
                   >
-                    <Bookmark
-                      size={12}
-                      color={theme === 'green' ? colors.gold : colors.primary}
-                      fill={theme === 'green' ? colors.gold : colors.primary}
+                    <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
+                    <TextInput
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Kërko me titull, qytet ose lagje..."
+                      placeholderTextColor={colors.textMuted}
+                      style={[styles.searchInput, { color: colors.textPrimary }]}
+                      returnKeyType="search"
+                      clearButtonMode="never"
+                      autoCorrect={false}
                     />
-                    <Text style={[styles.savedNoticeText, { color: colors.textSecondary }]}>
-                      {savedCount === 1
-                        ? '1 pronë e ruajtur në llogari'
-                        : `${savedCount} prona të ruajtura në llogari`}
-                    </Text>
+                    {searchQuery.length > 0 && (
+                      <Pressable
+                        onPress={() => {
+                          playTapSound()
+                          if (Platform.OS !== 'web') Haptics.selectionAsync()
+                          setSearchQuery('')
+                        }}
+                        style={styles.searchClearBtn}
+                        hitSlop={8}
+                      >
+                        <X size={13} color={colors.textMuted} strokeWidth={2.4} />
+                      </Pressable>
+                    )}
                   </View>
+                )}
+              </View>
 
-                  {/* Instant In-Screen Search Bar for Saved */}
-                  {savedListings.length > 0 && (
-                    <View
-                      style={[
-                        styles.searchBarContainer,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: specularBorder,
-                          marginTop: 4,
-                        },
-                      ]}
-                    >
-                      <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
-                      <TextInput
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholder="Kërko në pronat e ruajtura..."
-                        placeholderTextColor={colors.textMuted}
-                        style={[styles.searchInput, { color: colors.textPrimary }]}
-                        returnKeyType="search"
-                        clearButtonMode="never"
-                        autoCorrect={false}
-                      />
-                      {searchQuery.length > 0 && (
-                        <Pressable
-                          onPress={() => {
-                            playTapSound()
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setSearchQuery('')
-                          }}
-                          style={styles.searchClearBtn}
-                          hitSlop={8}
-                        >
-                          <X size={13} color={colors.textMuted} strokeWidth={2.4} />
-                        </Pressable>
-                      )}
-                    </View>
-                  )}
+              {/* Child Sub-Filters Section: Below "Të Ruajturat" */}
+              <View
+                style={[
+                  styles.childFiltersSection,
+                  mainTab !== 'saved' && styles.hiddenTabContent,
+                ]}
+                pointerEvents={mainTab === 'saved' ? 'auto' : 'none'}
+              >
+                <View
+                  style={[
+                    styles.savedNoticeBadge,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                >
+                  <Bookmark
+                    size={12}
+                    color={theme === 'green' ? colors.gold : colors.primary}
+                    fill={theme === 'green' ? colors.gold : colors.primary}
+                  />
+                  <Text style={[styles.savedNoticeText, { color: colors.textSecondary }]}>
+                    {savedCount === 1
+                      ? '1 pronë e ruajtur në llogari'
+                      : `${savedCount} prona të ruajtura në llogari`}
+                  </Text>
                 </View>
-              )}
+
+                {/* Instant In-Screen Search Bar for Saved */}
+                {savedListings.length > 0 && (
+                  <View
+                    style={[
+                      styles.searchBarContainer,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: specularBorder,
+                        marginTop: 4,
+                      },
+                    ]}
+                  >
+                    <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
+                    <TextInput
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Kërko në pronat e ruajtura..."
+                      placeholderTextColor={colors.textMuted}
+                      style={[styles.searchInput, { color: colors.textPrimary }]}
+                      returnKeyType="search"
+                      clearButtonMode="never"
+                      autoCorrect={false}
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable
+                        onPress={() => {
+                          playTapSound()
+                          if (Platform.OS !== 'web') Haptics.selectionAsync()
+                          setSearchQuery('')
+                        }}
+                        style={styles.searchClearBtn}
+                        hitSlop={8}
+                      >
+                        <X size={13} color={colors.textMuted} strokeWidth={2.4} />
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </View>
             </View>
           </View>
 
@@ -1713,6 +1723,9 @@ const styles = StyleSheet.create({
   childFiltersSection: {
     marginTop: 10,
     gap: 8,
+  },
+  hiddenTabContent: {
+    display: 'none',
   },
   searchBarContainer: {
     flexDirection: 'row',

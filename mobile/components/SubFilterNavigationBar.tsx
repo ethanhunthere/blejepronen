@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, memo } from 'react'
+import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react'
 import {
   View,
   Text,
@@ -15,21 +15,23 @@ import { useTheme, Fonts } from '@/constants/theme'
 
 export type SubFilter = 'all' | 'active' | 'sold' | 'inactive'
 
+export interface SubFilterCounts {
+  all: number
+  active: number
+  sold: number
+  inactive: number
+}
+
 interface SubFilterNavigationBarProps {
   activeFilter: SubFilter
   onChangeFilter: (filter: SubFilter) => void
-  counts: {
-    all: number
-    active: number
-    sold: number
-    inactive: number
-  }
+  counts: SubFilterCounts
   isCompact?: boolean
 }
 
 const BASE_INDICATOR_WIDTH = 100
 
-export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
+function SubFilterNavigationBarComponent({
   activeFilter,
   onChangeFilter,
   counts,
@@ -78,7 +80,7 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
   const containerWidthRef = useRef<number>(0)
   const contentWidthRef = useRef<number>(0)
   const scrollViewRef = useRef<ScrollView>(null)
-  const isFirstRenderRef = useRef(true)
+  const activeTargetRef = useRef<SubFilter>(activeFilter)
 
   // Strictly native driver Animated values (60/120 FPS locked)
   const indicatorTranslateX = useRef(new Animated.Value(0)).current
@@ -105,16 +107,16 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
       Animated.parallel([
         Animated.spring(indicatorTranslateX, {
           toValue: targetTranslateX,
-          stiffness: 300,
-          damping: 26,
-          mass: 0.9,
+          stiffness: 340,
+          damping: 30,
+          mass: 0.85,
           useNativeDriver: true,
         }),
         Animated.spring(indicatorScaleX, {
           toValue: targetScaleX,
-          stiffness: 300,
-          damping: 26,
-          mass: 0.9,
+          stiffness: 340,
+          damping: 30,
+          mass: 0.85,
           useNativeDriver: true,
         }),
         Animated.timing(indicatorOpacity, {
@@ -149,15 +151,13 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
     []
   )
 
-  // Synchronize on activeFilter change or layout readiness
+  // Synchronize on external activeFilter change or layout readiness
   useEffect(() => {
     if (!layoutsReady) return
 
-    if (isFirstRenderRef.current) {
-      animateToTab(activeFilter, false)
-      scrollToTab(activeFilter, false)
-      isFirstRenderRef.current = false
-    } else {
+    // Avoid double animating when the change was already triggered by handleTabPress
+    if (activeTargetRef.current !== activeFilter) {
+      activeTargetRef.current = activeFilter
       animateToTab(activeFilter, true)
       scrollToTab(activeFilter, true)
     }
@@ -173,10 +173,15 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
       !!tabLayoutsRef.current.sold &&
       !!tabLayoutsRef.current.inactive
 
-    if (allMeasured && !layoutsReady) {
+    if (!layoutsReady && allMeasured) {
+      const layout = tabLayoutsRef.current[activeFilter]
+      if (layout) {
+        const targetCenter = layout.x + layout.width / 2
+        indicatorTranslateX.setValue(targetCenter - BASE_INDICATOR_WIDTH / 2)
+        indicatorScaleX.setValue(layout.width / BASE_INDICATOR_WIDTH)
+        indicatorOpacity.setValue(1)
+      }
       setLayoutsReady(true)
-    } else if (layoutsReady) {
-      animateToTab(activeFilter, false)
     }
   }
 
@@ -201,7 +206,7 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
       Haptics.selectionAsync()
     }
 
-    // 0ms instant trigger for spring and auto-center
+    activeTargetRef.current = filter
     animateToTab(filter, true)
     scrollToTab(filter, true)
     onChangeFilter(filter)
@@ -212,12 +217,15 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
     label: string
     count: number
     hasIcon?: boolean
-  }> = [
-    { id: 'all', label: 'Të gjitha', count: counts.all, hasIcon: true },
-    { id: 'active', label: 'Aktive', count: counts.active },
-    { id: 'sold', label: 'Të shitura', count: counts.sold },
-    { id: 'inactive', label: 'Jo aktive', count: counts.inactive },
-  ]
+  }> = useMemo(
+    () => [
+      { id: 'all', label: 'Të gjitha', count: counts.all, hasIcon: true },
+      { id: 'active', label: 'Aktive', count: counts.active },
+      { id: 'sold', label: 'Të shitura', count: counts.sold },
+      { id: 'inactive', label: 'Jo aktive', count: counts.inactive },
+    ],
+    [counts.all, counts.active, counts.sold, counts.inactive]
+  )
 
   return (
     <View style={styles.outerContainer}>
@@ -278,6 +286,11 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
                     gap: 5,
                     borderRadius: 10,
                   },
+                  // Zero-flash fallback before measurements complete
+                  !layoutsReady && isActive && {
+                    backgroundColor: activeBg,
+                    borderColor: activeBorder,
+                  },
                   pressed && styles.tabButtonPressed,
                 ]}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -296,9 +309,10 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
                     isCompact && { fontSize: 11 },
                     {
                       color: isActive ? activeTextColor : colors.textPrimary,
-                      fontFamily: isActive ? Fonts.bold : Fonts.semiBold,
+                      fontFamily: Fonts.semiBold,
                     },
                   ]}
+                  numberOfLines={1}
                 >
                   {tab.label}
                 </Text>
@@ -326,6 +340,7 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
                         color: isActive
                           ? activeBadgeTextColor
                           : colors.textSecondary,
+                        fontFamily: Fonts.semiBold,
                       },
                     ]}
                   >
@@ -339,7 +354,22 @@ export const SubFilterNavigationBar = memo(function SubFilterNavigationBar({
       </ScrollView>
     </View>
   )
-})
+}
+
+export const SubFilterNavigationBar = memo(
+  SubFilterNavigationBarComponent,
+  (prev, next) => {
+    return (
+      prev.activeFilter === next.activeFilter &&
+      prev.isCompact === next.isCompact &&
+      prev.onChangeFilter === next.onChangeFilter &&
+      prev.counts.all === next.counts.all &&
+      prev.counts.active === next.counts.active &&
+      prev.counts.sold === next.counts.sold &&
+      prev.counts.inactive === next.counts.inactive
+    )
+  }
+)
 
 const styles = StyleSheet.create({
   outerContainer: {
@@ -380,16 +410,18 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'transparent',
     gap: 6,
     zIndex: 2,
   },
   tabButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.97 }],
+    opacity: 0.75,
   },
   tabLabel: {
     fontSize: 12,
     letterSpacing: -0.1,
+    fontFamily: Fonts.semiBold,
   },
   counterBadge: {
     paddingHorizontal: 5.5,
@@ -398,6 +430,6 @@ const styles = StyleSheet.create({
   },
   counterBadgeText: {
     fontSize: 10.5,
-    fontFamily: Fonts.bold,
+    fontFamily: Fonts.semiBold,
   },
 })
