@@ -80,8 +80,31 @@ export async function GET(request: Request) {
     // 1. Locations Search (instant synchronous local-first matching)
     const matchedLocations: OmniResultItem[] = searchLocations(cleanQ, 6)
 
-    // 2. Parallel Supabase queries for listings and profiles
-    const [listingsRes, profilesRes] = await Promise.all([
+    // Build dynamic phone search filters if query contains numbers
+    const digitsOnly = cleanQ.replace(/[^0-9]/g, '')
+    const phoneFilters: string[] = []
+    if (digitsOnly.length >= 2) {
+      phoneFilters.push(`phone.ilike.%${digitsOnly}%`)
+      if (digitsOnly.startsWith('0')) {
+        phoneFilters.push(`phone.ilike.%${digitsOnly.slice(1)}%`)
+      }
+    }
+
+    const isCorporateSearch = /agjenci|kompani|patundshm|real\s*estate|shpk|invest|group/i.test(normQ)
+
+    const profileConditions: string[] = [
+      `first_name.ilike.%${cleanQ}%`,
+      `last_name.ilike.%${cleanQ}%`,
+      ...phoneFilters,
+    ]
+    if (isCorporateSearch) {
+      profileConditions.push('last_name.ilike.%Kompani%')
+      profileConditions.push('first_name.ilike.%Agjenci%')
+      profileConditions.push('first_name.ilike.%Kompani%')
+    }
+
+    // 2. Parallel Supabase queries for listings, profiles, and companies
+    const [listingsRes, profilesRes, companiesRes] = await Promise.all([
       supabase
         .from('listings')
         .select('id, title, description, price, city, neighborhood, address, rooms, area_m2, type, images, apartment_type, condition, is_featured, created_at, profiles:user_id(id, first_name, last_name, phone, avatar_url, email_verified)')
@@ -92,12 +115,19 @@ export async function GET(request: Request) {
       supabase
         .from('profiles')
         .select('id, first_name, last_name, phone, avatar_url, email_verified, created_at')
-        .or(`first_name.ilike.%${cleanQ}%,last_name.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
+        .or(profileConditions.join(','))
+        .limit(limit),
+
+      supabase
+        .from('companies')
+        .select('*')
+        .or(`name.ilike.%${cleanQ}%,title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
         .limit(limit),
     ])
 
     const rawListings = listingsRes.data || []
     const rawProfiles = profilesRes.data || []
+    const rawCompanies = (!companiesRes.error && Array.isArray(companiesRes.data)) ? companiesRes.data : []
 
     // 3. Process & score listings
     const matchedListings: OmniResultItem[] = rawListings.map((item: any) => {
@@ -105,13 +135,13 @@ export async function GET(request: Request) {
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
 
-      let score = 30
-      if (normTitle === normQ) score += 70
-      else if (normTitle.startsWith(normQ)) score += 50
-      else if (normTitle.includes(normQ)) score += 35
+      let score = 40
+      if (normTitle === normQ) score += 60
+      else if (normTitle.startsWith(normQ)) score += 40
+      else if (normTitle.includes(normQ)) score += 25
 
-      if (normCity === normQ) score += 30
-      else if (normCity.startsWith(normQ)) score += 20
+      if (normCity === normQ) score += 25
+      else if (normCity.startsWith(normQ)) score += 15
 
       if (normHood.includes(normQ)) score += 20
       if (item.is_featured) score += 10
@@ -155,32 +185,40 @@ export async function GET(request: Request) {
     const matchedAgents: OmniResultItem[] = []
 
     for (const p of rawProfiles) {
-      const isCompany = p.last_name === 'Kompani'
+      const isCompany =
+        p.last_name === 'Kompani' ||
+        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.first_name || '') ||
+        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.last_name || '') ||
+        Boolean((p as any).is_company) ||
+        (p as any).account_type === 'company'
+
       const normFirst = normalizeSearchString(p.first_name || '')
       const normLast = normalizeSearchString(p.last_name || '')
+      const normFull = `${normFirst} ${normLast}`.trim()
       const normPhone = normalizeSearchString(p.phone || '')
 
-      let score = 40
-      if (normFirst === normQ) score += 60
-      else if (normFirst.startsWith(normQ)) score += 40
-      else if (normFirst.includes(normQ)) score += 25
+      let score = 55
+      if (normFull === normQ || normFirst === normQ) score += 50
+      else if (normFull.startsWith(normQ) || normFirst.startsWith(normQ)) score += 40
+      else if (normFull.includes(normQ) || normFirst.includes(normQ)) score += 25
 
-      if (normLast.includes(normQ)) score += 20
-      if (normPhone.includes(normQ)) score += 30
+      if (normLast && (normLast === normQ || normLast.startsWith(normQ))) score += 30
+      if (normPhone && (normPhone.includes(normQ) || (digitsOnly && normPhone.includes(digitsOnly)))) score += 45
       if (p.email_verified) score += 10
+      if (isCompany) score += 8
 
       const displayName = isCompany
-        ? p.first_name
-        : `${p.first_name} ${p.last_name}`.trim() || 'Përdorues'
+        ? (p.first_name || p.last_name || 'Agjenci Imobiliare').trim()
+        : `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Përdorues i Bleje Pronën'
 
       const item: OmniResultItem = {
         id: p.id,
         entityType: isCompany ? ('agency' as const) : ('agent' as const),
         title: displayName,
         subtitle: isCompany
-          ? 'Agjenci e Verifikuar e Patundshmërive'
-          : 'Përdorues / Pronar i Verifikuar',
-        badge: p.email_verified ? 'Verifikuar' : undefined,
+          ? 'Agjenci e Licencuar e Patundshmërive'
+          : (p.phone ? `Pronar Privat • ${p.phone}` : 'Pronar Privat • Llogari e Verifikuar'),
+        badge: isCompany ? 'Agjenci' : 'Pronar',
         imageUrl: p.avatar_url || '/avatars/avatar-1.png',
         price: null,
         city: undefined,
@@ -188,6 +226,8 @@ export async function GET(request: Request) {
         payload: {
           phone: p.phone,
           email_verified: p.email_verified,
+          id: p.id,
+          isCompany,
           account_type: isCompany ? 'company' : 'individual',
           created_at: p.created_at,
         },
@@ -201,16 +241,46 @@ export async function GET(request: Request) {
       }
     }
 
-    // 5. Combine and sort
+    // 5. Process Companies table (if present)
+    for (const c of rawCompanies) {
+      const compName = (c.name || c.title || c.company_name || 'Agjenci Imobiliare').trim()
+      const normComp = normalizeSearchString(compName)
+      let score = 65
+      if (normComp === normQ || normComp.startsWith(normQ)) score += 40
+      else if (normComp.includes(normQ)) score += 25
+
+      const item: OmniResultItem = {
+        id: c.id,
+        entityType: 'agency' as const,
+        title: compName,
+        subtitle: c.city ? `Agjenci Imobiliare në ${c.city}` : 'Agjenci e Licencuar e Patundshmërive',
+        badge: 'Agjenci',
+        imageUrl: c.logo_url || c.avatar_url || null,
+        price: null,
+        city: c.city || undefined,
+        score,
+        payload: {
+          phone: c.phone,
+          email_verified: true,
+          id: c.id,
+          isCompany: true,
+          account_type: 'company',
+        },
+        targetUrl: `/profili/${c.id}`,
+      }
+      matchedAgencies.push(item)
+    }
+
+    // 6. Combine and sort
     matchedListings.sort((a, b) => b.score - a.score)
     matchedAgencies.sort((a, b) => b.score - a.score)
     matchedAgents.sort((a, b) => b.score - a.score)
 
     let flatResults: OmniResultItem[] = [
       ...matchedLocations,
-      ...matchedListings,
       ...matchedAgencies,
       ...matchedAgents,
+      ...matchedListings,
     ].sort((a, b) => b.score - a.score)
 
     if (filterType) {

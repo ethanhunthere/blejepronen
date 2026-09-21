@@ -201,6 +201,23 @@ export default function OmniSearchModal({
     }
   }, [query])
 
+  // Auto-reset activeTab to 'all' if selected category has 0 items in current results
+  useEffect(() => {
+    if (results && activeTab !== 'all') {
+      const count =
+        activeTab === 'listing'
+          ? results.counts.listings
+          : activeTab === 'agency'
+          ? results.counts.agencies
+          : activeTab === 'agent'
+          ? results.counts.agents
+          : results.counts.locations
+      if (count === 0) {
+        setActiveTab('all')
+      }
+    }
+  }, [results, activeTab])
+
   // Filter visible items based on activeTab
   const visibleItems = React.useMemo(() => {
     if (!results) return []
@@ -351,14 +368,14 @@ export default function OmniSearchModal({
               contentContainerStyle={styles.tabsScrollContent}
               data={[
                 { key: 'all', label: `Të gjitha (${results.total})` },
-                ...(results.counts.listings > 0
-                  ? [{ key: 'listing', label: `Prona (${results.counts.listings})` }]
-                  : []),
                 ...(results.counts.agencies > 0
                   ? [{ key: 'agency', label: `Agjenci & Kompani (${results.counts.agencies})` }]
                   : []),
                 ...(results.counts.agents > 0
                   ? [{ key: 'agent', label: `Llogari Personale (${results.counts.agents})` }]
+                  : []),
+                ...(results.counts.listings > 0
+                  ? [{ key: 'listing', label: `Prona (${results.counts.listings})` }]
                   : []),
                 ...(results.counts.locations > 0
                   ? [{ key: 'location', label: `Qytete & Zona (${results.counts.locations})` }]

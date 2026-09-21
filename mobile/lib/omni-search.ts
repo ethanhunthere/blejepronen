@@ -115,8 +115,9 @@ export function searchLocations(query: string, limit = 6): OmniResultItem[] {
 }
 
 /**
- * Blazing-fast federated search across locations, listings, companies, and individuals.
- * Backed by in-memory LRU caching, parallel indexed Supabase queries, and instant relevance scoring.
+ * Multi-Entity Search Pipeline
+ * Actively queries listings, profiles, and companies database tables in parallel with unified aggregation.
+ * Surfaces matching people, individual sellers, and agency/company accounts alongside property listings.
  */
 export async function executeMobileOmniSearch(
   query: string,
@@ -146,33 +147,75 @@ export async function executeMobileOmniSearch(
   // 2. Synchronous Instant Locations Matching
   const locations = searchLocations(cleanQ, 6)
 
-  // 3. Parallel Indexed Supabase Fetch for Listings & Profiles
+  // 3. Build dynamic phone search filters if query contains numbers
+  const digitsOnly = cleanQ.replace(/[^0-9]/g, '')
+  const phoneFilters: string[] = []
+  if (digitsOnly.length >= 2) {
+    phoneFilters.push(`phone.ilike.%${digitsOnly}%`)
+    // If phone starts with 0 (e.g. 044 -> 44)
+    if (digitsOnly.startsWith('0')) {
+      phoneFilters.push(`phone.ilike.%${digitsOnly.slice(1)}%`)
+    }
+  }
+
+  // Check if query is looking for companies
+  const isCorporateSearch = /agjenci|kompani|patundshm|real\s*estate|shpk|invest|group/i.test(normQ)
+
+  // Build profiles OR conditions strictly with valid columns
+  const profileConditions: string[] = [
+    `first_name.ilike.%${cleanQ}%`,
+    `last_name.ilike.%${cleanQ}%`,
+    ...phoneFilters,
+  ]
+  if (isCorporateSearch) {
+    profileConditions.push('last_name.ilike.%Kompani%')
+    profileConditions.push('first_name.ilike.%Agjenci%')
+    profileConditions.push('first_name.ilike.%Kompani%')
+  }
+
+  // 4. Parallel Federated Queries across Listings, Profiles, and Companies
   try {
-    const [listingsRes, profilesRes] = await Promise.all([
+    const [listingsRes, profilesRes, companiesRes] = await Promise.all([
+      // A. Query listings table
       supabase
         .from('listings')
-        .select('id, title, price, city, neighborhood, type, images, area_m2, rooms, apartment_type')
+        .select('id, title, price, city, neighborhood, type, images, area_m2, rooms, apartment_type, user_id')
         .eq('is_active', true)
-        .or(`title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,neighborhood.ilike.%${cleanQ}%`)
-        .limit(20),
+        .or(`title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,neighborhood.ilike.%${cleanQ}%,description.ilike.%${cleanQ}%`)
+        .limit(25),
 
+      // B. Query profiles table (using strictly verified schema columns)
       supabase
         .from('profiles')
-        .select('id, first_name, last_name, company_name, account_type, phone, avatar_url, email_verified')
-        .or(`first_name.ilike.%${cleanQ}%,last_name.ilike.%${cleanQ}%,company_name.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
+        .select('id, first_name, last_name, phone, avatar_url, email_verified, created_at')
+        .or(profileConditions.join(','))
+        .limit(25),
+
+      // C. Query companies table (gracefully handle if table or view exists)
+      supabase
+        .from('companies')
+        .select('*')
+        .or(`name.ilike.%${cleanQ}%,title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
         .limit(20),
     ])
 
     const rawListings = listingsRes.data || []
     const rawProfiles = profilesRes.data || []
+    const rawCompanies = (!companiesRes.error && Array.isArray(companiesRes.data)) ? companiesRes.data : []
 
-    // Map & Score Listings
+    // ─── 5. Parse & Score Listings ───
     const listings: OmniResultItem[] = rawListings.map((item: any) => {
       const normTitle = normalizeSearchString(item.title || '')
-      let score = 35
-      if (normTitle === normQ) score += 65
-      else if (normTitle.startsWith(normQ)) score += 45
+      const normCity = normalizeSearchString(item.city || '')
+      const normHood = normalizeSearchString(item.neighborhood || '')
+
+      let score = 40
+      if (normTitle === normQ) score += 60
+      else if (normTitle.startsWith(normQ)) score += 40
       else if (normTitle.includes(normQ)) score += 25
+
+      if (normCity === normQ) score += 25
+      if (normHood.includes(normQ)) score += 20
 
       return {
         id: item.id,
@@ -188,34 +231,35 @@ export async function executeMobileOmniSearch(
       }
     })
 
-    // Map & Score Agencies and Individual Profiles
+    // ─── 6. Parse & Partition Profiles into Agencies & Individual Users ───
     const agencies: OmniResultItem[] = []
     const agents: OmniResultItem[] = []
 
     for (const p of rawProfiles) {
       const isCompany =
-        p.account_type === 'company' ||
         p.last_name === 'Kompani' ||
-        Boolean(p.company_name)
+        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.first_name || '') ||
+        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.last_name || '') ||
+        Boolean((p as any).is_company) ||
+        (p as any).account_type === 'company'
 
       const normFirst = normalizeSearchString(p.first_name || '')
       const normLast = normalizeSearchString(p.last_name || '')
-      const normCompany = normalizeSearchString(p.company_name || '')
+      const normFull = `${normFirst} ${normLast}`.trim()
       const normPhone = normalizeSearchString(p.phone || '')
 
-      let score = 40
-      if (normCompany && (normCompany === normQ || normCompany.startsWith(normQ))) score += 55
-      else if (normFirst === normQ) score += 50
-      else if (normFirst.startsWith(normQ)) score += 35
-      else if (normFirst.includes(normQ)) score += 20
-      if (normLast.includes(normQ)) score += 20
-      if (normPhone.includes(normQ)) score += 35
+      let score = 55 // High baseline so matched people/companies surface prominently
+      if (normFull === normQ || normFirst === normQ) score += 50
+      else if (normFull.startsWith(normQ) || normFirst.startsWith(normQ)) score += 40
+      else if (normFull.includes(normQ) || normFirst.includes(normQ)) score += 25
+      if (normLast && (normLast === normQ || normLast.startsWith(normQ))) score += 30
+      if (normPhone && (normPhone.includes(normQ) || (digitsOnly && normPhone.includes(digitsOnly)))) score += 45
       if (p.email_verified) score += 10
-      if (isCompany) score += 5 // Corporate boost for commercial discovery
+      if (isCompany) score += 8
 
       const displayName = isCompany
-        ? (p.company_name || p.first_name || 'Agjenci Imobiliare').trim()
-        : `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Përdorues'
+        ? (p.first_name || p.last_name || 'Agjenci Imobiliare').trim()
+        : `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Përdorues i Bleje Pronën'
 
       const item: OmniResultItem = {
         id: p.id,
@@ -223,16 +267,18 @@ export async function executeMobileOmniSearch(
         title: displayName,
         subtitle: isCompany
           ? 'Agjenci e Licencuar e Patundshmërive'
-          : 'Pronar Privat • Llogari e Verifikuar',
+          : (p.phone ? `Pronar Privat • ${p.phone}` : 'Pronar Privat • Llogari e Verifikuar'),
         badge: isCompany ? 'Agjenci' : 'Pronar',
         imageUrl: p.avatar_url || null,
         price: null,
+        city: undefined,
         score,
         payload: {
           phone: p.phone,
           email_verified: p.email_verified,
           id: p.id,
           isCompany,
+          account_type: isCompany ? 'company' : 'individual',
         },
         targetUrl: `/profili/${p.id}`,
       }
@@ -241,7 +287,39 @@ export async function executeMobileOmniSearch(
       else agents.push(item)
     }
 
-    const flat = [...locations, ...agencies, ...listings, ...agents].sort(
+    // ─── 7. Parse Companies Table (if present) ───
+    for (const c of rawCompanies) {
+      const compName = (c.name || c.title || c.company_name || 'Agjenci Imobiliare').trim()
+      const normComp = normalizeSearchString(compName)
+      let score = 65
+      if (normComp === normQ || normComp.startsWith(normQ)) score += 40
+      else if (normComp.includes(normQ)) score += 25
+
+      const item: OmniResultItem = {
+        id: c.id,
+        entityType: 'agency',
+        title: compName,
+        subtitle: c.city ? `Agjenci Imobiliare në ${c.city}` : 'Agjenci e Licencuar e Patundshmërive',
+        badge: 'Agjenci',
+        imageUrl: c.logo_url || c.avatar_url || null,
+        price: null,
+        city: c.city || undefined,
+        score,
+        payload: {
+          phone: c.phone,
+          email_verified: true,
+          id: c.id,
+          isCompany: true,
+          account_type: 'company',
+        },
+        targetUrl: `/profili/${c.id}`,
+      }
+      agencies.push(item)
+    }
+
+    // ─── 8. Unified Flat Ranking ───
+    // Sort all entities by relevance score to guarantee high-matching people and companies appear at the top
+    const flat = [...locations, ...agencies, ...agents, ...listings].sort(
       (a, b) => b.score - a.score
     )
 
@@ -264,7 +342,7 @@ export async function executeMobileOmniSearch(
       trending: TRENDING_SEARCHES,
     }
 
-    // Write to memory cache with eviction bounds
+    // Write to memory cache with bounds
     if (searchCache.size >= MAX_CACHE_ENTRIES) {
       const oldestKey = searchCache.keys().next().value
       if (oldestKey) searchCache.delete(oldestKey)

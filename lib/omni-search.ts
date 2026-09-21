@@ -15,6 +15,8 @@ export interface OmniListingPayload {
 }
 
 export interface OmniProfilePayload {
+  id?: string
+  isCompany?: boolean
   phone?: string
   email_verified?: boolean
   account_type?: 'individual' | 'company'
