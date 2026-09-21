@@ -33,6 +33,7 @@ import { waitForAuthCacheHydration } from '@/lib/auth-cache'
 import { prewarmBrandAssets } from '@/assets/brand/logo-data'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { isLogoutInProgress } from '@/lib/auth-cache'
+import { SplashHandover } from '@/components/motion'
 
 export { ErrorBoundary } from 'expo-router'
 
@@ -165,6 +166,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="+not-found" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
         </Stack>
       </NavigationThemeProvider>
+      <SplashHandover isReady={hasHiddenSplash} />
     </View>
   )
 }

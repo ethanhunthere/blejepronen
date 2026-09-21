@@ -43,6 +43,8 @@ import { safeBack } from '@/lib/navigation'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { syncAuthSession } from '@/lib/auth-cache'
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated'
+import { TactilePressable, SlidingTabSwitcher } from '@/components/motion'
 
 // ─── Official multi-color Google "G" emblem (vector, crisp at any size) ───
 function GoogleLogo({ size = 18 }: { size?: number }) {
@@ -712,13 +714,15 @@ export default function AuthModalScreen() {
       {/* Top Drag Handle & Close Button */}
       <View style={styles.topBar}>
         <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-        <Pressable
+        <TactilePressable
+          activeScale={0.92}
+          haptic="selection"
           style={[styles.closeBtn, { backgroundColor: colors.surfaceSubtle }]}
           onPress={() => safeBack(router, '/(tabs)')}
           hitSlop={10}
         >
           <X size={18} color={colors.textSecondary} strokeWidth={2.4} />
-        </Pressable>
+        </TactilePressable>
       </View>
 
       <ScrollView
@@ -731,7 +735,8 @@ export default function AuthModalScreen() {
       >
         {/* ================= STEP 2: VERIFY EMAIL CODE (OTP) ================= */}
         {step === 'verify_otp' ? (
-          <View
+          <Animated.View
+            entering={FadeInDown.duration(260).springify().damping(18)}
             style={[
               styles.authCard,
               {
@@ -742,17 +747,16 @@ export default function AuthModalScreen() {
           >
             <View style={styles.verifyStepWrapper}>
               {/* Back Button */}
-              <Pressable
+              <TactilePressable
+                activeScale={0.94}
+                haptic="selection"
                 style={styles.backBtn}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.selectionAsync()
-                  setStep('auth')
-                }}
+                onPress={() => setStep('auth')}
                 hitSlop={8}
               >
                 <ArrowLeft size={14} color={brandHighlight} strokeWidth={2.4} />
                 <Text style={[styles.backBtnText, { color: brandHighlight }]}>Kthehu mbrapa</Text>
-              </Pressable>
+              </TactilePressable>
 
               {/* Verification Header Icon */}
               <View
@@ -871,7 +875,9 @@ export default function AuthModalScreen() {
               )}
 
               {/* Verify Button */}
-              <Pressable
+              <TactilePressable
+                activeScale={0.97}
+                haptic="medium"
                 style={[
                   styles.submitBtn,
                   styles.verifySubmitBtn,
@@ -899,12 +905,14 @@ export default function AuthModalScreen() {
                     </Text>
                   </View>
                 )}
-              </Pressable>
+              </TactilePressable>
 
               {/* Resend Section */}
               <View style={styles.resendSection}>
                 {canResend ? (
-                  <Pressable
+                  <TactilePressable
+                    activeScale={0.96}
+                    haptic="light"
                     style={[
                       styles.resendBtn,
                       { backgroundColor: colors.surfaceSubtle, borderColor: specularBorderColor },
@@ -922,7 +930,7 @@ export default function AuthModalScreen() {
                         </Text>
                       </>
                     )}
-                  </Pressable>
+                  </TactilePressable>
                 ) : (
                   <Text style={[styles.countdownText, { color: colors.textMuted }]}>
                     Mund të kërkoni një kod të ri pas{' '}
@@ -941,7 +949,9 @@ export default function AuthModalScreen() {
                   <View style={[styles.orDividerLine, { backgroundColor: specularBorderColor }]} />
                 </View>
 
-                <Pressable
+                <TactilePressable
+                  activeScale={0.97}
+                  haptic="light"
                   style={[
                     styles.skipBtn,
                     { borderColor: specularBorderColor, backgroundColor: colors.surfaceSubtle },
@@ -959,15 +969,18 @@ export default function AuthModalScreen() {
                     </Text>
                   </View>
                   <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
-                </Pressable>
+                </TactilePressable>
               </View>
             </View>
-          </View>
+          </Animated.View>
         ) : (
           /* ================= STEP 1: AUTH (LOGIN & REGISTER) ================= */
           <>
             {/* Centered Brand Emblem & Header with crisp typography */}
-            <View style={styles.brandHero}>
+            <Animated.View
+              entering={FadeInDown.duration(240).springify().damping(20)}
+              style={styles.brandHero}
+            >
               <Logo size={30} />
               <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                 {heroTitle}
@@ -975,10 +988,11 @@ export default function AuthModalScreen() {
               <Text style={[styles.heroSubtitle, { color: colors.textMuted }]}>
                 {heroSubtitle}
               </Text>
-            </View>
+            </Animated.View>
 
             {/* Modern Polished Card Container */}
-            <View
+            <Animated.View
+              entering={FadeInDown.duration(280).delay(40).springify().damping(20)}
               style={[
                 styles.authCard,
                 {
@@ -987,94 +1001,34 @@ export default function AuthModalScreen() {
                 },
               ]}
             >
-              {/* Segmented Tab Switcher (Kyçu / Regjistrohu) */}
-              <View
-                style={[
-                  styles.tabSwitcher,
+              {/* Fluid Native UI-Thread Segmented Tab Switcher (Kyçu / Regjistrohu) */}
+              <SlidingTabSwitcher<'login' | 'register'>
+                tabs={[
                   {
-                    backgroundColor:
-                      theme === 'white'
-                        ? 'rgba(0, 0, 0, 0.04)'
-                        : 'rgba(255, 255, 255, 0.06)',
-                    borderColor: specularBorderColor,
-                    borderWidth: 0.5,
+                    key: 'login',
+                    label: 'Kyçu',
+                    icon: (col, sz) => <LogIn size={sz} color={col} strokeWidth={2.4} />,
+                  },
+                  {
+                    key: 'register',
+                    label: 'Regjistrohu',
+                    icon: (col, sz) => <UserPlus size={sz} color={col} strokeWidth={2.4} />,
                   },
                 ]}
-              >
-                <Pressable
-                  style={[
-                    styles.tabBtn,
-                    activeTab === 'login' && [
-                      styles.tabBtnActive,
-                      {
-                        backgroundColor: colors.surface,
-                        borderWidth: 0.5,
-                        borderColor: specularBorderColor,
-                        shadowColor: '#000',
-                        shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                        shadowRadius: 3,
-                        elevation: 2,
-                      },
-                    ],
-                  ]}
-                  onPress={() => handleTabChange('login')}
-                >
-                  <LogIn
-                    size={14}
-                    color={activeTab === 'login' ? brandHighlight : colors.textMuted}
-                    strokeWidth={activeTab === 'login' ? 2.5 : 2}
-                  />
-                  <Text
-                    style={[
-                      styles.tabBtnText,
-                      {
-                        color: activeTab === 'login' ? colors.textPrimary : colors.textMuted,
-                        fontFamily: activeTab === 'login' ? Fonts.bold : Fonts.medium,
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    Kyçu
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.tabBtn,
-                    activeTab === 'register' && [
-                      styles.tabBtnActive,
-                      {
-                        backgroundColor: colors.surface,
-                        borderWidth: 0.5,
-                        borderColor: specularBorderColor,
-                        shadowColor: '#000',
-                        shadowOpacity: theme === 'black' ? 0.35 : 0.08,
-                        shadowRadius: 3,
-                        elevation: 2,
-                      },
-                    ],
-                  ]}
-                  onPress={() => handleTabChange('register')}
-                >
-                  <UserPlus
-                    size={14}
-                    color={activeTab === 'register' ? brandHighlight : colors.textMuted}
-                    strokeWidth={activeTab === 'register' ? 2.5 : 2}
-                  />
-                  <Text
-                    style={[
-                      styles.tabBtnText,
-                      {
-                        color: activeTab === 'register' ? colors.textPrimary : colors.textMuted,
-                        fontFamily: activeTab === 'register' ? Fonts.bold : Fonts.medium,
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    Regjistrohu
-                  </Text>
-                </Pressable>
-              </View>
+                activeTab={activeTab}
+                onChangeTab={handleTabChange}
+                containerBg={
+                  theme === 'white'
+                    ? 'rgba(0, 0, 0, 0.04)'
+                    : 'rgba(255, 255, 255, 0.06)'
+                }
+                indicatorBg={colors.surface}
+                borderColor={specularBorderColor}
+                activeTextColor={colors.textPrimary}
+                inactiveTextColor={colors.textMuted}
+                activeIconColor={brandHighlight}
+                inactiveIconColor={colors.textMuted}
+              />
 
               {/* Error Alert */}
               {errorMessage && (
@@ -1085,98 +1039,42 @@ export default function AuthModalScreen() {
 
               {/* Dual-Track Persona Switcher (Individ vs Kompani / Biznes) */}
               <View style={styles.accountTypeWrapper}>
-                <View
-                  style={[
-                    styles.accountTypeSelector,
+                <SlidingTabSwitcher<'individual' | 'company'>
+                  tabs={[
                     {
-                      backgroundColor:
-                        theme === 'white'
-                          ? 'rgba(0, 0, 0, 0.035)'
-                          : 'rgba(255, 255, 255, 0.05)',
-                      borderColor: specularBorderColor,
-                      borderWidth: 0.5,
+                      key: 'individual',
+                      label: 'Individ',
+                      icon: (col, sz) => <User size={sz} color={col} strokeWidth={2.2} />,
+                    },
+                    {
+                      key: 'company',
+                      label: 'Kompani / Biznes',
+                      icon: (col, sz) => <Building2 size={sz} color={col} strokeWidth={2.2} />,
                     },
                   ]}
-                >
-                  <Pressable
-                    style={[
-                      styles.accountTypePill,
-                      accountType === 'individual' && [
-                        styles.accountTypePillActive,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: specularBorderColor,
-                          borderWidth: 0.5,
-                        },
-                      ],
-                    ]}
-                    onPress={() => handleAccountTypeChange('individual')}
-                  >
-                    <User
-                      size={13}
-                      color={accountType === 'individual' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2.2}
-                    />
-                    <Text
-                      style={[
-                        styles.accountTypePillText,
-                        {
-                          color:
-                            accountType === 'individual'
-                              ? colors.textPrimary
-                              : colors.textMuted,
-                          fontFamily:
-                            accountType === 'individual' ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      Individ
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.accountTypePill,
-                      accountType === 'company' && [
-                        styles.accountTypePillActive,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: specularBorderColor,
-                          borderWidth: 0.5,
-                        },
-                      ],
-                    ]}
-                    onPress={() => handleAccountTypeChange('company')}
-                  >
-                    <Building2
-                      size={13}
-                      color={accountType === 'company' ? brandHighlight : colors.textMuted}
-                      strokeWidth={2.2}
-                    />
-                    <Text
-                      style={[
-                        styles.accountTypePillText,
-                        {
-                          color:
-                            accountType === 'company'
-                              ? colors.textPrimary
-                              : colors.textMuted,
-                          fontFamily: accountType === 'company' ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      Kompani / Biznes
-                    </Text>
-                  </Pressable>
-                </View>
+                  activeTab={accountType}
+                  onChangeTab={handleAccountTypeChange}
+                  containerBg={
+                    theme === 'white'
+                      ? 'rgba(0, 0, 0, 0.035)'
+                      : 'rgba(255, 255, 255, 0.05)'
+                  }
+                  indicatorBg={colors.surface}
+                  borderColor={specularBorderColor}
+                  activeTextColor={colors.textPrimary}
+                  inactiveTextColor={colors.textMuted}
+                  activeIconColor={brandHighlight}
+                  inactiveIconColor={colors.textMuted}
+                  height={40}
+                />
               </View>
 
               {/* ─── Branded, Evenly Spaced 3-Button Social Auth Row (Apple, Google, Facebook) ─── */}
               <View style={styles.socialAuthRow}>
                 {/* Apple */}
-                <Pressable
+                <TactilePressable
+                  activeScale={0.96}
+                  haptic="light"
                   style={[
                     styles.socialAuthBtn,
                     {
@@ -1199,10 +1097,12 @@ export default function AuthModalScreen() {
                       </Text>
                     </View>
                   )}
-                </Pressable>
+                </TactilePressable>
 
                 {/* Google */}
-                <Pressable
+                <TactilePressable
+                  activeScale={0.96}
+                  haptic="light"
                   style={[
                     styles.socialAuthBtn,
                     {
@@ -1225,10 +1125,12 @@ export default function AuthModalScreen() {
                       </Text>
                     </View>
                   )}
-                </Pressable>
+                </TactilePressable>
 
                 {/* Facebook */}
-                <Pressable
+                <TactilePressable
+                  activeScale={0.96}
+                  haptic="light"
                   style={[
                     styles.socialAuthBtn,
                     {
@@ -1251,7 +1153,7 @@ export default function AuthModalScreen() {
                       </Text>
                     </View>
                   )}
-                </Pressable>
+                </TactilePressable>
               </View>
 
               {/* Divider */}
@@ -1267,7 +1169,11 @@ export default function AuthModalScreen() {
               <View style={styles.form}>
                 {/* If Company & Register: Emri i Kompanisë */}
                 {activeTab === 'register' && accountType === 'company' && (
-                  <View style={styles.inputGroup}>
+                  <Animated.View
+                    entering={FadeInDown.duration(200).springify().damping(18)}
+                    exiting={FadeOutUp.duration(160)}
+                    style={styles.inputGroup}
+                  >
                     <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                       Emri i Kompanisë ose Agjencisë *
                     </Text>
@@ -1298,7 +1204,7 @@ export default function AuthModalScreen() {
                         autoCapitalize="words"
                       />
                     </View>
-                  </View>
+                  </Animated.View>
                 )}
 
                 {/* Email */}
@@ -1383,7 +1289,9 @@ export default function AuthModalScreen() {
                 </View>
 
                 {/* Primary Action Button with Loading Spinner */}
-                <Pressable
+                <TactilePressable
+                  activeScale={0.97}
+                  haptic="medium"
                   style={[
                     styles.submitBtn,
                     { backgroundColor: brandHighlight },
@@ -1413,24 +1321,26 @@ export default function AuthModalScreen() {
                       <ArrowRight size={16} color={primaryBtnText} strokeWidth={2.4} />
                     </View>
                   )}
-                </Pressable>
+                </TactilePressable>
 
                 {/* 1-Line Switcher Prompt */}
                 <View style={styles.switchPromptRow}>
                   <Text style={[styles.switchPromptText, { color: colors.textMuted }]}>
                     {activeTab === 'login' ? 'Nuk keni llogari?' : 'Keni tashmë llogari?'}
                   </Text>
-                  <Pressable
+                  <TactilePressable
+                    activeScale={0.95}
+                    haptic="light"
                     onPress={() => handleTabChange(activeTab === 'login' ? 'register' : 'login')}
                     hitSlop={8}
                   >
                     <Text style={[styles.switchActionText, { color: brandHighlight }]}>
                       {activeTab === 'login' ? 'Regjistrohu falas' : 'Kyçu këtu'}
                     </Text>
-                  </Pressable>
+                  </TactilePressable>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           </>
         )}
       </ScrollView>
