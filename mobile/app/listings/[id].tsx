@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   Pressable,
   ActivityIndicator,
   Platform,
@@ -64,6 +65,8 @@ export default function ListingDetailScreen() {
   const [loanYears, setLoanYears] = useState(20)
 
   useEffect(() => {
+    let isMounted = true
+
     async function fetchDetails() {
       if (!id) return
       try {
@@ -82,6 +85,8 @@ export default function ListingDetailScreen() {
           fetchFavoriteIds(),
         ])
 
+        if (!isMounted) return
+
         setCurrentUser(authRes.data?.user || null)
 
         let loadedListing: any = listingRes.data
@@ -99,6 +104,8 @@ export default function ListingDetailScreen() {
           }
         }
 
+        if (!isMounted) return
+
         if (loadedListing) {
           setListing(loadedListing as Listing)
         }
@@ -109,11 +116,17 @@ export default function ListingDetailScreen() {
       } catch (err: any) {
         console.warn('Listing catch:', err?.message || err)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchDetails()
+
+    return () => {
+      isMounted = false
+    }
   }, [id])
 
   const favPendingRef = useRef(false)
@@ -281,22 +294,30 @@ export default function ListingDetailScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Fullwidth Image Slider */}
         <View style={[styles.galleryContainer, { width: windowWidth }]}>
-          <ScrollView
+          <FlatList
+            data={imagesList}
+            keyExtractor={(_, i) => String(i)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
+            initialNumToRender={2}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            removeClippedSubviews={Platform.OS !== 'web'}
+            getItemLayout={(_, index) => ({
+              length: windowWidth,
+              offset: windowWidth * index,
+              index,
+            })}
+            onMomentumScrollEnd={(e) => {
               const slide = Math.min(
                 imagesList.length - 1,
                 Math.max(0, Math.round(e.nativeEvent.contentOffset.x / windowWidth))
               )
               if (slide !== activeImageIdx) setActiveImageIdx(slide)
             }}
-            scrollEventThrottle={32}
-          >
-            {imagesList.map((img, i) => (
+            renderItem={({ item: img, index: i }) => (
               <Image
-                key={i}
                 source={{ uri: img }}
                 recyclingKey={`gallery-${i}`}
                 style={[styles.galleryImage, { width: windowWidth, backgroundColor: colors.surfaceSubtle }]}
@@ -305,8 +326,8 @@ export default function ListingDetailScreen() {
                 cachePolicy="memory-disk"
                 transition={150}
               />
-            ))}
-          </ScrollView>
+            )}
+          />
 
           <View style={styles.imageCounter}>
             <BlurView
@@ -572,7 +593,7 @@ export default function ListingDetailScreen() {
           ]}
         />
         <View
-          style={[styles.bottomBarSafeArea, { paddingBottom: insets.bottom }]}
+          style={[styles.bottomBarSafeArea, { paddingBottom: Math.max(insets.bottom, 12) }]}
         >
           {currentUser?.id === listing.user_id ? (
             <View style={styles.ownerNoticeBar}>

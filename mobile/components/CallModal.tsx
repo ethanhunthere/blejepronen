@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme, Fonts } from '@/constants/theme'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
@@ -53,6 +54,7 @@ export function CallModal({
   conversationId,
   isSignedIn = true,
 }: CallModalProps) {
+  const insets = useSafeAreaInsets()
   const { colors, theme } = useTheme()
 
   if (!visible) return null
@@ -142,6 +144,7 @@ export function CallModal({
             {
               backgroundColor: colors.surface,
               borderColor: specularBorder,
+              paddingBottom: Math.max(insets.bottom + 12, 24),
             },
           ]}
           onPress={(e) => e.stopPropagation()}

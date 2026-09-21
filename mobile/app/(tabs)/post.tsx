@@ -553,6 +553,8 @@ export default function PostPropertyScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       >
         {/* SECTION 1: Kategoria e Pronës */}
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>

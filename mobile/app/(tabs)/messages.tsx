@@ -16,6 +16,7 @@ import {
   getSyncAuthUser,
   isAuthCacheHydrated,
   subscribeAuthCache,
+  isLogoutInProgress,
 } from '@/lib/auth-cache'
 import {
   MessageSquare,
@@ -103,10 +104,22 @@ export default function MessagesScreen() {
   })
 
   const loadConversations = useCallback(async () => {
+    if (isLogoutInProgress()) {
+      setConversations([])
+      setLoading(false)
+      return
+    }
+
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (isLogoutInProgress()) {
+        setCurrentUser(null)
+        setConversations([])
+        return
+      }
 
       setCurrentUser(user || null)
 
@@ -129,6 +142,8 @@ export default function MessagesScreen() {
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('updated_at', { ascending: false })
+
+      if (isLogoutInProgress()) return
 
       if (error) {
         console.warn('Conversations notice:', error.message)
@@ -194,6 +209,11 @@ export default function MessagesScreen() {
     loadConversations()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isLogoutInProgress()) {
+        setCurrentUser(null)
+        setConversations([])
+        return
+      }
       setCurrentUser(session?.user || null)
       loadConversations()
     })
@@ -221,7 +241,7 @@ export default function MessagesScreen() {
     }
 
     return () => {
-      authListener.subscription.unsubscribe()
+      authListener?.subscription?.unsubscribe()
       if (channel) supabase.removeChannel(channel)
     }
   }, [loadConversations])

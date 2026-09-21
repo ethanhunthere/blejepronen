@@ -31,6 +31,8 @@ import * as SystemUI from 'expo-system-ui'
 import { waitForListingsCacheHydration } from '@/lib/listings-cache'
 import { waitForAuthCacheHydration } from '@/lib/auth-cache'
 import { prewarmBrandAssets } from '@/assets/brand/logo-data'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { isLogoutInProgress } from '@/lib/auth-cache'
 
 export { ErrorBoundary } from 'expo-router'
 
@@ -55,11 +57,13 @@ export default function RootLayout() {
   }, [fontError])
 
   return (
-    <ThemeProvider>
-      <BannerProvider>
-        <RootLayoutNav fontsLoaded={fontsLoaded} />
-      </BannerProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <BannerProvider>
+          <RootLayoutNav fontsLoaded={fontsLoaded} />
+        </BannerProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 
@@ -174,11 +178,18 @@ function CallGate() {
   useEffect(() => {
     let mounted = true
     async function wire() {
+      if (isLogoutInProgress()) {
+        try {
+          const { callEngine } = await import('@/lib/calling')
+          callEngine.listenForIncoming(null)
+        } catch {}
+        return
+      }
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser()
-        if (!mounted) return
+        if (!mounted || isLogoutInProgress()) return
         const { callEngine } = await import('@/lib/calling')
         callEngine.listenForIncoming(user?.id ?? null)
       } catch {
@@ -190,7 +201,7 @@ function CallGate() {
     const { data } = supabase.auth.onAuthStateChange(() => void wire())
     return () => {
       mounted = false
-      data.subscription.unsubscribe()
+      data?.subscription?.unsubscribe()
       import('@/lib/calling')
         .then(({ callEngine }) => callEngine.listenForIncoming(null))
         .catch(() => {})

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -68,11 +68,22 @@ export default function PublicProfileScreen() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'shitje' | 'qira'>('all')
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   // Concurrently fetch profile, active listings, and user's favorites
   const loadData = useCallback(async (isRefresh = false) => {
     if (!profileId) {
-      setError('ID e profilit mungon.')
-      setLoading(false)
+      if (isMountedRef.current) {
+        setError('ID e profilit mungon.')
+        setLoading(false)
+      }
       return
     }
 
@@ -96,6 +107,8 @@ export default function PublicProfileScreen() {
         fetchFavoriteIds().catch(() => ({})),
       ])
 
+      if (!isMountedRef.current) return
+
       if (profileRes.error) {
         throw new Error(profileRes.error.message)
       }
@@ -111,10 +124,14 @@ export default function PublicProfileScreen() {
       }
     } catch (err: any) {
       console.warn('Public profile load exception:', err)
-      setError(err?.message || 'Ndodhi një problem gjatë ngarkimit të profilit.')
+      if (isMountedRef.current) {
+        setError(err?.message || 'Ndodhi një problem gjatë ngarkimit të profilit.')
+      }
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      if (isMountedRef.current) {
+        setLoading(false)
+        setRefreshing(false)
+      }
     }
   }, [profileId])
 
@@ -122,19 +139,23 @@ export default function PublicProfileScreen() {
     loadData()
   }, [loadData])
 
-  // Favorite toggle handling with optimistic rollback
+  // Favorite toggle handling with optimistic rollback and stable reference
   const handleToggleFavorite = useCallback(async (listingId: string) => {
-    const wasFav = Boolean(favorites[listingId])
-    const newFav = !wasFav
-
-    setFavorites((prev) => ({ ...prev, [listingId]: newFav }))
+    let wasFav = false
+    setFavorites((prev) => {
+      wasFav = Boolean(prev[listingId])
+      return { ...prev, [listingId]: !wasFav }
+    })
 
     try {
-      await persistFavoriteToggle(listingId, wasFav)
+      const ok = await persistFavoriteToggle(listingId, wasFav)
+      if (!ok) {
+        setFavorites((prev) => ({ ...prev, [listingId]: wasFav }))
+      }
     } catch {
       setFavorites((prev) => ({ ...prev, [listingId]: wasFav }))
     }
-  }, [favorites])
+  }, [])
 
   // Profile entity classification & display name
   const isCompany = useMemo(() => {

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   Pressable,
   ActivityIndicator,
   RefreshControl,
@@ -17,7 +18,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
-import { getSyncAuthUser, isAuthCacheHydrated } from '@/lib/auth-cache'
+import { getSyncAuthUser, isAuthCacheHydrated, isLogoutInProgress } from '@/lib/auth-cache'
 import { getCachedListings } from '@/lib/listings-cache'
 import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
@@ -130,6 +131,14 @@ export default function ShpalljetEMiaScreen() {
   // Action busy state per listing
   const [actionBusyId, setActionBusyId] = useState<string | null>(null)
 
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   const fetchUserListings = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -140,14 +149,16 @@ export default function ShpalljetEMiaScreen() {
 
       if (error) {
         console.warn('Fetch user listings error:', error)
-      } else {
+      } else if (isMountedRef.current && !isLogoutInProgress()) {
         setListings((data || []) as unknown as Listing[])
       }
     } catch (e) {
       console.warn('Listings fetch exception:', e)
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      if (isMountedRef.current && !isLogoutInProgress()) {
+        setLoading(false)
+        setRefreshing(false)
+      }
     }
   }, [])
 
@@ -156,29 +167,41 @@ export default function ShpalljetEMiaScreen() {
     setLoadingSaved(true)
     try {
       const rows = await fetchFavoriteListings()
-      setSavedListings(rows as unknown as Listing[])
+      if (isMountedRef.current && !isLogoutInProgress()) {
+        setSavedListings(rows as unknown as Listing[])
+      }
     } finally {
-      setLoadingSaved(false)
+      if (isMountedRef.current && !isLogoutInProgress()) {
+        setLoadingSaved(false)
+      }
     }
   }, [])
 
   useEffect(() => {
     async function init() {
       try {
+        if (isLogoutInProgress()) {
+          if (isMountedRef.current) setLoading(false)
+          return
+        }
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
+        if (!isMountedRef.current || isLogoutInProgress()) return
+
         setCurrentUser(user || null)
         if (user) {
           await fetchUserListings(user.id)
-          fetchSavedListings()
+          if (isMountedRef.current && !isLogoutInProgress()) {
+            fetchSavedListings()
+          }
         } else {
           setLoading(false)
         }
       } catch (err) {
         console.warn('Auth check in shpalljet-e-mia notice:', err)
-        setLoading(false)
+        if (isMountedRef.current) setLoading(false)
       }
     }
 
@@ -496,6 +519,620 @@ export default function ShpalljetEMiaScreen() {
   }), [allCount, activeCount, soldCount, inactiveCount])
 
   const specularBorder = colors.border
+
+  const renderEmptyComponent = useCallback(() => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Po ngarkojmë shpalljet tuaja...
+          </Text>
+        </View>
+      )
+    }
+
+    if (mainTab === 'saved' && loadingSaved) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+            Po ngarkojmë pronat e ruajtura...
+          </Text>
+        </View>
+      )
+    }
+
+    if (mainTab === 'saved') {
+      return (
+        <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+          <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
+            <Bookmark size={38} color={colors.primary} strokeWidth={2.2} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            {searchQuery.trim().length > 0
+              ? 'Nuk u gjet asnjë pronë'
+              : 'Nuk keni prona të ruajtura'}
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtitle,
+              { maxWidth: Math.min(width - 64, 440) },
+              { color: colors.textMuted },
+            ]}
+          >
+            {searchQuery.trim().length > 0
+              ? `Nuk u gjet asnjë pronë e ruajtur me kërkimin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
+              : 'Shtypni zemrën në çdo pronë për ta ruajtur këtu dhe për ta gjetur shpejt më vonë.'}
+          </Text>
+          {searchQuery.trim().length > 0 ? (
+            <Pressable
+              style={[
+                styles.emptyPostBtn,
+                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+              ]}
+              onPress={() => {
+                playTapSound()
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                setSearchQuery('')
+              }}
+            >
+              <X
+                size={17}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                strokeWidth={2.6}
+              />
+              <Text
+                style={[
+                  styles.emptyPostBtnText,
+                  { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                ]}
+              >
+                Pastro Kërkimin
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[
+                styles.emptyPostBtn,
+                { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+              ]}
+              onPress={() => {
+                playTapSound()
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push('/(tabs)/listings' as any)
+              }}
+            >
+              <Building2
+                size={17}
+                color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                strokeWidth={2.6}
+              />
+              <Text
+                style={[
+                  styles.emptyPostBtnText,
+                  { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                ]}
+              >
+                Eksploro Pronat
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )
+    }
+
+    return (
+      <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+        <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
+          <Building2 size={38} color={colors.primary} strokeWidth={2.2} />
+        </View>
+        <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+          {searchQuery.trim().length > 0
+            ? 'Nuk u gjet asnjë shpallje'
+            : subFilter === 'all'
+            ? 'Nuk keni asnjë shpallje ende'
+            : subFilter === 'active'
+            ? 'Nuk keni shpallje aktive për momentin'
+            : subFilter === 'sold'
+            ? 'Nuk keni shpallje të shënuara si të shitura'
+            : 'Nuk keni shpallje jo aktive'}
+        </Text>
+        <Text
+          style={[
+            styles.emptySubtitle,
+            { maxWidth: Math.min(width - 64, 440) },
+            { color: colors.textMuted },
+          ]}
+        >
+          {searchQuery.trim().length > 0
+            ? `Nuk u gjet asnjë shpallje me termin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
+            : subFilter === 'all'
+            ? 'Postoni pronën tuaj falas brenda pak minutave dhe gjeni blerës të verifikuar në treg.'
+            : subFilter === 'active'
+            ? 'Të gjitha shpalljet tuaja janë shënuar si të shitura ose jo aktive.'
+            : subFilter === 'sold'
+            ? 'Asnjë shpallje nuk është shënuar si e shitur ende.'
+            : 'Aktualisht nuk keni asnjë shpallje jo aktive në llogarinë tuaj.'}
+        </Text>
+        {searchQuery.trim().length > 0 ? (
+          <Pressable
+            style={[
+              styles.emptyPostBtn,
+              { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              setSearchQuery('')
+            }}
+          >
+            <X
+              size={17}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.6}
+            />
+            <Text
+              style={[
+                styles.emptyPostBtnText,
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+              ]}
+            >
+              Pastro Kërkimin
+            </Text>
+          </Pressable>
+        ) : subFilter !== 'all' ? (
+          <Pressable
+            style={[
+              styles.emptyPostBtn,
+              { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              handleSubFilterChange('all')
+            }}
+          >
+            <SlidersHorizontal
+              size={17}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.6}
+            />
+            <Text
+              style={[
+                styles.emptyPostBtnText,
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+              ]}
+            >
+              Shfaq të Gjitha ({listings.length})
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[
+              styles.emptyPostBtn,
+              { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push('/post' as any)
+            }}
+          >
+            <Plus
+              size={18}
+              color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+              strokeWidth={2.6}
+            />
+            <Text
+              style={[
+                styles.emptyPostBtnText,
+                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+              ]}
+            >
+              Posto Pronë të Re
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    )
+  }, [
+    loading,
+    mainTab,
+    loadingSaved,
+    colors,
+    specularBorder,
+    searchQuery,
+    width,
+    theme,
+    router,
+    subFilter,
+    handleSubFilterChange,
+    listings.length,
+  ])
+
+  const renderListingItem = useCallback(
+    ({ item }: { item: Listing }) => {
+      const mainImage =
+        item.images && item.images.length > 0
+          ? item.images[0]
+          : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+
+      if (mainTab === 'saved') {
+        return (
+          <View
+            style={[
+              styles.listingCard,
+              { backgroundColor: colors.surface, borderColor: specularBorder },
+            ]}
+          >
+            {/* Cover */}
+            <Pressable
+              style={[styles.cardCover, { height: coverHeight }]}
+              onPress={() => router.push(`/listings/${item.id}` as any)}
+            >
+              <Image
+                source={{ uri: mainImage }}
+                style={styles.coverImage}
+                contentFit="cover"
+                transition={200}
+              />
+
+              <View style={styles.coverBadgesRow}>
+                <View
+                  style={[
+                    styles.typePill,
+                    {
+                      backgroundColor:
+                        item.type === 'shitje'
+                          ? 'rgba(0, 100, 89, 0.88)'
+                          : 'rgba(217, 119, 6, 0.88)',
+                    },
+                  ]}
+                >
+                  <Text style={styles.typePillText}>
+                    {item.type === 'shitje' ? 'Shitje' : 'Me Qira'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Price Strip Bottom Glass */}
+              <View style={styles.coverPriceGlass}>
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 85 : 100}
+                  tint="dark"
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
+              </View>
+            </Pressable>
+
+            {/* Info */}
+            <View style={styles.cardBody}>
+              <Pressable onPress={() => router.push(`/listings/${item.id}` as any)}>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                  {item.title}
+                </Text>
+              </Pressable>
+
+              <View style={styles.cardLocationRow}>
+                <MapPin size={14} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.cardLocationText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {item.city} {item.neighborhood ? `• ${item.neighborhood}` : ''}
+                </Text>
+              </View>
+
+              <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
+                {item.rooms ? (
+                  <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                    <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
+                    <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
+                      {item.rooms} dhoma
+                    </Text>
+                  </View>
+                ) : null}
+
+                {item.area_m2 ? (
+                  <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                    <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                    <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
+                      {item.area_m2} m²
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Actions: Unsave + View */}
+            <View
+              style={[
+                styles.cardActionGrid,
+                isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
+                { borderTopColor: specularBorder },
+              ]}
+            >
+              <Pressable
+                style={[
+                  styles.actionBtn,
+                  isCompact && { height: 36, paddingHorizontal: 6 },
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FEF2F2' : 'rgba(239, 68, 68, 0.12)',
+                  },
+                ]}
+                onPress={() => handleUnsave(item)}
+              >
+                <HeartOff size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
+                <Text
+                  style={[styles.actionBtnText, isCompact && { fontSize: 11.5 }, { color: '#EF4444' }]}
+                  numberOfLines={1}
+                >
+                  {isCompact ? 'Hiq Ruajtjen' : 'Hiq nga Të Ruajturat'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.actionSquareBtn,
+                  isCompact && { width: 36, height: 36 },
+                  { backgroundColor: colors.surfaceSubtle },
+                ]}
+                onPress={() => router.push(`/listings/${item.id}` as any)}
+                hitSlop={6}
+              >
+                <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
+              </Pressable>
+            </View>
+          </View>
+        )
+      }
+
+      const isBusy = actionBusyId === item.id
+      const active = isListingActive(item)
+      const isSold = isListingSold(item)
+
+      return (
+        <View
+          style={[
+            styles.listingCard,
+            { backgroundColor: colors.surface, borderColor: specularBorder },
+          ]}
+        >
+          {/* Top Media & Preview Banner */}
+          <Pressable
+            style={[styles.cardCover, { height: coverHeight }]}
+            onPress={() => router.push(`/listings/${item.id}` as any)}
+          >
+            <Image
+              source={{ uri: mainImage }}
+              style={styles.coverImage}
+              contentFit="cover"
+              transition={200}
+            />
+
+            {/* Top Badges Overlay */}
+            <View style={styles.coverBadgesRow}>
+              <View
+                style={[
+                  styles.typePill,
+                  {
+                    backgroundColor:
+                      item.type === 'shitje'
+                        ? 'rgba(0, 100, 89, 0.88)'
+                        : 'rgba(217, 119, 6, 0.88)',
+                  },
+                ]}
+              >
+                <Text style={styles.typePillText}>
+                  {item.type === 'shitje' ? 'Shitje' : 'Me Qira'}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.statusPill,
+                  {
+                    backgroundColor: isSold
+                      ? 'rgba(15, 23, 42, 0.88)'
+                      : active
+                      ? 'rgba(16, 185, 129, 0.92)'
+                      : 'rgba(107, 114, 128, 0.90)',
+                  },
+                ]}
+              >
+                <Text style={styles.statusPillText}>
+                  {isSold ? 'E Shitur' : active ? 'Aktive' : 'Jo aktive'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Price Strip Bottom Glass */}
+            <View style={styles.coverPriceGlass}>
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 85 : 100}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+              <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
+              <Pressable
+                style={[styles.coverEditPriceBtn, isCompact && { paddingHorizontal: 7, paddingVertical: 3.5 }]}
+                onPress={(e) => {
+                  e.stopPropagation()
+                  openPriceModal(item)
+                }}
+                hitSlop={6}
+              >
+                <Tag size={isCompact ? 12 : 13} color="#FFFFFF" strokeWidth={2.4} />
+                <Text style={[styles.coverEditPriceBtnText, isCompact && { fontSize: 10.5 }]}>
+                  {isCompact ? 'Ndrysho' : 'Ndrysho Çmimin'}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+
+          {/* Middle Info Block */}
+          <View style={styles.cardBody}>
+            <Pressable onPress={() => router.push(`/listings/${item.id}` as any)}>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                {item.title}
+              </Text>
+            </Pressable>
+
+            <View style={styles.cardLocationRow}>
+              <MapPin size={14} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.cardLocationText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {item.city} {item.neighborhood ? `• ${item.neighborhood}` : ''}
+              </Text>
+            </View>
+
+            <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
+              {item.rooms ? (
+                <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                  <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
+                  <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
+                    {item.rooms} dhoma
+                  </Text>
+                </View>
+              ) : null}
+
+              {item.area_m2 ? (
+                <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                  <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                  <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
+                    {item.area_m2} m²
+                  </Text>
+                </View>
+              ) : null}
+
+              {item.floor !== undefined && item.floor !== null ? (
+                <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
+                  <Building2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
+                  <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
+                    Kati {item.floor}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Bottom Action Controls (Apple Glass Grid) */}
+          <View
+            style={[
+              styles.cardActionGrid,
+              isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
+              { borderTopColor: specularBorder },
+            ]}
+          >
+            {/* 1. Toggle Active / Inactive */}
+            <Pressable
+              style={[
+                styles.actionBtn,
+                isCompact && { height: 36, paddingHorizontal: 6 },
+                {
+                  backgroundColor: active
+                    ? theme === 'white'
+                      ? '#FEF2F2'
+                      : 'rgba(239, 68, 68, 0.12)'
+                    : theme === 'white'
+                    ? '#ECFDF5'
+                    : 'rgba(16, 185, 129, 0.12)',
+                },
+              ]}
+              onPress={() => handleToggleStatus(item)}
+              disabled={isBusy}
+            >
+              {isBusy ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : active ? (
+                <>
+                  <XCircle size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
+                  <Text
+                    style={[
+                      styles.actionBtnText,
+                      isCompact && { fontSize: 11.5 },
+                      { color: '#EF4444' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {isCompact ? 'Shëno Shitur' : 'Shëno si të Shitur'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={isCompact ? 14 : 15} color="#10B981" strokeWidth={2.2} />
+                  <Text
+                    style={[
+                      styles.actionBtnText,
+                      isCompact && { fontSize: 11.5 },
+                      { color: '#10B981' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    Rikthe Aktiv
+                  </Text>
+                </>
+              )}
+            </Pressable>
+
+            {/* 2. Share */}
+            <Pressable
+              style={[
+                styles.actionSquareBtn,
+                isCompact && { width: 36, height: 36 },
+                { backgroundColor: colors.surfaceSubtle },
+              ]}
+              onPress={() => handleShare(item)}
+              hitSlop={6}
+            >
+              <Share2 size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
+            </Pressable>
+
+            {/* 3. View Details */}
+            <Pressable
+              style={[
+                styles.actionSquareBtn,
+                isCompact && { width: 36, height: 36 },
+                { backgroundColor: colors.surfaceSubtle },
+              ]}
+              onPress={() => router.push(`/listings/${item.id}` as any)}
+              hitSlop={6}
+            >
+              <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
+            </Pressable>
+
+            {/* 4. Delete */}
+            <Pressable
+              style={[
+                styles.actionSquareBtn,
+                isCompact && { width: 36, height: 36 },
+                {
+                  backgroundColor:
+                    theme === 'white' ? '#FEE2E2' : 'rgba(239, 68, 68, 0.18)',
+                },
+              ]}
+              onPress={() => handleDeleteListing(item)}
+              disabled={isBusy}
+              hitSlop={6}
+            >
+              <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
+            </Pressable>
+          </View>
+        </View>
+      )
+    },
+    [
+      mainTab,
+      colors,
+      theme,
+      specularBorder,
+      coverHeight,
+      isCompact,
+      actionBusyId,
+      isListingActive,
+      isListingSold,
+      router,
+    ]
+  )
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -867,8 +1504,11 @@ export default function ShpalljetEMiaScreen() {
             </View>
           </View>
 
-          {/* Listings List */}
-          <ScrollView
+          {/* Virtualized Listings List */}
+          <FlatList
+            data={loading || (mainTab === 'saved' && loadingSaved) ? [] : filteredListings}
+            keyExtractor={(item) => item.id}
+            renderItem={renderListingItem}
             style={styles.container}
             contentContainerStyle={[
               styles.contentContainer,
@@ -879,6 +1519,12 @@ export default function ShpalljetEMiaScreen() {
               },
             ]}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            removeClippedSubviews={Platform.OS !== 'web'}
+            initialNumToRender={4}
+            maxToRenderPerBatch={4}
+            windowSize={5}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -886,586 +1532,8 @@ export default function ShpalljetEMiaScreen() {
                 tintColor={colors.primary}
               />
             }
-          >
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Po ngarkojmë shpalljet tuaja...
-                </Text>
-              </View>
-            ) : mainTab === 'saved' && loadingSaved ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Po ngarkojmë pronat e ruajtura...
-                </Text>
-              </View>
-            ) : mainTab === 'saved' && filteredListings.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-                <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
-                  <Bookmark size={38} color={colors.primary} strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  {searchQuery.trim().length > 0
-                    ? 'Nuk u gjet asnjë pronë'
-                    : 'Nuk keni prona të ruajtura'}
-                </Text>
-                <Text
-                  style={[
-                    styles.emptySubtitle,
-                    { maxWidth: Math.min(width - 64, 440) },
-                    { color: colors.textMuted },
-                  ]}
-                >
-                  {searchQuery.trim().length > 0
-                    ? `Nuk u gjet asnjë pronë e ruajtur me kërkimin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
-                    : 'Shtypni zemrën në çdo pronë për ta ruajtur këtu dhe për ta gjetur shpejt më vonë.'}
-                </Text>
-                {searchQuery.trim().length > 0 ? (
-                  <Pressable
-                    style={[
-                      styles.emptyPostBtn,
-                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                    onPress={() => {
-                      playTapSound()
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      setSearchQuery('')
-                    }}
-                  >
-                    <X
-                      size={17}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.6}
-                    />
-                    <Text
-                      style={[
-                        styles.emptyPostBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                    >
-                      Pastro Kërkimin
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    style={[
-                      styles.emptyPostBtn,
-                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                    onPress={() => {
-                      playTapSound()
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      router.push('/(tabs)/listings' as any)
-                    }}
-                  >
-                    <Building2
-                      size={17}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.6}
-                    />
-                    <Text
-                      style={[
-                        styles.emptyPostBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                    >
-                      Eksploro Pronat
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            ) : filteredListings.length === 0 ? (
-              <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
-                <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
-                  <Building2 size={38} color={colors.primary} strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  {searchQuery.trim().length > 0
-                    ? 'Nuk u gjet asnjë shpallje'
-                    : subFilter === 'all'
-                    ? 'Nuk keni asnjë shpallje ende'
-                    : subFilter === 'active'
-                    ? 'Nuk keni shpallje aktive për momentin'
-                    : subFilter === 'sold'
-                    ? 'Nuk keni shpallje të shënuara si të shitura'
-                    : 'Nuk keni shpallje jo aktive'}
-                </Text>
-                <Text
-                  style={[
-                    styles.emptySubtitle,
-                    { maxWidth: Math.min(width - 64, 440) },
-                    { color: colors.textMuted },
-                  ]}
-                >
-                  {searchQuery.trim().length > 0
-                    ? `Nuk u gjet asnjë shpallje me termin "${searchQuery}". Provoni me fjalë të tjera ose pastroni kërkimin.`
-                    : subFilter === 'all'
-                    ? 'Postoni pronën tuaj falas brenda pak minutave dhe gjeni blerës të verifikuar në treg.'
-                    : subFilter === 'active'
-                    ? 'Të gjitha shpalljet tuaja janë shënuar si të shitura ose jo aktive.'
-                    : subFilter === 'sold'
-                    ? 'Asnjë shpallje nuk është shënuar si e shitur ende.'
-                    : 'Aktualisht nuk keni asnjë shpallje jo aktive në llogarinë tuaj.'}
-                </Text>
-                {searchQuery.trim().length > 0 ? (
-                  <Pressable
-                    style={[
-                      styles.emptyPostBtn,
-                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                    onPress={() => {
-                      playTapSound()
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      setSearchQuery('')
-                    }}
-                  >
-                    <X
-                      size={17}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.6}
-                    />
-                    <Text
-                      style={[
-                        styles.emptyPostBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                    >
-                      Pastro Kërkimin
-                    </Text>
-                  </Pressable>
-                ) : subFilter !== 'all' ? (
-                  <Pressable
-                    style={[
-                      styles.emptyPostBtn,
-                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                    onPress={() => {
-                      playTapSound()
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      handleSubFilterChange('all')
-                    }}
-                  >
-                    <SlidersHorizontal
-                      size={17}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.6}
-                    />
-                    <Text
-                      style={[
-                        styles.emptyPostBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                    >
-                      Shfaq të Gjitha ({listings.length})
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    style={[
-                      styles.emptyPostBtn,
-                      { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                    onPress={() => {
-                      playTapSound()
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      router.push('/post' as any)
-                    }}
-                  >
-                    <Plus
-                      size={18}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.6}
-                    />
-                    <Text
-                      style={[
-                        styles.emptyPostBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                    >
-                      Posto Pronë të Re
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            ) : mainTab === 'saved' ? (
-              filteredListings.map((item) => {
-                const mainImage =
-                  item.images && item.images.length > 0
-                    ? item.images[0]
-                    : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
-
-                return (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.listingCard,
-                      { backgroundColor: colors.surface, borderColor: specularBorder },
-                    ]}
-                  >
-                    {/* Cover */}
-                    <Pressable
-                      style={[styles.cardCover, { height: coverHeight }]}
-                      onPress={() => router.push(`/listings/${item.id}` as any)}
-                    >
-                      <Image
-                        source={{ uri: mainImage }}
-                        style={styles.coverImage}
-                        contentFit="cover"
-                        transition={200}
-                      />
-
-                      <View style={styles.coverBadgesRow}>
-                        <View
-                          style={[
-                            styles.typePill,
-                            {
-                              backgroundColor:
-                                item.type === 'shitje'
-                                  ? 'rgba(0, 100, 89, 0.88)'
-                                  : 'rgba(217, 119, 6, 0.88)',
-                            },
-                          ]}
-                        >
-                          <Text style={styles.typePillText}>
-                            {item.type === 'shitje' ? 'Shitje' : 'Me Qira'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Price Strip Bottom Glass */}
-                      <View style={styles.coverPriceGlass}>
-                        <BlurView
-                          intensity={Platform.OS === 'ios' ? 85 : 100}
-                          tint="dark"
-                          style={StyleSheet.absoluteFill}
-                        />
-                        <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
-                      </View>
-                    </Pressable>
-
-                    {/* Info */}
-                    <View style={styles.cardBody}>
-                      <Pressable onPress={() => router.push(`/listings/${item.id}` as any)}>
-                        <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
-                          {item.title}
-                        </Text>
-                      </Pressable>
-
-                      <View style={styles.cardLocationRow}>
-                        <MapPin size={14} color={colors.primary} strokeWidth={2.2} />
-                        <Text style={[styles.cardLocationText, { color: colors.textSecondary }]} numberOfLines={1}>
-                          {item.city} {item.neighborhood ? `• ${item.neighborhood}` : ''}
-                        </Text>
-                      </View>
-
-                      <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
-                        {item.rooms ? (
-                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
-                            <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
-                              {item.rooms} dhoma
-                            </Text>
-                          </View>
-                        ) : null}
-
-                        {item.area_m2 ? (
-                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
-                              {item.area_m2} m²
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    {/* Actions: Unsave + View */}
-                    <View
-                      style={[
-                        styles.cardActionGrid,
-                        isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
-                        { borderTopColor: specularBorder },
-                      ]}
-                    >
-                      <Pressable
-                        style={[
-                          styles.actionBtn,
-                          isCompact && { height: 36, paddingHorizontal: 6 },
-                          {
-                            backgroundColor:
-                              theme === 'white' ? '#FEF2F2' : 'rgba(239, 68, 68, 0.12)',
-                          },
-                        ]}
-                        onPress={() => handleUnsave(item)}
-                      >
-                        <HeartOff size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
-                        <Text
-                          style={[styles.actionBtnText, isCompact && { fontSize: 11.5 }, { color: '#EF4444' }]}
-                          numberOfLines={1}
-                        >
-                          {isCompact ? 'Hiq Ruajtjen' : 'Hiq nga Të Ruajturat'}
-                        </Text>
-                      </Pressable>
-
-                      <Pressable
-                        style={[
-                          styles.actionSquareBtn,
-                          isCompact && { width: 36, height: 36 },
-                          { backgroundColor: colors.surfaceSubtle },
-                        ]}
-                        onPress={() => router.push(`/listings/${item.id}` as any)}
-                        hitSlop={6}
-                      >
-                        <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
-                      </Pressable>
-                    </View>
-                  </View>
-                )
-              })
-            ) : (
-              filteredListings.map((item) => {
-                const isBusy = actionBusyId === item.id
-                const active = isListingActive(item)
-                const isSold = isListingSold(item)
-                const mainImage =
-                  item.images && item.images.length > 0
-                    ? item.images[0]
-                    : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
-
-                return (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.listingCard,
-                      { backgroundColor: colors.surface, borderColor: specularBorder },
-                    ]}
-                  >
-                    {/* Top Media & Preview Banner */}
-                    <Pressable
-                      style={[styles.cardCover, { height: coverHeight }]}
-                      onPress={() => router.push(`/listings/${item.id}` as any)}
-                    >
-                      <Image
-                        source={{ uri: mainImage }}
-                        style={styles.coverImage}
-                        contentFit="cover"
-                        transition={200}
-                      />
-
-                      {/* Top Badges Overlay */}
-                      <View style={styles.coverBadgesRow}>
-                        <View
-                          style={[
-                            styles.typePill,
-                            {
-                              backgroundColor:
-                                item.type === 'shitje'
-                                  ? 'rgba(0, 100, 89, 0.88)'
-                                  : 'rgba(217, 119, 6, 0.88)',
-                            },
-                          ]}
-                        >
-                          <Text style={styles.typePillText}>
-                            {item.type === 'shitje' ? 'Shitje' : 'Me Qira'}
-                          </Text>
-                        </View>
-
-                        <View
-                          style={[
-                            styles.statusPill,
-                            {
-                              backgroundColor: isSold
-                                ? 'rgba(15, 23, 42, 0.88)'
-                                : active
-                                ? 'rgba(16, 185, 129, 0.92)'
-                                : 'rgba(107, 114, 128, 0.90)',
-                            },
-                          ]}
-                        >
-                          <Text style={styles.statusPillText}>
-                            {isSold ? 'E Shitur' : active ? 'Aktive' : 'Jo aktive'}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Price Strip Bottom Glass */}
-                      <View style={styles.coverPriceGlass}>
-                        <BlurView
-                          intensity={Platform.OS === 'ios' ? 85 : 100}
-                          tint="dark"
-                          style={StyleSheet.absoluteFill}
-                        />
-                        <Text style={[styles.coverPriceText, isCompact && { fontSize: 17 }]}>{formatPrice(item.price)}</Text>
-                        <Pressable
-                          style={[styles.coverEditPriceBtn, isCompact && { paddingHorizontal: 7, paddingVertical: 3.5 }]}
-                          onPress={(e) => {
-                            e.stopPropagation()
-                            openPriceModal(item)
-                          }}
-                          hitSlop={6}
-                        >
-                          <Tag size={isCompact ? 12 : 13} color="#FFFFFF" strokeWidth={2.4} />
-                          <Text style={[styles.coverEditPriceBtnText, isCompact && { fontSize: 10.5 }]}>
-                            {isCompact ? 'Ndrysho' : 'Ndrysho Çmimin'}
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </Pressable>
-
-                    {/* Middle Info Block */}
-                    <View style={styles.cardBody}>
-                      <Pressable onPress={() => router.push(`/listings/${item.id}` as any)}>
-                        <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
-                          {item.title}
-                        </Text>
-                      </Pressable>
-
-                      <View style={styles.cardLocationRow}>
-                        <MapPin size={14} color={colors.primary} strokeWidth={2.2} />
-                        <Text style={[styles.cardLocationText, { color: colors.textSecondary }]} numberOfLines={1}>
-                          {item.city} {item.neighborhood ? `• ${item.neighborhood}` : ''}
-                        </Text>
-                      </View>
-
-                      <View style={[styles.cardFeaturesRow, isCompact && { gap: 6 }]}>
-                        {item.rooms ? (
-                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
-                            <BedDouble size={isCompact ? 13 : 14} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
-                              {item.rooms} dhoma
-                            </Text>
-                          </View>
-                        ) : null}
-
-                        {item.area_m2 ? (
-                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Maximize2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
-                              {item.area_m2} m²
-                            </Text>
-                          </View>
-                        ) : null}
-
-                        {item.floor !== undefined && item.floor !== null ? (
-                          <View style={[styles.featureItem, isCompact && { paddingHorizontal: 7, paddingVertical: 3 }, { backgroundColor: colors.surfaceSubtle }]}>
-                            <Building2 size={isCompact ? 12 : 13} color={colors.textMuted} strokeWidth={2.2} />
-                            <Text style={[styles.featureItemText, isCompact && { fontSize: 11.5 }, { color: colors.textSecondary }]}>
-                              Kati {item.floor}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    {/* Bottom Action Controls (Apple Glass Grid) */}
-                    <View
-                      style={[
-                        styles.cardActionGrid,
-                        isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
-                        { borderTopColor: specularBorder },
-                      ]}
-                    >
-                      {/* 1. Toggle Active / Inactive */}
-                      <Pressable
-                        style={[
-                          styles.actionBtn,
-                          isCompact && { height: 36, paddingHorizontal: 6 },
-                          {
-                            backgroundColor: active
-                              ? theme === 'white'
-                                ? '#FEF2F2'
-                                : 'rgba(239, 68, 68, 0.12)'
-                              : theme === 'white'
-                              ? '#ECFDF5'
-                              : 'rgba(16, 185, 129, 0.12)',
-                          },
-                        ]}
-                        onPress={() => handleToggleStatus(item)}
-                        disabled={isBusy}
-                      >
-                        {isBusy ? (
-                          <ActivityIndicator size="small" color={colors.primary} />
-                        ) : active ? (
-                          <>
-                            <XCircle size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
-                            <Text
-                              style={[
-                                styles.actionBtnText,
-                                isCompact && { fontSize: 11.5 },
-                                { color: '#EF4444' },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {isCompact ? 'Shëno Shitur' : 'Shëno si të Shitur'}
-                            </Text>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 size={isCompact ? 14 : 15} color="#10B981" strokeWidth={2.2} />
-                            <Text
-                              style={[
-                                styles.actionBtnText,
-                                isCompact && { fontSize: 11.5 },
-                                { color: '#10B981' },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              Rikthe Aktiv
-                            </Text>
-                          </>
-                        )}
-                      </Pressable>
-
-                      {/* 2. Share */}
-                      <Pressable
-                        style={[
-                          styles.actionSquareBtn,
-                          isCompact && { width: 36, height: 36 },
-                          { backgroundColor: colors.surfaceSubtle },
-                        ]}
-                        onPress={() => handleShare(item)}
-                        hitSlop={6}
-                      >
-                        <Share2 size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
-                      </Pressable>
-
-                      {/* 3. View Details */}
-                      <Pressable
-                        style={[
-                          styles.actionSquareBtn,
-                          isCompact && { width: 36, height: 36 },
-                          { backgroundColor: colors.surfaceSubtle },
-                        ]}
-                        onPress={() => router.push(`/listings/${item.id}` as any)}
-                        hitSlop={6}
-                      >
-                        <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
-                      </Pressable>
-
-                      {/* 4. Delete */}
-                      <Pressable
-                        style={[
-                          styles.actionSquareBtn,
-                          isCompact && { width: 36, height: 36 },
-                          {
-                            backgroundColor:
-                              theme === 'white' ? '#FEE2E2' : 'rgba(239, 68, 68, 0.18)',
-                          },
-                        ]}
-                        onPress={() => handleDeleteListing(item)}
-                        disabled={isBusy}
-                        hitSlop={6}
-                      >
-                        <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
-                      </Pressable>
-                    </View>
-                  </View>
-                )
-              })
-            )}
-          </ScrollView>
+            ListEmptyComponent={renderEmptyComponent}
+          />
         </>
       )}
 

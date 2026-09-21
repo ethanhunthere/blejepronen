@@ -41,6 +41,7 @@ import { apiSignUp, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { useBanner } from '@/context/BannerContext'
 import { safeBack } from '@/lib/navigation'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { syncAuthSession } from '@/lib/auth-cache'
 
 // ─── Official multi-color Google "G" emblem (vector, crisp at any size) ───
@@ -93,6 +94,7 @@ function FacebookLogo({ size = 18 }: { size?: number }) {
 
 export default function AuthModalScreen() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const params = useLocalSearchParams<{ initialTab?: string; reason?: string; title?: string }>()
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
@@ -145,7 +147,7 @@ export default function AuthModalScreen() {
   const [canResend, setCanResend] = useState(false)
   const [resending, setResending] = useState(false)
   const [verifying, setVerifying] = useState(false)
-  const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const otpInputRef = useRef<TextInput | null>(null)
 
   // State
@@ -155,6 +157,8 @@ export default function AuthModalScreen() {
 
   // 60-second OTP Countdown timer
   useEffect(() => {
+    let focusTimer: ReturnType<typeof setTimeout> | null = null
+
     if (step === 'verify_otp') {
       setCountdown(60)
       setCanResend(false)
@@ -171,13 +175,14 @@ export default function AuthModalScreen() {
         })
       }, 1000)
 
-      setTimeout(() => {
+      focusTimer = setTimeout(() => {
         otpInputRef.current?.focus()
       }, 300)
     }
 
     return () => {
       if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+      if (focusTimer) clearTimeout(focusTimer)
     }
   }, [step])
 
@@ -717,7 +722,10 @@ export default function AuthModalScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 20, 32) },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

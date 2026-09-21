@@ -100,14 +100,24 @@ export default function ChatConversationScreen() {
   const [contactSheetVisible, setContactSheetVisible] = useState(false)
 
   const flatListRef = useRef<FlatList>(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const loadConversationData = useCallback(async () => {
     if (!id) return
     try {
-      setLoading(true)
+      if (isMountedRef.current) setLoading(true)
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (!isMountedRef.current) return
 
       if (!user) {
         setLoading(false)
@@ -131,12 +141,14 @@ export default function ChatConversationScreen() {
         .eq('id', id)
         .single()
 
+      if (!isMountedRef.current) return
+
       if (convErr) {
         console.warn('Load conversation error:', convErr.message)
         return
       }
 
-      if (convData) {
+      if (convData && isMountedRef.current) {
         const isBuyer = user.id === convData.buyer_id
         const counterpart: any = isBuyer ? convData.seller : convData.buyer
         if (counterpart) {
@@ -172,6 +184,8 @@ export default function ChatConversationScreen() {
         .eq('conversation_id', id)
         .order('created_at', { ascending: true })
 
+      if (!isMountedRef.current) return
+
       if (msgErr) {
         console.warn('Fetch messages error:', msgErr.message)
       } else if (msgData) {
@@ -187,7 +201,9 @@ export default function ChatConversationScreen() {
     } catch (err: any) {
       console.warn('Error loading conversation:', err?.message || err)
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
     }
   }, [id])
 
@@ -222,7 +238,10 @@ export default function ChatConversationScreen() {
                 .from('messages')
                 .update({ is_read: true })
                 .eq('id', newMsg.id)
-                .then(() => {})
+                .then(
+                  () => {},
+                  (e: unknown) => console.warn('Mark read notice:', e)
+                )
             }
           }
         )
@@ -285,7 +304,10 @@ export default function ChatConversationScreen() {
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', id)
-          .then(() => {})
+          .then(
+            () => {},
+            (e: unknown) => console.warn('Update convo notice:', e)
+          )
       }
     } catch (err: any) {
       console.warn('Send exception:', err?.message || err)
@@ -378,74 +400,77 @@ export default function ChatConversationScreen() {
     }
   }
 
-  const renderMessageBubble = ({ item }: { item: MessageItem }) => {
-    const isMine = item.sender_id === currentUserId
-    const isPhoto = item.content.startsWith('[Foto:')
+  const renderMessageBubble = useCallback(
+    ({ item }: { item: MessageItem }) => {
+      const isMine = item.sender_id === currentUserId
+      const isPhoto = item.content.startsWith('[Foto:')
 
-    const bubbleBg = isMine
-      ? theme === 'green'
-        ? colors.gold
-        : colors.primary
-      : colors.surface
-    const textColor = isMine
-      ? theme === 'green'
-        ? '#071C18'
-        : '#FFFFFF'
-      : colors.textPrimary
-    const metaColor = isMine
-      ? theme === 'green'
-        ? 'rgba(7, 28, 24, 0.75)'
-        : 'rgba(255, 255, 255, 0.75)'
-      : colors.textMuted
+      const bubbleBg = isMine
+        ? theme === 'green'
+          ? colors.gold
+          : colors.primary
+        : colors.surface
+      const textColor = isMine
+        ? theme === 'green'
+          ? '#071C18'
+          : '#FFFFFF'
+        : colors.textPrimary
+      const metaColor = isMine
+        ? theme === 'green'
+          ? 'rgba(7, 28, 24, 0.75)'
+          : 'rgba(255, 255, 255, 0.75)'
+        : colors.textMuted
 
-    return (
-      <View
-        style={[
-          styles.bubbleWrapper,
-          isMine ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft,
-        ]}
-      >
+      return (
         <View
           style={[
-            styles.bubble,
-            {
-              backgroundColor: bubbleBg,
-              borderColor: isMine ? 'transparent' : colors.border,
-            },
-            isMine ? styles.bubbleMine : styles.bubbleOther,
+            styles.bubbleWrapper,
+            isMine ? styles.bubbleWrapperRight : styles.bubbleWrapperLeft,
           ]}
         >
-          {isPhoto ? (
-            <View style={styles.photoBubbleContainer}>
-              <Image
-                source={{
-                  uri: item.content.replace('[Foto:', '').replace(']', '').trim(),
-                }}
-                style={styles.bubblePhoto}
-                contentFit="cover"
-                transition={200}
-              />
-            </View>
-          ) : (
-            <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
-          )}
-
-          <View style={styles.bubbleFooter}>
-            <Text style={[styles.timeText, { color: metaColor }]}>
-              {formatTime(item.created_at)}
-            </Text>
-            {isMine && (
-              item.is_read ? (
-                <CheckCheck size={14} color={metaColor} strokeWidth={2.4} />
-              ) : (
-                <Check size={14} color={metaColor} strokeWidth={2.4} />
-              )
+          <View
+            style={[
+              styles.bubble,
+              {
+                backgroundColor: bubbleBg,
+                borderColor: isMine ? 'transparent' : colors.border,
+              },
+              isMine ? styles.bubbleMine : styles.bubbleOther,
+            ]}
+          >
+            {isPhoto ? (
+              <View style={styles.photoBubbleContainer}>
+                <Image
+                  source={{
+                    uri: item.content.replace('[Foto:', '').replace(']', '').trim(),
+                  }}
+                  style={styles.bubblePhoto}
+                  contentFit="cover"
+                  transition={200}
+                />
+              </View>
+            ) : (
+              <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
             )}
+
+            <View style={styles.bubbleFooter}>
+              <Text style={[styles.timeText, { color: metaColor }]}>
+                {formatTime(item.created_at)}
+              </Text>
+              {isMine && (
+                item.is_read ? (
+                  <CheckCheck size={14} color={metaColor} strokeWidth={2.4} />
+                ) : (
+                  <Check size={14} color={metaColor} strokeWidth={2.4} />
+                )
+              )}
+            </View>
           </View>
         </View>
-      </View>
-    )
-  }
+      )
+    },
+    [currentUserId, theme, colors]
+  )
 
   const counterpartAvatar = getAvatarUri(otherUser?.avatar_url)
 

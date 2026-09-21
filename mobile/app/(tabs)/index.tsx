@@ -140,15 +140,29 @@ export default function HomeScreen() {
         return
       }
 
-      const wasFavorite = !!favorites[id]
-      setFavorites((prev) => ({ ...prev, [id]: !wasFavorite }))
+      let wasFavorite = false
+      setFavorites((prev) => {
+        wasFavorite = Boolean(prev[id])
+        return { ...prev, [id]: !wasFavorite }
+      })
 
       const ok = await persistFavoriteToggle(id, wasFavorite)
       if (!ok) {
         setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
       }
     },
-    [favorites, router]
+    [router]
+  )
+
+  const renderItem = useCallback(
+    ({ item }: { item: Listing }) => (
+      <ListingCard
+        listing={item}
+        isFavorite={Boolean(favorites[item.id])}
+        onToggleFavorite={handleToggleFavorite}
+      />
+    ),
+    [favorites, handleToggleFavorite]
   )
 
   // Category counts
@@ -182,17 +196,12 @@ export default function HomeScreen() {
       <FlatList
         data={filteredListings}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ListingCard
-            listing={item}
-            isFavorite={!!favorites[item.id]}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        )}
-        initialNumToRender={6}
+        renderItem={renderItem}
+        initialNumToRender={5}
         windowSize={5}
         maxToRenderPerBatch={5}
-        removeClippedSubviews
+        removeClippedSubviews={Platform.OS !== 'web'}
+        keyboardShouldPersistTaps="handled"
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}

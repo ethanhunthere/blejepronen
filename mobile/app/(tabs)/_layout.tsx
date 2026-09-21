@@ -8,6 +8,8 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
 
+import { isLogoutInProgress } from '@/lib/auth-cache'
+
 interface TabBarItemContentProps {
   icon: any
   title: string
@@ -15,7 +17,12 @@ interface TabBarItemContentProps {
   badgeCount?: number
 }
 
-function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarItemContentProps) {
+const TabBarItemContent = React.memo(function TabBarItemContent({
+  icon: Icon,
+  title,
+  focused,
+  badgeCount,
+}: TabBarItemContentProps) {
   const { colors, theme } = useTheme()
 
   const activeColor = colors.tabBarActive
@@ -65,9 +72,9 @@ function TabBarItemContent({ icon: Icon, title, focused, badgeCount }: TabBarIte
       </Text>
     </View>
   )
-}
+})
 
-function PostTabBarItem({ focused }: { focused: boolean }) {
+const PostTabBarItem = React.memo(function PostTabBarItem({ focused }: { focused: boolean }) {
   const { colors, theme } = useTheme()
   const activeColor = colors.tabBarActive
   const inactiveColor = colors.tabBarInactive
@@ -104,7 +111,7 @@ function PostTabBarItem({ focused }: { focused: boolean }) {
       </Text>
     </View>
   )
-}
+})
 
 export default function TabLayout() {
   const { colors, theme } = useTheme()
@@ -112,14 +119,21 @@ export default function TabLayout() {
   const [unreadCount, setUnreadCount] = useState<number>(0)
 
   useEffect(() => {
+    let isMounted = true
+
     async function checkUnread() {
+      if (isLogoutInProgress()) {
+        if (isMounted) setUnreadCount(0)
+        return
+      }
+
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
-        if (!user) {
-          setUnreadCount(0)
+        if (!user || isLogoutInProgress()) {
+          if (isMounted) setUnreadCount(0)
           return
         }
 
@@ -127,6 +141,8 @@ export default function TabLayout() {
           .from('conversations')
           .select('id')
           .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+
+        if (!isMounted || isLogoutInProgress()) return
 
         if (convos && convos.length > 0) {
           const cIds = convos.map((c) => c.id)
@@ -137,11 +153,13 @@ export default function TabLayout() {
             .eq('is_read', false)
             .neq('sender_id', user.id)
 
-          setUnreadCount(count || 0)
+          if (isMounted && !isLogoutInProgress()) {
+            setUnreadCount(count || 0)
+          }
         } else {
-          setUnreadCount(0)
+          if (isMounted) setUnreadCount(0)
         }
-      } catch (err) {
+      } catch {
         // Silent catch for network jitter
       }
     }
@@ -177,7 +195,8 @@ export default function TabLayout() {
     }
 
     return () => {
-      authListener.subscription.unsubscribe()
+      isMounted = false
+      authListener?.subscription?.unsubscribe()
       if (channel) supabase.removeChannel(channel)
     }
   }, [])
@@ -185,6 +204,29 @@ export default function TabLayout() {
   // Dynamic safe bottom spacing tailored to device bezels / home indicators
   const bottomInset = insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10
   const tabHeight = 56 + bottomInset
+
+  const renderTabBarBackground = React.useCallback(() => (
+    <View style={StyleSheet.absoluteFill}>
+      <BlurView
+        intensity={Platform.OS === 'ios' ? 88 : 100}
+        tint={colors.blurTint}
+        style={StyleSheet.absoluteFill}
+      />
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor:
+              theme === 'white'
+                ? 'rgba(255, 255, 255, 0.72)'
+                : theme === 'green'
+                ? 'rgba(7, 28, 24, 0.78)'
+                : 'rgba(12, 17, 16, 0.68)',
+          },
+        ]}
+      />
+    </View>
+  ), [colors.blurTint, theme])
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -197,28 +239,7 @@ export default function TabLayout() {
           freezeOnBlur: false,
           animation: 'none',
           sceneStyle: { backgroundColor: colors.background },
-          tabBarBackground: () => (
-            <View style={StyleSheet.absoluteFill}>
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 88 : 100}
-                tint={colors.blurTint}
-                style={StyleSheet.absoluteFill}
-              />
-              <View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor:
-                      theme === 'white'
-                        ? 'rgba(255, 255, 255, 0.72)'
-                        : theme === 'green'
-                        ? 'rgba(7, 28, 24, 0.78)'
-                        : 'rgba(12, 17, 16, 0.68)',
-                  },
-                ]}
-              />
-            </View>
-          ),
+          tabBarBackground: renderTabBarBackground,
           tabBarStyle: {
             position: 'absolute',
             bottom: 0,

@@ -63,6 +63,11 @@ export interface OmniSearchModalProps {
   onSelectQuery?: (query: string) => void
 }
 
+function formatPrice(price?: number | null) {
+  if (!price || price <= 0) return 'Me marrëveshje'
+  return new Intl.NumberFormat('de-DE').format(price) + ' €'
+}
+
 export function OmniSearchContent({
   initialQuery = '',
   onClose,
@@ -346,10 +351,199 @@ export function OmniSearchContent({
     [query, saveRecent, onClose, router, onSelectCity, onSelectQuery, isStackScreen]
   )
 
-  const formatPrice = (price?: number | null) => {
-    if (!price || price <= 0) return 'Me marrëveshje'
-    return new Intl.NumberFormat('de-DE').format(price) + ' €'
-  }
+  const renderTabItem = useCallback(
+    ({ item }: { item: { key: string; label: string } }) => {
+      const isActive = activeTab === item.key
+      return (
+        <Pressable
+          onPress={() => {
+            if (Platform.OS !== 'web') Haptics.selectionAsync()
+            setActiveTab(item.key as any)
+          }}
+          style={[
+            styles.tabPill,
+            {
+              backgroundColor: isActive ? colors.chipActiveBg : colors.surfaceSubtle,
+              borderColor: isActive ? colors.chipActiveBg : colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabPillText,
+              {
+                color: isActive ? colors.chipTextActive : colors.textSecondary,
+                fontFamily: isActive ? Fonts.bold : Fonts.medium,
+              },
+            ]}
+          >
+            {item.label}
+          </Text>
+        </Pressable>
+      )
+    },
+    [activeTab, colors]
+  )
+
+  const renderResultItem = useCallback(
+    ({ item }: { item: OmniResultItem }) => {
+      const isAgency = item.entityType === 'agency'
+      const isAgent = item.entityType === 'agent'
+      const isLocation = item.entityType === 'location'
+      const isListing = item.entityType === 'listing'
+
+      return (
+        <Pressable
+          onPress={() => handleItemPress(item)}
+          style={({ pressed }) => [
+            styles.resultCard,
+            {
+              backgroundColor: pressed
+                ? colors.surfaceHighlight
+                : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          {/* Entity Icon / Thumbnail */}
+          <View
+            style={[
+              styles.itemThumbBox,
+              isAgency && styles.itemThumbBoxAgency,
+              isAgent && styles.itemThumbBoxAgent,
+              {
+                backgroundColor: isAgency
+                  ? (theme === 'green' ? 'rgba(212, 175, 55, 0.12)' : colors.primaryLight)
+                  : colors.surfaceSubtle,
+                borderColor: isAgency
+                  ? (theme === 'green' ? 'rgba(212, 175, 55, 0.3)' : colors.border)
+                  : colors.border,
+              },
+            ]}
+          >
+            {item.imageUrl ? (
+              <Image
+                source={getAvatarSource(item.imageUrl)}
+                style={[
+                  styles.itemThumbImg,
+                  isAgency && { borderRadius: 10 },
+                  isAgent && { borderRadius: 20 },
+                ]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={0}
+              />
+            ) : isLocation ? (
+              <MapPin size={22} color={colors.primary} />
+            ) : isAgency ? (
+              <Building2 size={22} color={theme === 'green' ? colors.gold : colors.primary} />
+            ) : isAgent ? (
+              <User size={22} color={colors.textMuted} />
+            ) : (
+              <Home size={22} color={colors.primary} />
+            )}
+          </View>
+
+          {/* Details Column */}
+          <View style={styles.itemInfo}>
+            <View style={styles.itemTitleRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 }}>
+                <Text
+                  style={[styles.itemTitle, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {item.title}
+                </Text>
+                {isAgency && (
+                  <ShieldCheck
+                    size={13}
+                    color={theme === 'green' ? colors.gold : colors.primary}
+                    strokeWidth={2.4}
+                  />
+                )}
+              </View>
+              {item.badge && (
+                <View
+                  style={[
+                    styles.badgePill,
+                    {
+                      backgroundColor:
+                        isAgency
+                          ? colors.badgeBg
+                          : isAgent
+                          ? 'rgba(59, 130, 246, 0.12)'
+                          : item.badge === 'Në shitje'
+                          ? theme === 'green' ? colors.primaryLight : 'rgba(16, 185, 129, 0.14)'
+                          : colors.goldLight,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.badgePillText,
+                      {
+                        color:
+                          isAgency
+                            ? colors.primary
+                            : isAgent
+                            ? '#3B82F6'
+                            : item.badge === 'Në shitje'
+                            ? theme === 'green' ? colors.gold : '#10B981'
+                            : colors.gold,
+                      },
+                    ]}
+                  >
+                    {item.badge}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <Text
+              style={[styles.itemSubtitle, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              {item.subtitle}
+            </Text>
+          </View>
+
+          {/* Price or Action Column */}
+          <View style={styles.itemActionCol}>
+            {isListing && item.price !== null && item.price !== undefined ? (
+              <Text style={[styles.itemPrice, { color: colors.primary }]}>
+                {formatPrice(item.price)}
+              </Text>
+            ) : isAgency || isAgent ? (
+              <View style={styles.agencyActionCol}>
+                {item.payload?.phone ? (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation()
+                      if (item.payload?.phone) {
+                        Linking.openURL(`tel:${item.payload.phone}`)
+                      }
+                    }}
+                    hitSlop={8}
+                    style={[
+                      styles.phoneActionBtn,
+                      { backgroundColor: colors.primaryLight },
+                    ]}
+                  >
+                    <Phone size={14} color={colors.primary} />
+                  </Pressable>
+                ) : null}
+                <ChevronRight size={17} color={colors.textMuted} />
+              </View>
+            ) : (
+              <ChevronRight size={18} color={colors.textMuted} />
+            )}
+          </View>
+        </Pressable>
+      )
+    },
+    [handleItemPress, colors, theme]
+  )
 
   return (
     <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
@@ -460,36 +654,7 @@ export function OmniSearchContent({
                   : []),
               ]}
               keyExtractor={(item) => item.key}
-              renderItem={({ item }) => {
-                const isActive = activeTab === item.key
-                return (
-                  <Pressable
-                    onPress={() => {
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      setActiveTab(item.key as any)
-                    }}
-                    style={[
-                      styles.tabPill,
-                      {
-                        backgroundColor: isActive ? colors.chipActiveBg : colors.surfaceSubtle,
-                        borderColor: isActive ? colors.chipActiveBg : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.tabPillText,
-                        {
-                          color: isActive ? colors.chipTextActive : colors.textSecondary,
-                          fontFamily: isActive ? Fonts.bold : Fonts.medium,
-                        },
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                )
-              }}
+              renderItem={renderTabItem}
             />
           </View>
         )}
@@ -621,162 +786,7 @@ export function OmniSearchContent({
               updateCellsBatchingPeriod={40}
               initialNumToRender={8}
               windowSize={5}
-              renderItem={({ item }) => {
-                const isAgency = item.entityType === 'agency'
-                const isAgent = item.entityType === 'agent'
-                const isLocation = item.entityType === 'location'
-                const isListing = item.entityType === 'listing'
-
-                return (
-                  <Pressable
-                    onPress={() => handleItemPress(item)}
-                    style={({ pressed }) => [
-                      styles.resultCard,
-                      {
-                        backgroundColor: pressed
-                          ? colors.surfaceHighlight
-                          : colors.surface,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                  >
-                    {/* Entity Icon / Thumbnail */}
-                    <View
-                      style={[
-                        styles.itemThumbBox,
-                        isAgency && styles.itemThumbBoxAgency,
-                        isAgent && styles.itemThumbBoxAgent,
-                        {
-                          backgroundColor: isAgency
-                            ? (theme === 'green' ? 'rgba(212, 175, 55, 0.12)' : colors.primaryLight)
-                            : colors.surfaceSubtle,
-                          borderColor: isAgency
-                            ? (theme === 'green' ? 'rgba(212, 175, 55, 0.3)' : colors.border)
-                            : colors.border,
-                        },
-                      ]}
-                    >
-                      {item.imageUrl ? (
-                        <Image
-                          source={getAvatarSource(item.imageUrl)}
-                          style={[
-                            styles.itemThumbImg,
-                            isAgency && { borderRadius: 10 },
-                            isAgent && { borderRadius: 20 },
-                          ]}
-                          contentFit="cover"
-                          cachePolicy="memory-disk"
-                          priority="high"
-                          transition={0}
-                        />
-                      ) : isLocation ? (
-                        <MapPin size={22} color={colors.primary} />
-                      ) : isAgency ? (
-                        <Building2 size={22} color={theme === 'green' ? colors.gold : colors.primary} />
-                      ) : isAgent ? (
-                        <User size={22} color={colors.textMuted} />
-                      ) : (
-                        <Home size={22} color={colors.primary} />
-                      )}
-                    </View>
-
-                    {/* Details Column */}
-                    <View style={styles.itemInfo}>
-                      <View style={styles.itemTitleRow}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 }}>
-                          <Text
-                            style={[styles.itemTitle, { color: colors.textPrimary }]}
-                            numberOfLines={1}
-                          >
-                            {item.title}
-                          </Text>
-                          {isAgency && (
-                            <ShieldCheck
-                              size={13}
-                              color={theme === 'green' ? colors.gold : colors.primary}
-                              strokeWidth={2.4}
-                            />
-                          )}
-                        </View>
-                        {item.badge && (
-                          <View
-                            style={[
-                              styles.badgePill,
-                              {
-                                backgroundColor:
-                                  isAgency
-                                    ? colors.badgeBg
-                                    : isAgent
-                                    ? 'rgba(59, 130, 246, 0.12)'
-                                    : item.badge === 'Në shitje'
-                                    ? theme === 'green' ? colors.primaryLight : 'rgba(16, 185, 129, 0.14)'
-                                    : colors.goldLight,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.badgePillText,
-                                {
-                                  color:
-                                    isAgency
-                                      ? colors.primary
-                                      : isAgent
-                                      ? '#3B82F6'
-                                      : item.badge === 'Në shitje'
-                                      ? theme === 'green' ? colors.gold : '#10B981'
-                                      : colors.gold,
-                                },
-                              ]}
-                            >
-                              {item.badge}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <Text
-                        style={[styles.itemSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
-                      >
-                        {item.subtitle}
-                      </Text>
-                    </View>
-
-                    {/* Price or Action Column */}
-                    <View style={styles.itemActionCol}>
-                      {isListing && item.price !== null && item.price !== undefined ? (
-                        <Text style={[styles.itemPrice, { color: colors.primary }]}>
-                          {formatPrice(item.price)}
-                        </Text>
-                      ) : isAgency || isAgent ? (
-                        <View style={styles.agencyActionCol}>
-                          {item.payload?.phone ? (
-                            <Pressable
-                              onPress={(e) => {
-                                e.stopPropagation()
-                                if (item.payload?.phone) {
-                                  Linking.openURL(`tel:${item.payload.phone}`)
-                                }
-                              }}
-                              hitSlop={8}
-                              style={[
-                                styles.phoneActionBtn,
-                                { backgroundColor: colors.primaryLight },
-                              ]}
-                            >
-                              <Phone size={14} color={colors.primary} />
-                            </Pressable>
-                          ) : null}
-                          <ChevronRight size={17} color={colors.textMuted} />
-                        </View>
-                      ) : (
-                        <ChevronRight size={18} color={colors.textMuted} />
-                      )}
-                    </View>
-                  </Pressable>
-                )
-              }}
+              renderItem={renderResultItem}
               ListEmptyComponent={
                 !loading ? (
                   <View style={styles.zeroResultsWrap}>
