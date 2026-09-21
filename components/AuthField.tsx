@@ -67,7 +67,7 @@ export default function AuthField({
           className={`pl-9 sm:pl-10 ${isPasswordField ? 'pr-10 sm:pr-11' : 'pr-3'} h-10 sm:h-11 rounded-xl border text-sm text-[#101828] placeholder:text-gray-400 transition-colors ${
             error
               ? 'border-red-300 bg-red-50/60 focus:bg-white focus:border-red-400'
-              : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-[#006459]/40'
+              : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-[#00675B]/40'
           }`}
           value={value}
           onChange={(e) => onChange(e.target.value)}

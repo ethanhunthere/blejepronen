@@ -19,7 +19,7 @@ interface SplashHandoverProps {
   onComplete?: () => void
 }
 
-const SPLASH_BG = '#006459'
+const SPLASH_BG = '#00675B'
 const LOGO_SIZE = 180
 
 export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {

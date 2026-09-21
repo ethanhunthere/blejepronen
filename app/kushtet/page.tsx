@@ -14,7 +14,7 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-12 border border-gray-100 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.05)]">
           {/* Header */}
-          <div className="flex items-center gap-2 text-xs font-bold text-[#006459] uppercase tracking-wider mb-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#00675B] uppercase tracking-wider mb-2">
             <Scale className="w-4 h-4" />
             <span>Dokument Zyrtar & Transparencë</span>
           </div>
@@ -28,7 +28,7 @@ export default function TermsPage() {
             {/* Section 1 */}
             <section className="pt-6 first:pt-0">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   1
                 </span>
                 Pranimi i Kushteve
@@ -41,7 +41,7 @@ export default function TermsPage() {
             {/* Section 2 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   2
                 </span>
                 Natyra e Shërbimit
@@ -54,7 +54,7 @@ export default function TermsPage() {
             {/* Section 3 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   3
                 </span>
                 Përgjegjësitë e Përdoruesit & Saktësia e Shpalljeve
@@ -67,7 +67,7 @@ export default function TermsPage() {
             {/* Section 4 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   4
                 </span>
                 Krijimi dhe Siguria e Llogarisë
@@ -80,7 +80,7 @@ export default function TermsPage() {
             {/* Section 5 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   5
                 </span>
                 Periudha Provë & Publikimi Falas
@@ -93,7 +93,7 @@ export default function TermsPage() {
             {/* Section 6 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   6
                 </span>
                 Përmbajtja e Ndaluar & Masat Disiplinore
@@ -106,7 +106,7 @@ export default function TermsPage() {
             {/* Section 7 */}
             <section className="pt-6">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] mb-2.5 flex items-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#006459]/10 text-[#006459] text-xs font-bold mr-2.5 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#00675B]/10 text-[#00675B] text-xs font-bold mr-2.5 shrink-0">
                   7
                 </span>
                 Kufizimi i Përgjegjësisë
@@ -118,15 +118,15 @@ export default function TermsPage() {
           </div>
 
           {/* Guarantee Highlight */}
-          <div className="mt-10 p-5 rounded-2xl bg-[#006459]/5 border border-[#006459]/15 flex items-center gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-[#006459] text-white flex items-center justify-center shrink-0">
+          <div className="mt-10 p-5 rounded-2xl bg-[#00675B]/5 border border-[#00675B]/15 flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-[#00675B] text-white flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="text-xs sm:text-sm">
               <p className="font-bold text-[#101828]">Komunitet i Besuar dhe i Hapur</p>
               <p className="text-gray-600 mt-0.5">
                 Për çdo raportim apo kërkesë sqarimi, na shkruani lirisht në{' '}
-                <a href="mailto:blejepronen@gmail.com" className="text-[#006459] font-bold underline">
+                <a href="mailto:blejepronen@gmail.com" className="text-[#00675B] font-bold underline">
                   blejepronen@gmail.com
                 </a>
               </p>
@@ -137,18 +137,18 @@ export default function TermsPage() {
           <div className="border-t border-gray-100 pt-6 mt-8 flex items-center justify-between flex-wrap gap-4 text-xs">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 font-semibold text-gray-600 hover:text-[#006459] transition-colors group"
+              className="inline-flex items-center gap-1.5 font-semibold text-gray-600 hover:text-[#00675B] transition-colors group"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
               <span>Kthehu në ballinë</span>
             </Link>
 
             <div className="flex items-center gap-4 text-gray-500">
-              <Link href="/privatesia" className="hover:text-[#006459] transition-colors">
+              <Link href="/privatesia" className="hover:text-[#00675B] transition-colors">
                 Politika e Privatësisë
               </Link>
               <span>•</span>
-              <Link href="/kontakti" className="hover:text-[#006459] transition-colors">
+              <Link href="/kontakti" className="hover:text-[#00675B] transition-colors">
                 Kontakti
               </Link>
             </div>

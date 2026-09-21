@@ -153,6 +153,11 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 /muaj
               </Text>
             )}
+            {isSale && listing.price && listing.area_m2 && listing.area_m2 > 0 ? (
+              <Text style={[styles.pricePerM2CardText, { color: colors.textMuted }]}>
+                ({new Intl.NumberFormat('de-DE').format(Math.round(listing.price / listing.area_m2))} €/m²)
+              </Text>
+            ) : null}
           </View>
 
           {listing.apartment_type ? (
@@ -465,6 +470,11 @@ const styles = StyleSheet.create({
   pricePeriod: {
     fontSize: 12.5,
     fontFamily: Fonts.medium,
+  },
+  pricePerM2CardText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    marginLeft: 2,
   },
   typologyPill: {
     paddingHorizontal: 10,

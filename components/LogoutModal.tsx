@@ -106,7 +106,7 @@ export default function LogoutModal({
       {/* Center Modal Card */}
       <div className="relative w-full max-w-[390px] rounded-3xl bg-white/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_32px_80px_-16px_rgba(0,35,30,0.45)] border border-stone-200/80 text-center flex flex-col items-center overflow-hidden transition-all duration-300">
         {/* Subtle decorative top ambient light */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#006459]/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#00675B]/15 rounded-full blur-2xl pointer-events-none" />
 
         {/* Phase 1: Confirmation Dialog */}
         {phase === 'confirm' && (
@@ -139,7 +139,7 @@ export default function LogoutModal({
             {/* User Account Micro-Card */}
             {(userEmail || userName) && (
               <div className="mt-5 w-full flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 text-left">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 text-[#006459] font-bold text-sm flex items-center justify-center border border-gray-200">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-[#00675B]/10 text-[#00675B] font-bold text-sm flex items-center justify-center border border-gray-200">
                   <Image src={avatarUrl || '/avatars/avatar-1.png'} alt="" fill sizes="40px" className="object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -177,8 +177,8 @@ export default function LogoutModal({
           <div className="py-2 flex flex-col items-center">
             {/* Animated Brand Emblem with Orbital Ring */}
             <div className="relative mb-5 flex items-center justify-center">
-              <div className="absolute -inset-3 rounded-3xl border-2 border-dashed border-[#006459]/35 animate-[spin_10s_linear_infinite]" />
-              <div className="w-18 h-18 rounded-2xl bg-gradient-to-br from-[#006459] to-[#00473f] flex items-center justify-center shadow-xl shadow-[#006459]/30 ring-8 ring-[#006459]/10">
+              <div className="absolute -inset-3 rounded-3xl border-2 border-dashed border-[#00675B]/35 animate-[spin_10s_linear_infinite]" />
+              <div className="w-18 h-18 rounded-2xl bg-gradient-to-br from-[#00675B] to-[#004D43] flex items-center justify-center shadow-xl shadow-[#00675B]/30 ring-8 ring-[#00675B]/10">
                 <Image
                   src="/logo-white.png"
                   alt="Bleje Pronën"
@@ -199,7 +199,7 @@ export default function LogoutModal({
             {/* Smooth Progress Bar */}
             <div className="w-52 h-1.5 bg-gray-100 rounded-full overflow-hidden mt-6">
               <div
-                className="h-full bg-gradient-to-r from-[#006459] via-[#008272] to-[#C8B882] rounded-full transition-all duration-200 ease-out"
+                className="h-full bg-gradient-to-r from-[#00675B] via-[#008272] to-[#C8B882] rounded-full transition-all duration-200 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -227,7 +227,7 @@ export default function LogoutModal({
             </p>
 
             <div className="mt-6 flex items-center gap-2 text-xs text-gray-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#006459]" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00675B]" />
               <span>Faleminderit që përdorni Bleje Pronën</span>
             </div>
           </div>

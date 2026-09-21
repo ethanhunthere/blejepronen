@@ -169,7 +169,7 @@ export default function CompletoProfilinFastPage() {
   if (checking) {
     return (
       <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#006459]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00675B]" />
       </div>
     )
   }
@@ -228,7 +228,7 @@ export default function CompletoProfilinFastPage() {
                     className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                       fieldErrors.firstName
                         ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                        : 'border-gray-200 focus:border-[#006459]'
+                        : 'border-gray-200 focus:border-[#00675B]'
                     }`}
                     value={firstName}
                     onChange={(e) => {
@@ -261,7 +261,7 @@ export default function CompletoProfilinFastPage() {
                     className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                       fieldErrors.lastName
                         ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                        : 'border-gray-200 focus:border-[#006459]'
+                        : 'border-gray-200 focus:border-[#00675B]'
                     }`}
                     value={lastName}
                     onChange={(e) => {
@@ -299,7 +299,7 @@ export default function CompletoProfilinFastPage() {
                   className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                     fieldErrors.phone
                       ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                      : 'border-gray-200 focus:border-[#006459]'
+                      : 'border-gray-200 focus:border-[#00675B]'
                   }`}
                   value={phone}
                   onChange={(e) => {
@@ -316,7 +316,7 @@ export default function CompletoProfilinFastPage() {
 
             <Button
               type="submit"
-              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#00675B] shadow-md shadow-[#00675B]/20 hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
               disabled={loading}
             >
               {loading ? (

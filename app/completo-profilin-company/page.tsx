@@ -216,7 +216,7 @@ export default function CompletoProfilinCompanyPage() {
   if (checking) {
     return (
       <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#006459]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00675B]" />
       </div>
     )
   }
@@ -225,12 +225,12 @@ export default function CompletoProfilinCompanyPage() {
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
         {/* Verification Success Pill - Clean reassurance */}
-        <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-[#006459]/10 border border-[#006459]/25 text-[#006459] text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs">
+        <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-[#00675B]/10 border border-[#00675B]/25 text-[#00675B] text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#006459]" />
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00675B]" />
             <span>Email-i u konfirmua me sukses</span>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-[#006459] text-white rounded-full px-2.5 py-0.5">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-[#00675B] text-white rounded-full px-2.5 py-0.5">
             <Building2 className="h-3 w-3" /> Kompani
           </span>
         </div>
@@ -275,7 +275,7 @@ export default function CompletoProfilinCompanyPage() {
                   className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                     fieldErrors.companyName
                       ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                      : 'border-gray-200 focus:border-[#006459]'
+                      : 'border-gray-200 focus:border-[#00675B]'
                   }`}
                   value={companyName}
                   onChange={(e) => {
@@ -310,7 +310,7 @@ export default function CompletoProfilinCompanyPage() {
                   className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                     fieldErrors.phone
                       ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                      : 'border-gray-200 focus:border-[#006459]'
+                      : 'border-gray-200 focus:border-[#00675B]'
                   }`}
                   value={phone}
                   onChange={(e) => {
@@ -348,7 +348,7 @@ export default function CompletoProfilinCompanyPage() {
                     className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                       fieldErrors.foundedYear
                         ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                        : 'border-gray-200 focus:border-[#006459]'
+                        : 'border-gray-200 focus:border-[#00675B]'
                     }`}
                     value={foundedYear}
                     onChange={(e) => {
@@ -380,7 +380,7 @@ export default function CompletoProfilinCompanyPage() {
                     className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                       fieldErrors.contactPerson
                         ? 'border-red-300 bg-red-50/60 focus:border-red-400'
-                        : 'border-gray-200 focus:border-[#006459]'
+                        : 'border-gray-200 focus:border-[#00675B]'
                     }`}
                     value={contactPerson}
                     onChange={(e) => {
@@ -414,7 +414,7 @@ export default function CompletoProfilinCompanyPage() {
                   id="description"
                   rows={3}
                   placeholder="Kush jeni ju? Shkruani shkurtimisht përvojën tuaj në treg, zonat ku operoni dhe shërbimet e patundshmërisë..."
-                  className="w-full p-3 text-sm rounded-xl border border-gray-200 bg-gray-50 text-[#101828] placeholder:text-gray-400 focus:bg-white focus:border-[#006459] outline-none transition-colors resize-none leading-relaxed"
+                  className="w-full p-3 text-sm rounded-xl border border-gray-200 bg-gray-50 text-[#101828] placeholder:text-gray-400 focus:bg-white focus:border-[#00675B] outline-none transition-colors resize-none leading-relaxed"
                   value={description}
                   onChange={(e) => {
                     setDescription(e.target.value)
@@ -431,7 +431,7 @@ export default function CompletoProfilinCompanyPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="mt-3 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#006459] shadow-md shadow-[#006459]/20 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="mt-3 w-full min-h-[44px] h-11 sm:h-12 rounded-xl font-semibold text-white bg-[#00675B] shadow-md shadow-[#00675B]/20 hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/30 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
               disabled={loading}
             >
               {loading ? (
@@ -453,7 +453,7 @@ export default function CompletoProfilinCompanyPage() {
                 type="button"
                 onClick={handleContinueWithoutVerifying}
                 disabled={loading}
-                className="text-xs sm:text-sm font-medium text-gray-500 hover:text-[#006459] transition-colors py-1.5 cursor-pointer disabled:opacity-50"
+                className="text-xs sm:text-sm font-medium text-gray-500 hover:text-[#00675B] transition-colors py-1.5 cursor-pointer disabled:opacity-50"
               >
                 Vazhdo pa verifikuar →
               </button>

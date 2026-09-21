@@ -69,7 +69,7 @@ export default function MortgageCalculator({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#006459] shadow-2xs">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#00675B] shadow-2xs">
             <Calculator className="h-5 w-5" />
           </div>
           <div>
@@ -82,13 +82,13 @@ export default function MortgageCalculator({
           </div>
         </div>
 
-        <span className="hidden sm:inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
+        <span className="hidden sm:inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#00675B] border border-emerald-100">
           Financim Bankar
         </span>
       </div>
 
       {/* Hero Monthly Estimate Card */}
-      <div className="bg-gradient-to-br from-[#006459] to-[#00473e] text-white rounded-2xl p-5 sm:p-6 mb-6 shadow-md shadow-[#006459]/15">
+      <div className="bg-gradient-to-br from-[#00675B] to-[#004D43] text-white rounded-2xl p-5 sm:p-6 mb-6 shadow-md shadow-[#00675B]/15">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-semibold text-emerald-200/90 uppercase tracking-wider">
@@ -144,15 +144,15 @@ export default function MortgageCalculator({
 
           <div className="flex flex-wrap items-center justify-between gap-2 mt-2 text-[11px] text-emerald-100/90 font-medium">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#C8B882]" />
+              <span className="w-3 h-1.5 rounded-sm bg-[#C8B882]" />
               <span>Pjesëmarrja: {formatCurrency(downPaymentAmount)}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-300" />
+              <span className="w-3 h-1.5 rounded-sm bg-emerald-300" />
               <span>Kredia: {formatCurrency(loanPrincipal)}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-300" />
+              <span className="w-3 h-1.5 rounded-sm bg-amber-300" />
               <span>Interesi: {formatCurrency(totalInterest)}</span>
             </div>
           </div>
@@ -165,21 +165,21 @@ export default function MortgageCalculator({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <Euro className="h-3.5 w-3.5 text-[#006459]" />
+              <Euro className="h-3.5 w-3.5 text-[#00675B]" />
               <span>Çmimi i Pronës</span>
             </label>
             {price !== propertyPrice && (
               <button
                 type="button"
                 onClick={() => setPrice(propertyPrice)}
-                className="text-[11px] font-semibold text-[#006459] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-semibold text-[#00675B] hover:underline inline-flex items-center gap-1 cursor-pointer"
               >
                 <RotateCcw className="h-3 w-3" />
                 Rivendos në {formatCurrency(propertyPrice)}
               </button>
             )}
           </div>
-          <div className="relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#006459] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/15 transition-all">
+          <div className="relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#00675B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00675B]/15 transition-all">
             <span className="pl-3 text-sm font-bold text-gray-400">€</span>
             <input
               type="number"
@@ -197,10 +197,10 @@ export default function MortgageCalculator({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <Percent className="h-3.5 w-3.5 text-[#006459]" />
+              <Percent className="h-3.5 w-3.5 text-[#00675B]" />
               <span>Pjesëmarrja Vetjake</span>
             </label>
-            <span className="text-xs font-bold text-[#006459]">
+            <span className="text-xs font-bold text-[#00675B]">
               {downPaymentPercent}% ({formatCurrency(downPaymentAmount)})
             </span>
           </div>
@@ -213,7 +213,7 @@ export default function MortgageCalculator({
                 onClick={() => setDownPaymentPercent(p)}
                 className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                   downPaymentPercent === p
-                    ? 'bg-[#006459] text-white border-[#006459] shadow-2xs'
+                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-2xs'
                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                 }`}
               >
@@ -227,10 +227,10 @@ export default function MortgageCalculator({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-[#006459]" />
+              <Calendar className="h-3.5 w-3.5 text-[#00675B]" />
               <span>Afati i Kredisë</span>
             </label>
-            <span className="text-xs font-bold text-[#006459]">{loanYears} vite ({loanYears * 12} këste)</span>
+            <span className="text-xs font-bold text-[#00675B]">{loanYears} vite ({loanYears * 12} këste)</span>
           </div>
 
           <div className="grid grid-cols-5 gap-1.5">
@@ -241,7 +241,7 @@ export default function MortgageCalculator({
                 onClick={() => setLoanYears(y)}
                 className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                   loanYears === y
-                    ? 'bg-[#006459] text-white border-[#006459] shadow-2xs'
+                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-2xs'
                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                 }`}
               >
@@ -255,10 +255,10 @@ export default function MortgageCalculator({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <Euro className="h-3.5 w-3.5 text-[#006459]" />
+              <Euro className="h-3.5 w-3.5 text-[#00675B]" />
               <span>Norma Vjetore e Interesit</span>
             </label>
-            <span className="text-xs font-extrabold text-[#006459] px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-100">
+            <span className="text-xs font-extrabold text-[#00675B] px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-100">
               {interestRate.toFixed(1)}%
             </span>
           </div>
@@ -270,7 +270,7 @@ export default function MortgageCalculator({
             step="0.1"
             value={interestRate}
             onChange={(e) => setInterestRate(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#006459]"
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00675B]"
           />
 
           <div className="flex justify-between text-[10px] text-gray-600 mt-1 font-semibold">
@@ -290,7 +290,7 @@ export default function MortgageCalculator({
 
         <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100">
           <div className="text-[10px] uppercase font-bold text-gray-600">Kredia Neto</div>
-          <div className="text-xs font-extrabold text-[#006459] mt-0.5">
+          <div className="text-xs font-extrabold text-[#00675B] mt-0.5">
             {formatCurrency(loanPrincipal)}
           </div>
         </div>

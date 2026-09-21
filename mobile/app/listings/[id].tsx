@@ -11,6 +11,7 @@ import {
   Linking,
   Dimensions,
   Alert,
+  Share,
   useWindowDimensions,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
@@ -32,6 +33,10 @@ import {
   Plus,
   Minus,
   ChevronRight,
+  Share2,
+  Compass,
+  Send,
+  Sparkles,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -43,6 +48,7 @@ import { safeBack } from '@/lib/navigation'
 import { getCachedListingById } from '@/lib/listings-cache'
 import { getSyncAuthUser } from '@/lib/auth-cache'
 import { FavoriteButton } from '@/components/FavoriteButton'
+import { TactilePressable } from '@/components/motion'
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -159,15 +165,15 @@ export default function ListingDetailScreen() {
     Linking.openURL(`tel:${sellerPhone}`)
   }
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = (customText?: string) => {
     const cleanPhone = sellerPhone.replace(/[^0-9]/g, '')
-    const text = encodeURIComponent(
-      `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronën "${listing?.title || ''}" (${formatPrice(listing?.price)}).`
-    )
-    Linking.openURL(`https://wa.me/${cleanPhone}?text=${text}`)
+    const defaultText = `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronën "${listing?.title || ''}" (${formatPrice(listing?.price)}).`
+    const body = customText ? `${defaultText}\n\nPyetje: ${customText}` : defaultText
+    const encoded = encodeURIComponent(body)
+    Linking.openURL(`https://wa.me/${cleanPhone}?text=${encoded}`)
   }
 
-  const handleChat = async () => {
+  const handleChat = async (initialQuery?: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
     if (!currentUser) {
@@ -192,7 +198,10 @@ export default function ListingDetailScreen() {
         .maybeSingle()
 
       if (existing?.id) {
-        router.push(`/messages/${existing.id}` as any)
+        router.push({
+          pathname: `/messages/${existing.id}` as any,
+          params: initialQuery ? { initialText: initialQuery } : {},
+        })
         return
       }
 
@@ -209,13 +218,57 @@ export default function ListingDetailScreen() {
       if (createErr) {
         Alert.alert('Vërejtje', 'Nuk mund të hapet biseda: ' + createErr.message)
       } else if (created?.id) {
-        router.push(`/messages/${created.id}` as any)
+        router.push({
+          pathname: `/messages/${created.id}` as any,
+          params: initialQuery ? { initialText: initialQuery } : {},
+        })
       }
     } catch (err: any) {
       console.warn('Chat err:', err)
     } finally {
       setStartingChat(false)
     }
+  }
+
+  const handleShare = async () => {
+    if (!listing) return
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
+    try {
+      const shareUrl = `https://blejepronen.com/listings/${listing.id}`
+      const m2Text = listing.area_m2 ? ` • ${listing.area_m2} m²` : ''
+      const locText = [listing.neighborhood, listing.city].filter(Boolean).join(', ')
+      const message = `${listing.title}\n💰 ${formatPrice(listing.price)}${m2Text}\n📍 ${locText}\n\nShiko detajet në Bleje Pronën:\n${shareUrl}`
+
+      await Share.share({
+        title: listing.title,
+        message,
+        url: shareUrl,
+      })
+    } catch (err) {
+      console.warn('Share error:', err)
+    }
+  }
+
+  const handleOpenMaps = () => {
+    if (!listing) return
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync()
+    }
+    const query = encodeURIComponent(
+      [listing.address, listing.neighborhood, listing.city, 'Kosovo']
+        .filter(Boolean)
+        .join(', ')
+    )
+    const url = Platform.select({
+      ios: `maps:0,0?q=${query}`,
+      android: `geo:0,0?q=${query}`,
+      default: `https://maps.google.com/?q=${query}`,
+    })
+    Linking.openURL(url!).catch(() => {
+      Linking.openURL(`https://maps.google.com/?q=${query}`)
+    })
   }
 
   const formatPrice = (val?: number) => {
@@ -269,16 +322,37 @@ export default function ListingDetailScreen() {
       {/* Floating Top Nav Bar */}
       <View style={[styles.floatingNavSafeArea, { paddingTop: insets.top }]}>
         <View style={styles.floatingNav}>
-          <Pressable style={styles.navIconBtn} onPress={() => safeBack(router, '/(tabs)/listings')} hitSlop={8}>
+          <TactilePressable
+            style={styles.navIconBtn}
+            onPress={() => safeBack(router, '/(tabs)/listings')}
+            hitSlop={8}
+            activeScale={0.92}
+            haptic="light"
+          >
             <BlurView
               intensity={Platform.OS === 'ios' ? 70 : 100}
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
             <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.4} />
-          </Pressable>
+          </TactilePressable>
 
           <View style={styles.navRight}>
+            <TactilePressable
+              style={styles.navIconBtn}
+              onPress={handleShare}
+              hitSlop={8}
+              activeScale={0.92}
+              haptic="light"
+            >
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 70 : 100}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+              <Share2 size={18} color="#FFFFFF" strokeWidth={2.2} />
+            </TactilePressable>
+
             <FavoriteButton
               isFavorite={isFavorite}
               onToggle={handleFavoriteToggle}
@@ -357,30 +431,130 @@ export default function ListingDetailScreen() {
           {/* Price & Location Header */}
           <View style={[styles.headerBlock, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.priceRow}>
-              <Text
-                style={[
-                  styles.priceText,
-                  { color: theme === 'green' ? colors.gold : colors.primary },
-                ]}
-              >
-                {formatPrice(listing.price)}
-              </Text>
-              {listing.type === 'qira' && (
-                <Text style={[styles.periodText, { color: colors.textMuted }]}>/muaj</Text>
-              )}
+              <View style={styles.priceWithPeriod}>
+                <Text
+                  style={[
+                    styles.priceText,
+                    { color: theme === 'green' ? colors.gold : colors.primary },
+                  ]}
+                >
+                  {formatPrice(listing.price)}
+                </Text>
+                {listing.type === 'qira' && (
+                  <Text style={[styles.periodText, { color: colors.textMuted }]}>/muaj</Text>
+                )}
+              </View>
+
+              {listing.type === 'shitje' && listing.price && listing.area_m2 && listing.area_m2 > 0 ? (
+                <View
+                  style={[
+                    styles.pricePerM2Badge,
+                    {
+                      backgroundColor:
+                        theme === 'white'
+                          ? 'rgba(0, 103, 91, 0.08)'
+                          : theme === 'green'
+                          ? 'rgba(212, 175, 55, 0.16)'
+                          : 'rgba(52, 211, 153, 0.12)',
+                      borderColor:
+                        theme === 'white'
+                          ? 'rgba(0, 103, 91, 0.2)'
+                          : theme === 'green'
+                          ? 'rgba(212, 175, 55, 0.35)'
+                          : 'rgba(52, 211, 153, 0.3)',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.pricePerM2Text,
+                      {
+                        color:
+                          theme === 'green'
+                            ? colors.gold
+                            : theme === 'black'
+                            ? '#34D399'
+                            : colors.primary,
+                      },
+                    ]}
+                  >
+                    ≈ {new Intl.NumberFormat('de-DE').format(Math.round(listing.price / listing.area_m2))} €/m²
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <Text style={[styles.titleText, { color: colors.textPrimary }]}>{listing.title}</Text>
 
-            <View style={styles.locationRow}>
-              <MapPin size={16} color={colors.primary} strokeWidth={2.2} />
-              <Text style={[styles.locationText, { color: colors.textSecondary }]}>
-                {listing.neighborhood ? `${listing.neighborhood}, ` : ''}
-                {listing.city}
-                {listing.address ? ` • ${listing.address}` : ''}
-              </Text>
+            <View style={styles.locationContainer}>
+              <View style={styles.locationRow}>
+                <MapPin size={16} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.locationText, { color: colors.textSecondary }]}>
+                  {listing.neighborhood ? `${listing.neighborhood}, ` : ''}
+                  {listing.city}
+                  {listing.address ? ` • ${listing.address}` : ''}
+                </Text>
+              </View>
+              <TactilePressable
+                style={[
+                  styles.openMapsBtn,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={handleOpenMaps}
+                activeScale={0.95}
+                haptic="selection"
+                hitSlop={6}
+              >
+                <Compass size={13} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.openMapsBtnText, { color: colors.primary }]}>Harta</Text>
+              </TactilePressable>
             </View>
           </View>
+
+          {/* Quick 1-Tap Inquiry Row */}
+          {currentUser?.id !== listing.user_id && (
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.quickInquiryHeader}>
+                <Sparkles size={16} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>
+                  Pyetje të shpejta për pronarin
+                </Text>
+              </View>
+              <Text style={[styles.quickInquirySub, { color: colors.textMuted }]}>
+                Zgjidhni një pyetje për të hapur bisedën me 1 prekje:
+              </Text>
+              <View style={styles.quickChipsWrap}>
+                {[
+                  'A është prona ende e lirë?',
+                  'Dua të caktoj një vizitë',
+                  'A ka fletë poseduese?',
+                  'A ka fleksibilitet në çmim?',
+                ].map((msg, i) => (
+                  <TactilePressable
+                    key={i}
+                    style={[
+                      styles.quickChip,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: colors.borderSubtle,
+                      },
+                    ]}
+                    onPress={() => handleChat(msg)}
+                    activeScale={0.96}
+                    haptic="light"
+                  >
+                    <Text style={[styles.quickChipText, { color: colors.textPrimary }]}>
+                      {msg}
+                    </Text>
+                    <Send size={11} color={colors.primary} strokeWidth={2} />
+                  </TactilePressable>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* Key Specs Grid */}
           <View style={styles.specsGrid}>
@@ -605,14 +779,16 @@ export default function ListingDetailScreen() {
           ) : (
             <View style={styles.bottomBar}>
               {/* 1. In-App Direct Chat */}
-              <Pressable
+              <TactilePressable
+                activeScale={0.97}
+                haptic="medium"
                 style={[
                   styles.chatActionBtn,
                   {
                     backgroundColor: theme === 'green' ? colors.gold : colors.primary,
                   },
                 ]}
-                onPress={handleChat}
+                onPress={() => handleChat()}
                 disabled={startingChat}
                 hitSlop={8}
               >
@@ -637,18 +813,26 @@ export default function ListingDetailScreen() {
                     </Text>
                   </>
                 )}
-              </Pressable>
+              </TactilePressable>
 
               {/* 2. WhatsApp Button */}
-              <Pressable style={styles.whatsAppBtn} onPress={handleWhatsApp} hitSlop={8}>
+              <TactilePressable
+                activeScale={0.97}
+                haptic="medium"
+                style={styles.whatsAppBtn}
+                onPress={() => handleWhatsApp()}
+                hitSlop={8}
+              >
                 <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
                 <Text style={styles.whatsAppBtnText} numberOfLines={1} adjustsFontSizeToFit>
                   WhatsApp
                 </Text>
-              </Pressable>
+              </TactilePressable>
 
               {/* 3. Phone Call Button */}
-              <Pressable
+              <TactilePressable
+                activeScale={0.97}
+                haptic="medium"
                 style={[
                   styles.callBtn,
                   {
@@ -677,7 +861,7 @@ export default function ListingDetailScreen() {
                 >
                   Telefono
                 </Text>
-              </Pressable>
+              </TactilePressable>
             </View>
           )}
         </View>
@@ -800,8 +984,26 @@ const styles = StyleSheet.create({
   },
   priceRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  priceWithPeriod: {
+    flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
+  },
+  pricePerM2Badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 8,
+    borderWidth: 0.5,
+  },
+  pricePerM2Text: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
   },
   priceText: {
     fontSize: 26,
@@ -817,16 +1019,65 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     letterSpacing: -0.3,
   },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 4,
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    marginTop: 4,
+    flex: 1,
   },
   locationText: {
     fontSize: 13,
     fontFamily: Fonts.medium,
     flex: 1,
+  },
+  openMapsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 0.5,
+  },
+  openMapsBtnText: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+  quickInquiryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  quickInquirySub: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: -4,
+  },
+  quickChipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 0.5,
+  },
+  quickChipText: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
   },
   specsGrid: {
     flexDirection: 'row',

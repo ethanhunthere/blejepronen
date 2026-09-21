@@ -785,7 +785,7 @@ export default function ShpalljetEMiaScreen() {
                     {
                       backgroundColor:
                         item.type === 'shitje'
-                          ? 'rgba(0, 100, 89, 0.88)'
+                          ? 'rgba(0, 103, 91, 0.88)'
                           : 'rgba(217, 119, 6, 0.88)',
                     },
                   ]}
@@ -918,7 +918,7 @@ export default function ShpalljetEMiaScreen() {
                   {
                     backgroundColor:
                       item.type === 'shitje'
-                        ? 'rgba(0, 100, 89, 0.88)'
+                        ? 'rgba(0, 103, 91, 0.88)'
                         : 'rgba(217, 119, 6, 0.88)',
                   },
                 ]}

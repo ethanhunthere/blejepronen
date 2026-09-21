@@ -417,7 +417,7 @@ export default async function ListingDetailPage({
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${
                     listing.type === 'shitje'
-                      ? 'bg-[#006459] text-white shadow-2xs'
+                      ? 'bg-[#00675B] text-white shadow-2xs'
                       : 'bg-indigo-600 text-white shadow-2xs'
                   }`}
                 >
@@ -442,7 +442,7 @@ export default async function ListingDetailPage({
 
               <div className="flex items-center justify-between flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-[#006459] shrink-0" />
+                  <MapPin className="h-4 w-4 text-[#00675B] shrink-0" />
                   <span className="font-semibold text-gray-800">
                     {[listing.city, listing.neighborhood, listing.address].filter(Boolean).join(', ')}
                   </span>
@@ -465,7 +465,7 @@ export default async function ListingDetailPage({
                 {/* Rooms or Category */}
                 {listing.rooms > 0 ? (
                   <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                       <BedDouble className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -477,7 +477,7 @@ export default async function ListingDetailPage({
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                       <Home className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -491,7 +491,7 @@ export default async function ListingDetailPage({
 
                 {/* Area m² */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                  <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Maximize2 className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -507,7 +507,7 @@ export default async function ListingDetailPage({
 
                 {/* Floor */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                  <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -520,7 +520,7 @@ export default async function ListingDetailPage({
 
                 {/* Condition */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                  <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -533,7 +533,7 @@ export default async function ListingDetailPage({
 
                 {/* Type / Category */}
                 <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 transition-all hover:bg-white hover:shadow-2xs">
-                  <div className="w-10 h-10 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Home className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -572,7 +572,7 @@ export default async function ListingDetailPage({
                   </p>
                 </div>
                 {pricePerSqm && (
-                  <span className="text-xs font-bold text-[#006459] bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold text-[#00675B] bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
                     {pricePerSqm}/m²
                   </span>
                 )}
@@ -594,7 +594,7 @@ export default async function ListingDetailPage({
                 {sellerPhone ? (
                   <a
                     href={`tel:${sellerPhone}`}
-                    className="h-11 flex items-center justify-center gap-2 rounded-2xl bg-[#006459] text-white font-bold text-sm shadow-sm active:scale-95 transition-all"
+                    className="h-11 flex items-center justify-center gap-2 rounded-2xl bg-[#00675B] text-white font-bold text-sm shadow-sm active:scale-95 transition-all"
                   >
                     <Phone className="h-4 w-4" />
                     <span>Telefono</span>
@@ -612,7 +612,7 @@ export default async function ListingDetailPage({
                   href={`/register?next=${encodeURIComponent(`/listings/${listing.id}`)}`}
                   className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 transition-colors"
                 >
-                  <MessagesSquare className="h-3.5 w-3.5 text-[#006459]" />
+                  <MessagesSquare className="h-3.5 w-3.5 text-[#00675B]" />
                   <span>Dërgo mesazh në platformë</span>
                 </a>
               </div>
@@ -658,7 +658,7 @@ export default async function ListingDetailPage({
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#006459] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00675B] hover:underline"
                 >
                   <span>Google Maps</span>
                   <ExternalLink className="h-3 w-3" />
@@ -666,7 +666,7 @@ export default async function ListingDetailPage({
               </div>
 
               <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0 mt-0.5">
                   <MapPin className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -694,9 +694,9 @@ export default async function ListingDetailPage({
             )}
 
             {/* 7. TRUST & SAFETY NOTICE (Apple/Airbnb high-trust banner) */}
-            <div className="bg-gradient-to-br from-[#006459]/5 via-white to-gray-50 border border-[#006459]/15 shadow-2xs rounded-3xl p-5 sm:p-6">
+            <div className="bg-gradient-to-br from-[#00675B]/5 via-white to-gray-50 border border-[#00675B]/15 shadow-2xs rounded-3xl p-5 sm:p-6">
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-2xl bg-[#00675B] text-white flex items-center justify-center shrink-0 shadow-sm">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
@@ -736,7 +736,7 @@ export default async function ListingDetailPage({
 
               <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 mb-3.5">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#00675B]/10 border border-gray-200">
                     <Image
                       src={listing.profiles?.avatar_url || '/avatars/avatar-1.png'}
                       alt={listing.profiles?.first_name || 'Shitësi'}
@@ -752,7 +752,7 @@ export default async function ListingDetailPage({
                     <div className="flex items-center gap-2 mt-0.5">
                       <Link
                         href={`/profili/${listing.user_id}`}
-                        className="text-xs font-semibold text-[#006459] hover:underline inline-flex items-center gap-1"
+                        className="text-xs font-semibold text-[#00675B] hover:underline inline-flex items-center gap-1"
                       >
                         Shiko profilin <ExternalLink className="h-2.5 w-2.5" />
                       </Link>
@@ -828,7 +828,7 @@ export default async function ListingDetailPage({
             </div>
             <Link
               href={`/listings?city=${encodeURIComponent(listing.city)}`}
-              className="text-xs sm:text-sm font-bold text-[#006459] hover:underline inline-flex items-center gap-1"
+              className="text-xs sm:text-sm font-bold text-[#00675B] hover:underline inline-flex items-center gap-1"
             >
               <span>Shiko të gjitha</span>
               <ChevronLeft className="h-4 w-4 rotate-180" />

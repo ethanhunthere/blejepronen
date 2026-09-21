@@ -515,15 +515,15 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     } catch {}
   }, [router])
 
-  // Lock document and theme color to brand teal #006459 across all / pages and navigation
+  // Lock document and theme color to brand teal #00675B across all / pages and navigation
   useEffect(() => {
-    document.documentElement.style.backgroundColor = '#006459'
-    document.body.style.backgroundColor = '#006459'
+    document.documentElement.style.backgroundColor = '#00675B'
+    document.body.style.backgroundColor = '#00675B'
     const metaTheme = document.querySelector('meta[name="theme-color"]')
-    if (metaTheme) metaTheme.setAttribute('content', '#006459')
+    if (metaTheme) metaTheme.setAttribute('content', '#00675B')
   }, [pathname])
 
-  // Mobile menu: clean scroll lock without layout shifts & enforce #006459 theme color
+  // Mobile menu: clean scroll lock without layout shifts & enforce #00675B theme color
   useEffect(() => {
     if (!menuOpen) return
 
@@ -538,12 +538,12 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     document.body.style.overflow = 'hidden'
     document.body.style.overscrollBehavior = 'none'
     document.body.style.touchAction = 'none'
-    document.documentElement.style.backgroundColor = '#006459'
-    document.body.style.backgroundColor = '#006459'
+    document.documentElement.style.backgroundColor = '#00675B'
+    document.body.style.backgroundColor = '#00675B'
 
     const metaTheme = document.querySelector('meta[name="theme-color"]')
     if (metaTheme) {
-      metaTheme.setAttribute('content', '#006459')
+      metaTheme.setAttribute('content', '#00675B')
     }
 
     // Block any touchmove or wheel event that originates outside the scrollable menu container
@@ -570,10 +570,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       document.body.style.overflow = prevBodyOverflow
       document.body.style.overscrollBehavior = prevBodyOverscroll
       document.body.style.touchAction = prevTouchAction
-      document.documentElement.style.backgroundColor = '#006459'
-      document.body.style.backgroundColor = '#006459'
+      document.documentElement.style.backgroundColor = '#00675B'
+      document.body.style.backgroundColor = '#00675B'
       if (metaTheme) {
-        metaTheme.setAttribute('content', '#006459')
+        metaTheme.setAttribute('content', '#00675B')
       }
       window.removeEventListener('touchmove', preventOutsideScroll)
       window.removeEventListener('wheel', preventOutsideScroll)
@@ -689,7 +689,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const displayName = profile.firstName || activeUser?.email?.split('@')[0] || 'Përdorues'
 
   return (
-    <nav className={`${positionClasses} bg-[#006459] pt-[env(safe-area-inset-top,0px)] ${menuOpen ? 'border-b border-white/10' : 'border-b border-[#005048] shadow-sm'} transition-colors duration-200 px-4 sm:px-8 lg:px-12 ${className || ''}`}>
+    <nav className={`${positionClasses} bg-[#00675B] pt-[env(safe-area-inset-top,0px)] ${menuOpen ? 'border-b border-white/10' : 'border-b border-[#004D43] shadow-sm'} transition-colors duration-200 px-4 sm:px-8 lg:px-12 ${className || ''}`}>
       <div className="w-full relative z-50">
         {/* Fixed-height row: every child is vertically centered, so top and
             bottom padding are equal by construction at every breakpoint. */}
@@ -707,10 +707,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <Image
               src="/logo-icon.png"
               alt="Bleje Pronën"
-              width={38}
-              height={38}
+              width={48}
+              height={48}
               priority
-              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain block"
+              className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain block"
             />
           </Link>
 
@@ -736,7 +736,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 className={`relative inline-flex items-center h-10 text-[15px] px-3.5 rounded-lg transition-all duration-200 ${
                   pathname === '/listings'
                     ? 'text-white font-semibold after:absolute after:bottom-1 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
-                    : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#005048]'
+                    : 'text-[#cceae8] font-medium hover:text-white hover:bg-[#004D43]'
                 }`}
               >
                 Shiko pronat
@@ -756,7 +756,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   >
                     <Link
                       href="/posto-prona"
-                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 gap-1.5 text-[15px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#006459]"
+                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 gap-1.5 text-[15px] font-semibold whitespace-nowrap bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer text-[#00675B]"
                     >
                       <Plus className="h-4 w-4" />
                       Posto pronë
@@ -765,7 +765,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     {/* Messages */}
                     <Link
                       href="/mesazhet"
-                      className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
+                      className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#004D43] transition-all duration-200 cursor-pointer"
                       aria-label="Mesazhet"
                     >
                       <MessageCircle className="h-5 w-5" />
@@ -789,7 +789,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         }}
                         className={`inline-flex items-center justify-center relative rounded-full w-10 h-10 transition-all duration-200 cursor-pointer flex-shrink-0 outline-none navbar-avatar-display ${
                           dropdownOpen
-                            ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-[#006459] shadow-md scale-105'
+                            ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-[#00675B] shadow-md scale-105'
                             : 'ring-2 ring-white/30 hover:ring-white/80 hover:scale-105'
                         }`}
                         aria-label="Menyja e përdoruesit"
@@ -806,7 +806,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           />
                         </div>
                         {unreadCount > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold border-2 border-[#006459] rounded-full flex items-center justify-center shadow-xs">
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold border-2 border-[#00675B] rounded-full flex items-center justify-center shadow-xs">
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </span>
                         )}
@@ -816,14 +816,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-84 bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,100,89,0.22),0_10px_25px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,100,89,0.08)] border border-gray-100/90 p-2.5 z-50 text-[#101828] animate-in fade-in-0 zoom-in-95 duration-150 ease-out origin-top-right">
                           {/* User info header card */}
                           <div
-                            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#006459]/[0.06] via-[#F2F7F7] to-[#C8B882]/[0.10] border border-[#006459]/10 cursor-pointer hover:border-[#006459]/30 hover:shadow-xs transition-all group"
+                            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00675B]/[0.06] via-[#F2F7F7] to-[#C8B882]/[0.10] border border-[#00675B]/10 cursor-pointer hover:border-[#00675B]/30 hover:shadow-xs transition-all group"
                             onClick={() => {
                               closeDropdown()
                               router.push('/profili')
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-white shadow-sm ring-2 ring-[#006459]/15 group-hover:ring-[#006459]/40 transition-all navbar-avatar-display">
+                              <div className="relative w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-white shadow-sm ring-2 ring-[#00675B]/15 group-hover:ring-[#00675B]/40 transition-all navbar-avatar-display">
                                 <Image
                                   src={getAvatarUrl(profile.avatarUrl)}
                                   alt="Foto profili"
@@ -834,13 +834,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="text-sm font-extrabold text-[#101828] group-hover:text-[#006459] transition-colors truncate">
+                                  <p className="text-sm font-extrabold text-[#101828] group-hover:text-[#00675B] transition-colors truncate">
                                     {displayName}
                                   </p>
                                   {profile.isCompany ? (
-                                    <Building2 className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                                    <Building2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
                                   ) : (
-                                    <ShieldCheck className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                                    <ShieldCheck className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
                                   )}
                                 </div>
                                 <p className="text-[11px] text-gray-500 truncate mt-0.5">
@@ -849,13 +849,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                                 <div className="flex items-center justify-between gap-1.5 mt-1.5">
                                   <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                                     profile.isCompany
-                                      ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
+                                      ? 'bg-[#00675B]/10 text-[#00675B] border border-[#00675B]/20'
                                       : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                                   }`}>
                                     {profile.isCompany ? <Building2 className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
                                     {profile.isCompany ? 'Kompani' : 'Individual'}
                                   </span>
-                                  <span className="text-[10px] text-[#006459] font-bold group-hover:underline flex items-center gap-0.5">
+                                  <span className="text-[10px] text-[#00675B] font-bold group-hover:underline flex items-center gap-0.5">
                                     Profili <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                                   </span>
                                 </div>
@@ -896,20 +896,20 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             <button
                               type="button"
                               onClick={() => { closeDropdown(); router.push('/posto-prona') }}
-                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-[#006459]/5 transition-all text-left group cursor-pointer"
+                              className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-[#00675B]/5 transition-all text-left group cursor-pointer"
                             >
-                              <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] group-hover:bg-[#00675B] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
                                 <Plus className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#00675B] transition-colors leading-tight">
                                   Posto Pronë të Re
                                 </p>
                                 <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
                                   Publikoni shpallje me foto & video
                                 </p>
                               </div>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-[#C8B882]/20 text-[#006459] border border-[#C8B882]/40 shrink-0">
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-[#C8B882]/20 text-[#00675B] border border-[#C8B882]/40 shrink-0">
                                 Falas
                               </span>
                             </button>
@@ -920,18 +920,18 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               onClick={() => { closeDropdown(); router.push('/postimet-e-mia') }}
                               className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
                             >
-                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#00675B] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
                                 <Home className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#00675B] transition-colors leading-tight">
                                   Pronat e Mia
                                 </p>
                                 <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
                                   Menaxhoni dhe modifikoni shpalljet
                                 </p>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#00675B] group-hover:translate-x-0.5 transition-all shrink-0" />
                             </button>
 
                             {/* Mesazhet */}
@@ -940,14 +940,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               onClick={() => { closeDropdown(); router.push('/mesazhet') }}
                               className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
                             >
-                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 relative">
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#00675B] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 relative">
                                 <MessageCircle className="w-4 h-4" />
                                 {unreadCount > 0 && (
                                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white" />
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#00675B] transition-colors leading-tight">
                                   Mesazhet
                                 </p>
                                 <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
@@ -959,7 +959,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                                   {unreadCount > 9 ? '9+' : unreadCount}
                                 </span>
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#00675B] group-hover:translate-x-0.5 transition-all shrink-0" />
                               )}
                             </button>
 
@@ -969,18 +969,18 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                               onClick={() => { closeDropdown(); router.push('/settings') }}
                               className="flex items-center gap-3 w-full p-2 rounded-2xl hover:bg-gray-50 transition-all text-left group cursor-pointer"
                             >
-                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#006459] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 group-hover:bg-[#00675B] group-hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0">
                                 <Settings className="w-4 h-4" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#006459] transition-colors leading-tight">
+                                <p className="text-xs font-bold text-gray-900 group-hover:text-[#00675B] transition-colors leading-tight">
                                   Cilësimet
                                 </p>
                                 <p className="text-[11px] text-gray-400 group-hover:text-gray-500 transition-colors">
                                   Preferencat, njoftimet & siguria
                                 </p>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all shrink-0" />
+                              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#00675B] group-hover:translate-x-0.5 transition-all shrink-0" />
                             </button>
                           </div>
 
@@ -1013,13 +1013,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   >
                     <Link
                       href="/login"
-                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 text-[15px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#005048] transition-all duration-200 cursor-pointer"
+                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 text-[15px] font-semibold text-[#cceae8] hover:text-white hover:bg-[#004D43] transition-all duration-200 cursor-pointer"
                     >
                       Hyr
                     </Link>
                     <Link
                       href="/register"
-                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 text-[15px] font-semibold text-[#006459] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
+                      className="inline-flex items-center justify-center h-10 rounded-xl px-4 text-[15px] font-semibold text-[#00675B] bg-white hover:bg-[#C8B882] shadow-sm transition-all duration-200 cursor-pointer"
                     >
                       Regjistrohu
                     </Link>
@@ -1070,7 +1070,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 />
               </div>
               {unreadCount > 0 && !menuOpen && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[#006459]" />
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[#00675B]" />
               )}
             </button>
           </div>
@@ -1084,7 +1084,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       <div
         id="mobile-menu"
         inert={!menuOpen ? true : undefined}
-        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#006459] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out ${
+        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#00675B] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out ${
           menuOpen
             ? 'visible opacity-100 pointer-events-auto'
             : 'invisible opacity-0 pointer-events-none'
@@ -1125,7 +1125,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             {displayName}
                           </p>
                           {profile.isCompany && (
-                            <span className="shrink-0 inline-flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#006459]">
+                            <span className="shrink-0 inline-flex items-center text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#00675B]">
                               PRO
                             </span>
                           )}
@@ -1168,7 +1168,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       <div className="relative">
                         <MessageCircle className="h-4 w-4 text-white/90 shrink-0" />
                         {unreadCount > 0 && (
-                          <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#006459]">
+                          <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#00675B]">
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </span>
                         )}
@@ -1220,7 +1220,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-2.5 sm:mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#006459]/10 border border-[#006459]/15 flex items-center justify-center text-[#006459] shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 border border-[#00675B]/15 flex items-center justify-center text-[#00675B] shrink-0">
                       <User className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -1237,7 +1237,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/register"
                       prefetch={true}
                       onClick={() => handleNavClick('/register')}
-                      className="flex items-center justify-center h-10 sm:h-11 rounded-xl bg-[#006459] hover:bg-[#005048] active:bg-[#003d37] text-white text-sm font-bold shadow-md transition-colors cursor-pointer"
+                      className="flex items-center justify-center h-10 sm:h-11 rounded-xl bg-[#00675B] hover:bg-[#004D43] active:bg-[#003d37] text-white text-sm font-bold shadow-md transition-colors cursor-pointer"
                     >
                       Regjistrohu
                     </Link>
@@ -1260,7 +1260,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   href={activeUser ? '/posto-prona' : '/register'}
                   prefetch={true}
                   onClick={() => handleNavClick(activeUser ? '/posto-prona' : '/register')}
-                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#005048] hover:bg-[#00453e] active:bg-[#003d37] border border-white/20 text-white shadow-md transition-colors cursor-pointer group"
+                  className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#004D43] hover:bg-[#00453e] active:bg-[#003d37] border border-white/20 text-white shadow-md transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">

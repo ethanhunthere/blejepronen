@@ -88,13 +88,13 @@ export default function ProfileSocialStats({
         <button
           type="button"
           onClick={openFollowers}
-          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#006459] transition-colors group cursor-pointer"
+          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
           title="Shiko ndiqësit"
         >
-          <span className="font-extrabold text-[#101828] group-hover:text-[#006459] text-sm sm:text-base transition-colors">
+          <span className="font-extrabold text-[#101828] group-hover:text-[#00675B] text-sm sm:text-base transition-colors">
             {followersCount}
           </span>
-          <span className="text-gray-500 group-hover:text-[#006459] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
+          <span className="text-gray-500 group-hover:text-[#00675B] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
             {followersCount === 1 ? 'ndiqës' : 'ndiqës'}
           </span>
         </button>
@@ -105,13 +105,13 @@ export default function ProfileSocialStats({
         <button
           type="button"
           onClick={openFollowing}
-          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#006459] transition-colors group cursor-pointer"
+          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
           title="Shiko llogaritë që ndjek"
         >
-          <span className="font-extrabold text-[#101828] group-hover:text-[#006459] text-sm sm:text-base transition-colors">
+          <span className="font-extrabold text-[#101828] group-hover:text-[#00675B] text-sm sm:text-base transition-colors">
             {followingCount}
           </span>
-          <span className="text-gray-500 group-hover:text-[#006459] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
+          <span className="text-gray-500 group-hover:text-[#00675B] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
             ndjek
           </span>
         </button>

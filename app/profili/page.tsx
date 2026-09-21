@@ -283,7 +283,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-9 w-9 animate-spin text-[#006459] mx-auto mb-3" />
+          <Loader2 className="h-9 w-9 animate-spin text-[#00675B] mx-auto mb-3" />
           <p className="text-xs text-gray-500 font-semibold">Po hapim profilin tuaj...</p>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function ProfilePage() {
         {/* Top Breadcrumb & Quick Actions Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-            <Link href="/" className="hover:text-[#006459] transition-colors">
+            <Link href="/" className="hover:text-[#00675B] transition-colors">
               Ballina
             </Link>
             <span>/</span>
@@ -340,14 +340,14 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2">
             <Link
               href="/posto-prona"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Posto Pronë</span>
             </Link>
             <Link
               href="/settings"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:text-[#006459] hover:border-[#006459]/30 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/30 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
             >
               <Settings className="w-3.5 h-3.5" />
               <span>Cilësimet</span>
@@ -364,7 +364,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center gap-2 flex-shrink-0">
                 <div
                   onClick={() => setShowAvatarModal(true)}
-                  className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-gray-100 cursor-pointer group hover:scale-[1.02] transition-all duration-200 ring-2 ring-[#006459]/15"
+                  className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-gray-100 cursor-pointer group hover:scale-[1.02] transition-all duration-200 ring-2 ring-[#00675B]/15"
                   title="Kliko për të ndryshuar avatarin"
                 >
                   <Image
@@ -386,7 +386,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowAvatarModal(true)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full bg-[#00675B]/10 text-[#00675B] hover:bg-[#00675B] hover:text-white transition-all cursor-pointer shadow-2xs active:scale-95"
                   >
                     <Camera className="w-3 h-3" />
                     <span>20 Avatarë</span>
@@ -396,7 +396,7 @@ export default function ProfilePage() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingAvatar}
                     title="Ngarko foton nga kompjuteri"
-                    className="p-1 text-gray-500 hover:text-[#006459] rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="p-1 text-gray-500 hover:text-[#00675B] rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     {uploadingAvatar ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                   )}
 
                   {isCompany ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#006459]/10 text-[#006459] border border-[#006459]/20">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#00675B]/10 text-[#00675B] border border-[#00675B]/20">
                       <Building2 className="h-3 w-3" />
                       Kompani
                     </span>
@@ -490,7 +490,7 @@ export default function ProfilePage() {
               {userId && (
                 <Link
                   href={`/profili/${userId}`}
-                  className="h-10 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#006459]/40 hover:text-[#006459] text-gray-700 font-bold text-xs flex items-center gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  className="h-10 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#00675B]/40 hover:text-[#00675B] text-gray-700 font-bold text-xs flex items-center gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Profili Publik</span>
@@ -517,7 +517,7 @@ export default function ProfilePage() {
 
               <Link
                 href="/settings"
-                className="h-10 px-4 rounded-xl bg-[#006459] hover:bg-[#005048] text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-[#006459]/20 active:scale-95 transition-all cursor-pointer"
+                className="h-10 px-4 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-[#00675B]/20 active:scale-95 transition-all cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Ndrysho të Dhënat</span>
@@ -540,7 +540,7 @@ export default function ProfilePage() {
                   <span>Nuk keni vendosur ende një përshkrim për profilin tuaj.</span>
                   <Link
                     href="/settings"
-                    className="text-[#006459] font-bold hover:underline inline-flex items-center gap-1"
+                    className="text-[#00675B] font-bold hover:underline inline-flex items-center gap-1"
                   >
                     <span>+ Shto në Cilësime</span>
                     <ArrowRight className="w-3 h-3" />
@@ -559,7 +559,7 @@ export default function ProfilePage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Home className="w-5 h-5" />
                   </div>
                   <div>
@@ -570,7 +570,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-[#00675B] border border-emerald-100">
                   {listingsCount} {listingsCount === 1 ? 'pronë' : 'prona'}
                 </span>
               </div>
@@ -590,14 +590,14 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                   <Link
                     href="/postimet-e-mia"
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#006459] hover:border-[#006459]/30 transition-all shadow-2xs"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/30 transition-all shadow-2xs"
                   >
                     <span>Menaxho</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                   <Link
                     href="/posto-prona"
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs font-bold transition-all shadow-xs"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs font-bold transition-all shadow-xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Shto pronë</span>
@@ -610,7 +610,7 @@ export default function ProfilePage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Share2 className="w-5 h-5" />
                   </div>
                   <div>
@@ -625,7 +625,7 @@ export default function ProfilePage() {
 
                 <Link
                   href="/settings?tab=socials"
-                  className="text-xs font-bold text-[#006459] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[#00675B] hover:underline cursor-pointer"
                 >
                   Ndrysho
                 </Link>
@@ -642,7 +642,7 @@ export default function ProfilePage() {
                   </p>
                   <Link
                     href="/settings?tab=socials"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#006459] text-white hover:bg-[#005048] shadow-xs transition-all"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#00675B] text-white hover:bg-[#004D43] shadow-xs transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Lidh rrjetet sociale tani</span>
@@ -697,7 +697,7 @@ export default function ProfilePage() {
                       href={website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-[#006459] hover:underline inline-flex items-center gap-1 truncate max-w-[140px]"
+                      className="font-bold text-[#00675B] hover:underline inline-flex items-center gap-1 truncate max-w-[140px]"
                     >
                       <Globe className="w-3 h-3" />
                       <span>{website.replace(/^https?:\/\//, '')}</span>
@@ -716,13 +716,13 @@ export default function ProfilePage() {
               <div className="pt-2">
                 <Link
                   href="/mesazhet"
-                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-50 hover:bg-[#006459]/5 border border-gray-200/70 hover:border-[#006459]/30 text-xs font-bold text-gray-800 hover:text-[#006459] transition-all group"
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-50 hover:bg-[#00675B]/5 border border-gray-200/70 hover:border-[#00675B]/30 text-xs font-bold text-gray-800 hover:text-[#00675B] transition-all group"
                 >
                   <div className="flex items-center gap-2.5">
-                    <MessageCircle className="w-4 h-4 text-[#006459]" />
+                    <MessageCircle className="w-4 h-4 text-[#00675B]" />
                     <span>Bisedat e Mia</span>
                   </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#00675B] group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </div>

@@ -66,7 +66,7 @@ export default function HomeHero() {
               <Link
                 key={city}
                 href={`/listings?city=${encodeURIComponent(city)}`}
-                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[15px] font-medium text-white/90 transition-colors hover:border-white hover:bg-white hover:text-[#006459]"
+                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[15px] font-medium text-white/90 transition-colors hover:border-white hover:bg-white hover:text-[#00675B]"
               >
                 {city}
               </Link>

@@ -306,7 +306,7 @@ export default function ChatPage() {
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#006459] rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#00675B] rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -363,7 +363,7 @@ export default function ChatPage() {
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
         >
           {/* Avatar */}
-          <div className="relative w-9 h-9 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-sm flex-shrink-0 overflow-hidden">
+          <div className="relative w-9 h-9 rounded-full bg-[#00675B]/10 border border-[#00675B]/20 flex items-center justify-center text-[#00675B] font-bold text-sm flex-shrink-0 overflow-hidden">
             <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="36px" className="object-cover" />
           </div>
 
@@ -376,7 +376,7 @@ export default function ChatPage() {
               <p className="text-gray-600 text-xs truncate">{conv.listing.title}</p>
             )}
             {isTyping && (
-              <p className="text-[11px] text-[#006459] font-medium animate-fade-in">duke shkruar...</p>
+              <p className="text-[11px] text-[#00675B] font-medium animate-fade-in">duke shkruar...</p>
             )}
           </div>
         </Link>
@@ -411,7 +411,7 @@ export default function ChatPage() {
           {messages.length === 0 && (
             <div className="py-10 px-4 text-center animate-fade-in">
               <div className="max-w-md mx-auto bg-white border border-gray-100/90 shadow-2xs rounded-3xl p-6 sm:p-7">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#006459] mx-auto mb-3.5 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-[#00675B] mx-auto mb-3.5 shadow-2xs">
                   <MessageCircle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-[#101828] mb-1">
@@ -426,10 +426,10 @@ export default function ChatPage() {
                       key={reply}
                       type="button"
                       onClick={() => sendMessage(reply)}
-                      className="w-full text-left p-3 px-4 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-[#006459]/40 text-xs font-semibold text-gray-700 hover:text-[#006459] flex items-center justify-between transition-all cursor-pointer group active:scale-[0.99]"
+                      className="w-full text-left p-3 px-4 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-[#00675B]/40 text-xs font-semibold text-gray-700 hover:text-[#00675B] flex items-center justify-between transition-all cursor-pointer group active:scale-[0.99]"
                     >
                       <span>{reply}</span>
-                      <SendHorizonal className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#006459] group-hover:translate-x-0.5 transition-all" />
+                      <SendHorizonal className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#00675B] group-hover:translate-x-0.5 transition-all" />
                     </button>
                   ))}
                 </div>
@@ -472,7 +472,7 @@ export default function ChatPage() {
               >
                 {!isMine && (
                   isLastInGroup ? (
-                    <div className="relative w-7 h-7 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+                    <div className="relative w-7 h-7 rounded-full bg-[#00675B]/10 border border-[#00675B]/20 flex items-center justify-center text-[#00675B] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                       <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
                     </div>
                   ) : (
@@ -483,7 +483,7 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[75%] md:max-w-[60%] px-3 py-1 text-sm leading-snug ${
                     isMine
-                      ? 'bg-[#006459] text-white rounded-2xl rounded-br-md'
+                      ? 'bg-[#00675B] text-white rounded-2xl rounded-br-md'
                       : 'bg-white border border-gray-100 shadow-sm text-[#101828] rounded-2xl rounded-bl-md'
                   }`}
                 >
@@ -506,7 +506,7 @@ export default function ChatPage() {
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2" style={{ animation: 'fadeSlideUp 0.25s ease-out' }}>
-              <div className="relative w-7 h-7 rounded-full bg-[#006459]/10 border border-[#006459]/20 flex items-center justify-center text-[#006459] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
+              <div className="relative w-7 h-7 rounded-full bg-[#00675B]/10 border border-[#00675B]/20 flex items-center justify-center text-[#00675B] font-bold text-[10px] flex-shrink-0 self-end overflow-hidden">
                 <Image src={conv.otherUser?.avatar_url || '/avatars/avatar-1.png'} alt="" fill sizes="28px" className="object-cover" />
               </div>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
@@ -536,7 +536,7 @@ export default function ChatPage() {
                 key={reply}
                 type="button"
                 onClick={() => sendMessage(reply)}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 hover:bg-[#006459] text-gray-700 hover:text-white border border-gray-200 hover:border-[#006459] shadow-2xs whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer group"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 hover:bg-[#00675B] text-gray-700 hover:text-white border border-gray-200 hover:border-[#00675B] shadow-2xs whitespace-nowrap transition-all duration-150 active:scale-95 cursor-pointer group"
               >
                 <span>{reply}</span>
                 <SendHorizonal className="w-3 h-3 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
@@ -556,7 +556,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#101828] text-sm placeholder:text-gray-500 resize-none min-h-[40px] max-h-[100px] focus:border-[#006459]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#101828] text-sm placeholder:text-gray-500 resize-none min-h-[40px] max-h-[100px] focus:border-[#00675B]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'
@@ -568,7 +568,7 @@ export default function ChatPage() {
               type="button"
               onClick={() => sendMessage()}
               disabled={!newMsg.trim()}
-              className="w-10 h-10 bg-[#006459] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
+              className="w-10 h-10 bg-[#00675B] rounded-full flex items-center justify-center flex-shrink-0 hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 ease-out cursor-pointer"
             >
               <SendHorizonal className="h-4 w-4 text-white" />
             </button>

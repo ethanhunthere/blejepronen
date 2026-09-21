@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Command, ArrowRight } from 'lucide-react'
+import { Search, Command } from 'lucide-react'
 import OmniSearchModal from './OmniSearchModal'
 
 interface SearchBarProps {
@@ -94,10 +94,10 @@ function SearchBar({
   return (
     <>
       <div
-        className={`relative bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#006459]/30 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto cursor-text ${className}`}
+        className={`relative bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#00675B]/30 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto cursor-text ${className}`}
         onClick={() => handleOpenSearch(value)}
       >
-        <Search className="h-4 w-4 text-[#006459] flex-shrink-0 ml-1" />
+        <Search className="h-4 w-4 text-[#00675B] flex-shrink-0 ml-1" />
         <input
           type="text"
           placeholder={placeholder}
@@ -124,7 +124,7 @@ function SearchBar({
             e.stopPropagation()
             handleOpenSearch(value)
           }}
-          className="flex-shrink-0 min-h-[44px] min-w-[115px] sm:min-w-[145px] bg-[#006459] text-white px-3 sm:px-5 py-2 rounded-full text-xs sm:text-[15px] font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap flex items-center justify-center"
+          className="flex-shrink-0 min-h-[44px] min-w-[115px] sm:min-w-[145px] bg-[#00675B] text-white px-3 sm:px-5 py-2 rounded-full text-xs sm:text-[15px] font-semibold hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap flex items-center justify-center"
         >
           <span>Kërko {typedWord || '\u00A0'}</span>
           <span className="inline-block w-[1.5px] h-[13px] sm:h-[15px] bg-white/75 ml-1 align-middle animate-pulse" />

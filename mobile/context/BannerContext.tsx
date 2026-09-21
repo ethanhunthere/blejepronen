@@ -196,8 +196,8 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         return {
           label: 'SESIONI U MBYLL',
           accent: theme === 'green' ? colors.gold : colors.primary,
-          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 100, 89, 0.10)',
-          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 100, 89, 0.22)',
+          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 103, 91, 0.10)',
+          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 103, 91, 0.22)',
           icon: LogOut,
         }
       case 'success':
@@ -220,8 +220,8 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         return {
           label: 'NJOFTIM',
           accent: theme === 'green' ? colors.gold : colors.primary,
-          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 100, 89, 0.10)',
-          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 100, 89, 0.22)',
+          bg: theme === 'green' ? 'rgba(212, 175, 55, 0.14)' : 'rgba(0, 103, 91, 0.10)',
+          border: theme === 'green' ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 103, 91, 0.22)',
           icon: Info,
         }
     }
@@ -246,7 +246,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
               styles.iconBox,
               {
                 backgroundColor: theme === 'green' ? colors.gold : colors.primary,
-                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 100, 89, 0.3)',
+                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 103, 91, 0.3)',
               },
             ]}
           >
@@ -288,7 +288,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
               styles.iconBox,
               {
                 backgroundColor: theme === 'green' ? colors.gold : colors.primary,
-                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 100, 89, 0.3)',
+                borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(0, 103, 91, 0.3)',
               },
             ]}
           >
@@ -319,7 +319,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
       : banner?.type === 'logout'
       ? theme === 'green'
         ? 'rgba(212, 175, 55, 0.35)'
-        : 'rgba(0, 100, 89, 0.25)'
+        : 'rgba(0, 103, 91, 0.25)'
       : theme === 'white'
       ? 'rgba(0, 0, 0, 0.08)'
       : theme === 'green'

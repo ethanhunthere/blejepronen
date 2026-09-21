@@ -13,10 +13,8 @@ import {
   Clock,
   TrendingUp,
   ArrowRight,
-  ShieldCheck,
   ChevronRight,
   Loader2,
-  Command,
 } from 'lucide-react'
 import {
   OmniResultItem,
@@ -222,7 +220,7 @@ export default function OmniSearchModal({
       >
         {/* Search Header Bar */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-white/10">
-          <Search className="h-5 w-5 text-[#006459] dark:text-[#C8B882] flex-shrink-0" />
+          <Search className="h-5 w-5 text-[#00675B] dark:text-[#C8B882] flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -233,7 +231,7 @@ export default function OmniSearchModal({
             className="flex-1 bg-transparent text-[16px] sm:text-[17px] font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/40 outline-none border-none"
           />
           {loading && (
-            <Loader2 className="h-4 w-4 text-[#006459] animate-spin flex-shrink-0" />
+            <Loader2 className="h-4 w-4 text-[#00675B] animate-spin flex-shrink-0" />
           )}
           {query.length > 0 && !loading && (
             <button
@@ -267,7 +265,7 @@ export default function OmniSearchModal({
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === 'all'
-                  ? 'bg-[#006459] text-white shadow-xs'
+                  ? 'bg-[#00675B] text-white shadow-xs'
                   : 'text-gray-600 dark:text-white/70 hover:bg-gray-200/60 dark:hover:bg-white/10'
               }`}
             >
@@ -283,7 +281,7 @@ export default function OmniSearchModal({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   activeTab === 'listing'
-                    ? 'bg-[#006459] text-white shadow-xs'
+                    ? 'bg-[#00675B] text-white shadow-xs'
                     : 'text-gray-600 dark:text-white/70 hover:bg-gray-200/60 dark:hover:bg-white/10'
                 }`}
               >
@@ -300,7 +298,7 @@ export default function OmniSearchModal({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   activeTab === 'agency'
-                    ? 'bg-[#006459] text-white shadow-xs'
+                    ? 'bg-[#00675B] text-white shadow-xs'
                     : 'text-gray-600 dark:text-white/70 hover:bg-gray-200/60 dark:hover:bg-white/10'
                 }`}
               >
@@ -317,7 +315,7 @@ export default function OmniSearchModal({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   activeTab === 'agent'
-                    ? 'bg-[#006459] text-white shadow-xs'
+                    ? 'bg-[#00675B] text-white shadow-xs'
                     : 'text-gray-600 dark:text-white/70 hover:bg-gray-200/60 dark:hover:bg-white/10'
                 }`}
               >
@@ -334,7 +332,7 @@ export default function OmniSearchModal({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                   activeTab === 'location'
-                    ? 'bg-[#006459] text-white shadow-xs'
+                    ? 'bg-[#00675B] text-white shadow-xs'
                     : 'text-gray-600 dark:text-white/70 hover:bg-gray-200/60 dark:hover:bg-white/10'
                 }`}
               >
@@ -371,7 +369,7 @@ export default function OmniSearchModal({
                       <div
                         key={item}
                         onClick={() => setQuery(item)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-[#006459]/10 hover:text-[#006459] dark:hover:text-[#C8B882] rounded-xl text-xs font-medium cursor-pointer transition-all group"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-[#00675B]/10 hover:text-[#00675B] dark:hover:text-[#C8B882] rounded-xl text-xs font-medium cursor-pointer transition-all group"
                       >
                         <span>{item}</span>
                         <button
@@ -398,7 +396,7 @@ export default function OmniSearchModal({
                       key={item}
                       type="button"
                       onClick={() => setQuery(item)}
-                      className="text-left px-3 py-2.5 rounded-2xl bg-gray-50 dark:bg-white/[0.04] hover:bg-[#006459]/10 hover:border-[#006459]/20 border border-gray-100 dark:border-white/5 text-xs font-medium text-gray-800 dark:text-white/90 transition-all flex items-center justify-between"
+                      className="text-left px-3 py-2.5 rounded-2xl bg-gray-50 dark:bg-white/[0.04] hover:bg-[#00675B]/10 hover:border-[#00675B]/20 border border-gray-100 dark:border-white/5 text-xs font-medium text-gray-800 dark:text-white/90 transition-all flex items-center justify-between"
                     >
                       <span className="truncate">{item}</span>
                       <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
@@ -422,7 +420,7 @@ export default function OmniSearchModal({
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`flex items-center gap-3.5 p-3 rounded-2xl cursor-pointer transition-all duration-150 ${
                       isSelected
-                        ? 'bg-[#006459]/[0.08] dark:bg-white/10 ring-1 ring-[#006459]/25 shadow-xs'
+                        ? 'bg-[#00675B]/[0.08] dark:bg-white/10 ring-1 ring-[#00675B]/25 shadow-xs'
                         : 'hover:bg-gray-50 dark:hover:bg-white/[0.03]'
                     }`}
                   >
@@ -437,13 +435,13 @@ export default function OmniSearchModal({
                           className="object-cover"
                         />
                       ) : item.entityType === 'location' ? (
-                        <MapPin className="h-5 w-5 text-[#006459] dark:text-[#C8B882]" />
+                        <MapPin className="h-5 w-5 text-[#00675B] dark:text-[#C8B882]" />
                       ) : item.entityType === 'agency' ? (
-                        <Building2 className="h-5 w-5 text-[#006459] dark:text-[#C8B882]" />
+                        <Building2 className="h-5 w-5 text-[#00675B] dark:text-[#C8B882]" />
                       ) : item.entityType === 'agent' ? (
                         <User className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                       ) : (
-                        <Home className="h-5 w-5 text-[#006459]" />
+                        <Home className="h-5 w-5 text-[#00675B]" />
                       )}
                     </div>
 
@@ -458,7 +456,7 @@ export default function OmniSearchModal({
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
                               item.entityType === 'agency'
-                                ? 'bg-[#006459]/10 text-[#006459] dark:bg-[#C8B882]/20 dark:text-[#C8B882]'
+                                ? 'bg-[#00675B]/10 text-[#00675B] dark:bg-[#C8B882]/20 dark:text-[#C8B882]'
                                 : item.badge === 'Në shitje'
                                 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                                 : 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
@@ -478,7 +476,7 @@ export default function OmniSearchModal({
                     <div className="flex items-center gap-2 flex-shrink-0 text-right">
                       {item.price !== null && item.price !== undefined ? (
                         <div className="text-right">
-                          <span className="text-[14px] font-extrabold text-[#006459] dark:text-[#C8B882]">
+                          <span className="text-[14px] font-extrabold text-[#00675B] dark:text-[#C8B882]">
                             {formatPrice(item.price)}
                           </span>
                         </div>
@@ -513,7 +511,7 @@ export default function OmniSearchModal({
                     onClose()
                     router.push('/listings')
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] transition-all"
                 >
                   Shfleto të gjitha pronat
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -536,7 +534,7 @@ export default function OmniSearchModal({
               Zgjidh
             </span>
           </div>
-          <span className="text-[11px] font-medium text-[#006459] dark:text-[#C8B882]">
+          <span className="text-[11px] font-medium text-[#00675B] dark:text-[#C8B882]">
             Bleje Pronën Discovery Engine
           </span>
         </div>

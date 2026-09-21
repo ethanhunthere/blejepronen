@@ -29,11 +29,11 @@ export default function ListingsError({
           Nuk mundëm të ngarkonim pronat. Ju lutemi provoni përsëri.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-[#006459] text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">
+          <Button onClick={reset} className="bg-[#00675B] text-white hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer">
             Provo përsëri
           </Button>
           <Link href="/">
-            <Button variant="outline" className="bg-white border-gray-200 text-gray-600 hover:border-[#006459] hover:text-[#006459] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
+            <Button variant="outline" className="bg-white border-gray-200 text-gray-600 hover:border-[#00675B] hover:text-[#00675B] hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 ease-out cursor-pointer">
               Kthehu në ballinë
             </Button>
           </Link>

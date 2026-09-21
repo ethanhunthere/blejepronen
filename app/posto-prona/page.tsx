@@ -1021,18 +1021,18 @@ export default function PostoPronaPage() {
       {uploading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-3xl bg-white border border-gray-100 shadow-2xl p-8 text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-[#006459]/10 text-[#006459] flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 rounded-2xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center mx-auto mb-5">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
             <h2 className="text-xl font-bold text-[#101828] mb-2">Duke publikuar pronën tënde...</h2>
             <p className="text-sm text-gray-500 mb-6">Optimizimi dhe ngarkimi i fotove me cilësi të lartë.</p>
             <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
               <div
-                className="h-full bg-[#006459] transition-all duration-300 rounded-full"
+                className="h-full bg-[#00675B] transition-all duration-300 rounded-full"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
-            <p className="text-xs font-semibold text-[#006459]">{uploadProgress}% përfunduar</p>
+            <p className="text-xs font-semibold text-[#00675B]">{uploadProgress}% përfunduar</p>
           </div>
         </div>
       )}
@@ -1041,7 +1041,7 @@ export default function PostoPronaPage() {
       <div className="bg-white border-b border-gray-200/80 pt-8 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#006459]/10 text-[#006459] text-xs font-bold uppercase tracking-wider mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00675B]/10 text-[#00675B] text-xs font-bold uppercase tracking-wider mb-4">
               <CheckCircle2 className="w-3.5 h-3.5" />
               Posto pa pagesë · 30 Ditë Falas
             </div>
@@ -1077,7 +1077,7 @@ export default function PostoPronaPage() {
               </div>
               <Link
                 href="/profili"
-                className="inline-flex items-center justify-center min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#006459] text-white hover:bg-[#005048] transition-all shadow-sm shrink-0"
+                className="inline-flex items-center justify-center min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#00675B] text-white hover:bg-[#004D43] transition-all shadow-sm shrink-0"
               >
                 Shko te profili për verifikim →
               </Link>
@@ -1093,7 +1093,7 @@ export default function PostoPronaPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-[#101828] flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-[#006459]/10 text-[#006459] text-sm font-black flex items-center justify-center">
+                    <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                       1
                     </span>
                     Çfarë lloj prone po postoni?
@@ -1117,7 +1117,7 @@ export default function PostoPronaPage() {
                         onClick={() => handleCategorySelect(catKey)}
                         className={`group relative p-3 sm:p-3.5 rounded-xl sm:rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border ${
                           isSelected
-                            ? 'bg-[#006459]/[0.05] border-[#006459] shadow-xs ring-1 sm:ring-2 ring-[#006459]/15'
+                            ? 'bg-[#00675B]/[0.05] border-[#00675B] shadow-xs ring-1 sm:ring-2 ring-[#00675B]/15'
                             : 'bg-white border-gray-200/90 hover:border-gray-300 hover:bg-gray-50/70 hover:shadow-2xs'
                         }`}
                       >
@@ -1126,7 +1126,7 @@ export default function PostoPronaPage() {
                             <div
                               className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected
-                                  ? 'bg-[#006459] text-white shadow-2xs'
+                                  ? 'bg-[#00675B] text-white shadow-2xs'
                                   : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200/80 group-hover:text-gray-900'
                               }`}
                             >
@@ -1137,14 +1137,14 @@ export default function PostoPronaPage() {
                               <span
                                 className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider transition-colors ${
                                   isSelected
-                                    ? 'bg-[#006459]/10 text-[#006459]'
+                                    ? 'bg-[#00675B]/10 text-[#00675B]'
                                     : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200/60'
                                 }`}
                               >
                                 {cat.badge}
                               </span>
                               {isSelected && (
-                                <div className="w-4 h-4 rounded-full bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <div className="w-4 h-4 rounded-full bg-[#00675B] text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </div>
                               )}
@@ -1153,7 +1153,7 @@ export default function PostoPronaPage() {
 
                           <h3
                             className={`text-xs sm:text-sm font-extrabold leading-tight transition-colors ${
-                              isSelected ? 'text-[#006459]' : 'text-[#101828]'
+                              isSelected ? 'text-[#00675B]' : 'text-[#101828]'
                             }`}
                           >
                             {cat.label}
@@ -1183,7 +1183,7 @@ export default function PostoPronaPage() {
                           onClick={() => setFormData((prev) => ({ ...prev, type: t }))}
                           className={`min-h-[46px] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 border ${
                             isActive
-                              ? 'bg-[#006459] text-white border-[#006459] shadow-sm'
+                              ? 'bg-[#00675B] text-white border-[#00675B] shadow-sm'
                               : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                           }`}
                         >
@@ -1197,7 +1197,7 @@ export default function PostoPronaPage() {
                 {/* DEDICATED SYNCHRONIZED OPTIONS PANEL FOR SELECTED CATEGORY */}
                 <div className="pt-5 border-t border-gray-100/90 space-y-5">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#006459] bg-[#006459]/10 px-2.5 py-1 rounded-lg">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#00675B] bg-[#00675B]/10 px-2.5 py-1 rounded-lg">
                       Opsionet e Detajuara · {activeCategory.label}
                     </span>
                     <span className="text-xs text-gray-500 hidden sm:inline-block">
@@ -1234,7 +1234,7 @@ export default function PostoPronaPage() {
                                 }}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -1264,7 +1264,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
                                 className={`px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
@@ -1292,7 +1292,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
                                   className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1318,7 +1318,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1344,7 +1344,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Ballkon|Tarracë/i, b === 'Pa ballkon' ? '' : b)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1372,7 +1372,7 @@ export default function PostoPronaPage() {
                                 onClick={() => syncSingleChoiceFeature(/Orientimi/i, featStr)}
                                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
@@ -1403,7 +1403,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -1430,7 +1430,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
                                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1455,7 +1455,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
                                   className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1484,7 +1484,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/oborr/i, o === 'Pa oborr' ? '' : o)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1510,7 +1510,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Garazhë|Vendparkim/i, p)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1536,7 +1536,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1568,7 +1568,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -1595,7 +1595,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
                                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1620,7 +1620,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, rooms: r }))}
                                   className={`w-9 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1649,7 +1649,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Pishinë|Jacuzzi|Sauna|Spa/i, p === 'Pa pishinë' ? '' : p)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1675,7 +1675,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Banjo/i, b)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1702,11 +1702,11 @@ export default function PostoPronaPage() {
                                 onClick={() => toggleFeature(feat)}
                                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
                                   isSel
-                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
-                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                {isSel && <Check className="w-3 h-3 text-[#00675B] stroke-[3]" />}
                                 <span>{feat}</span>
                               </button>
                             )
@@ -1734,7 +1734,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -1767,11 +1767,11 @@ export default function PostoPronaPage() {
                                   }}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
                                     isSel
-                                      ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                      ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
-                                  {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                  {isSel && <Check className="w-3 h-3 text-[#00675B] stroke-[3]" />}
                                   <span>{doc}</span>
                                 </button>
                               )
@@ -1794,7 +1794,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Rrugë|magjistrale/i, r)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1822,11 +1822,11 @@ export default function PostoPronaPage() {
                                   onClick={() => toggleFeature(util)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
                                     isSel
-                                      ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                      ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
-                                  {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                  {isSel && <Check className="w-3 h-3 text-[#00675B] stroke-[3]" />}
                                   <span>{util}</span>
                                 </button>
                               )
@@ -1848,7 +1848,7 @@ export default function PostoPronaPage() {
                                   onClick={() => syncSingleChoiceFeature(/Terren|Pjerrësi|Kodrinor/i, rel)}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1880,7 +1880,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -1908,7 +1908,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, rooms: targetRoom }))}
                                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1934,7 +1934,7 @@ export default function PostoPronaPage() {
                                   onClick={() => setFormData((prev) => ({ ...prev, floor: fl }))}
                                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                     isSel
-                                      ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                      ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                       : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                   }`}
                                 >
@@ -1961,11 +1961,11 @@ export default function PostoPronaPage() {
                                 onClick={() => toggleFeature(feat)}
                                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
                                   isSel
-                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
-                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                {isSel && <Check className="w-3 h-3 text-[#00675B] stroke-[3]" />}
                                 <span>{feat}</span>
                               </button>
                             )
@@ -1993,7 +1993,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, subtype: st }))}
                                 className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                                 }`}
                               >
@@ -2023,7 +2023,7 @@ export default function PostoPronaPage() {
                                 onClick={() => setFormData((prev) => ({ ...prev, floor: item.val }))}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                   isSel
-                                    ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                                    ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
@@ -2049,11 +2049,11 @@ export default function PostoPronaPage() {
                                 onClick={() => toggleFeature(feat)}
                                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border flex items-center gap-1.5 ${
                                   isSel
-                                    ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                                    ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                                     : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                                 }`}
                               >
-                                {isSel && <Check className="w-3 h-3 text-[#006459] stroke-[3]" />}
+                                {isSel && <Check className="w-3 h-3 text-[#00675B] stroke-[3]" />}
                                 <span>{feat}</span>
                               </button>
                             )
@@ -2069,7 +2069,7 @@ export default function PostoPronaPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-[#101828] flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-[#006459]/10 text-[#006459] text-sm font-black flex items-center justify-center">
+                    <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                       2
                     </span>
                     Vendndodhja e pronës
@@ -2091,7 +2091,7 @@ export default function PostoPronaPage() {
                       value={formData.city}
                       onChange={handleChange}
                       style={{ colorScheme: 'light' }}
-                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 transition-all cursor-pointer"
+                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                       required
                     >
                       <option value="">Zgjidhni qytetin</option>
@@ -2115,7 +2115,7 @@ export default function PostoPronaPage() {
                       onChange={handleChange}
                       disabled={!formData.city}
                       style={{ colorScheme: 'light' }}
-                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <option value="">
                         {formData.city ? 'Zgjidhni lagjen...' : 'Zgjidhni qytetin së pari'}
@@ -2142,7 +2142,7 @@ export default function PostoPronaPage() {
                       value={formData.address}
                       onChange={handleChange}
                       placeholder="p.sh. Rruga Fehmi Agani, përballë parkut"
-                      className="pl-10 h-12 rounded-xl bg-white border-gray-200 text-[#101828] focus:border-[#006459]"
+                      className="pl-10 h-12 rounded-xl bg-white border-gray-200 text-[#101828] focus:border-[#00675B]"
                       required
                     />
                   </div>
@@ -2156,7 +2156,7 @@ export default function PostoPronaPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-[#101828] flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-[#006459]/10 text-[#006459] text-sm font-black flex items-center justify-center">
+                    <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                       3
                     </span>
                     Specifikat teknike & Çmimi
@@ -2173,7 +2173,7 @@ export default function PostoPronaPage() {
                       Çmimi i kërkuar {formData.type === 'qira' ? '(€ / Muaj)' : '(€ Total)'} <span className="text-red-500">*</span>
                     </Label>
                     {formData.price && (
-                      <span className="text-sm font-bold text-[#006459] bg-[#006459]/10 px-2.5 py-0.5 rounded-lg">
+                      <span className="text-sm font-bold text-[#00675B] bg-[#00675B]/10 px-2.5 py-0.5 rounded-lg">
                         {formatPriceDisplay(formData.price)} {formData.type === 'qira' ? '/muaj' : ''}
                       </span>
                     )}
@@ -2207,7 +2207,7 @@ export default function PostoPronaPage() {
                         onClick={() => setFormData((prev) => ({ ...prev, price: pVal }))}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                           formData.price === pVal
-                            ? 'bg-[#006459] text-white'
+                            ? 'bg-[#00675B] text-white'
                             : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -2232,7 +2232,7 @@ export default function PostoPronaPage() {
                           onClick={() => setFormData((prev) => ({ ...prev, areaUnit: 'ari' }))}
                           className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
                             formData.areaUnit === 'ari'
-                              ? 'bg-white text-[#006459] shadow-2xs'
+                              ? 'bg-white text-[#00675B] shadow-2xs'
                               : 'text-gray-500 hover:text-gray-900'
                           }`}
                         >
@@ -2243,7 +2243,7 @@ export default function PostoPronaPage() {
                           onClick={() => setFormData((prev) => ({ ...prev, areaUnit: 'm2' }))}
                           className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
                             formData.areaUnit === 'm2'
-                              ? 'bg-white text-[#006459] shadow-2xs'
+                              ? 'bg-white text-[#00675B] shadow-2xs'
                               : 'text-gray-500 hover:text-gray-900'
                           }`}
                         >
@@ -2272,7 +2272,7 @@ export default function PostoPronaPage() {
                         </span>
                       </div>
                       {formData.land_ari && (
-                        <p className="text-xs font-semibold text-[#006459] mt-1.5">
+                        <p className="text-xs font-semibold text-[#00675B] mt-1.5">
                           E barabartë me: {formData.area_m2 || 0} m²
                         </p>
                       )}
@@ -2296,7 +2296,7 @@ export default function PostoPronaPage() {
                         </span>
                       </div>
                       {formData.category === 'toke' && formData.land_ari && (
-                        <p className="text-xs font-semibold text-[#006459] mt-1.5">
+                        <p className="text-xs font-semibold text-[#00675B] mt-1.5">
                           E barabartë me: {formData.land_ari} Ari
                         </p>
                       )}
@@ -2323,7 +2323,7 @@ export default function PostoPronaPage() {
                         }}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer border ${
                           formData.area_m2 === preset.value.toString()
-                            ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                            ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                             : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -2335,8 +2335,8 @@ export default function PostoPronaPage() {
                   {/* Price per sqm display */}
                   {pricePerM2 && formData.type === 'shitje' && (
                     <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg mt-1">
-                      <Tag className="w-3.5 h-3.5 text-[#006459]" />
-                      Çmimi për m²: <span className="text-[#006459] font-bold">{pricePerM2.toLocaleString('sq-AL')} € / m²</span>
+                      <Tag className="w-3.5 h-3.5 text-[#00675B]" />
+                      Çmimi për m²: <span className="text-[#00675B] font-bold">{pricePerM2.toLocaleString('sq-AL')} € / m²</span>
                     </div>
                   )}
                 </div>
@@ -2355,7 +2355,7 @@ export default function PostoPronaPage() {
                         value={formData.rooms}
                         onChange={handleChange}
                         style={{ colorScheme: 'light' }}
-                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 transition-all cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                         required
                       >
                         {(activeCategory.roomOptions || [1, 2, 3, 4, 5, 6]).map((r) => (
@@ -2379,7 +2379,7 @@ export default function PostoPronaPage() {
                         value={formData.floor}
                         onChange={handleChange}
                         style={{ colorScheme: 'light' }}
-                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#006459]/50 transition-all cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                       >
                         {(activeCategory.floors || ['P/D', '1', '2', '3', '4', '5+']).map((fl) => (
                           <option key={fl} value={fl}>
@@ -2406,7 +2406,7 @@ export default function PostoPronaPage() {
                           onClick={() => setFormData((prev) => ({ ...prev, condition: cond.value }))}
                           className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border ${
                             isCondActive
-                              ? 'bg-[#006459] text-white border-[#006459] shadow-xs'
+                              ? 'bg-[#00675B] text-white border-[#00675B] shadow-xs'
                               : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                           }`}
                         >
@@ -2435,11 +2435,11 @@ export default function PostoPronaPage() {
                           onClick={() => toggleFeature(feat)}
                           className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer border flex items-center gap-1.5 ${
                             isFeatActive
-                              ? 'bg-[#006459]/10 text-[#006459] border-[#006459]/40 font-semibold shadow-2xs'
+                              ? 'bg-[#00675B]/10 text-[#00675B] border-[#00675B]/40 font-semibold shadow-2xs'
                               : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                           }`}
                         >
-                          {isFeatActive && <Check className="w-3.5 h-3.5 text-[#006459] stroke-[3]" />}
+                          {isFeatActive && <Check className="w-3.5 h-3.5 text-[#00675B] stroke-[3]" />}
                           <span>{feat}</span>
                         </button>
                       )
@@ -2452,7 +2452,7 @@ export default function PostoPronaPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-[#101828] flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-[#006459]/10 text-[#006459] text-sm font-black flex items-center justify-center">
+                    <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                       4
                     </span>
                     Titulli & Përshkrimi
@@ -2471,7 +2471,7 @@ export default function PostoPronaPage() {
                     <button
                       type="button"
                       onClick={handleSuggestTitle}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#006459] hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#00675B] hover:underline cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       Sugjero titull tërheqës
@@ -2520,14 +2520,14 @@ export default function PostoPronaPage() {
                         disabled={isGeneratingDesc}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 ${
                           formData.description.trim().length > 0
-                            ? 'bg-[#C8B882]/25 text-[#006459] hover:bg-[#C8B882]/40 border border-[#C8B882]/50'
-                            : 'bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white border border-[#006459]/20'
+                            ? 'bg-[#C8B882]/25 text-[#00675B] hover:bg-[#C8B882]/40 border border-[#C8B882]/50'
+                            : 'bg-[#00675B]/10 text-[#00675B] hover:bg-[#00675B] hover:text-white border border-[#00675B]/20'
                         }`}
                       >
                         {isGeneratingDesc ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <FileText className="w-3.5 h-3.5 text-[#006459]" />
+                          <FileText className="w-3.5 h-3.5 text-[#00675B]" />
                         )}
                         <span>
                           {isGeneratingDesc
@@ -2548,7 +2548,7 @@ export default function PostoPronaPage() {
                     placeholder={activeCategory.descriptionPlaceholder}
                     maxLength={MAX_DESCRIPTION_LENGTH}
                     rows={6}
-                    className="w-full p-4 rounded-xl border border-gray-200 text-sm sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006459]/40 focus:border-[#006459] resize-y transition-all leading-relaxed"
+                    className="w-full p-4 rounded-xl border border-gray-200 text-sm sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00675B]/40 focus:border-[#00675B] resize-y transition-all leading-relaxed"
                     required
                   />
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mt-1.5 text-xs text-gray-500">
@@ -2569,7 +2569,7 @@ export default function PostoPronaPage() {
                 <div>
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg sm:text-xl font-bold text-[#101828] flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-xl bg-[#006459]/10 text-[#006459] text-sm font-black flex items-center justify-center">
+                      <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                         5
                       </span>
                       Fotografitë e pronës
@@ -2593,8 +2593,8 @@ export default function PostoPronaPage() {
                   onDrop={handleDropImages}
                   className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                     isDragOver
-                      ? 'border-[#006459] bg-[#006459]/5 scale-[0.99]'
-                      : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-[#006459]/60'
+                      ? 'border-[#00675B] bg-[#00675B]/5 scale-[0.99]'
+                      : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50 hover:border-[#00675B]/60'
                   }`}
                 >
                   <input
@@ -2606,7 +2606,7 @@ export default function PostoPronaPage() {
                     onChange={handleImageSelect}
                   />
                   <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                    <div className="w-14 h-14 rounded-2xl bg-[#006459]/10 text-[#006459] flex items-center justify-center mb-3">
+                    <div className="w-14 h-14 rounded-2xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center mb-3">
                       <Upload className="w-6 h-6" />
                     </div>
                     <p className="text-sm sm:text-base font-bold text-[#101828]">
@@ -2636,7 +2636,7 @@ export default function PostoPronaPage() {
 
                         {/* Primary Badge */}
                         {i === 0 ? (
-                          <div className="absolute top-2 left-2 bg-[#006459] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                          <div className="absolute top-2 left-2 bg-[#00675B] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                             <Star className="w-3 h-3 fill-current" />
                             Kryesorja
                           </div>
@@ -2672,14 +2672,14 @@ export default function PostoPronaPage() {
                   onClick={() => setShowPreviewModal(true)}
                   className="lg:hidden w-full min-h-[44px] py-3 px-4 mb-3 rounded-2xl border border-gray-200 bg-white text-gray-700 text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
                 >
-                  <Eye className="w-4 h-4 text-[#006459]" />
+                  <Eye className="w-4 h-4 text-[#00675B]" />
                   <span>Shiko pamjen paraprake të shpalljes</span>
                 </button>
 
                 <Button
                   type="submit"
                   disabled={uploading}
-                  className="w-full h-14 rounded-2xl bg-[#006459] hover:bg-[#005048] text-white text-base font-bold shadow-lg shadow-[#006459]/20 hover:shadow-[#006459]/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full h-14 rounded-2xl bg-[#00675B] hover:bg-[#004D43] text-white text-base font-bold shadow-lg shadow-[#00675B]/20 hover:shadow-[#00675B]/30 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   {uploading ? (
                     <>
@@ -2695,11 +2695,11 @@ export default function PostoPronaPage() {
                 </Button>
                 <p className="text-center text-xs text-gray-500 mt-3">
                   Duke klikuar &quot;Publiko pronën falas&quot;, ju pranoni{' '}
-                  <Link href="/kushtet" className="text-[#006459] font-medium hover:underline">
+                  <Link href="/kushtet" className="text-[#00675B] font-medium hover:underline">
                     Kushtet e Shërbimit
                   </Link>{' '}
                   dhe{' '}
-                  <Link href="/privatesia" className="text-[#006459] font-medium hover:underline">
+                  <Link href="/privatesia" className="text-[#00675B] font-medium hover:underline">
                     Politikën e Privatësisë
                   </Link>
                   .
@@ -2713,7 +2713,7 @@ export default function PostoPronaPage() {
               <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-sm">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-                    <Eye className="w-3.5 h-3.5 text-[#006459]" />
+                    <Eye className="w-3.5 h-3.5 text-[#00675B]" />
                     Pamja paraprake
                   </span>
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
@@ -2769,7 +2769,7 @@ export default function PostoPronaPage() {
                     </div>
 
                     <div className="pt-2 flex items-baseline justify-between">
-                      <span className="text-base font-black text-[#006459]">
+                      <span className="text-base font-black text-[#00675B]">
                         {formatPriceDisplay(formData.price) || '0 €'}
                       </span>
                       {formData.type === 'qira' && <span className="text-xs text-gray-500">/muaj</span>}
@@ -2823,7 +2823,7 @@ export default function PostoPronaPage() {
           <div className="w-full max-w-sm bg-white rounded-3xl p-5 border border-gray-100 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-[#006459]" />
+                <Eye className="w-3.5 h-3.5 text-[#00675B]" />
                 Pamja paraprake
               </span>
               <button
@@ -2876,7 +2876,7 @@ export default function PostoPronaPage() {
                 </div>
 
                 <div className="pt-2 flex items-baseline justify-between">
-                  <span className="text-base font-black text-[#006459]">
+                  <span className="text-base font-black text-[#00675B]">
                     {formatPriceDisplay(formData.price) || '0 €'}
                   </span>
                   {formData.type === 'qira' && <span className="text-xs text-gray-500">/muaj</span>}
@@ -2887,7 +2887,7 @@ export default function PostoPronaPage() {
             <Button
               type="button"
               onClick={() => setShowPreviewModal(false)}
-              className="w-full mt-4 h-11 rounded-xl bg-[#006459] text-white font-bold text-xs cursor-pointer"
+              className="w-full mt-4 h-11 rounded-xl bg-[#00675B] text-white font-bold text-xs cursor-pointer"
             >
               Mbyll pamjen paraprake
             </Button>

@@ -8,8 +8,8 @@ export default function MesazhetPage() {
     <div className="flex-1 flex items-center justify-center p-6 bg-[#F2F7F7] min-h-[500px]">
       <div className="max-w-md w-full text-center bg-white border border-gray-100/90 shadow-sm rounded-3xl p-8 sm:p-10">
         {/* Modern Illustration Badge */}
-        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-[#006459]/10 flex items-center justify-center border border-[#006459]/15 shadow-inner mb-6">
-          <MessagesSquare className="w-10 h-10 text-[#006459]" />
+        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-[#00675B]/10 flex items-center justify-center border border-[#00675B]/15 shadow-inner mb-6">
+          <MessagesSquare className="w-10 h-10 text-[#00675B]" />
         </div>
 
         {/* Crisp High-Contrast Typography */}
@@ -30,7 +30,7 @@ export default function MesazhetPage() {
         <div className="pt-2 border-t border-gray-100">
           <Link
             href="/listings"
-            className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gray-50 hover:bg-gray-100 text-[#006459] text-xs sm:text-sm font-bold border border-gray-200 transition-colors"
+            className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gray-50 hover:bg-gray-100 text-[#00675B] text-xs sm:text-sm font-bold border border-gray-200 transition-colors"
           >
             <span>Eksploro pronat e reja</span>
             <ArrowRight className="w-4 h-4" />

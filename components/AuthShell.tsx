@@ -17,7 +17,7 @@ const AuthTealPanel = memo(function AuthTealPanel({
   subline: string
 }) {
   return (
-    <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#006459]">
+    <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#00675B]">
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.18),transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.08),transparent_70%)]" />
@@ -71,12 +71,12 @@ export default function AuthShell({
             <Image
               src="/logo-teal.png"
               alt="Bleje Pronën"
-              width={32}
-              height={32}
+              width={36}
+              height={36}
               priority
-              className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
+              className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
             />
-            <span className="text-2xl font-black tracking-tight text-[#006459]">
+            <span className="text-2xl font-black tracking-tight text-[#00675B]">
               Bleje <span className="text-[#C8B882]">Pronën</span>
             </span>
           </Link>

@@ -46,6 +46,37 @@ function getAdminClient() {
   })
 }
 
+interface RawListing {
+  id: string
+  title?: string | null
+  city?: string | null
+  neighborhood?: string | null
+  is_featured?: boolean | null
+  area_m2?: number | null
+  apartment_type?: string | null
+  rooms?: number | null
+  profiles?: { first_name?: string | null; last_name?: string | null; phone?: string | null } | { first_name?: string | null; last_name?: string | null; phone?: string | null }[] | null
+  type?: string | null
+  images?: string[] | null
+  price?: number | string | null
+  condition?: string | null
+  user_id?: string | null
+}
+
+interface RawProfile {
+  id: string
+  first_name?: string | null
+  last_name?: string | null
+  phone?: string | null
+  avatar_url?: string | null
+  city?: string | null
+  is_company?: boolean | null
+  account_type?: string | null
+  verified?: boolean | null
+  email_verified?: boolean | null
+  created_at?: string | null
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -130,7 +161,7 @@ export async function GET(request: Request) {
     const rawCompanies = (!companiesRes.error && Array.isArray(companiesRes.data)) ? companiesRes.data : []
 
     // 3. Process & score listings
-    const matchedListings: OmniResultItem[] = rawListings.map((item: any) => {
+    const matchedListings: OmniResultItem[] = (rawListings as unknown as RawListing[]).map((item) => {
       const normTitle = normalizeSearchString(item.title || '')
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
@@ -159,22 +190,23 @@ export async function GET(request: Request) {
       return {
         id: item.id,
         entityType: 'listing' as const,
-        title: item.title,
+        title: item.title || 'Pronë',
         subtitle: subtitleParts.join(' • '),
         badge: item.type === 'shitje' ? 'Në shitje' : 'Me qira',
         imageUrl: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null,
         price: Number(item.price) || 0,
-        city: item.city,
+        city: item.city || undefined,
         score,
         payload: {
-          type: item.type,
-          rooms: item.rooms,
-          area_m2: item.area_m2,
-          apartment_type: item.apartment_type,
-          condition: item.condition,
-          user_id: item.user_id,
-          seller_name: seller ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() : undefined,
-          seller_phone: seller?.phone,
+          // Supabase returns `type` as string|null — normalize to the payload union
+          type: item.type === 'shitje' || item.type === 'qira' ? item.type : undefined,
+          rooms: item.rooms ?? undefined,
+          area_m2: item.area_m2 ?? undefined,
+          apartment_type: item.apartment_type ?? undefined,
+          condition: item.condition ?? undefined,
+          user_id: item.user_id ?? undefined,
+          seller_name: seller ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || undefined : undefined,
+          seller_phone: seller?.phone ?? undefined,
         },
         targetUrl: `/listings/${item.id}`,
       }
@@ -184,13 +216,13 @@ export async function GET(request: Request) {
     const matchedAgencies: OmniResultItem[] = []
     const matchedAgents: OmniResultItem[] = []
 
-    for (const p of rawProfiles) {
+    for (const p of (rawProfiles as unknown as RawProfile[])) {
       const isCompany =
         p.last_name === 'Kompani' ||
         /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.first_name || '') ||
         /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.last_name || '') ||
-        Boolean((p as any).is_company) ||
-        (p as any).account_type === 'company'
+        Boolean(p.is_company) ||
+        p.account_type === 'company'
 
       const normFirst = normalizeSearchString(p.first_name || '')
       const normLast = normalizeSearchString(p.last_name || '')
@@ -224,12 +256,12 @@ export async function GET(request: Request) {
         city: undefined,
         score,
         payload: {
-          phone: p.phone,
-          email_verified: p.email_verified,
+          phone: p.phone || undefined,
+          email_verified: Boolean(p.email_verified),
           id: p.id,
           isCompany,
           account_type: isCompany ? 'company' : 'individual',
-          created_at: p.created_at,
+          created_at: p.created_at || undefined,
         },
         targetUrl: `/profili/${p.id}`,
       }
@@ -311,7 +343,7 @@ export async function GET(request: Request) {
     return NextResponse.json(responseData, {
       headers: { 'X-Cache': 'MISS' },
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Omni-search API error:', err)
     return NextResponse.json(
       {

@@ -61,7 +61,7 @@ function CookieBanner() {
         (isAuth
           ? // Continue the auth split-screen behind the consent bar so the
             // bottom band matches the page (white left / teal right).
-            'border-transparent bg-white lg:bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_55%,#006459_55%,#006459_100%)]'
+            'border-transparent bg-white lg:bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_55%,#00675B_55%,#00675B_100%)]'
           : 'bg-white border-gray-100')
       }
     >
@@ -82,8 +82,8 @@ function CookieBanner() {
             type="button"
             onClick={accept}
             className={
-              'w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#006459] px-4 text-sm font-medium text-white hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer' +
-              (isAuth ? ' lg:bg-white lg:text-[#006459] lg:hover:bg-gray-50' : '')
+              'w-full sm:w-auto h-11 inline-flex items-center justify-center rounded-md bg-[#00675B] px-4 text-sm font-medium text-white hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer' +
+              (isAuth ? ' lg:bg-white lg:text-[#00675B] lg:hover:bg-gray-50' : '')
             }
           >
             Prano

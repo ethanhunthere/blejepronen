@@ -57,7 +57,7 @@ export default function CompletoProfilinPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
       <div className="flex flex-col items-center gap-3 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#006459]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00675B]" />
         <p className="text-sm font-semibold text-gray-600">Po hapim konfigurimin e profilit tuaj...</p>
       </div>
     </div>

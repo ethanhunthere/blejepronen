@@ -140,7 +140,7 @@ export default function ContactSellerCard({
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
             Çmimi i kërkuar
           </span>
-          <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#006459] border border-emerald-100">
+          <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#00675B] border border-emerald-100">
             {type === 'shitje' ? 'Shitje direkte' : 'Qira mujore'}
           </span>
         </div>
@@ -219,7 +219,7 @@ export default function ContactSellerCard({
         {/* Seller Info Row */}
         <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50/70 border border-gray-100">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#006459]/10 border border-gray-200">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#00675B]/10 border border-gray-200">
               <Image
                 src={seller.avatarUrl || '/avatars/avatar-1.png'}
                 alt={seller.firstName || 'Shitësi'}
@@ -235,7 +235,7 @@ export default function ContactSellerCard({
               <div className="flex items-center gap-2 mt-0.5">
                 <a
                   href={`/profili/${seller.userId}`}
-                  className="text-[11px] font-medium text-[#006459] hover:underline inline-flex items-center gap-1"
+                  className="text-[11px] font-medium text-[#00675B] hover:underline inline-flex items-center gap-1"
                 >
                   Shiko profilin <ExternalLink className="h-2.5 w-2.5" />
                 </a>
@@ -279,7 +279,7 @@ export default function ContactSellerCard({
             {/* Direct Phone Call */}
             <a
               href={`tel:${seller.phone}`}
-              className="w-full min-h-[44px] bg-[#006459] hover:bg-[#005048] text-white py-2.5 px-4 rounded-2xl font-bold text-sm shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-[#00675B] hover:bg-[#004D43] text-white py-2.5 px-4 rounded-2xl font-bold text-sm shadow-md shadow-[#00675B]/20 hover:shadow-lg hover:shadow-[#00675B]/30 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-4 w-4" />
               <span>Telefono ({displayPhone})</span>
@@ -299,7 +299,7 @@ export default function ContactSellerCard({
               onClick={handleMessage}
               className="w-full min-h-[42px] bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 px-4 rounded-2xl font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
-              <MessagesSquare className="h-4 w-4 text-[#006459]" />
+              <MessagesSquare className="h-4 w-4 text-[#00675B]" />
               <span>Dërgo Mesazh në Platformë</span>
             </button>
           )

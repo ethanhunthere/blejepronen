@@ -165,7 +165,7 @@ export default function DeleteAccountModal({
                       <p className="text-sm font-semibold text-[#101828] truncate">{userName}</p>
                     )}
                     {isCompany && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-[#006459]/10 text-[#006459] rounded-full px-2 py-0.5 shrink-0">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-[#00675B]/10 text-[#00675B] rounded-full px-2 py-0.5 shrink-0">
                         <Building2 className="h-2.5 w-2.5" /> Kompani
                       </span>
                     )}

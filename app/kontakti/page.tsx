@@ -35,9 +35,9 @@ export default function ContactPage() {
           {/* Quick Contact Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
             {/* Email Box */}
-            <div className="flex flex-col justify-between p-5 bg-[#006459]/5 border border-[#006459]/15 rounded-2xl group hover:border-[#006459]/30 transition-all">
+            <div className="flex flex-col justify-between p-5 bg-[#00675B]/5 border border-[#00675B]/15 rounded-2xl group hover:border-[#00675B]/30 transition-all">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-[#006459] text-white flex items-center justify-center mb-3.5 shadow-sm shadow-[#006459]/20">
+                <div className="w-10 h-10 rounded-xl bg-[#00675B] text-white flex items-center justify-center mb-3.5 shadow-sm shadow-[#00675B]/20">
                   <Mail className="h-5 w-5" />
                 </div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -45,14 +45,14 @@ export default function ContactPage() {
                 </p>
                 <a
                   href="mailto:blejepronen@gmail.com"
-                  className="text-sm sm:text-base font-bold text-[#006459] hover:underline break-all"
+                  className="text-sm sm:text-base font-bold text-[#00675B] hover:underline break-all"
                 >
                   blejepronen@gmail.com
                 </a>
               </div>
               <a
                 href="mailto:blejepronen@gmail.com?subject=K%C3%ABrkes%C3%AB%20nga%20Bleje%20Pron%C3%ABn"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#006459] mt-4 group-hover:translate-x-0.5 transition-transform"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00675B] mt-4 group-hover:translate-x-0.5 transition-transform"
               >
                 <span>Dërgo email tani</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -99,7 +99,7 @@ export default function ContactPage() {
           {/* Department / Request Topics */}
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
-              <HelpCircle className="w-4 h-4 text-[#006459]" />
+              <HelpCircle className="w-4 h-4 text-[#00675B]" />
               <h2 className="text-base sm:text-lg font-bold text-[#101828] tracking-tight">
                 Për çfarë mund të na shkruani?
               </h2>
@@ -108,7 +108,7 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-2xs transition-all">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#006459] flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#00675B] flex items-center justify-center shrink-0 mt-0.5">
                     <Home className="w-4 h-4" />
                   </div>
                   <div>
@@ -173,7 +173,7 @@ export default function ContactPage() {
           </div>
 
           {/* Action Callout */}
-          <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-[#006459] to-[#004d44] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-[#006459]/15 mb-8">
+          <div className="p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-[#00675B] to-[#004d44] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-[#00675B]/15 mb-8">
             <div>
               <h3 className="text-base sm:text-lg font-bold tracking-tight">
                 Keni një pyetje specifike?
@@ -184,7 +184,7 @@ export default function ContactPage() {
             </div>
             <a
               href="mailto:blejepronen@gmail.com?subject=Pyetje%20p%C3%ABr%20Bleje%20Pron%C3%ABn"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-[#006459] text-xs sm:text-sm font-bold shadow-sm hover:bg-emerald-50 active:scale-95 transition-all text-center whitespace-nowrap cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-[#00675B] text-xs sm:text-sm font-bold shadow-sm hover:bg-emerald-50 active:scale-95 transition-all text-center whitespace-nowrap cursor-pointer"
             >
               Shkruaj Email
             </a>
@@ -194,18 +194,18 @@ export default function ContactPage() {
           <div className="border-t border-gray-100 pt-6 flex items-center justify-between flex-wrap gap-4 text-xs">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 font-semibold text-gray-600 hover:text-[#006459] transition-colors group"
+              className="inline-flex items-center gap-1.5 font-semibold text-gray-600 hover:text-[#00675B] transition-colors group"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
               <span>Kthehu në ballinë</span>
             </Link>
 
             <div className="flex items-center gap-4 text-gray-500">
-              <Link href="/kushtet" className="hover:text-[#006459] transition-colors">
+              <Link href="/kushtet" className="hover:text-[#00675B] transition-colors">
                 Kushtet e Përdorimit
               </Link>
               <span>•</span>
-              <Link href="/privatesia" className="hover:text-[#006459] transition-colors">
+              <Link href="/privatesia" className="hover:text-[#00675B] transition-colors">
                 Politika e Privatësisë
               </Link>
             </div>

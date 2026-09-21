@@ -148,7 +148,7 @@ export async function POST(request: Request) {
               <td align="center">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 480px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); border: 1px solid #E5E7EB;">
                   <tr>
-                    <td style="background-color: #006459; padding: 32px; text-align: center;">
+                    <td style="background-color: #00675B; padding: 32px; text-align: center;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Bleje Pronën</h1>
                       <p style="margin: 6px 0 0; color: rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 500;">Verifikimi i llogarisë suaj</p>
                     </td>
@@ -159,8 +159,8 @@ export async function POST(request: Request) {
                       <p style="margin: 0 0 28px; font-size: 14px; line-height: 1.6; color: #4B5563;">
                         Përdorni kodin e mëposhtëm 6-shifror për të konfirmuar email-in dhe për të aktivizuar llogarinë tuaj:
                       </p>
-                      <div style="margin: 0 auto 28px; display: inline-block; background-color: #F2F7F7; border: 2px dashed #006459; border-radius: 14px; padding: 16px 36px;">
-                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #006459;">
+                      <div style="margin: 0 auto 28px; display: inline-block; background-color: #F2F7F7; border: 2px dashed #00675B; border-radius: 14px; padding: 16px 36px;">
+                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #00675B;">
                           ${code}
                         </span>
                       </div>

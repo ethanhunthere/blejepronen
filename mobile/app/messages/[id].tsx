@@ -80,7 +80,7 @@ const QUICK_REPLIES = [
 ]
 
 export default function ChatConversationScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, initialText } = useLocalSearchParams<{ id: string; initialText?: string }>()
   const router = useRouter()
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
@@ -90,7 +90,7 @@ export default function ChatConversationScreen() {
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
   const [listing, setListing] = useState<ListingPreview | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
-  const [inputText, setInputText] = useState('')
+  const [inputText, setInputText] = useState(initialText || '')
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)

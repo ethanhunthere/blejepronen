@@ -185,8 +185,8 @@ export default function FollowButton({
         isFollowing
           ? isHovered
             ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:border-red-300'
-            : 'bg-emerald-50 text-[#006459] border border-emerald-200 hover:bg-emerald-100'
-          : 'bg-[#006459] text-white hover:bg-[#005048] shadow-sm'
+            : 'bg-emerald-50 text-[#00675B] border border-emerald-200 hover:bg-emerald-100'
+          : 'bg-[#00675B] text-white hover:bg-[#004D43] shadow-sm'
       } ${className}`}
       title={isFollowing ? 'Kliko për të ndaluar ndjekjen' : `Ndiq ${targetUserName}`}
     >

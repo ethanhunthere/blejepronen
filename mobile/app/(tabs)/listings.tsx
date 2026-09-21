@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   Pressable,
   RefreshControl,
   Platform,
@@ -11,7 +12,7 @@ import {
 import { BlurView } from 'expo-blur'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { Search, X, SlidersHorizontal, Building2 } from 'lucide-react-native'
+import { Search, X, SlidersHorizontal, Building2, ArrowDownUp } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
@@ -35,6 +36,14 @@ import {
   subscribeCachedListings,
 } from '@/lib/listings-cache'
 import { getSyncAuthUser } from '@/lib/auth-cache'
+import { TactilePressable } from '@/components/motion'
+
+const QUICK_SORT_OPTIONS: { id: PropertyFilterState['sortBy']; label: string }[] = [
+  { id: 'newest', label: 'Më të rejat' },
+  { id: 'price_asc', label: 'Çmimi: Ulët-Lart' },
+  { id: 'price_desc', label: 'Çmimi: Lart-Ulët' },
+  { id: 'area_desc', label: 'Sipërfaqja' },
+]
 
 export default function ListingsScreen() {
   const params = useLocalSearchParams<{
@@ -213,9 +222,9 @@ export default function ListingsScreen() {
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Top Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Eksploro Pronat</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Katalogu i Pronave</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-          {displayedListings.length} {displayedListings.length === 1 ? 'pronë e disponueshme' : 'prona të disponueshme'}
+          {displayedListings.length} {displayedListings.length === 1 ? 'pronë e listuar' : 'prona të listuara'}
         </Text>
       </View>
 
@@ -241,12 +250,9 @@ export default function ListingsScreen() {
           />
         }
         ListHeaderComponent={<>
-        {/* 
-          Search & Filter Row:
-          Identical design, bounded flex constraints, zero keyboard overflow
-        */}
+        {/* Search & Filter Row */}
         <View style={styles.searchRow}>
-          <Pressable
+          <TactilePressable
             style={[
               styles.searchBar,
               {
@@ -254,12 +260,13 @@ export default function ListingsScreen() {
               },
             ]}
             onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
               router.push({
                 pathname: '/search' as any,
                 params: filters.searchQuery ? { initialQuery: filters.searchQuery } : {},
               })
             }}
+            activeScale={0.98}
+            haptic="light"
           >
             <BlurView
               intensity={Platform.OS === 'ios' ? 70 : 100}
@@ -288,10 +295,10 @@ export default function ListingsScreen() {
                 <X size={16} color={colors.textMuted} />
               </Pressable>
             )}
-          </Pressable>
+          </TactilePressable>
 
           {/* Unified Filter Trigger Button */}
-          <Pressable
+          <TactilePressable
             style={[
               styles.filterButton,
               {
@@ -309,9 +316,10 @@ export default function ListingsScreen() {
               },
             ]}
             onPress={() => {
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
               setShowFilterModal(true)
             }}
+            activeScale={0.94}
+            haptic="selection"
           >
             {Platform.OS === 'ios' && activeFiltersCount === 0 && (
               <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]}>
@@ -345,13 +353,10 @@ export default function ListingsScreen() {
                 </Text>
               </View>
             )}
-          </Pressable>
+          </TactilePressable>
         </View>
 
-        {/* 
-          Shared Modular Filter Bar:
-          Exact same transaction toggle & category pills as Kërko tab
-        */}
+        {/* Shared Modular Filter Bar */}
         <PropertyFilterBar
           transactionType={filters.transactionType}
           onChangeTransactionType={(t) => setFilters((prev) => ({ ...prev, transactionType: t }))}
@@ -359,6 +364,55 @@ export default function ListingsScreen() {
           onChangeCategory={(c) => setFilters((prev) => ({ ...prev, category: c }))}
           categoryCounts={categoryCounts}
         />
+
+        {/* Quick Sort Pill Strip */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.sortScrollContent}
+          style={styles.sortScroll}
+        >
+          {QUICK_SORT_OPTIONS.map((opt) => {
+            const isSelected = filters.sortBy === opt.id
+            return (
+              <TactilePressable
+                key={opt.id}
+                style={[
+                  styles.sortChip,
+                  {
+                    backgroundColor: isSelected
+                      ? colors.primary
+                      : theme === 'white'
+                      ? '#FFFFFF'
+                      : colors.surface,
+                    borderColor: isSelected ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => {
+                  setFilters((prev) => ({ ...prev, sortBy: opt.id }))
+                }}
+                activeScale={0.95}
+                haptic="selection"
+              >
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    {
+                      color: isSelected
+                        ? theme === 'green'
+                          ? '#071C18'
+                          : '#FFFFFF'
+                        : colors.textSecondary,
+                      fontFamily: isSelected ? Fonts.bold : Fonts.medium,
+                    },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TactilePressable>
+            )
+          })}
+        </ScrollView>
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>
@@ -368,9 +422,8 @@ export default function ListingsScreen() {
               : CATEGORY_ITEMS.find((c) => c.id === filters.category)?.label || 'Prona'}
           </Text>
           {activeFiltersCount > 0 && (
-            <Pressable
+            <TactilePressable
               onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync()
                 setFilters({
                   ...DEFAULT_FILTER_STATE,
                   transactionType: filters.transactionType,
@@ -378,9 +431,11 @@ export default function ListingsScreen() {
                 })
               }}
               hitSlop={8}
+              activeScale={0.95}
+              haptic="light"
             >
               <Text style={[styles.resetLink, { color: colors.primary }]}>Pastro filtrat</Text>
-            </Pressable>
+            </TactilePressable>
           )}
         </View>
 
@@ -401,7 +456,7 @@ export default function ListingsScreen() {
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
               Provoni të ndryshoni filtrat ose pastroni kriteret e kërkimit.
             </Text>
-            <Pressable
+            <TactilePressable
               style={[
                 styles.resetButton,
                 {
@@ -411,15 +466,16 @@ export default function ListingsScreen() {
                 },
               ]}
               hitSlop={8}
+              activeScale={0.95}
+              haptic="light"
               onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                 setFilters(DEFAULT_FILTER_STATE)
               }}
             >
               <Text style={[styles.resetButtonText, { color: colors.primary }]}>
                 Pastro të gjitha filtrat
               </Text>
-            </Pressable>
+            </TactilePressable>
           </View>
         ) : null}
         </>}
@@ -536,6 +592,25 @@ const styles = StyleSheet.create({
     color: '#071C18',
     fontSize: 10,
     fontFamily: Fonts.bold,
+  },
+  sortScroll: {
+    marginTop: 6,
+    marginBottom: 8,
+    marginHorizontal: -16,
+  },
+  sortScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  sortChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 0.5,
+  },
+  sortChipText: {
+    fontSize: 12,
+    letterSpacing: -0.2,
   },
   sectionHeader: {
     flexDirection: 'row',

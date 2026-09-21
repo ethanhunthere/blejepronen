@@ -131,7 +131,7 @@ export default function FollowsModal({
             onClick={() => setActiveTab('followers')}
             className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
               activeTab === 'followers'
-                ? 'bg-white text-[#006459] shadow-xs'
+                ? 'bg-white text-[#00675B] shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
@@ -142,7 +142,7 @@ export default function FollowsModal({
             onClick={() => setActiveTab('following')}
             className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
               activeTab === 'following'
-                ? 'bg-white text-[#006459] shadow-xs'
+                ? 'bg-white text-[#00675B] shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
@@ -159,7 +159,7 @@ export default function FollowsModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={activeTab === 'followers' ? 'Kërko në ndiqës...' : 'Kërko llogari...'}
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459] transition-all"
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all"
             />
             {searchQuery && (
               <button
@@ -177,7 +177,7 @@ export default function FollowsModal({
         <div className="flex-1 overflow-y-auto px-4 py-2 divide-y divide-gray-50 min-h-[220px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-6 h-6 animate-spin text-[#006459] mb-2" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#00675B] mb-2" />
               <p className="text-xs">Duke ngarkuar...</p>
             </div>
           ) : filteredList.length === 0 ? (
@@ -215,7 +215,7 @@ export default function FollowsModal({
                     onClick={onClose}
                     className="flex items-center gap-3 min-w-0 flex-1 group"
                   >
-                    <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200 group-hover:border-[#006459]/40 transition-colors">
+                    <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200 group-hover:border-[#00675B]/40 transition-colors">
                       <Image
                         src={getAvatarUrl(item.avatarUrl)}
                         alt={item.name}
@@ -226,14 +226,14 @@ export default function FollowsModal({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs sm:text-sm font-bold text-[#101828] group-hover:text-[#006459] truncate transition-colors">
+                        <p className="text-xs sm:text-sm font-bold text-[#101828] group-hover:text-[#00675B] truncate transition-colors">
                           {item.name}
                         </p>
                         {item.isVerified && (
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         )}
                         {item.isCompany && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-bold rounded-md bg-[#006459]/10 text-[#006459]">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-bold rounded-md bg-[#00675B]/10 text-[#00675B]">
                             <Building2 className="w-2.5 h-2.5" />
                             Kompani
                           </span>

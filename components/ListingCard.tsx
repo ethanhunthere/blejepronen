@@ -147,7 +147,7 @@ const ListingCard = React.memo(function ListingCard({
                 className="bg-white/80 backdrop-blur-sm rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer touch-manipulation"
               >
                 <Heart
-                  className={`h-4 w-4 ${isFavorited ? 'text-[#006459]' : 'text-gray-500'}`}
+                  className={`h-4 w-4 ${isFavorited ? 'text-[#00675B]' : 'text-gray-500'}`}
                   fill={isFavorited ? 'currentColor' : 'none'}
                 />
               </button>
@@ -179,7 +179,7 @@ const ListingCard = React.memo(function ListingCard({
                 <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
               </div>
             ) : listing.apartment_type ? (
-              <div className="flex items-center gap-1 flex-shrink-0 text-[#006459] font-medium">
+              <div className="flex items-center gap-1 flex-shrink-0 text-[#00675B] font-medium">
                 <Building2 className="h-3.5 w-3.5" />
                 <span className="whitespace-nowrap truncate max-w-[120px]">{listing.apartment_type}</span>
               </div>
@@ -191,7 +191,7 @@ const ListingCard = React.memo(function ListingCard({
           </div>
 
           <div className="flex items-baseline gap-1 mt-auto">
-            <span suppressHydrationWarning className="text-[18px] font-bold text-[#006459] tracking-tight whitespace-nowrap">
+            <span suppressHydrationWarning className="text-[18px] font-bold text-[#00675B] tracking-tight whitespace-nowrap">
               {formatPrice(listing.price)}
             </span>
             {listing.type === 'qira' && <span className="text-[15px] text-[#4B5563]">/muaj</span>}

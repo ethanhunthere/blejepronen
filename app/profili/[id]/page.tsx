@@ -156,7 +156,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         {/* Breadcrumb / Back Link */}
         <Link
           href="/listings"
-          className="inline-flex items-center gap-1 text-gray-500 hover:text-[#006459] text-xs sm:text-sm font-semibold mb-6 transition-colors group"
+          className="inline-flex items-center gap-1 text-gray-500 hover:text-[#00675B] text-xs sm:text-sm font-semibold mb-6 transition-colors group"
         >
           <ChevronLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>Kthehu te të gjitha pronat</span>
@@ -193,7 +193,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                     </span>
                   )}
                   {isCompany && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#006459]/10 text-[#006459] border border-[#006459]/20">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#00675B]/10 text-[#00675B] border border-[#00675B]/20">
                       <Building2 className="h-3 w-3" />
                       Kompani
                     </span>
@@ -249,7 +249,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
               {cleanPhone && (
                 <a
                   href={`tel:${profile.phone}`}
-                  className="h-10 px-4 rounded-xl bg-[#006459] hover:bg-[#005048] text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+                  className="h-10 px-4 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all"
                 >
                   <Phone className="h-4 w-4" />
                   <span>Telefono ({displayPhone})</span>
@@ -278,7 +278,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
           <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-6 sm:p-7 mb-8">
             <div className="mb-4">
               <h2 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                <Share2 className="h-4 w-4 text-[#006459]" />
+                <Share2 className="h-4 w-4 text-[#00675B]" />
                 Rrjetet Sociale & Prezenca Digjitale
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -321,7 +321,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             <div className="mt-5">
               <Link
                 href="/listings"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] text-white text-xs font-bold hover:bg-[#005048] shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] text-white text-xs font-bold hover:bg-[#004D43] shadow-sm transition-all"
               >
                 Eksploro pronat
               </Link>

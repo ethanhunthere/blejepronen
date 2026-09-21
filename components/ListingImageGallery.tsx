@@ -122,7 +122,7 @@ export default function ListingImageGallery({
 
           {/* Badges */}
           <div className="absolute top-4 left-4 z-10">
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-[#006459] text-white shadow-lg">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-[#00675B] text-white shadow-lg">
               {typeLabel}
             </span>
           </div>
@@ -184,7 +184,7 @@ export default function ListingImageGallery({
 
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#006459] text-white shadow-sm">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#00675B] text-white shadow-sm">
               {typeLabel}
             </span>
           </div>

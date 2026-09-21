@@ -1,37 +1,22 @@
 {
   "expo": {
-    "name": "Bleje Pronën",
+    "name": "Bleje Pron\u00ebn",
     "slug": "blejepronen",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "blejepronen",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#006459",
-    "splash": {
-      "image": "./assets/images/splash-logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#006459"
-    },
+    "backgroundColor": "#00675B",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.blejepronen.app",
-      "backgroundColor": "#006459",
-      "splash": {
-        "image": "./assets/images/splash-logo.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#006459"
-      }
+      "backgroundColor": "#00675B"
     },
     "android": {
-      "backgroundColor": "#006459",
-      "splash": {
-        "image": "./assets/images/splash-logo.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#006459"
-      },
+      "backgroundColor": "#00675B",
       "adaptiveIcon": {
-        "backgroundColor": "#006459",
+        "backgroundColor": "#00675B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -59,24 +44,24 @@
           "image": "./assets/images/splash-logo.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#006459",
+          "backgroundColor": "#00675B",
           "dark": {
             "image": "./assets/images/splash-logo.png",
-            "backgroundColor": "#006459"
+            "backgroundColor": "#00675B"
           }
         }
       ],
       [
         "@config-plugins/react-native-webrtc",
         {
-          "microphonePermission": "Bleje Pronën ju lejon të telefononi direk në aplikacion me shitësin/blerësin (thirrje zanore falas)."
+          "microphonePermission": "Bleje Pron\u00ebn ju lejon t\u00eb telefononi direk n\u00eb aplikacion me shit\u00ebsin/bler\u00ebsin (thirrje zanore falas)."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Bleje Pronën përdor galerinë tuaj për të shtuar fotot e banesës dhe foton e profilit.",
-          "cameraPermission": "Bleje Pronën përdor kamerën për të fotografuar banesën që po postoni."
+          "photosPermission": "Bleje Pron\u00ebn p\u00ebrdor galerin\u00eb tuaj p\u00ebr t\u00eb shtuar fotot e banes\u00ebs dhe foton e profilit.",
+          "cameraPermission": "Bleje Pron\u00ebn p\u00ebrdor kamer\u00ebn p\u00ebr t\u00eb fotografuar banes\u00ebn q\u00eb po postoni."
         }
       ],
       "expo-secure-store"

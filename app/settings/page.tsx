@@ -671,7 +671,7 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-9 w-9 animate-spin text-[#006459] mx-auto mb-3" />
+          <Loader2 className="h-9 w-9 animate-spin text-[#00675B] mx-auto mb-3" />
           <p className="text-xs text-gray-500 font-semibold tracking-wide">Duke ngarkuar cilësimet...</p>
         </div>
       </div>
@@ -703,7 +703,7 @@ export default function SettingsPage() {
         <div className="mb-4">
           <Link
             href="/profili"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-500 hover:text-[#006459] transition-colors group cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-500 hover:text-[#00675B] transition-colors group cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span>Kthehu te profili</span>
@@ -723,7 +723,7 @@ export default function SettingsPage() {
             {currentUserId && (
               <Link
                 href={`/profili/${currentUserId}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:text-[#006459] hover:border-[#006459]/30 hover:shadow-xs transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/30 hover:shadow-xs transition-all cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Profili Publik</span>
@@ -733,7 +733,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => handleSaveSettings()}
               disabled={saving}
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[#006459] hover:bg-[#005048] text-white shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-75"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-75"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -752,7 +752,7 @@ export default function SettingsPage() {
         {saveSuccessBanner && (
           <div className="mb-6 flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 shadow-sm animate-in fade-in slide-in-from-top-3 duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#006459] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-[#00675B] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check className="w-5 h-5 stroke-[3]" />
               </div>
               <div>
@@ -787,7 +787,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-[#006459] text-white shadow-xs'
+                    ? 'bg-[#00675B] text-white shadow-xs'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
@@ -820,14 +820,14 @@ export default function SettingsPage() {
                   onClick={() => setIsCompany(false)}
                   className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                     !isCompany
-                      ? 'border-[#006459] bg-[#006459]/[0.03] shadow-sm ring-2 ring-[#006459]/10'
+                      ? 'border-[#00675B] bg-[#00675B]/[0.03] shadow-sm ring-2 ring-[#00675B]/10'
                       : 'border-gray-200 bg-gray-50/40 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-colors ${
-                        !isCompany ? 'bg-[#006459] text-white' : 'bg-gray-200 text-gray-600'
+                        !isCompany ? 'bg-[#00675B] text-white' : 'bg-gray-200 text-gray-600'
                       }`}>
                         <User className="w-5 h-5" />
                       </div>
@@ -850,7 +850,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      !isCompany ? 'border-[#006459] bg-[#006459]' : 'border-gray-300 bg-white'
+                      !isCompany ? 'border-[#00675B] bg-[#00675B]' : 'border-gray-300 bg-white'
                     }`}>
                       {!isCompany && <Check className="w-3 h-3 text-white stroke-[3]" />}
                     </div>
@@ -876,14 +876,14 @@ export default function SettingsPage() {
                   onClick={() => setIsCompany(true)}
                   className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                     isCompany
-                      ? 'border-[#006459] bg-[#006459]/[0.03] shadow-sm ring-2 ring-[#006459]/10'
+                      ? 'border-[#00675B] bg-[#00675B]/[0.03] shadow-sm ring-2 ring-[#00675B]/10'
                       : 'border-gray-200 bg-gray-50/40 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-colors ${
-                        isCompany ? 'bg-[#006459] text-white' : 'bg-gray-200 text-gray-600'
+                        isCompany ? 'bg-[#00675B] text-white' : 'bg-gray-200 text-gray-600'
                       }`}>
                         <Building2 className="w-5 h-5" />
                       </div>
@@ -897,7 +897,7 @@ export default function SettingsPage() {
                               E PAVERIFIKUAR
                             </span>
                           ) : (
-                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#006459]">
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#00675B]">
                               BIZNES
                             </span>
                           )}
@@ -906,22 +906,22 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      isCompany ? 'border-[#006459] bg-[#006459]' : 'border-gray-300 bg-white'
+                      isCompany ? 'border-[#00675B] bg-[#00675B]' : 'border-gray-300 bg-white'
                     }`}>
                       {isCompany && <Check className="w-3 h-3 text-white stroke-[3]" />}
                     </div>
                   </div>
                   <ul className="mt-3.5 space-y-1.5 text-xs text-gray-600 border-t border-gray-200/60 pt-3">
                     <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
                       <span>Logoja zyrtare e kompanisë në të gjitha shpalljet</span>
                     </li>
                     <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
                       <span>Shfaqje e NIPT-it, vitit të themelimit dhe adresës</span>
                     </li>
                     <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#006459] shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
                       <span>Faqe zyrtare e dedikuar me të gjitha pronat e agjencisë</span>
                     </li>
                   </ul>
@@ -952,8 +952,8 @@ export default function SettingsPage() {
                       const el = document.getElementById('company-details-section')
                       if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                        el.classList.add('ring-2', 'ring-[#006459]', 'transition-all')
-                        setTimeout(() => el.classList.remove('ring-2', 'ring-[#006459]'), 2000)
+                        el.classList.add('ring-2', 'ring-[#00675B]', 'transition-all')
+                        setTimeout(() => el.classList.remove('ring-2', 'ring-[#00675B]'), 2000)
                       }
                     }}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
@@ -966,10 +966,10 @@ export default function SettingsPage() {
             </div>
 
             {/* Live Profile Card Preview */}
-            <div className="bg-gradient-to-br from-[#006459]/[0.05] via-[#F2F7F7] to-[#C8B882]/[0.08] border border-[#006459]/15 rounded-3xl p-5 sm:p-6 shadow-sm">
+            <div className="bg-gradient-to-br from-[#00675B]/[0.05] via-[#F2F7F7] to-[#C8B882]/[0.08] border border-[#00675B]/15 rounded-3xl p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#006459]">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#00675B]">
                     Pamja Live e Profilit Tuaj Publik
                   </span>
                 </div>
@@ -979,7 +979,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#006459]/20 shadow-xs shrink-0 bg-gray-100">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#00675B]/20 shadow-xs shrink-0 bg-gray-100">
                   <Image
                     src={getAvatarUrl(avatarUrl)}
                     alt="Foto Profili"
@@ -999,7 +999,7 @@ export default function SettingsPage() {
                     <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
                       isCompany
                         ? isCompanyDataComplete
-                          ? 'bg-[#006459]/10 text-[#006459] border border-[#006459]/20'
+                          ? 'bg-[#00675B]/10 text-[#00675B] border border-[#00675B]/20'
                           : 'bg-amber-50 text-amber-800 border border-amber-200'
                         : isEmailVerified
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
@@ -1036,24 +1036,24 @@ export default function SettingsPage() {
                   <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-0.5">
                     {city && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#006459]" />
+                        <MapPin className="w-3.5 h-3.5 text-[#00675B]" />
                         {city}
                       </span>
                     )}
                     {(isCompany ? companyPhone : individualPhone) && (
                       <span className="flex items-center gap-1 font-mono">
-                        <Phone className="w-3.5 h-3.5 text-[#006459]" />
+                        <Phone className="w-3.5 h-3.5 text-[#00675B]" />
                         {isCompany ? companyPhone : individualPhone}
                       </span>
                     )}
                     {(isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)) && (
                       <span className="flex items-center gap-1 font-mono text-[11px]">
-                        <Mail className="w-3.5 h-3.5 text-[#006459]" />
+                        <Mail className="w-3.5 h-3.5 text-[#00675B]" />
                         {isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)}
                       </span>
                     )}
                     {isCompany && website && (
-                      <span className="flex items-center gap-1 text-[#006459] font-medium">
+                      <span className="flex items-center gap-1 text-[#00675B] font-medium">
                         <Globe className="w-3.5 h-3.5" />
                         {website.replace(/^https?:\/\//, '')}
                       </span>
@@ -1104,7 +1104,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setShowAvatarModal(true)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#006459]/10 text-[#006459] hover:bg-[#006459] hover:text-white transition-all cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#00675B]/10 text-[#00675B] hover:bg-[#00675B] hover:text-white transition-all cursor-pointer shadow-xs"
                     >
                       <ImageIcon className="w-3.5 h-3.5" />
                       Zgjidh nga biblioteka
@@ -1157,7 +1157,7 @@ export default function SettingsPage() {
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="p.sh. Elite Real Estate"
                       required
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1170,7 +1170,7 @@ export default function SettingsPage() {
                       value={companyContactPerson}
                       onChange={(e) => setCompanyContactPerson(e.target.value)}
                       placeholder="p.sh. Agron Berisha"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1183,7 +1183,7 @@ export default function SettingsPage() {
                       value={companyPhone}
                       onChange={(e) => setCompanyPhone(e.target.value)}
                       placeholder="+383 44 123 456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1194,7 +1194,7 @@ export default function SettingsPage() {
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     >
                       <option value="">Zgjidh qytetin...</option>
                       {CITIES.map((c) => (
@@ -1209,7 +1209,7 @@ export default function SettingsPage() {
                   <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#006459]" />
+                        <Mail className="w-4 h-4 text-[#00675B]" />
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
                           Email-i Zyrtar i Kompanisë për Kontakt
                         </label>
@@ -1225,7 +1225,7 @@ export default function SettingsPage() {
                       value={companyEmail}
                       onChange={(e) => setCompanyEmail(e.target.value)}
                       placeholder="p.sh. info@kompania.com ose agjencia@shembull.com"
-                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">
                       <p className="text-[11px] text-gray-500">
@@ -1236,7 +1236,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => handleUpdateAccountEmail(companyEmail)}
                           disabled={updatingEmail}
-                          className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                          className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
                         >
                           {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
                           <span>Bëje edhe email kryesor të llogarisë</span>
@@ -1254,7 +1254,7 @@ export default function SettingsPage() {
                       value={nipt}
                       onChange={(e) => setNipt(e.target.value)}
                       placeholder="p.sh. 810123456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1269,7 +1269,7 @@ export default function SettingsPage() {
                       value={foundedYear}
                       onChange={(e) => setFoundedYear(e.target.value)}
                       placeholder="p.sh. 2018"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1282,7 +1282,7 @@ export default function SettingsPage() {
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
                       placeholder="https://kompania.com"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1295,7 +1295,7 @@ export default function SettingsPage() {
                       value={officeAddress}
                       onChange={(e) => setOfficeAddress(e.target.value)}
                       placeholder="p.sh. Rr. Nëna Terezë, Nr. 45, Prishtinë"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1314,7 +1314,7 @@ export default function SettingsPage() {
                       value={companyDescription}
                       onChange={(e) => setCompanyDescription(e.target.value)}
                       placeholder="Shkruani një përshkrim për historikun, shërbimet dhe misionin e kompanisë suaj..."
-                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
                 </div>
@@ -1331,7 +1331,7 @@ export default function SettingsPage() {
                       onChange={(e) => setIndividualFirstName(e.target.value)}
                       placeholder="Emri juaj"
                       required
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1344,7 +1344,7 @@ export default function SettingsPage() {
                       value={individualLastName}
                       onChange={(e) => setIndividualLastName(e.target.value)}
                       placeholder="Mbiemri juaj"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1357,7 +1357,7 @@ export default function SettingsPage() {
                       value={individualPhone}
                       onChange={(e) => setIndividualPhone(e.target.value)}
                       placeholder="+383 44 123 456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
 
@@ -1368,7 +1368,7 @@ export default function SettingsPage() {
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     >
                       <option value="">Zgjidh qytetin...</option>
                       {CITIES.map((c) => (
@@ -1383,7 +1383,7 @@ export default function SettingsPage() {
                   <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#006459]" />
+                        <Mail className="w-4 h-4 text-[#00675B]" />
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
                           Adresa Email e Llogarisë
                         </label>
@@ -1399,7 +1399,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => handleUpdateAccountEmail(individualEmail)}
                           disabled={updatingEmail}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[#006459] text-white hover:bg-[#005048] transition-all cursor-pointer shadow-xs disabled:opacity-50 self-start sm:self-auto"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[#00675B] text-white hover:bg-[#004D43] transition-all cursor-pointer shadow-xs disabled:opacity-50 self-start sm:self-auto"
                         >
                           {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
                           <span>Dërgo konfirmim në email-in e ri</span>
@@ -1411,7 +1411,7 @@ export default function SettingsPage() {
                       value={individualEmail}
                       onChange={(e) => setIndividualEmail(e.target.value)}
                       placeholder="email@shembull.com"
-                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                     <p className="text-[11px] text-gray-500 mt-1.5">
                       Ky email përdoret për kyçje dhe njoftime zyrtare. Nëse e ndryshoni, do të merrni një link konfirmimi në adresën e re për siguri maksimale.
@@ -1433,7 +1433,7 @@ export default function SettingsPage() {
                       value={individualBio}
                       onChange={(e) => setIndividualBio(e.target.value)}
                       placeholder="Një përshkrim i shkurtër për veten, përvojën ose kërkesat tuaja imobiliare..."
-                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                   </div>
                 </div>
@@ -1444,7 +1444,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleSaveSettings()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>Ruaj të dhënat e profilit</span>
@@ -1462,7 +1462,7 @@ export default function SettingsPage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-[#006459]" />
+                  <Share2 className="w-5 h-5 text-[#00675B]" />
                   Lidhjet me Rrjetet Sociale
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -1485,7 +1485,7 @@ export default function SettingsPage() {
                         href={normalizeSocialUrl('instagram', socials.instagram)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1496,7 +1496,7 @@ export default function SettingsPage() {
                     value={socials.instagram || ''}
                     onChange={(e) => setSocials((p) => ({ ...p, instagram: e.target.value }))}
                     placeholder="@kompania ose https://instagram.com/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
 
@@ -1514,7 +1514,7 @@ export default function SettingsPage() {
                         href={normalizeSocialUrl('facebook', socials.facebook)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1525,7 +1525,7 @@ export default function SettingsPage() {
                     value={socials.facebook || ''}
                     onChange={(e) => setSocials((p) => ({ ...p, facebook: e.target.value }))}
                     placeholder="https://facebook.com/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
 
@@ -1543,7 +1543,7 @@ export default function SettingsPage() {
                         href={normalizeSocialUrl('whatsapp', socials.whatsapp)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1554,7 +1554,7 @@ export default function SettingsPage() {
                     value={socials.whatsapp || ''}
                     onChange={(e) => setSocials((p) => ({ ...p, whatsapp: e.target.value }))}
                     placeholder="+383 44 123 456 ose link"
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
 
@@ -1572,7 +1572,7 @@ export default function SettingsPage() {
                         href={normalizeSocialUrl('tiktok', socials.tiktok)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1583,7 +1583,7 @@ export default function SettingsPage() {
                     value={socials.tiktok || ''}
                     onChange={(e) => setSocials((p) => ({ ...p, tiktok: e.target.value }))}
                     placeholder="@kompania ose https://tiktok.com/@..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
 
@@ -1601,7 +1601,7 @@ export default function SettingsPage() {
                         href={linkedin.startsWith('http') ? linkedin : `https://${linkedin}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1612,7 +1612,7 @@ export default function SettingsPage() {
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
                     placeholder="https://linkedin.com/in/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
 
@@ -1630,7 +1630,7 @@ export default function SettingsPage() {
                         href={youtube.startsWith('http') ? youtube : `https://${youtube}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
                       >
                         Testo <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1641,7 +1641,7 @@ export default function SettingsPage() {
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
                     placeholder="https://youtube.com/@..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                   />
                 </div>
               </div>
@@ -1652,7 +1652,7 @@ export default function SettingsPage() {
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Pamja live e lidhjeve tuaja sociale:
                   </span>
-                  <span className="text-[11px] text-[#006459] font-semibold flex items-center gap-1">
+                  <span className="text-[11px] text-[#00675B] font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> E sinkronizuar me shpalljet
                   </span>
                 </div>
@@ -1664,7 +1664,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleSaveSettings()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>Ruaj rrjetet sociale</span>
@@ -1682,7 +1682,7 @@ export default function SettingsPage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-[#006459]" />
+                  <Bell className="w-5 h-5 text-[#00675B]" />
                   Preferencat e Njoftimeve
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -1710,7 +1710,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNotifications((p) => ({ ...p, messages: !p.messages }))}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.messages ? 'bg-[#006459]' : 'bg-gray-200'
+                        notifications.messages ? 'bg-[#00675B]' : 'bg-gray-200'
                       }`}
                     >
                       <span
@@ -1735,7 +1735,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNotifications((p) => ({ ...p, inquiries: !p.inquiries }))}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.inquiries ? 'bg-[#006459]' : 'bg-gray-200'
+                        notifications.inquiries ? 'bg-[#00675B]' : 'bg-gray-200'
                       }`}
                     >
                       <span
@@ -1760,7 +1760,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNotifications((p) => ({ ...p, followers: !p.followers }))}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.followers ? 'bg-[#006459]' : 'bg-gray-200'
+                        notifications.followers ? 'bg-[#00675B]' : 'bg-gray-200'
                       }`}
                     >
                       <span
@@ -1793,7 +1793,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNotifications((p) => ({ ...p, weeklyReport: !p.weeklyReport }))}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.weeklyReport ? 'bg-[#006459]' : 'bg-gray-200'
+                        notifications.weeklyReport ? 'bg-[#00675B]' : 'bg-gray-200'
                       }`}
                     >
                       <span
@@ -1818,7 +1818,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNotifications((p) => ({ ...p, newsletter: !p.newsletter }))}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.newsletter ? 'bg-[#006459]' : 'bg-gray-200'
+                        notifications.newsletter ? 'bg-[#00675B]' : 'bg-gray-200'
                       }`}
                     >
                       <span
@@ -1836,7 +1836,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleSaveSettings()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>Ruaj preferencat e njoftimeve</span>
@@ -1854,7 +1854,7 @@ export default function SettingsPage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#006459]" />
+                  <Shield className="w-5 h-5 text-[#00675B]" />
                   Privatësia & Dukshmëria
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -1877,7 +1877,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => setPrivacy((p) => ({ ...p, showPhone: !p.showPhone }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showPhone ? 'bg-[#006459]' : 'bg-gray-200'
+                      privacy.showPhone ? 'bg-[#00675B]' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -1902,7 +1902,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => setPrivacy((p) => ({ ...p, showSocials: !p.showSocials }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showSocials ? 'bg-[#006459]' : 'bg-gray-200'
+                      privacy.showSocials ? 'bg-[#00675B]' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -1927,7 +1927,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => setPrivacy((p) => ({ ...p, showOnline: !p.showOnline }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showOnline ? 'bg-[#006459]' : 'bg-gray-200'
+                      privacy.showOnline ? 'bg-[#00675B]' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -1952,7 +1952,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => setPrivacy((p) => ({ ...p, allowDirectMsgs: !p.allowDirectMsgs }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.allowDirectMsgs ? 'bg-[#006459]' : 'bg-gray-200'
+                      privacy.allowDirectMsgs ? 'bg-[#00675B]' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -1977,7 +1977,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => setPrivacy((p) => ({ ...p, showListingsOnProfile: !p.showListingsOnProfile }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showListingsOnProfile ? 'bg-[#006459]' : 'bg-gray-200'
+                      privacy.showListingsOnProfile ? 'bg-[#00675B]' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -1994,7 +1994,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleSaveSettings()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] hover:bg-[#005048] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>Ruaj cilësimet e privatësisë</span>
@@ -2013,7 +2013,7 @@ export default function SettingsPage() {
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="mb-5">
                 <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-[#006459]" />
+                  <Lock className="w-5 h-5 text-[#00675B]" />
                   Ndrysho Fjalëkalimin
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -2032,7 +2032,7 @@ export default function SettingsPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                     <button
                       type="button"
@@ -2080,7 +2080,7 @@ export default function SettingsPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#006459]/20 focus:border-[#006459]"
+                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                     />
                     <button
                       type="button"
@@ -2095,7 +2095,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={updatingPassword || !newPassword}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#006459] hover:bg-[#005048] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {updatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
                   <span>Përditëso Fjalëkalimin</span>
@@ -2124,7 +2124,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
                     <Laptop className="w-5 h-5" />
                   </div>
                   <div>
@@ -2185,7 +2185,7 @@ export default function SettingsPage() {
           type="button"
           onClick={() => handleSaveSettings()}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#006459] active:scale-95 text-white text-xs font-bold shadow-md cursor-pointer shrink-0 disabled:opacity-75"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00675B] active:scale-95 text-white text-xs font-bold shadow-md cursor-pointer shrink-0 disabled:opacity-75"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span>{saving ? 'Ruajtje...' : 'Ruaj'}</span>

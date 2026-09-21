@@ -57,11 +57,11 @@ Aplikacioni është projektuar për të pasqyruar 100% platformën kryesore web 
 
 ## 🎨 Paleta e Ngjyrave & Shenjat e Dizajnit (Tokens)
 
-- **Primary**: `#006459` (E gjelbër e thellë pylli/smerald)
-- **Primary Dark**: `#005048`
-- **Primary Light**: `#E6F2F1` (Prapavijë e butë e elementeve aktive)
-- **Gold Accent**: `#C8B882` (Ari luksoz për distinktivë dhe theksime)
-- **Background Canvas**: `#F2F7F7` (Prapavijë e pastër dhe e freskët)
+- **Primary**: `#00675B` (E gjelbër elegante smerald)
+- **Primary Dark**: `#004D43`
+- **Primary Light**: `#E8F5F2` (Prapavijë e butë e elementeve aktive)
+- **Gold Accent**: `#D4AF37` / `#9A7228` (Ari luksoz për distinktivë dhe theksime)
+- **Background Canvas**: `#F5F7FA` (Prapavijë e pastër dhe e freskët)
 - **Card Surface**: `#FFFFFF`
 - **Border**: `#E5E7EB`
 - **Typography**: Tituj të theksuar me peshë 800/900, tekst ndihmës neutral.

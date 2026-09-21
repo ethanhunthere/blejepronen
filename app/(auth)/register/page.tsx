@@ -275,7 +275,8 @@ export default function RegisterPage() {
           return
         }
         const msg = oauthErr.message?.toLowerCase() || ''
-        if (msg.includes('provider is not enabled') || (oauthErr as any).code === 400 || (oauthErr as any).status === 400) {
+        const errObj = oauthErr as unknown as { code?: string | number; status?: number }
+        if (msg.includes('provider is not enabled') || errObj.code === 400 || errObj.status === 400) {
           setError(`Regjistrimi përmes ${providerTitle} po përgatitet në sistem. Mund të regjistroheni menjëherë me Google ose me email.`)
         } else {
           setError(oauthErr.message || `Ndodhi një problem gjatë regjistrimit me ${providerTitle}.`)
@@ -325,7 +326,7 @@ export default function RegisterPage() {
           footer={
             <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
               <span>Keni tashmë një llogari?</span>
-              <Link href="/login" className="font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5">
+              <Link href="/login" className="font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5">
                 Hyr këtu →
               </Link>
             </div>
@@ -334,8 +335,8 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} noValidate className="space-y-2.5 sm:space-y-3">
             {/* Extra reassurance hint when Kompani is selected */}
             {accountType === 'company' && (
-              <div className="p-2 rounded-xl bg-[#006459]/5 border border-[#006459]/20 text-[11px] text-[#006459] flex items-center gap-1.5 animate-in fade-in duration-200">
-                <Building2 className="h-3.5 w-3.5 shrink-0 text-[#006459]" />
+              <div className="p-2 rounded-xl bg-[#00675B]/5 border border-[#00675B]/20 text-[11px] text-[#00675B] flex items-center gap-1.5 animate-in fade-in duration-200">
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-[#00675B]" />
                 <span>
                   Llogaria e kompanisë pajiset me profil agjencie dhe etiketë zyrtare në të gjitha pronat.
                 </span>
@@ -405,7 +406,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#006459]/20 hover:shadow-md hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#00675B]/20 hover:shadow-md hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading || !!oauthLoading}
             >
               {loading ? (
@@ -420,11 +421,11 @@ export default function RegisterPage() {
 
             <p className="text-[10.5px] text-gray-500 text-center leading-normal pt-0.5">
               Duke u regjistruar, ju pranoni{' '}
-              <Link href="/kushtet" className="text-gray-700 underline hover:text-[#006459]">
+              <Link href="/kushtet" className="text-gray-700 underline hover:text-[#00675B]">
                 Kushtet e Përdorimit
               </Link>{' '}
               dhe{' '}
-              <Link href="/privatesia" className="text-gray-700 underline hover:text-[#006459]">
+              <Link href="/privatesia" className="text-gray-700 underline hover:text-[#00675B]">
                 Politikën e Privatësisë
               </Link>
               .
@@ -434,10 +435,10 @@ export default function RegisterPage() {
       ) : (
         <div className="w-full">
           {/* Professional Success Banner */}
-          <div className="mb-3 p-2.5 rounded-xl bg-[#006459]/10 border border-[#006459]/25 text-[#006459] text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
-            <CheckCircle2 className="h-4 w-4 text-[#006459] shrink-0 mt-0.5" />
+          <div className="mb-3 p-2.5 rounded-xl bg-[#00675B]/10 border border-[#00675B]/25 text-[#00675B] text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="h-4 w-4 text-[#00675B] shrink-0 mt-0.5" />
             <div className="leading-snug">
-              <p className="font-bold text-[#006459]">Kodi i verifikimit u dërgua me sukses!</p>
+              <p className="font-bold text-[#00675B]">Kodi i verifikimit u dërgua me sukses!</p>
               <p className="mt-0.5 text-gray-600">
                 Kemi dërguar kodin 6-shifror te <strong className="text-[#101828] font-semibold">{email}</strong>.
               </p>
@@ -502,13 +503,13 @@ export default function RegisterPage() {
                           key={index}
                           className={`h-12 sm:h-14 rounded-xl border flex items-center justify-center text-xl sm:text-2xl font-bold font-mono transition-all duration-150 select-none ${
                             char
-                              ? 'border-[#006459] bg-[#006459]/5 text-[#101828] shadow-xs'
+                              ? 'border-[#00675B] bg-[#00675B]/5 text-[#101828] shadow-xs'
                               : isFocused
-                              ? 'border-[#006459] bg-white ring-2 ring-[#006459]/20 text-transparent'
+                              ? 'border-[#00675B] bg-white ring-2 ring-[#00675B]/20 text-transparent'
                               : 'border-gray-200 bg-gray-50/80 text-transparent'
                           }`}
                         >
-                          {char || (isFocused ? <span className="w-0.5 h-6 bg-[#006459] animate-pulse" /> : '')}
+                          {char || (isFocused ? <span className="w-0.5 h-6 bg-[#00675B] animate-pulse" /> : '')}
                         </div>
                       )
                     })}
@@ -520,7 +521,7 @@ export default function RegisterPage() {
                 type="button"
                 onClick={() => handleVerify(code)}
                 disabled={verifying || redirecting || code.length !== 6}
-                className="w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[44px] h-11 sm:h-12 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#00675B]/20 hover:shadow-lg hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {redirecting ? (
                   <span className="flex items-center gap-2">
@@ -555,7 +556,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={handleResend}
                     disabled={resending}
-                    className="text-[#006459] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    className="text-[#00675B] hover:underline font-semibold inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   >
                     <RotateCcw className={`h-3 w-3 ${resending ? 'animate-spin' : ''}`} />
                     {resending ? 'Duke dërguar...' : 'Ridërgo kodin'}

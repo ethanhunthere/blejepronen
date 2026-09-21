@@ -38,7 +38,7 @@ export default function Error({
           <button
             type="button"
             onClick={reset}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-[#006459] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#006459]/20 hover:bg-[#005048] active:scale-95 transition-all cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-[#00675B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00675B]/20 hover:bg-[#004D43] active:scale-95 transition-all cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Provo përsëri</span>

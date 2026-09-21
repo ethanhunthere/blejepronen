@@ -596,7 +596,7 @@ function ListingsContent() {
                   onClick={() => setFilters(prev => ({ ...prev, type: tab.key as FilterState['type'] }))}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#006459] text-white shadow-2xs'
+                      ? 'bg-[#00675B] text-white shadow-2xs'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
@@ -611,7 +611,7 @@ function ListingsContent() {
         <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-2 sm:p-2.5 mb-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-center">
             {/* 1. Search Bar */}
-            <div className="sm:col-span-2 lg:col-span-4 xl:col-span-5 relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#006459] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#006459]/15 transition-all">
+            <div className="sm:col-span-2 lg:col-span-4 xl:col-span-5 relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#00675B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00675B]/15 transition-all">
               <Search className="h-4 w-4 text-gray-400 ml-3 flex-shrink-0" />
               <input
                 type="text"
@@ -643,7 +643,7 @@ function ListingsContent() {
                 }}
                 className={`w-full h-9 px-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
                   filters.city
-                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    ? 'border-[#00675B] bg-[#00675B]/5 text-[#00675B]'
                     : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
@@ -673,7 +673,7 @@ function ListingsContent() {
                         setCityOpen(false)
                       }}
                       className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors ${
-                        !filters.city ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                        !filters.city ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
                       Të gjitha qytetet
@@ -687,7 +687,7 @@ function ListingsContent() {
                           setCityOpen(false)
                         }}
                         className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
-                          filters.city === c ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                          filters.city === c ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
                         }`}
                       >
                         <span>{c}</span>
@@ -713,7 +713,7 @@ function ListingsContent() {
                   !filters.city
                     ? 'border-gray-200 bg-gray-100/50 text-gray-400 cursor-not-allowed'
                     : filters.neighborhood
-                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    ? 'border-[#00675B] bg-[#00675B]/5 text-[#00675B]'
                     : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
@@ -745,7 +745,7 @@ function ListingsContent() {
                         setNeighborhoodOpen(false)
                       }}
                       className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors ${
-                        !filters.neighborhood ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                        !filters.neighborhood ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
                       Të gjitha lagjet
@@ -759,7 +759,7 @@ function ListingsContent() {
                           setNeighborhoodOpen(false)
                         }}
                         className={`w-full text-left px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
-                          filters.neighborhood === n ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                          filters.neighborhood === n ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
                         }`}
                       >
                         <span>{n}</span>
@@ -782,7 +782,7 @@ function ListingsContent() {
                 }}
                 className={`w-full h-9 px-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between transition-all cursor-pointer ${
                   filters.minPrice || filters.maxPrice
-                    ? 'border-[#006459] bg-[#006459]/5 text-[#006459]'
+                    ? 'border-[#00675B] bg-[#00675B]/5 text-[#00675B]'
                     : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
@@ -817,7 +817,7 @@ function ListingsContent() {
                           onClick={() => setFilters(prev => ({ ...prev, minPrice: p.min, maxPrice: p.max }))}
                           className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${
                             isMatching
-                              ? 'bg-[#006459] text-white border-[#006459]'
+                              ? 'bg-[#00675B] text-white border-[#00675B]'
                               : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
                           }`}
                         >
@@ -835,7 +835,7 @@ function ListingsContent() {
                         placeholder="0"
                         value={filters.minPrice}
                         onChange={e => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
-                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#006459]"
+                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#00675B]"
                       />
                     </div>
                     <div>
@@ -845,7 +845,7 @@ function ListingsContent() {
                         placeholder="200,000"
                         value={filters.maxPrice}
                         onChange={e => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
-                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#006459]"
+                        className="w-full h-9 px-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-[#101828] outline-none focus:border-[#00675B]"
                       />
                     </div>
                   </div>
@@ -861,7 +861,7 @@ function ListingsContent() {
                     <button
                       type="button"
                       onClick={() => setPriceOpen(false)}
-                      className="px-3.5 py-1 rounded-lg bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+                      className="px-3.5 py-1 rounded-lg bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] cursor-pointer"
                     >
                       Mbyll
                     </button>
@@ -877,7 +877,7 @@ function ListingsContent() {
                 onClick={openMoreFilters}
                 className={`w-full h-9 px-2.5 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   advancedFiltersCount > 0
-                    ? 'bg-[#006459] text-white border-[#006459]'
+                    ? 'bg-[#00675B] text-white border-[#00675B]'
                     : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
@@ -901,7 +901,7 @@ function ListingsContent() {
               onClick={() => setFilters(prev => ({ ...prev, city: '', neighborhood: '' }))}
               className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
                 !filters.city
-                  ? 'bg-[#006459] text-white border-[#006459]'
+                  ? 'bg-[#00675B] text-white border-[#00675B]'
                   : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
               }`}
             >
@@ -923,7 +923,7 @@ function ListingsContent() {
                   }
                   className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#006459] text-white border-[#006459]'
+                      ? 'bg-[#00675B] text-white border-[#00675B]'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -973,7 +973,7 @@ function ListingsContent() {
                       setSortOpen(false)
                     }}
                     className={`w-full text-left px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
-                      sortBy === opt.key ? 'bg-[#006459] text-white' : 'hover:bg-gray-50 text-gray-700'
+                      sortBy === opt.key ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
                     }`}
                   >
                     <span>{opt.label}</span>
@@ -1016,7 +1016,7 @@ function ListingsContent() {
                   }
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#006459] text-white border-[#006459]'
+                      ? 'bg-[#00675B] text-white border-[#00675B]'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900'
                   }`}
                 >
@@ -1129,7 +1129,7 @@ function ListingsContent() {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="text-xs font-semibold text-[#006459] hover:underline cursor-pointer ml-1.5"
+              className="text-xs font-semibold text-[#00675B] hover:underline cursor-pointer ml-1.5"
             >
               Pastro të gjitha
             </button>
@@ -1140,7 +1140,7 @@ function ListingsContent() {
         {!fetchState.loading && filters.agentId && selectedAgent && (
           <div className="mb-3 bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center font-bold text-sm text-[#006459]">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center font-bold text-sm text-[#00675B]">
                 {selectedAgent.avatar_url ? (
                   <Image src={selectedAgent.avatar_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
@@ -1189,7 +1189,7 @@ function ListingsContent() {
             <button
               type="button"
               onClick={() => fetchListings(0)}
-              className="px-4 py-2 rounded-xl bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] cursor-pointer"
             >
               Provo përsëri
             </button>
@@ -1206,7 +1206,7 @@ function ListingsContent() {
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="px-4 py-2 rounded-xl bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] cursor-pointer"
               >
                 Pastro filtrat
               </button>
@@ -1281,7 +1281,7 @@ function ListingsContent() {
                         }
                         className={`px-3 py-1.5 rounded-lg border cursor-pointer font-medium ${
                           isSelected
-                            ? 'bg-[#006459] text-white border-[#006459]'
+                            ? 'bg-[#00675B] text-white border-[#00675B]'
                             : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -1310,7 +1310,7 @@ function ListingsContent() {
                         }
                         className={`px-3 py-1.5 rounded-lg border cursor-pointer font-medium ${
                           isSelected
-                            ? 'bg-[#006459] text-white border-[#006459]'
+                            ? 'bg-[#00675B] text-white border-[#00675B]'
                             : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -1342,7 +1342,7 @@ function ListingsContent() {
                         }
                         className={`px-2.5 py-1 rounded-lg border cursor-pointer ${
                           isMatch
-                            ? 'bg-[#006459] text-white border-[#006459]'
+                            ? 'bg-[#00675B] text-white border-[#00675B]'
                             : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -1357,14 +1357,14 @@ function ListingsContent() {
                     placeholder="Min m²"
                     value={tempModalFilters.minArea}
                     onChange={e => setTempModalFilters(p => ({ ...p, minArea: e.target.value }))}
-                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#006459]"
+                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#00675B]"
                   />
                   <input
                     type="number"
                     placeholder="Max m²"
                     value={tempModalFilters.maxArea}
                     onChange={e => setTempModalFilters(p => ({ ...p, maxArea: e.target.value }))}
-                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#006459]"
+                    className="w-full h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#00675B]"
                   />
                 </div>
               </div>
@@ -1387,7 +1387,7 @@ function ListingsContent() {
                         }
                         className={`w-8 h-8 rounded-lg border cursor-pointer font-semibold flex items-center justify-center ${
                           isSelected
-                            ? 'bg-[#006459] text-white border-[#006459]'
+                            ? 'bg-[#00675B] text-white border-[#00675B]'
                             : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                         }`}
                       >
@@ -1418,12 +1418,12 @@ function ListingsContent() {
                         }
                         className={`px-3 py-2 rounded-lg border text-left cursor-pointer flex items-center justify-between ${
                           isSelected
-                            ? 'bg-[#006459]/5 border-[#006459] text-[#006459] font-semibold'
+                            ? 'bg-[#00675B]/5 border-[#00675B] text-[#00675B] font-semibold'
                             : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <span>{f.label}</span>
-                        {isSelected && <Check className="h-3 w-3 text-[#006459]" />}
+                        {isSelected && <Check className="h-3 w-3 text-[#00675B]" />}
                       </button>
                     )
                   })}
@@ -1450,7 +1450,7 @@ function ListingsContent() {
                 <button
                   type="button"
                   onClick={applyMoreFilters}
-                  className="px-4 py-1.5 rounded-lg bg-[#006459] text-white text-xs font-semibold hover:bg-[#005048] cursor-pointer"
+                  className="px-4 py-1.5 rounded-lg bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] cursor-pointer"
                 >
                   Zbato filtrat
                 </button>
@@ -1468,7 +1468,7 @@ export default function ListingsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#006459]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#00675B]" />
         </div>
       }
     >

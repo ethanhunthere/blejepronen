@@ -106,7 +106,7 @@ export default function AuthPanel({
             onClick={() => onAccountTypeChange('individual')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'individual'
-                ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
+                ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
@@ -119,7 +119,7 @@ export default function AuthPanel({
             onClick={() => onAccountTypeChange('company')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'company'
-                ? 'bg-white text-[#006459] shadow-xs font-bold ring-1 ring-black/5'
+                ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
@@ -173,11 +173,11 @@ export default function AuthPanel({
                 title="Vazhdo me Google"
               >
                 {oauthLoading === 'google' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#006459]" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00675B]" />
                 ) : (
                   <>
                     <GoogleIcon className="h-3.5 w-3.5" />
-                    <span>Google</span>
+                    <span>{googleLabel}</span>
                   </>
                 )}
               </button>

@@ -186,7 +186,7 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
 
       {/* Clickable Info Section */}
       <Link href={`/listings/${listing.id}`} className="flex-1 flex flex-col gap-2 p-4 pb-3">
-        <h3 className="font-semibold text-[#101828] text-[16px] leading-snug line-clamp-2 min-h-[44px] group-hover:text-[#006459] transition-colors">
+        <h3 className="font-semibold text-[#101828] text-[16px] leading-snug line-clamp-2 min-h-[44px] group-hover:text-[#00675B] transition-colors">
           {listing.title}
         </h3>
 
@@ -202,7 +202,7 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
               <span className="whitespace-nowrap">{listing.rooms} dhoma</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 flex-shrink-0 text-[#006459] font-medium">
+            <div className="flex items-center gap-1 flex-shrink-0 text-[#00675B] font-medium">
               <Building2 className="h-3.5 w-3.5" />
               <span className="whitespace-nowrap truncate max-w-[120px]">{listing.apartment_type || 'Prona'}</span>
             </div>
@@ -215,7 +215,7 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
         </div>
 
         <div className="flex items-baseline gap-1 mt-auto pt-2">
-          <span className="text-[18px] font-bold text-[#006459] tracking-tight whitespace-nowrap">
+          <span className="text-[18px] font-bold text-[#00675B] tracking-tight whitespace-nowrap">
             {formatPrice(listing.price)}
           </span>
           {listing.type === 'qira' && <span className="text-[14px] text-[#4B5563]">/muaj</span>}
@@ -226,7 +226,7 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
       <div className="border-t border-gray-100 bg-gray-50/70 p-3 px-4 flex items-center justify-between gap-2 mt-auto">
         <Link
           href={`/listings/${listing.id}`}
-          className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#006459] hover:border-[#006459]/40 hover:shadow-xs transition-all duration-150"
+          className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/40 hover:shadow-xs transition-all duration-150"
         >
           <Eye className="w-3.5 h-3.5" />
           Shiko pronën
@@ -395,7 +395,7 @@ export default function PostimetEMiaPage() {
             <p className="text-gray-500 text-sm sm:text-base mt-1">Menaxho pronat që ke postuar në platformë</p>
           </div>
           <Link href="/posto-prona" className="self-start sm:self-auto">
-            <Button className="h-11 px-5 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold inline-flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-150">
+            <Button className="h-11 px-5 bg-[#00675B] hover:bg-[#004D43] text-white rounded-xl font-semibold inline-flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-150">
               <Plus className="w-4 h-4" />
               Posto pronë të re
             </Button>
@@ -409,14 +409,14 @@ export default function PostimetEMiaPage() {
             onClick={() => setActiveTab('mine')}
             className={`pb-3.5 text-sm sm:text-base cursor-pointer transition-all duration-150 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'mine'
-                ? 'border-b-2 border-[#006459] text-[#006459] font-bold'
+                ? 'border-b-2 border-[#00675B] text-[#00675B] font-bold'
                 : 'text-gray-500 hover:text-gray-700 font-medium'
             }`}
           >
             <span>Postimet e mia</span>
             <span
               className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                activeTab === 'mine' ? 'bg-[#006459]/10 text-[#006459]' : 'bg-gray-100 text-gray-500'
+                activeTab === 'mine' ? 'bg-[#00675B]/10 text-[#00675B]' : 'bg-gray-100 text-gray-500'
               }`}
             >
               {listings.length}
@@ -427,7 +427,7 @@ export default function PostimetEMiaPage() {
             onClick={() => setActiveTab('favorites')}
             className={`pb-3.5 text-sm sm:text-base cursor-pointer transition-all duration-150 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'favorites'
-                ? 'border-b-2 border-[#006459] text-[#006459] font-bold'
+                ? 'border-b-2 border-[#00675B] text-[#00675B] font-bold'
                 : 'text-gray-500 hover:text-gray-700 font-medium'
             }`}
           >
@@ -435,7 +435,7 @@ export default function PostimetEMiaPage() {
             {favoriteListings.length > 0 && (
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                  activeTab === 'favorites' ? 'bg-[#006459]/10 text-[#006459]' : 'bg-gray-100 text-gray-500'
+                  activeTab === 'favorites' ? 'bg-[#00675B]/10 text-[#00675B]' : 'bg-gray-100 text-gray-500'
                 }`}
               >
                 {favoriteListings.length}
@@ -461,7 +461,7 @@ export default function PostimetEMiaPage() {
                 Klikoni ikonën e zemrës në çdo pronë për ta ruajtur këtu
               </p>
               <Link href="/listings">
-                <Button className="h-11 px-6 bg-[#006459] hover:bg-[#005048] text-white rounded-xl font-semibold shadow-sm hover:shadow-md transition-all">
+                <Button className="h-11 px-6 bg-[#00675B] hover:bg-[#004D43] text-white rounded-xl font-semibold shadow-sm hover:shadow-md transition-all">
                   Eksploro pronat
                 </Button>
               </Link>
@@ -494,7 +494,7 @@ export default function PostimetEMiaPage() {
               Postoni pronën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
             <Link href="/posto-prona">
-              <Button className="h-11 px-6 bg-[#006459] text-white rounded-xl font-semibold hover:bg-[#005048] hover:shadow-lg hover:shadow-[#006459]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
+              <Button className="h-11 px-6 bg-[#00675B] text-white rounded-xl font-semibold hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
                 Posto pronën tënde
               </Button>
             </Link>
@@ -504,7 +504,7 @@ export default function PostimetEMiaPage() {
             {/* Quick stats indicator */}
             <div className="mb-8 flex items-center gap-3">
               <div className="bg-white border border-gray-200/70 shadow-xs rounded-2xl px-5 py-3.5 flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#006459]/10 flex items-center justify-center text-[#006459]">
+                <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 flex items-center justify-center text-[#00675B]">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -575,7 +575,7 @@ export default function PostimetEMiaPage() {
                   <p className="text-xs text-gray-500 truncate">
                     {listingToDelete.city} {listingToDelete.address ? `· ${listingToDelete.address}` : ''}
                   </p>
-                  <p className="text-xs font-bold text-[#006459] mt-0.5">
+                  <p className="text-xs font-bold text-[#00675B] mt-0.5">
                     {formatPrice(listingToDelete.price)}
                   </p>
                 </div>

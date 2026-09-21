@@ -766,7 +766,7 @@ export default function AuthModalScreen() {
                     backgroundColor:
                       theme === 'green'
                         ? 'rgba(200, 184, 130, 0.18)'
-                        : 'rgba(0, 100, 89, 0.10)',
+                        : 'rgba(0, 103, 91, 0.10)',
                   },
                 ]}
               >

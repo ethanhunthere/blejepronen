@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router'
 import { Platform, View, Text, StyleSheet } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
+import { Compass, Search, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
@@ -269,9 +269,9 @@ export default function TabLayout() {
           name="index"
           options={{
             lazy: false,
-            title: 'Kërko',
+            title: 'Eksploro',
             tabBarIcon: ({ focused }) => (
-              <TabBarItemContent icon={Search} title="Kërko" focused={focused} />
+              <TabBarItemContent icon={Compass} title="Eksploro" focused={focused} />
             ),
           }}
         />

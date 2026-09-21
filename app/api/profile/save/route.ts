@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { normalizePhoneNumber } from '@/lib/phone'
 
@@ -16,7 +16,7 @@ function getAdminClient() {
 
 export async function POST(request: Request) {
   try {
-    let user: any = null
+    let user: User | null = null
     try {
       const serverSupabase = await createServerSupabaseClient()
       const {

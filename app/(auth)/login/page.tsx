@@ -17,8 +17,8 @@ function VerifiedMessage() {
   if (!isVerified) return null
 
   return (
-    <div className="mb-3 p-2.5 rounded-xl bg-[#006459]/10 border border-[#006459]/20 text-[#006459] text-xs sm:text-[13px] flex items-center gap-2">
-      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#006459]" />
+    <div className="mb-3 p-2.5 rounded-xl bg-[#00675B]/10 border border-[#00675B]/20 text-[#00675B] text-xs sm:text-[13px] flex items-center gap-2">
+      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00675B]" />
       <span>Email-i u verifikua me sukses! Tani mund të hyni në llogari.</span>
     </div>
   )
@@ -230,7 +230,8 @@ function LoginForm() {
           return
         }
         const msg = oauthErr.message?.toLowerCase() || ''
-        if (msg.includes('provider is not enabled') || (oauthErr as any).code === 400 || (oauthErr as any).status === 400) {
+        const errObj = oauthErr as unknown as { code?: string | number; status?: number }
+        if (msg.includes('provider is not enabled') || errObj.code === 400 || errObj.status === 400) {
           setError(`Hyrja përmes ${providerTitle} po përgatitet në sistem. Mund të kyçeni menjëherë me Google ose me email.`)
         } else {
           setError(oauthErr.message || `Ndodhi një problem me hyrjen përmes ${providerTitle}.`)
@@ -276,7 +277,7 @@ function LoginForm() {
             <span>Nuk keni llogari ende?</span>
             <Link
               href="/register"
-              className="font-bold text-[#006459] hover:underline inline-flex items-center gap-0.5"
+              className="font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
             >
               Regjistrohu falas →
             </Link>
@@ -314,7 +315,7 @@ function LoginForm() {
             topRight={
               <Link
                 href="/forgot-password"
-                className="font-medium text-[11.5px] text-[#006459] hover:underline"
+                className="font-medium text-[11.5px] text-[#00675B] hover:underline"
               >
                 Keni harruar fjalëkalimin?
               </Link>
@@ -330,7 +331,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#006459]/20 hover:shadow-md hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#00675B]/20 hover:shadow-md hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading || !!oauthLoading}
           >
             {loading ? (

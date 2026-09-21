@@ -45,7 +45,7 @@ export default async function HomePage() {
             <p className="text-red-600 mb-3 text-[16px]">Kërkesa dështoi. Ju lutemi provoni përsëri më vonë.</p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center w-full sm:w-auto min-h-[48px] h-12 px-6 bg-[#006459] text-white rounded-xl text-[16px] font-semibold hover:bg-[#005048] transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center w-full sm:w-auto min-h-[48px] h-12 px-6 bg-[#00675B] text-white rounded-xl text-[16px] font-semibold hover:bg-[#004D43] transition-colors cursor-pointer"
             >
               Provo përsëri
             </Link>
@@ -66,7 +66,7 @@ export default async function HomePage() {
                 Të gjitha pronat në shitje dhe me qira, të postuara së fundmi.
               </p>
             </div>
-            <Link href="/listings" className="inline-flex items-center min-h-[48px] h-12 text-[16px] font-semibold text-[#006459] px-6 rounded-full border border-[#006459]/30 bg-white hover:bg-[#006459] hover:text-white transition-colors cursor-pointer whitespace-nowrap">
+            <Link href="/listings" className="inline-flex items-center min-h-[48px] h-12 text-[16px] font-semibold text-[#00675B] px-6 rounded-full border border-[#00675B]/30 bg-white hover:bg-[#00675B] hover:text-white transition-colors cursor-pointer whitespace-nowrap">
               Shiko të gjitha →
             </Link>
           </div>
@@ -75,13 +75,13 @@ export default async function HomePage() {
             <FavoritableListingsGrid listings={listings} />
           ) : (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#006459] shadow-[0_12px_24px_-8px_rgba(0,100,89,0.5)] flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#00675B] shadow-[0_12px_24px_-8px_rgba(0,100,89,0.5)] flex items-center justify-center">
                 <Image src="/logo-white.png" alt="" width={40} height={40} className="w-10 h-10" />
               </div>
               <h3 className="text-lg font-semibold text-[#101828] mb-2">Ende nuk ka listime</h3>
               <p className="text-gray-600 text-[16px] mb-6">Bëhu i pari që poston pronën tënde në platformën tonë falas!</p>
               <Link href="/posto-prona">
-                <Button className="h-12 w-full sm:w-auto px-6 bg-[#006459] text-white text-[16px] rounded-xl font-semibold hover:bg-[#005048] transition-colors">
+                <Button className="h-12 w-full sm:w-auto px-6 bg-[#00675B] text-white text-[16px] rounded-xl font-semibold hover:bg-[#004D43] transition-colors">
                   Posto pronën tënde falas
                 </Button>
               </Link>
@@ -104,9 +104,9 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#00675B]/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00675B]/10 text-[#00675B] font-bold text-lg group-hover:scale-105 group-hover:bg-[#00675B] group-hover:text-white transition-all duration-300">
                   01
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60">
@@ -121,9 +121,9 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#00675B]/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00675B]/10 text-[#00675B] font-bold text-lg group-hover:scale-105 group-hover:bg-[#00675B] group-hover:text-white transition-all duration-300">
                   02
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C8B882] bg-[#C8B882]/10 px-3 py-1 rounded-full border border-[#C8B882]/30">
@@ -138,12 +138,12 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#006459]/30 transition-all duration-300">
+            <div className="group relative bg-white rounded-3xl p-8 border border-gray-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_-8px_rgba(0,100,89,0.12)] hover:border-[#00675B]/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#006459]/10 text-[#006459] font-bold text-lg group-hover:scale-105 group-hover:bg-[#006459] group-hover:text-white transition-all duration-300">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00675B]/10 text-[#00675B] font-bold text-lg group-hover:scale-105 group-hover:bg-[#00675B] group-hover:text-white transition-all duration-300">
                   03
                 </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#006459] bg-[#006459]/10 px-3 py-1 rounded-full border border-[#006459]/20">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#00675B] bg-[#00675B]/10 px-3 py-1 rounded-full border border-[#00675B]/20">
                   Finalizim
                 </span>
               </div>
@@ -159,11 +159,10 @@ export default async function HomePage() {
       </section>
 
       {/* Call to action — elevated editorial finish */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#006459] via-[#00574D] to-[#004840] px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20 text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#00675B] via-[#00574D] to-[#004840] px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20 text-center">
         <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(circle_at_top_right,rgba(200,184,130,0.3),transparent_50%)]" />
         <div className="relative mx-auto max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white text-xs font-semibold tracking-wide uppercase mb-4 backdrop-blur-sm border border-white/15">
-            <span className="w-2 h-2 rounded-full bg-[#C8B882]" />
             Posto pronën falas
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
@@ -175,7 +174,7 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <Link
               href="/posto-prona"
-              className="inline-flex items-center justify-center h-13 min-h-[52px] w-full sm:w-auto rounded-2xl bg-white px-8 text-[16px] font-semibold text-[#006459] shadow-lg shadow-black/20 transition-all duration-200 hover:bg-[#C8B882] hover:text-[#101828] cursor-pointer"
+              className="inline-flex items-center justify-center h-13 min-h-[52px] w-full sm:w-auto rounded-2xl bg-white px-8 text-[16px] font-semibold text-[#00675B] shadow-lg shadow-black/20 transition-all duration-200 hover:bg-[#C8B882] hover:text-[#101828] cursor-pointer"
             >
               Posto pronën falas
             </Link>

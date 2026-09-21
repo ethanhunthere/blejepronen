@@ -45,8 +45,8 @@ export default function ForgotPasswordPage() {
         subline="Vendos fjalëkalimin e ri dhe vazhdo me pronat e tua."
       >
         <div className="w-full text-center">
-          <div className="w-16 h-16 bg-[#006459]/10 border border-[#006459]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-[#006459]" />
+          <div className="w-16 h-16 bg-[#00675B]/10 border border-[#00675B]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="h-8 w-8 text-[#00675B]" />
           </div>
           <h1 className="text-2xl sm:text-[27px] font-black leading-tight tracking-tight text-[#101828]">
             Kontrollo email-in!
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 space-y-3">
             <Link
               href="/login"
-              className="w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 inline-flex items-center justify-center cursor-pointer"
+              className="w-full min-h-[44px] h-11 sm:h-12 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-[#00675B]/20 inline-flex items-center justify-center cursor-pointer"
             >
               Shko te hyrja
             </Link>
@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
 
             <button
               type="submit"
-              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#006459] hover:bg-[#005048] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#006459]/20 hover:shadow-lg hover:shadow-[#006459]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-2 w-full min-h-[44px] h-11 sm:h-12 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-sm sm:text-[15px] font-semibold rounded-xl transition-all shadow-md shadow-[#00675B]/20 hover:shadow-lg hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? (
@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
         <div className="mt-5 border-t border-gray-100 pt-3 text-center">
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold text-gray-600 hover:text-[#006459] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold text-gray-600 hover:text-[#00675B] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Kthehu te hyrja</span>

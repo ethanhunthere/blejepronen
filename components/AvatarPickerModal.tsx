@@ -52,7 +52,7 @@ export default function AvatarPickerModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#006459]/10 text-[#006459] flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center flex-shrink-0">
               <User className="w-5 h-5" />
             </div>
             <div>
@@ -88,9 +88,9 @@ export default function AvatarPickerModal({
                   onClick={() => handleSelect(avatar)}
                   disabled={Boolean(savingUrl) || isUploadingCustom}
                   aria-label={avatar.name}
-                  className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center p-1 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#006459] ${
+                  className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center p-1 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#00675B] ${
                     isSelected
-                      ? 'border-[#006459] ring-2 ring-[#006459]/30 bg-[#006459]/5 scale-105 shadow-md'
+                      ? 'border-[#00675B] ring-2 ring-[#00675B]/30 bg-[#00675B]/5 scale-105 shadow-md'
                       : 'border-gray-200 hover:border-gray-400 hover:scale-105 hover:shadow-sm bg-gray-50'
                   }`}
                 >
@@ -106,7 +106,7 @@ export default function AvatarPickerModal({
 
                   {/* Active Checkmark Badge */}
                   {isSelected && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#006459] text-white flex items-center justify-center shadow-sm">
+                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#00675B] text-white flex items-center justify-center shadow-sm">
                       {isCurrentSaving ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
@@ -118,7 +118,7 @@ export default function AvatarPickerModal({
                   {/* Saving spinner for clicked item if not yet marked selected */}
                   {!isSelected && isCurrentSaving && (
                     <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#006459]" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#00675B]" />
                     </div>
                   )}
                 </button>
@@ -140,7 +140,7 @@ export default function AvatarPickerModal({
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
               {isUploadingCustom ? (
-                <Loader2 className="w-4 h-4 animate-spin text-[#006459]" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#00675B]" />
               ) : (
                 <Upload className="w-4 h-4 text-gray-500" />
               )}
