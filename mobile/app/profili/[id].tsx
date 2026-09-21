@@ -12,7 +12,6 @@ import {
   Alert,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
@@ -33,9 +32,9 @@ import {
   AlertCircle,
   Home,
   CheckCircle2,
-  ExternalLink,
   ChevronRight,
-  Info,
+  Briefcase,
+  Check,
 } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing, Profile } from '@/lib/supabase'
@@ -156,10 +155,6 @@ export default function PublicProfileScreen() {
     return fullName || 'Përdorues i Bleje Pronën'
   }, [profile, isCompany])
 
-  const roleLabel = useMemo(() => {
-    return isCompany ? 'Agjenci Imobiliare' : 'Shitës Privat / Pronar'
-  }, [isCompany])
-
   const isVerified = useMemo(() => {
     if (!profile) return false
     return profile.email_verified === true || isCompany
@@ -179,7 +174,7 @@ export default function PublicProfileScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.phone
     if (!rawPhone) {
-      Alert.alert('Nuk ka numër telefoni', 'Ky përdorues nuk ka vendosur një numër kontakti publik.')
+      Alert.alert('Nuk ka numër', 'Ky profil nuk ka vendosur një numër kontakti publik.')
       return
     }
     const normalized = normalizePhoneNumber(rawPhone)
@@ -192,33 +187,35 @@ export default function PublicProfileScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.whatsapp || profile?.phone
     if (!rawPhone) {
-      Alert.alert('Nuk ka WhatsApp', 'Ky përdorues nuk ka konfiguruar numër për WhatsApp.')
+      Alert.alert('Nuk ka WhatsApp', 'Ky profil nuk ka numër të konfiguruar për WhatsApp.')
       return
     }
     const cleanNumber = normalizePhoneNumber(rawPhone).replace(/[^0-9]/g, '')
     const greetingMsg = encodeURIComponent(
-      `Përshëndetje ${displayName}! Po ju kontaktoj përmes platformës Bleje Pronën lidhur me pronat tuaja.`
+      isCompany
+        ? `Përshëndetje ${displayName}! Po ju kontaktoj përmes platformës Bleje Pronën lidhur me pronat tuaja.`
+        : `Përshëndetje! Po ju kontaktoj nga Bleje Pronën lidhur me shpalljen tuaj.`
     )
     Linking.openURL(`https://wa.me/${cleanNumber}?text=${greetingMsg}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni WhatsApp.')
     })
-  }, [profile?.whatsapp, profile?.phone, displayName])
+  }, [profile?.whatsapp, profile?.phone, displayName, isCompany])
 
   const handleSMS = useCallback(() => {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.phone || profile?.whatsapp
     if (!rawPhone) {
-      Alert.alert('Nuk ka numër', 'Nuk ka numër telefoni të disponueshëm për SMS.')
+      Alert.alert('Nuk ka numër', 'Nuk ka numër të disponueshëm për SMS.')
       return
     }
     const normalized = normalizePhoneNumber(rawPhone)
     const smsMsg = encodeURIComponent(
-      `Përshëndetje ${displayName}, po ju shkruaj nga Bleje Pronën lidhur me shpalljet tuaja.`
+      `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronat tuaja.`
     )
     Linking.openURL(`sms:${normalized}?body=${smsMsg}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni i mesazheve.')
     })
-  }, [profile?.phone, profile?.whatsapp, displayName])
+  }, [profile?.phone, profile?.whatsapp])
 
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
@@ -246,24 +243,12 @@ export default function PublicProfileScreen() {
   const resolvedBottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'ios' ? 24 : 16)
   const specularBorder = colors.border
 
-  // Linear ambient banner gradient colors according to theme
-  const ambientBannerColors = useMemo((): [string, string, ...string[]] => {
-    if (theme === 'green') {
-      return ['#144237', '#0E332A', '#071C18']
-    }
-    if (theme === 'black') {
-      return ['#1A2421', '#101615', '#000000']
-    }
-    // white theme
-    return ['#E6F4F1', '#EDF7F5', '#F5F7FA']
-  }, [theme])
-
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* ─── 0. DYNAMIC HIGH-CONTRAST STATUS BAR ─── */}
+      {/* ─── DYNAMIC STATUS BAR ─── */}
       <StatusBar style={theme === 'white' ? 'dark' : 'light'} />
 
-      {/* ─── 1. FROSTED MASTER NAVIGATION BAR ─── */}
+      {/* ─── MINIMALIST MASTER TOP BAR ─── */}
       <View
         style={[
           styles.header,
@@ -295,18 +280,9 @@ export default function PublicProfileScreen() {
             {loading ? 'Profili' : displayName}
           </Text>
           {!loading && (
-            <View style={styles.headerSubtitleRow}>
-              {isVerified && (
-                <ShieldCheck
-                  size={11}
-                  color={theme === 'green' ? colors.gold : colors.primary}
-                  strokeWidth={2.6}
-                />
-              )}
-              <Text style={[styles.headerSubtitleText, { color: colors.textMuted }]} numberOfLines={1}>
-                {isCompany ? 'Agjenci e Verifikuar' : 'Profil Zyrtar'}
-              </Text>
-            </View>
+            <Text style={[styles.headerSubtitleText, { color: colors.textMuted }]} numberOfLines={1}>
+              {isCompany ? 'Agjenci Imobiliare' : 'Llogari Personale'}
+            </Text>
           )}
         </View>
 
@@ -326,12 +302,12 @@ export default function PublicProfileScreen() {
         </Pressable>
       </View>
 
-      {/* ─── 2. MAIN SCROLLABLE CONTENT CANVAS ─── */}
+      {/* ─── MAIN SCROLLABLE CONTENT ─── */}
       <ScrollView
         style={styles.container}
         contentContainerStyle={[
           styles.contentContainer,
-          { paddingBottom: 110 + resolvedBottomInset },
+          { paddingBottom: 100 + resolvedBottomInset },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -344,56 +320,40 @@ export default function PublicProfileScreen() {
         }
       >
         {loading ? (
-          /* ─── SKELETON LOADING STATE (Matching Linear / Stripe metrics) ─── */
+          /* ─── CLEAN MINIMALIST SKELETON LOADER ─── */
           <View style={styles.skeletonWrapper}>
-            {/* Banner skeleton */}
-            <View style={styles.skeletonBannerWrap}>
-              <SkeletonBox width="100%" height={100} borderRadius={24} />
-            </View>
-
-            {/* Profile card skeleton */}
             <View
               style={[
-                styles.profileHeroCard,
+                styles.profileSurfaceCard,
                 { backgroundColor: colors.surface, borderColor: specularBorder },
               ]}
             >
-              <View style={styles.heroTopRow}>
-                <SkeletonBox width={92} height={92} borderRadius={24} />
+              <View style={styles.heroHeaderRow}>
+                <SkeletonBox width={80} height={80} borderRadius={isCompany ? 18 : 40} />
                 <View style={styles.skeletonTextCol}>
-                  <SkeletonBox width="80%" height={24} borderRadius={6} />
-                  <SkeletonBox width="55%" height={16} borderRadius={6} />
-                  <SkeletonBox width="45%" height={14} borderRadius={6} />
+                  <SkeletonBox width="85%" height={24} borderRadius={6} />
+                  <SkeletonBox width="50%" height={16} borderRadius={6} />
+                  <SkeletonBox width="40%" height={14} borderRadius={6} />
                 </View>
               </View>
 
-              {/* Stats Skeleton */}
-              <View style={styles.skeletonStatsRow}>
-                <SkeletonBox width="30%" height={56} borderRadius={14} />
-                <SkeletonBox width="30%" height={56} borderRadius={14} />
-                <SkeletonBox width="30%" height={56} borderRadius={14} />
-              </View>
-
-              {/* Action Buttons Skeleton */}
-              <View style={styles.actionRow}>
-                <SkeletonBox width="48%" height={52} borderRadius={16} />
-                <SkeletonBox width="48%" height={52} borderRadius={16} />
+              <View style={styles.contactRow}>
+                <SkeletonBox width="48%" height={50} borderRadius={14} />
+                <SkeletonBox width="48%" height={50} borderRadius={14} />
               </View>
             </View>
 
-            {/* Listings Section Skeleton */}
-            <View style={styles.sectionHeaderRow}>
-              <SkeletonBox width={140} height={22} borderRadius={8} />
-              <SkeletonBox width={160} height={34} borderRadius={12} />
+            <View style={styles.sectionHeader}>
+              <SkeletonBox width={160} height={22} borderRadius={6} />
             </View>
 
             <View style={styles.skeletonCardsWrap}>
-              <SkeletonBox width="100%" height={280} borderRadius={20} />
-              <SkeletonBox width="100%" height={280} borderRadius={20} />
+              <SkeletonBox width="100%" height={260} borderRadius={18} />
+              <SkeletonBox width="100%" height={260} borderRadius={18} />
             </View>
           </View>
         ) : error || !profile ? (
-          /* ─── ERROR / 404 NOT FOUND RECOVERY STATE ─── */
+          /* ─── ERROR / 404 NOT FOUND RECOVERY ─── */
           <View
             style={[
               styles.errorCard,
@@ -402,15 +362,15 @@ export default function PublicProfileScreen() {
           >
             <View
               style={[
-                styles.errorIconCircle,
+                styles.errorIconBox,
                 {
                   backgroundColor:
-                    theme === 'green' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(239, 68, 68, 0.12)',
+                    theme === 'green' ? 'rgba(212, 175, 55, 0.12)' : 'rgba(239, 68, 68, 0.1)',
                 },
               ]}
             >
               <AlertCircle
-                size={38}
+                size={36}
                 color={theme === 'green' ? colors.gold : '#EF4444'}
                 strokeWidth={2}
               />
@@ -432,56 +392,16 @@ export default function PublicProfileScreen() {
               <Text style={styles.errorBtnText}>Kthehu te Ballina</Text>
             </Pressable>
           </View>
-        ) : (
-          /* ─── MASTER PUBLIC PROFILE CONTENT ─── */
+        ) : isCompany ? (
+          /* ═══════════════════════════════════════════════════════════════
+             1. COMPANY / REAL ESTATE AGENCY PROFILE (Corporate & Branded)
+             ═══════════════════════════════════════════════════════════════ */
           <>
-            {/* ─── 3. AMBIENT BRAND COVER BANNER ─── */}
-            <View style={styles.bannerContainer}>
-              <LinearGradient
-                colors={ambientBannerColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[
-                  styles.ambientBanner,
-                  { borderColor: specularBorder },
-                ]}
-              >
-                <View style={styles.bannerDecorRow}>
-                  <View
-                    style={[
-                      styles.bannerCapsule,
-                      {
-                        backgroundColor:
-                          theme === 'green'
-                            ? 'rgba(212, 175, 55, 0.2)'
-                            : theme === 'black'
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : 'rgba(0, 103, 91, 0.1)',
-                      },
-                    ]}
-                  >
-                    <Sparkles
-                      size={12}
-                      color={theme === 'green' ? colors.gold : colors.primary}
-                      strokeWidth={2.4}
-                    />
-                    <Text
-                      style={[
-                        styles.bannerCapsuleText,
-                        { color: theme === 'green' ? colors.gold : colors.primary },
-                      ]}
-                    >
-                      {isCompany ? 'Agjenci e Partnerizuar' : 'Profil Zyrtar'}
-                    </Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </View>
-
-            {/* ─── 4. ELEVATED IDENTITY CARD ─── */}
+            {/* ─── Corporate Identity Card ─── */}
             <View
               style={[
-                styles.profileHeroCard,
+                styles.profileSurfaceCard,
+                styles.companyCard,
                 {
                   backgroundColor: colors.surface,
                   borderColor: specularBorder,
@@ -489,103 +409,92 @@ export default function PublicProfileScreen() {
                 },
               ]}
             >
-              {/* Top Row: Avatar & Identity details */}
-              <View style={styles.heroTopRow}>
-                {/* Avatar / Brand Logo with Verification Seal */}
+              {/* Header: Company Logo Emblem + Official Title */}
+              <View style={styles.heroHeaderRow}>
                 <View
                   style={[
-                    styles.avatarWrapper,
+                    styles.companyLogoBox,
                     {
-                      borderColor: colors.surface,
-                      borderRadius: isCompany ? 24 : 46,
                       backgroundColor: colors.surfaceSubtle,
+                      borderColor: theme === 'green' ? 'rgba(212, 175, 55, 0.35)' : specularBorder,
                     },
                   ]}
                 >
                   <Image
                     source={getAvatarSource(profile.avatar_url)}
-                    style={[
-                      styles.avatarImg,
-                      { borderRadius: isCompany ? 22 : 44 },
-                    ]}
+                    style={styles.companyLogoImg}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     priority="high"
                   />
-
                   {isVerified && (
                     <View
                       style={[
-                        styles.verifiedAvatarBadge,
+                        styles.companyVerifiedBadge,
                         {
                           backgroundColor: theme === 'green' ? colors.gold : '#10B981',
                           borderColor: colors.surface,
                         },
                       ]}
                     >
-                      <CheckCircle2 size={13} color="#FFFFFF" strokeWidth={3} />
+                      <CheckCircle2 size={12} color="#FFFFFF" strokeWidth={3} />
                     </View>
                   )}
                 </View>
 
-                {/* Text Identity Block */}
                 <View style={styles.identityDetails}>
                   <Text
-                    style={[styles.officialName, { color: colors.textPrimary }]}
+                    style={[styles.companyNameText, { color: colors.textPrimary }]}
                     numberOfLines={2}
                   >
                     {displayName}
                   </Text>
 
-                  {/* Badges Row */}
-                  <View style={styles.badgesRow}>
+                  {/* Commercial Accreditation Tag */}
+                  <View style={styles.commercialTagRow}>
                     <View
                       style={[
-                        styles.roleBadge,
+                        styles.corporatePill,
                         {
                           backgroundColor:
                             theme === 'green'
-                              ? 'rgba(212, 175, 55, 0.16)'
+                              ? 'rgba(212, 175, 55, 0.14)'
                               : colors.primaryLight,
                           borderColor:
                             theme === 'green'
-                              ? 'rgba(212, 175, 55, 0.32)'
+                              ? 'rgba(212, 175, 55, 0.28)'
                               : colors.borderSubtle,
                         },
                       ]}
                     >
-                      {isCompany ? (
-                        <Building2
-                          size={12}
-                          color={theme === 'green' ? colors.gold : colors.primary}
-                          strokeWidth={2.4}
-                        />
-                      ) : (
-                        <User size={12} color={colors.primary} strokeWidth={2.4} />
-                      )}
+                      <Building2
+                        size={12}
+                        color={theme === 'green' ? colors.gold : colors.primary}
+                        strokeWidth={2.4}
+                      />
                       <Text
                         style={[
-                          styles.roleBadgeText,
+                          styles.corporatePillText,
                           { color: theme === 'green' ? colors.gold : colors.primary },
                         ]}
                       >
-                        {roleLabel}
+                        Agjenci Imobiliare
                       </Text>
                     </View>
 
                     {isVerified && (
                       <View
                         style={[
-                          styles.verifiedBadge,
+                          styles.corporatePill,
                           {
                             backgroundColor:
                               theme === 'green'
-                                ? 'rgba(212, 175, 55, 0.14)'
+                                ? 'rgba(212, 175, 55, 0.12)'
                                 : 'rgba(16, 185, 129, 0.12)',
                             borderColor:
                               theme === 'green'
-                                ? 'rgba(212, 175, 55, 0.28)'
-                                : 'rgba(16, 185, 129, 0.26)',
+                                ? 'rgba(212, 175, 55, 0.24)'
+                                : 'rgba(16, 185, 129, 0.22)',
                           },
                         ]}
                       >
@@ -596,17 +505,17 @@ export default function PublicProfileScreen() {
                         />
                         <Text
                           style={[
-                            styles.verifiedBadgeText,
+                            styles.corporatePillText,
                             { color: theme === 'green' ? colors.gold : '#10B981' },
                           ]}
                         >
-                          Verifikuar
+                          E Licencuar
                         </Text>
                       </View>
                     )}
                   </View>
 
-                  {/* Micro Metadata Row */}
+                  {/* Operational Location & Active Portfolio Meta */}
                   <View style={styles.metaRow}>
                     <View style={styles.metaItem}>
                       <MapPin size={12} color={colors.textMuted} strokeWidth={2.2} />
@@ -618,116 +527,39 @@ export default function PublicProfileScreen() {
                     <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
 
                     <View style={styles.metaItem}>
-                      <Calendar size={12} color={colors.textMuted} strokeWidth={2.2} />
+                      <Layers size={12} color={colors.textMuted} strokeWidth={2.2} />
                       <Text style={[styles.metaText, { color: colors.textMuted }]}>
-                        Anëtar {memberYear}
+                        {listings.length} {listings.length === 1 ? 'pronë' : 'prona'} aktive
                       </Text>
                     </View>
                   </View>
                 </View>
               </View>
 
-              {/* ─── 5. LINEAR-STYLE QUICK METRICS BAR ─── */}
-              <View
-                style={[
-                  styles.metricsBar,
-                  {
-                    backgroundColor: colors.surfaceSubtle,
-                    borderColor: specularBorder,
-                  },
-                ]}
-              >
-                <Pressable
-                  style={styles.metricCol}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.selectionAsync()
-                    setActiveFilter('all')
-                  }}
-                >
-                  <Text style={[styles.metricVal, { color: colors.textPrimary }]}>
-                    {listings.length}
-                  </Text>
-                  <Text style={[styles.metricLbl, { color: colors.textMuted }]}>
-                    TË GJITHA
-                  </Text>
-                </Pressable>
-
-                <View style={[styles.metricDivider, { backgroundColor: specularBorder }]} />
-
-                <Pressable
-                  style={styles.metricCol}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.selectionAsync()
-                    setActiveFilter('shitje')
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.metricVal,
-                      { color: theme === 'green' ? colors.gold : colors.primary },
-                    ]}
-                  >
-                    {countSales}
-                  </Text>
-                  <Text style={[styles.metricLbl, { color: colors.textMuted }]}>
-                    NË SHITJE
-                  </Text>
-                </Pressable>
-
-                <View style={[styles.metricDivider, { backgroundColor: specularBorder }]} />
-
-                <Pressable
-                  style={styles.metricCol}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.selectionAsync()
-                    setActiveFilter('qira')
-                  }}
-                >
-                  <Text style={[styles.metricVal, { color: colors.textPrimary }]}>
-                    {countRentals}
-                  </Text>
-                  <Text style={[styles.metricLbl, { color: colors.textMuted }]}>
-                    ME QIRA
-                  </Text>
-                </Pressable>
-              </View>
-
-              {/* ─── 6. ABOUT / BIO SECTION ─── */}
+              {/* ─── Corporate Summary / About Section ─── */}
               {(profile.company_description || profile.bio) && (
                 <View
                   style={[
-                    styles.bioCard,
+                    styles.corporateAboutBox,
                     {
                       backgroundColor: colors.surfaceSubtle,
                       borderColor: specularBorder,
                     },
                   ]}
                 >
-                  <View style={styles.bioHeaderRow}>
-                    <Info
-                      size={13}
-                      color={theme === 'green' ? colors.gold : colors.primary}
-                      strokeWidth={2.4}
-                    />
-                    <Text
-                      style={[
-                        styles.bioHeaderTitle,
-                        { color: theme === 'green' ? colors.gold : colors.primary },
-                      ]}
-                    >
-                      {isCompany ? 'Rreth Agjencisë' : 'Rreth Përdoruesit'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.bioText, { color: colors.textSecondary }]}>
+                  <Text style={[styles.corporateAboutTitle, { color: colors.textPrimary }]}>
+                    Rreth Agjencisë
+                  </Text>
+                  <Text style={[styles.corporateAboutText, { color: colors.textSecondary }]}>
                     {profile.company_description || profile.bio}
                   </Text>
                 </View>
               )}
 
-              {/* ─── 7. HIGH-CONVERSION CONTACT BUTTONS ─── */}
-              <View style={styles.contactActionsContainer}>
-                <View style={styles.actionRow}>
-                  {/* Phone Call Action Button */}
+              {/* ─── Corporate Contact Suite ─── */}
+              <View style={styles.contactContainer}>
+                <View style={styles.contactRow}>
+                  {/* Primary: Call Agency */}
                   <Pressable
                     style={({ pressed }) => [
                       styles.actionBtn,
@@ -744,7 +576,7 @@ export default function PublicProfileScreen() {
                   >
                     <Phone size={18} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
-                      <Text style={styles.actionBtnTitle}>Telefono</Text>
+                      <Text style={styles.actionBtnTitle}>Telefono Agjencinë</Text>
                       <Text style={styles.actionBtnSubtitle} numberOfLines={1}>
                         {profile.phone
                           ? formatPhoneDisplay(profile.phone)
@@ -753,7 +585,7 @@ export default function PublicProfileScreen() {
                     </View>
                   </Pressable>
 
-                  {/* WhatsApp Action Button */}
+                  {/* Secondary: Official WhatsApp */}
                   <Pressable
                     style={({ pressed }) => [
                       styles.actionBtn,
@@ -766,13 +598,13 @@ export default function PublicProfileScreen() {
                   >
                     <MessageCircle size={19} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
-                      <Text style={styles.actionBtnTitle}>WhatsApp</Text>
-                      <Text style={styles.actionBtnSubtitle}>Bisedo direkt</Text>
+                      <Text style={styles.actionBtnTitle}>WhatsApp Zyrtar</Text>
+                      <Text style={styles.actionBtnSubtitle}>Bisedë e drejtpërdrejtë</Text>
                     </View>
                   </Pressable>
                 </View>
 
-                {/* Auxiliary Row: SMS & Native Share */}
+                {/* Auxiliary Row */}
                 {Boolean(profile.phone || profile.whatsapp) && (
                   <View style={styles.auxRow}>
                     <Pressable
@@ -786,7 +618,7 @@ export default function PublicProfileScreen() {
                       ]}
                       onPress={handleSMS}
                     >
-                      <MessageSquare size={15} color={colors.textPrimary} strokeWidth={2} />
+                      <MessageSquare size={14} color={colors.textPrimary} strokeWidth={2} />
                       <Text style={[styles.auxBtnText, { color: colors.textPrimary }]}>
                         Dërgo SMS
                       </Text>
@@ -803,9 +635,9 @@ export default function PublicProfileScreen() {
                       ]}
                       onPress={handleShare}
                     >
-                      <Share2 size={15} color={colors.textPrimary} strokeWidth={2} />
+                      <Share2 size={14} color={colors.textPrimary} strokeWidth={2} />
                       <Text style={[styles.auxBtnText, { color: colors.textPrimary }]}>
-                        Shpërndaj
+                        Shpërndaj Profilin
                       </Text>
                     </Pressable>
                   </View>
@@ -813,13 +645,12 @@ export default function PublicProfileScreen() {
               </View>
             </View>
 
-            {/* ─── 8. ACTIVE LISTINGS GALLERY SECTION ─── */}
+            {/* ─── Real Estate Portfolio Gallery ─── */}
             <View style={styles.listingsSection}>
-              {/* Section Header with Segmented Filter */}
               <View style={styles.sectionHeaderRow}>
                 <View style={styles.sectionTitleWrap}>
                   <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-                    Pronat e Publikuara
+                    Portofoli i Pronave
                   </Text>
                   <View
                     style={[
@@ -843,7 +674,7 @@ export default function PublicProfileScreen() {
                   </View>
                 </View>
 
-                {/* Filter Segments (All, Shitje, Qira) */}
+                {/* Transaction Filters */}
                 {listings.length > 0 && (countSales > 0 || countRentals > 0) && (
                   <View
                     style={[
@@ -960,9 +791,8 @@ export default function PublicProfileScreen() {
                 )}
               </View>
 
-              {/* Listings Cards or Empty State */}
+              {/* Listings Cards / Empty State */}
               {filteredListings.length === 0 ? (
-                /* Master Empty State Card */
                 <View
                   style={[
                     styles.emptyListingsCard,
@@ -978,59 +808,342 @@ export default function PublicProfileScreen() {
                       {
                         backgroundColor:
                           theme === 'green'
-                            ? 'rgba(212, 175, 55, 0.14)'
+                            ? 'rgba(212, 175, 55, 0.12)'
                             : colors.surfaceSubtle,
                       },
                     ]}
                   >
                     <Home
-                      size={32}
+                      size={28}
                       color={theme === 'green' ? colors.gold : colors.textMuted}
                       strokeWidth={1.8}
                     />
                   </View>
                   <Text style={[styles.emptyListingsTitle, { color: colors.textPrimary }]}>
-                    Nuk ka shpallje aktive
+                    Nuk ka shpallje në këtë kategori
                   </Text>
                   <Text style={[styles.emptyListingsSubtitle, { color: colors.textMuted }]}>
-                    {listings.length === 0
-                      ? 'Ky përdorues nuk ka asnjë pronë aktive në shitje apo me qira për momentin.'
-                      : 'Nuk ka prona që përputhen me filtrin e përzgjedhur.'}
+                    Kjo agjenci nuk ka prona aktive të listuara për filtrin e zgjedhur.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.listingsGrid}>
+                  {filteredListings.map((listing) => (
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                      isFavorite={Boolean(favorites[listing.id])}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        ) : (
+          /* ═══════════════════════════════════════════════════════════════
+             2. INDIVIDUAL / PRIVATE SELLER PROFILE (Streamlined & Clean)
+             ═══════════════════════════════════════════════════════════════ */
+          <>
+            {/* ─── Individual User Identity Card ─── */}
+            <View
+              style={[
+                styles.profileSurfaceCard,
+                styles.individualCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: specularBorder,
+                  shadowColor: theme === 'black' ? '#000' : colors.primaryDark,
+                },
+              ]}
+            >
+              <View style={styles.individualHeaderRow}>
+                {/* Personal Circular Avatar */}
+                <View
+                  style={[
+                    styles.personalAvatarBox,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                >
+                  <Image
+                    source={getAvatarSource(profile.avatar_url)}
+                    style={styles.personalAvatarImg}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    priority="high"
+                  />
+                  {isVerified && (
+                    <View
+                      style={[
+                        styles.personalVerifiedBadge,
+                        {
+                          backgroundColor: '#10B981',
+                          borderColor: colors.surface,
+                        },
+                      ]}
+                    >
+                      <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                    </View>
+                  )}
+                </View>
+
+                {/* Personal Identity Details */}
+                <View style={styles.identityDetails}>
+                  <Text
+                    style={[styles.personalNameText, { color: colors.textPrimary }]}
+                    numberOfLines={2}
+                  >
+                    {displayName}
                   </Text>
 
-                  {listings.length > 0 ? (
-                    <Pressable
+                  <View style={styles.personalRoleRow}>
+                    <View
                       style={[
-                        styles.emptyActionBtn,
+                        styles.personalRolePill,
                         {
                           backgroundColor: colors.surfaceSubtle,
                           borderColor: specularBorder,
                         },
                       ]}
-                      onPress={() => setActiveFilter('all')}
                     >
-                      <Text style={[styles.emptyActionBtnText, { color: colors.textPrimary }]}>
-                        Shfaq të gjitha ({listings.length})
+                      <User size={11} color={colors.textSecondary} strokeWidth={2.2} />
+                      <Text style={[styles.personalRoleText, { color: colors.textSecondary }]}>
+                        Pronar Privat
                       </Text>
-                    </Pressable>
-                  ) : (
+                    </View>
+
+                    {isVerified && (
+                      <View
+                        style={[
+                          styles.personalRolePill,
+                          {
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderColor: 'rgba(16, 185, 129, 0.2)',
+                          },
+                        ]}
+                      >
+                        <ShieldCheck size={11} color="#10B981" strokeWidth={2.4} />
+                        <Text style={[styles.personalRoleText, { color: '#10B981' }]}>
+                          I Verifikuar
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <View style={styles.metaItem}>
+                      <MapPin size={11} color={colors.textMuted} strokeWidth={2} />
+                      <Text style={[styles.metaText, { color: colors.textMuted }]}>
+                        {profile.city || 'Kosovë'}
+                      </Text>
+                    </View>
+
+                    <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+
+                    <View style={styles.metaItem}>
+                      <Calendar size={11} color={colors.textMuted} strokeWidth={2} />
+                      <Text style={[styles.metaText, { color: colors.textMuted }]}>
+                        Anëtar që nga {memberYear}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* ─── Personal Bio (if present) ─── */}
+              {Boolean(profile.bio) && (
+                <View
+                  style={[
+                    styles.personalBioBox,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.personalBioText, { color: colors.textSecondary }]}>
+                    {profile.bio}
+                  </Text>
+                </View>
+              )}
+
+              {/* ─── Streamlined Personal Actions ─── */}
+              <View style={styles.personalActionsRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.personalActionBtn,
+                    styles.personalPhoneBtn,
+                    {
+                      backgroundColor: colors.primary,
+                    },
+                    pressed && styles.btnPressed,
+                    !profile.phone && styles.btnDisabled,
+                  ]}
+                  onPress={handleCall}
+                  disabled={!profile.phone}
+                >
+                  <Phone size={16} color="#FFFFFF" strokeWidth={2.4} />
+                  <Text style={styles.personalActionBtnText}>
+                    {profile.phone ? formatPhoneDisplay(profile.phone) : 'Pa numër'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.personalActionBtn,
+                    styles.personalWhatsAppBtn,
+                    pressed && styles.btnPressed,
+                    !(profile.whatsapp || profile.phone) && styles.btnDisabled,
+                  ]}
+                  onPress={handleWhatsApp}
+                  disabled={!(profile.whatsapp || profile.phone)}
+                >
+                  <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.4} />
+                  <Text style={styles.personalActionBtnText}>WhatsApp</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* ─── Personal Listings ─── */}
+            <View style={styles.listingsSection}>
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionTitleWrap}>
+                  <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
+                    Pronat e Shitësit
+                  </Text>
+                  <View
+                    style={[
+                      styles.countPill,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.countPillText, { color: colors.textPrimary }]}>
+                      {listings.length}
+                    </Text>
+                  </View>
+                </View>
+
+                {listings.length > 0 && (countSales > 0 || countRentals > 0) && (
+                  <View
+                    style={[
+                      styles.filterSegmentWrap,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: specularBorder,
+                      },
+                    ]}
+                  >
                     <Pressable
                       style={[
-                        styles.emptyActionBtn,
-                        {
-                          backgroundColor: colors.primary,
-                        },
+                        styles.filterSegmentBtn,
+                        activeFilter === 'all' && [
+                          styles.filterSegmentActive,
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: specularBorder,
+                          },
+                        ],
                       ]}
-                      onPress={() => router.push('/(tabs)/listings' as any)}
+                      onPress={() => setActiveFilter('all')}
                     >
-                      <Text style={[styles.emptyActionBtnText, { color: '#FFFFFF' }]}>
-                        Eksploro të gjitha pronat
+                      <Text
+                        style={[
+                          styles.filterSegmentText,
+                          {
+                            color: activeFilter === 'all' ? colors.textPrimary : colors.textMuted,
+                            fontFamily: activeFilter === 'all' ? Fonts.bold : Fonts.medium,
+                          },
+                        ]}
+                      >
+                        Të gjitha
                       </Text>
                     </Pressable>
-                  )}
+
+                    {countSales > 0 && (
+                      <Pressable
+                        style={[
+                          styles.filterSegmentBtn,
+                          activeFilter === 'shitje' && [
+                            styles.filterSegmentActive,
+                            {
+                              backgroundColor: colors.surface,
+                              borderColor: specularBorder,
+                            },
+                          ],
+                        ]}
+                        onPress={() => setActiveFilter('shitje')}
+                      >
+                        <Text
+                          style={[
+                            styles.filterSegmentText,
+                            {
+                              color: activeFilter === 'shitje' ? colors.textPrimary : colors.textMuted,
+                              fontFamily: activeFilter === 'shitje' ? Fonts.bold : Fonts.medium,
+                            },
+                          ]}
+                        >
+                          Shitje ({countSales})
+                        </Text>
+                      </Pressable>
+                    )}
+
+                    {countRentals > 0 && (
+                      <Pressable
+                        style={[
+                          styles.filterSegmentBtn,
+                          activeFilter === 'qira' && [
+                            styles.filterSegmentActive,
+                            {
+                              backgroundColor: colors.surface,
+                              borderColor: specularBorder,
+                            },
+                          ],
+                        ]}
+                        onPress={() => setActiveFilter('qira')}
+                      >
+                        <Text
+                          style={[
+                            styles.filterSegmentText,
+                            {
+                              color: activeFilter === 'qira' ? colors.textPrimary : colors.textMuted,
+                              fontFamily: activeFilter === 'qira' ? Fonts.bold : Fonts.medium,
+                            },
+                          ]}
+                        >
+                          Qira ({countRentals})
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </View>
+
+              {filteredListings.length === 0 ? (
+                <View
+                  style={[
+                    styles.emptyListingsCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                >
+                  <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceSubtle }]}>
+                    <Home size={26} color={colors.textMuted} strokeWidth={1.8} />
+                  </View>
+                  <Text style={[styles.emptyListingsTitle, { color: colors.textPrimary }]}>
+                    Nuk ka shpallje aktive
+                  </Text>
+                  <Text style={[styles.emptyListingsSubtitle, { color: colors.textMuted }]}>
+                    Ky shitës nuk ka prona aktive për momentin.
+                  </Text>
                 </View>
               ) : (
-                /* Listings Grid */
                 <View style={styles.listingsGrid}>
                   {filteredListings.map((listing) => (
                     <ListingCard
@@ -1055,7 +1168,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ─── Master Header ───
+  // ─── Header Navigation ───
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1065,21 +1178,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   navBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
   },
   navBtnPressed: {
     opacity: 0.75,
-    transform: [{ scale: 0.95 }],
+    transform: [{ scale: 0.96 }],
   },
   headerTitleCenter: {
     flex: 1,
@@ -1088,155 +1196,115 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   headerTitleText: {
-    fontSize: 16,
+    fontSize: 15.5,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.3,
-  },
-  headerSubtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 1,
+    letterSpacing: -0.2,
   },
   headerSubtitleText: {
     fontSize: 11,
     fontFamily: Fonts.medium,
-    letterSpacing: -0.1,
+    marginTop: 0.5,
   },
 
-  // ─── Scroll Container ───
+  // ─── Container ───
   container: {
     flex: 1,
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 16,
+    paddingTop: 16,
+    gap: 18,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
 
-  // ─── Ambient Banner ───
-  bannerContainer: {
-    marginBottom: -42,
-    zIndex: 1,
-  },
-  ambientBanner: {
-    height: 110,
-    borderRadius: 24,
+  // ─── Shared Profile Card ───
+  profileSurfaceCard: {
+    padding: 18,
+    borderRadius: 22,
     borderWidth: 0.5,
-    padding: 14,
-    justifyContent: 'flex-start',
-  },
-  bannerDecorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  bannerCapsule: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  bannerCapsuleText: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
-  },
-
-  // ─── Elevated Hero Identity Card ───
-  profileHeroCard: {
-    padding: 20,
-    borderRadius: 26,
-    borderWidth: 0.5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-    gap: 18,
-    zIndex: 2,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     gap: 16,
   },
-  avatarWrapper: {
-    width: 92,
-    height: 92,
-    borderWidth: 3,
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    elevation: 5,
+  companyCard: {
+    padding: 20,
+    borderRadius: 24,
+    gap: 18,
   },
-  avatarImg: {
+  individualCard: {
+    padding: 18,
+    borderRadius: 20,
+    gap: 16,
+  },
+
+  // ─── Company Header Layout ───
+  heroHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 15,
+  },
+  companyLogoBox: {
+    width: 82,
+    height: 82,
+    borderRadius: 20,
+    borderWidth: 1,
+    position: 'relative',
+    overflow: 'visible',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  companyLogoImg: {
     width: '100%',
     height: '100%',
+    borderRadius: 19,
   },
-  verifiedAvatarBadge: {
+  companyVerifiedBadge: {
     position: 'absolute',
     bottom: -3,
     right: -3,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2.5,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
   },
   identityDetails: {
     flex: 1,
-    gap: 7,
+    gap: 6,
   },
-  officialName: {
-    fontSize: 22,
+  companyNameText: {
+    fontSize: 21,
     fontFamily: Fonts.extraBold,
-    letterSpacing: -0.5,
-    lineHeight: 27,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
-  badgesRow: {
+  commercialTagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     alignItems: 'center',
   },
-  roleBadge: {
+  corporatePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4.5,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 7,
     borderWidth: 0.5,
   },
-  roleBadgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.semiBold,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4.5,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 0.5,
-  },
-  verifiedBadgeText: {
+  corporatePillText: {
     fontSize: 11,
     fontFamily: Fonts.bold,
+    letterSpacing: -0.1,
   },
   metaRow: {
     flexDirection: 'row',
@@ -1257,80 +1325,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // ─── Linear Metrics Bar ───
-  metricsBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 0.5,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-  },
-  metricCol: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  metricVal: {
-    fontSize: 19,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.4,
-  },
-  metricLbl: {
-    fontSize: 9.5,
-    fontFamily: Fonts.bold,
-    letterSpacing: 0.4,
-    marginTop: 2,
-  },
-  metricDivider: {
-    width: 0.5,
-    height: 28,
-  },
-
-  // ─── Bio Card ───
-  bioCard: {
+  // ─── Corporate About ───
+  corporateAboutBox: {
     padding: 14,
-    borderRadius: 16,
+    borderRadius: 15,
     borderWidth: 0.5,
-    gap: 6,
-  },
-  bioHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 5,
   },
-  bioHeaderTitle: {
-    fontSize: 12,
+  corporateAboutTitle: {
+    fontSize: 12.5,
     fontFamily: Fonts.bold,
     letterSpacing: -0.1,
   },
-  bioText: {
+  corporateAboutText: {
     fontSize: 13,
     fontFamily: Fonts.regular,
-    lineHeight: 20,
+    lineHeight: 19,
   },
 
-  // ─── High-Conversion Contact Buttons ───
-  contactActionsContainer: {
+  // ─── Contact Suite ───
+  contactContainer: {
     gap: 10,
   },
-  actionRow: {
+  contactRow: {
     flexDirection: 'row',
     gap: 10,
   },
   actionBtn: {
     flex: 1,
-    height: 54,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   phoneBtn: {
     borderWidth: 0.5,
@@ -1345,7 +1378,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionBtnTitle: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontFamily: Fonts.bold,
     color: '#FFFFFF',
     letterSpacing: -0.2,
@@ -1369,24 +1402,109 @@ const styles = StyleSheet.create({
   },
   auxBtn: {
     flex: 1,
-    height: 42,
+    height: 40,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 6,
     borderWidth: 0.5,
   },
   auxBtnText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontFamily: Fonts.semiBold,
+  },
+
+  // ─── Individual Profile Styling ───
+  individualHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  personalAvatarBox: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    borderWidth: 1.5,
+    position: 'relative',
+  },
+  personalAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 36,
+  },
+  personalVerifiedBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  personalNameText: {
+    fontSize: 20,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.4,
+    lineHeight: 25,
+  },
+  personalRoleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  personalRolePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 0.5,
+  },
+  personalRoleText: {
+    fontSize: 11,
+    fontFamily: Fonts.semiBold,
+  },
+  personalBioBox: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 0.5,
+  },
+  personalBioText: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    lineHeight: 19,
+  },
+  personalActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  personalActionBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  personalPhoneBtn: {},
+  personalWhatsAppBtn: {
+    backgroundColor: '#25D366',
+  },
+  personalActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: Fonts.bold,
     letterSpacing: -0.1,
   },
 
-  // ─── Listings Showcase Section ───
+  // ─── Listings Section ───
   listingsSection: {
     gap: 14,
-    marginTop: 4,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -1394,7 +1512,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 2,
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   sectionTitleWrap: {
     flexDirection: 'row',
@@ -1402,14 +1520,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionHeading: {
-    fontSize: 19,
+    fontSize: 18,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   countPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 10,
   },
   countPillText: {
     fontSize: 12,
@@ -1417,22 +1535,22 @@ const styles = StyleSheet.create({
   },
   filterSegmentWrap: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 0.5,
-    padding: 3,
+    padding: 2.5,
     gap: 2,
   },
   filterSegmentBtn: {
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   filterSegmentActive: {
     borderWidth: 0.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 1,
   },
   filterSegmentText: {
@@ -1442,100 +1560,83 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   emptyListingsCard: {
-    padding: 36,
-    borderRadius: 22,
+    padding: 32,
+    borderRadius: 20,
     borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
   },
   emptyIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
   emptyListingsTitle: {
-    fontSize: 17,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.3,
-  },
-  emptyListingsSubtitle: {
-    fontSize: 13.5,
-    fontFamily: Fonts.regular,
-    textAlign: 'center',
-    maxWidth: 290,
-    lineHeight: 19,
-  },
-  emptyActionBtn: {
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: 'transparent',
-  },
-  emptyActionBtnText: {
-    fontSize: 13,
+    fontSize: 16,
     fontFamily: Fonts.bold,
     letterSpacing: -0.2,
+  },
+  emptyListingsSubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 18,
   },
 
   // ─── Skeleton Loading ───
   skeletonWrapper: {
     gap: 16,
   },
-  skeletonBannerWrap: {
-    marginBottom: -42,
-  },
   skeletonTextCol: {
     flex: 1,
     gap: 8,
   },
-  skeletonStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   skeletonCardsWrap: {
     gap: 16,
+  },
+  sectionHeader: {
+    paddingHorizontal: 2,
   },
 
   // ─── Error State ───
   errorCard: {
-    padding: 36,
-    borderRadius: 26,
+    padding: 32,
+    borderRadius: 22,
     borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 14,
-    marginTop: 36,
+    gap: 12,
+    marginTop: 32,
   },
-  errorIconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  errorIconBox: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
   },
   errorTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   errorSubtitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontFamily: Fonts.regular,
     textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 290,
+    lineHeight: 19,
+    maxWidth: 280,
   },
   errorBtn: {
-    marginTop: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 13,
-    borderRadius: 16,
+    marginTop: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
   errorBtnText: {
     color: '#FFFFFF',

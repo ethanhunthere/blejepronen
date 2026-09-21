@@ -40,6 +40,7 @@ import {
   OmniEntityType,
   TRENDING_SEARCHES,
   executeMobileOmniSearch,
+  searchLocations,
 } from '@/lib/omni-search'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 
@@ -142,7 +143,35 @@ export default function OmniSearchModal({
     } catch {}
   }, [])
 
-  // Execute debounced multi-entity search
+  const handleQueryChange = useCallback((text: string) => {
+    setQuery(text)
+    const clean = text.trim()
+    if (!clean) {
+      setResults(null)
+      setLoading(false)
+      return
+    }
+
+    // Instant 0ms local location preview for instant visual responsiveness
+    const instantLocs = searchLocations(clean, 6)
+    if (instantLocs.length > 0) {
+      setResults((prev) => {
+        if (!prev || prev.query !== text) {
+          return {
+            query: text,
+            total: instantLocs.length,
+            counts: { listings: 0, agencies: 0, agents: 0, locations: instantLocs.length },
+            results: { listings: [], agencies: [], agents: [], locations: instantLocs },
+            flat: instantLocs,
+            trending: TRENDING_SEARCHES,
+          }
+        }
+        return prev
+      })
+    }
+  }, [])
+
+  // Blazing fast debounced multi-entity search (90ms)
   useEffect(() => {
     if (!query.trim()) {
       setResults(null)
@@ -165,7 +194,7 @@ export default function OmniSearchModal({
       } finally {
         setLoading(false)
       }
-    }, 180)
+    }, 90)
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
@@ -282,7 +311,7 @@ export default function OmniSearchModal({
                 placeholder="Kërko prona, agjenci, llogari, qytet..."
                 placeholderTextColor={colors.textLight}
                 value={query}
-                onChangeText={setQuery}
+                onChangeText={handleQueryChange}
                 returnKeyType="search"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -492,6 +521,11 @@ export default function OmniSearchModal({
               ]}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
+              removeClippedSubviews={Platform.OS !== 'web'}
+              maxToRenderPerBatch={10}
+              updateCellsBatchingPeriod={40}
+              initialNumToRender={8}
+              windowSize={5}
               renderItem={({ item }) => {
                 const isAgency = item.entityType === 'agency'
                 const isAgent = item.entityType === 'agent'
@@ -515,16 +549,26 @@ export default function OmniSearchModal({
                     <View
                       style={[
                         styles.itemThumbBox,
+                        isAgency && styles.itemThumbBoxAgency,
+                        isAgent && styles.itemThumbBoxAgent,
                         {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor: colors.border,
+                          backgroundColor: isAgency
+                            ? (theme === 'green' ? 'rgba(212, 175, 55, 0.12)' : colors.primaryLight)
+                            : colors.surfaceSubtle,
+                          borderColor: isAgency
+                            ? (theme === 'green' ? 'rgba(212, 175, 55, 0.3)' : colors.border)
+                            : colors.border,
                         },
                       ]}
                     >
                       {item.imageUrl ? (
                         <Image
                           source={getAvatarSource(item.imageUrl)}
-                          style={styles.itemThumbImg}
+                          style={[
+                            styles.itemThumbImg,
+                            isAgency && { borderRadius: 10 },
+                            isAgent && { borderRadius: 20 },
+                          ]}
                           contentFit="cover"
                           cachePolicy="memory-disk"
                           priority="high"
@@ -544,12 +588,21 @@ export default function OmniSearchModal({
                     {/* Details Column */}
                     <View style={styles.itemInfo}>
                       <View style={styles.itemTitleRow}>
-                        <Text
-                          style={[styles.itemTitle, { color: colors.textPrimary }]}
-                          numberOfLines={1}
-                        >
-                          {item.title}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 }}>
+                          <Text
+                            style={[styles.itemTitle, { color: colors.textPrimary }]}
+                            numberOfLines={1}
+                          >
+                            {item.title}
+                          </Text>
+                          {isAgency && (
+                            <ShieldCheck
+                              size={13}
+                              color={theme === 'green' ? colors.gold : colors.primary}
+                              strokeWidth={2.4}
+                            />
+                          )}
+                        </View>
                         {item.badge && (
                           <View
                             style={[
@@ -834,6 +887,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  itemThumbBoxAgency: {
+    borderRadius: 12,
+  },
+  itemThumbBoxAgent: {
+    borderRadius: 24,
   },
   itemThumbImg: {
     width: '100%',
