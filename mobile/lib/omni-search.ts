@@ -224,8 +224,8 @@ export async function executeMobileOmniSearch(
         imageUrl: p.avatar_url || null,
         price: null,
         score,
-        payload: { phone: p.phone, email_verified: p.email_verified },
-        targetUrl: `/listings?search=${encodeURIComponent(displayName)}`,
+        payload: { phone: p.phone, email_verified: p.email_verified, id: p.id },
+        targetUrl: `/profili/${p.id}`,
       }
 
       if (isCompany) agencies.push(item)

@@ -206,15 +206,25 @@ export default function OmniSearchModal({
             params: { city: item.payload?.city, neighborhood: item.payload?.neighborhood },
           })
         }
-      } else if (item.entityType === 'agency' || item.entityType === 'agent') {
-        if (onSelectQuery) {
-          onSelectQuery(item.title)
-        } else {
-          router.push({
-            pathname: '/(tabs)/listings' as any,
-            params: { search: item.title },
-          })
+      } else if (
+        item.entityType === 'agency' ||
+        item.entityType === 'agent' ||
+        (item as any).entityType === 'user' ||
+        (item as any).entityType === 'company' ||
+        item.targetUrl?.startsWith('/profili/') ||
+        item.targetUrl?.startsWith('/profile/')
+      ) {
+        let targetId = item.id
+        if (item.targetUrl?.includes('/profili/') || item.targetUrl?.includes('/profile/')) {
+          const parts = item.targetUrl.split('/')
+          const candidate = parts[parts.length - 1]?.split('?')[0]
+          if (candidate) targetId = candidate
         }
+
+        router.push({
+          pathname: '/profili/[id]',
+          params: { id: targetId },
+        })
       }
     },
     [query, saveRecent, onClose, router, onSelectCity, onSelectQuery]
@@ -591,22 +601,27 @@ export default function OmniSearchModal({
                         <Text style={[styles.itemPrice, { color: colors.primary }]}>
                           {formatPrice(item.price)}
                         </Text>
-                      ) : (isAgency || isAgent) && item.payload?.phone ? (
-                        <Pressable
-                          onPress={(e) => {
-                            e.stopPropagation()
-                            if (item.payload?.phone) {
-                              Linking.openURL(`tel:${item.payload.phone}`)
-                            }
-                          }}
-                          hitSlop={8}
-                          style={[
-                            styles.phoneActionBtn,
-                            { backgroundColor: colors.primaryLight },
-                          ]}
-                        >
-                          <Phone size={14} color={colors.primary} />
-                        </Pressable>
+                      ) : isAgency || isAgent ? (
+                        <View style={styles.agencyActionCol}>
+                          {item.payload?.phone ? (
+                            <Pressable
+                              onPress={(e) => {
+                                e.stopPropagation()
+                                if (item.payload?.phone) {
+                                  Linking.openURL(`tel:${item.payload.phone}`)
+                                }
+                              }}
+                              hitSlop={8}
+                              style={[
+                                styles.phoneActionBtn,
+                                { backgroundColor: colors.primaryLight },
+                              ]}
+                            >
+                              <Phone size={14} color={colors.primary} />
+                            </Pressable>
+                          ) : null}
+                          <ChevronRight size={17} color={colors.textMuted} />
+                        </View>
                       ) : (
                         <ChevronRight size={18} color={colors.textMuted} />
                       )}
@@ -859,6 +874,11 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+  },
+  agencyActionCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   phoneActionBtn: {
     width: 32,

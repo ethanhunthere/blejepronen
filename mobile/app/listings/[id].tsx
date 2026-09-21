@@ -30,6 +30,7 @@ import {
   Check,
   Plus,
   Minus,
+  ChevronRight,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -488,8 +489,24 @@ export default function ListingDetailScreen() {
             </View>
           )}
 
-          {/* Seller / Agent Card */}
-          <View style={[styles.sellerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {/* Seller / Agent Card with direct navigation to public profile */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.sellerCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
+            ]}
+            onPress={() => {
+              if (listing?.user_id) {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                router.push({
+                  pathname: '/profili/[id]',
+                  params: { id: listing.user_id },
+                })
+              }
+            }}
+            hitSlop={6}
+          >
             <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
               {seller?.avatar_url ? (
                 <Image
@@ -511,7 +528,7 @@ export default function ListingDetailScreen() {
               <View style={styles.sellerVerifiedRow}>
                 <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
                 <Text style={[styles.sellerRole, { color: colors.textMuted }]}>
-                  Përdorues i verifikuar në Bleje Pronën
+                  Shiko profilin & të gjitha pronat
                 </Text>
               </View>
               {seller?.phone && (
@@ -520,7 +537,8 @@ export default function ListingDetailScreen() {
                 </Text>
               )}
             </View>
-          </View>
+            <ChevronRight size={18} color={colors.textMuted} />
+          </Pressable>
 
           <View style={{ height: 110 }} />
         </View>
