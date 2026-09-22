@@ -704,8 +704,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             className="flex items-center gap-2.5 flex-shrink-0"
             aria-label="Ballina"
           >
-            <Image
-              src="/logo-icon.png"
+                        <Image
+              src="/logo-white.png"
               alt="Bleje Pronën"
               width={48}
               height={48}
