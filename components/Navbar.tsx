@@ -693,7 +693,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       <div className="w-full relative z-50">
         {/* Fixed-height row: every child is vertically centered, so top and
             bottom padding are equal by construction at every breakpoint. */}
-        <div className="flex items-center justify-between h-14 lg:h-16">
+                <div className="flex items-center justify-between h-14 lg:h-16">
           {/* Permanent static logo: never moves, scales, or animates during menu open/close */}
           <Link
             href="/"
@@ -701,10 +701,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               setMenuOpen(false)
               handleNavClick('/')
             }}
-            className="flex items-center gap-2.5 flex-shrink-0"
+            className="flex items-center flex-shrink-0 lg:mr-6"
             aria-label="Ballina"
           >
-                        <Image
+            <Image
               src="/logo-white.png"
               alt="Bleje Pronën"
               width={40}
@@ -714,23 +714,38 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             />
           </Link>
 
+          {/* Desktop Centered Search Trigger */}
+          <div className="hidden lg:flex-1 lg:flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsOmniSearchOpen(true)}
+              className="relative inline-flex items-center justify-between gap-2 w-full max-w-xl h-12 px-5 rounded-2xl bg-white/8 hover:bg-white/12 text-[#cceae8] hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200 cursor-pointer text-[14px] font-medium group shadow-lg shadow-black/10 focus:outline-none focus:ring-2 focus:ring-[#C8B882]/50 focus:ring-offset-2 focus:ring-offset-[#00675B]"
+              aria-label="Kërko në Bleje Pronën"
+            >
+              <div className="flex items-center gap-2.5">
+                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-110 transition-transform group-hover:text-white flex-shrink-0" />
+                <span className="hidden sm:inline">Kërko prona, qytet, postkod…</span>
+              </div>
+              <kbd className="inline-flex items-center gap-0.5 text-[11px] font-mono bg-white/15 hover:bg-white/25 px-2 py-1 rounded-lg text-white/70 group-hover:text-white transition-colors border border-white/10">
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+
           {/* Right nav section */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsOmniSearchOpen(true)}
-                className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#cceae8] hover:text-white border border-white/15 transition-all cursor-pointer text-[13.5px] font-medium group"
-                aria-label="Kërko në Bleje Pronën"
-              >
-                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-110 transition-transform" />
-                <span>Kërko</span>
-                <kbd className="hidden xl:inline-flex items-center gap-0.5 text-[10px] font-mono bg-white/15 px-1.5 py-0.5 rounded text-white/80">
-                  ⌘K
-                </kbd>
-              </button>
+            {/* Mobile Search Button */}
+            <button
+              type="button"
+              onClick={() => setIsOmniSearchOpen(true)}
+              className="lg:hidden relative inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/35 border border-white/20 text-white shadow-sm transition-all cursor-pointer"
+              aria-label="Kërko prona (⌘K / /)"
+            >
+              <Search className="h-4 w-4 text-white" />
+            </button>
 
+            {/* Desktop Nav Links */}
+            <div className="hidden lg:flex items-center gap-2">
               <Link
                 href="/listings"
                 className={`relative inline-flex items-center h-10 text-[15px] px-3.5 rounded-lg transition-all duration-200 ${
