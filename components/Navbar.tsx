@@ -707,10 +707,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                         <Image
               src="/logo-white.png"
               alt="Bleje Pronën"
-              width={48}
-              height={48}
+              width={40}
+              height={40}
               priority
-              className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-contain block"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain block"
             />
           </Link>
 
