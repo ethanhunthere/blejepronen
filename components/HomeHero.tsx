@@ -7,7 +7,7 @@ import { CITIES } from '@/lib/cities'
 
 export default function HomeHero() {
   return (
-    <section className="relative isolate flex min-h-[calc(100dvh-57px)] items-center overflow-hidden bg-[#003830]">
+    <section id="home-hero" className="relative isolate flex min-h-[calc(100dvh-57px)] items-center overflow-hidden bg-[#003830]">
       {/* Cinematic backdrop: bright, warm interior under a teal veil —
           lightweight progressive JPEG with a slow drift, no video. */}
       <div
