@@ -23,7 +23,6 @@ import {
   MapPin,
   Maximize2,
   ChevronRight,
-  Compass,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -64,44 +63,11 @@ const KOSOVO_METROS = [
   { id: 'Gjakovë', label: 'Gjakovë' },
 ]
 
-const TopBarHeader = React.memo(function TopBarHeader({
-  totalCount,
-}: {
-  totalCount: number
-}) {
-  const { colors, theme } = useTheme()
-
+const TopBarHeader = React.memo(function TopBarHeader() {
   return (
     <View style={styles.header}>
       <View style={styles.headerBrandRow}>
         <Logo size={34} />
-        {totalCount > 0 && (
-          <View
-            style={[
-              styles.marketBadge,
-              {
-                backgroundColor:
-                  theme === 'green'
-                    ? 'rgba(212, 175, 55, 0.15)'
-                    : colors.surfaceSubtle,
-                borderColor:
-                  theme === 'green'
-                    ? 'rgba(212, 175, 55, 0.35)'
-                    : colors.borderSubtle,
-              },
-            ]}
-          >
-            <Compass size={11} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.4} />
-            <Text
-              style={[
-                styles.marketBadgeText,
-                { color: theme === 'green' ? colors.gold : colors.textSecondary },
-              ]}
-            >
-              {totalCount}+ prona
-            </Text>
-          </View>
-        )}
       </View>
     </View>
   )
@@ -385,8 +351,8 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      {/* Top Bar Header with Official Logo & Market Status */}
-      <TopBarHeader totalCount={listings.length} />
+      {/* Top Bar Header with Official Logo */}
+      <TopBarHeader />
 
       <FlatList
         data={filteredListings}
@@ -782,22 +748,7 @@ const styles = StyleSheet.create({
   headerBrandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     width: '100%',
-  },
-  marketBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 0.5,
-  },
-  marketBadgeText: {
-    fontSize: 11.5,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
   },
   searchRow: {
     flexDirection: 'row',
