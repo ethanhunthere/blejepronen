@@ -140,22 +140,28 @@ const TAB_CONFIG: Record<string, { icon: any; label: string; isPost?: boolean }>
 }
 
 // ==========================================
-// iOS FLOATING TAB BAR — GLASS MATERIAL RECIPE
-// "Polished crystal": maximum frost (intensity 100) + Apple UltraThin
-// materials, a deliberately LOW base tint so underlying content shimmers
-// through, a top-lit specular gradient and razor-thin edge sheen.
+// iOS FLOATING TAB BAR — LIQUID GLASS RECIPE
+// Apple Liquid Glass emulation: maximum frost (intensity 100) on Apple
+// UltraThin materials; near-clear tint veils so background content truly
+// refracts through; a top-lit specular gradient with an inner bottom-edge
+// light bounce; a 0.5pt specular hairline ring; an inner light-scatter
+// rim; and an outer ambient halo wrapping the capsule on dark surfaces.
 // ==========================================
 
 interface GlassRecipe {
   tint: BlurTint
   intensity: number
-  /** Base tint veil — kept low so the blur (not the tint) defines the glass */
+  /** Near-clear tint veil — the blur, not the tint, must define the glass */
   base: string
-  /** Specular ring highlight around the capsule */
+  /** 0.5pt specular hairline ringing the capsule */
   edge: string
-  /** Razor-thin top edge sheen (light catching the top curve) */
+  /** Outer ambient halo — soft light wrapping just outside the edge */
+  halo: string
+  /** Inner rim — light scattering just inside the edge */
+  innerRim: string
+  /** Horizontal top sheen colour (fades out at both ends) */
   sheen: string
-  /** Vertical specular gradient: top-lit, fading to a faint bottom shade */
+  /** Vertical specular gradient: top light, clear middle, inner bottom bounce */
   gradient: readonly [string, string, string, string]
 }
 
@@ -163,40 +169,46 @@ const TAB_BAR_GLASS: Record<ThemeMode, GlassRecipe> = {
   white: {
     tint: 'systemUltraThinMaterialLight',
     intensity: 100,
-    base: 'rgba(255, 255, 255, 0.46)',
-    edge: 'rgba(255, 255, 255, 0.75)',
-    sheen: 'rgba(255, 255, 255, 0.60)',
+    base: 'rgba(255, 255, 255, 0.30)',
+    edge: 'rgba(255, 255, 255, 0.85)',
+    halo: 'rgba(255, 255, 255, 0.28)',
+    innerRim: 'rgba(255, 255, 255, 0.34)',
+    sheen: 'rgba(255, 255, 255, 0.75)',
     gradient: [
-      'rgba(255, 255, 255, 0.30)',
-      'rgba(255, 255, 255, 0.08)',
+      'rgba(255, 255, 255, 0.42)',
+      'rgba(255, 255, 255, 0.10)',
       'rgba(255, 255, 255, 0.00)',
-      'rgba(15, 23, 42, 0.05)',
+      'rgba(255, 255, 255, 0.10)',
     ],
   },
   green: {
     tint: 'systemUltraThinMaterialDark',
     intensity: 100,
-    base: 'rgba(7, 28, 24, 0.54)',
-    edge: 'rgba(212, 175, 55, 0.34)',
-    sheen: 'rgba(255, 255, 255, 0.22)',
+    base: 'rgba(7, 28, 24, 0.40)',
+    edge: 'rgba(212, 175, 55, 0.42)',
+    halo: 'rgba(255, 255, 255, 0.16)',
+    innerRim: 'rgba(255, 255, 255, 0.12)',
+    sheen: 'rgba(255, 255, 255, 0.30)',
     gradient: [
-      'rgba(255, 255, 255, 0.16)',
-      'rgba(255, 255, 255, 0.04)',
+      'rgba(255, 255, 255, 0.20)',
+      'rgba(255, 255, 255, 0.05)',
       'rgba(255, 255, 255, 0.00)',
-      'rgba(0, 0, 0, 0.16)',
+      'rgba(255, 255, 255, 0.07)',
     ],
   },
   black: {
     tint: 'systemUltraThinMaterialDark',
     intensity: 100,
-    base: 'rgba(16, 22, 21, 0.52)',
-    edge: 'rgba(255, 255, 255, 0.20)',
-    sheen: 'rgba(255, 255, 255, 0.20)',
+    base: 'rgba(16, 22, 21, 0.40)',
+    edge: 'rgba(255, 255, 255, 0.28)',
+    halo: 'rgba(255, 255, 255, 0.18)',
+    innerRim: 'rgba(255, 255, 255, 0.12)',
+    sheen: 'rgba(255, 255, 255, 0.28)',
     gradient: [
-      'rgba(255, 255, 255, 0.14)',
-      'rgba(255, 255, 255, 0.03)',
+      'rgba(255, 255, 255, 0.18)',
+      'rgba(255, 255, 255, 0.04)',
       'rgba(255, 255, 255, 0.00)',
-      'rgba(0, 0, 0, 0.18)',
+      'rgba(255, 255, 255, 0.06)',
     ],
   },
 }
@@ -278,16 +290,16 @@ const IOSTabButton = React.memo(function IOSTabButton({
   } else if (isFocused) {
     pillBg =
       theme === 'white'
-        ? 'rgba(0, 103, 91, 0.10)'
+        ? 'rgba(0, 103, 91, 0.12)'
         : theme === 'green'
-        ? 'rgba(212, 175, 55, 0.16)'
-        : 'rgba(47, 191, 139, 0.16)'
+        ? 'rgba(212, 175, 55, 0.18)'
+        : 'rgba(47, 191, 139, 0.18)'
     pillBorder =
       theme === 'white'
-        ? 'rgba(0, 103, 91, 0.14)'
+        ? 'rgba(0, 103, 91, 0.18)'
         : theme === 'green'
-        ? 'rgba(212, 175, 55, 0.28)'
-        : 'rgba(47, 191, 139, 0.24)'
+        ? 'rgba(212, 175, 55, 0.32)'
+        : 'rgba(47, 191, 139, 0.28)'
     iconColor = colors.tabBarActive
   }
 
@@ -376,17 +388,24 @@ const IOSTabBar = React.memo(function IOSTabBar({
           height: capsuleHeight,
           borderRadius: capsuleRadius,
           shadowColor: theme === 'black' ? '#000000' : theme === 'green' ? '#020C0A' : '#0F172A',
-          shadowOpacity: theme === 'black' ? 0.38 : theme === 'green' ? 0.30 : 0.10,
+          shadowOpacity: theme === 'black' ? 0.36 : theme === 'green' ? 0.28 : 0.09,
         },
       ]}
     >
-      {/* ── Polished-crystal glass stack (bottom → top) ──────────────
-          1. Heavy frost — max blur with Apple UltraThin materials
-          2. Low tint veil — just enough contrast so content shimmers
-          3. Top-lit specular gradient — light falling from above
-          4. Razor-thin edge sheen along the top curve
-          5. Specular ring highlight around the capsule
+      {/* ── Liquid Glass stack (bottom → top) ────────────────────────
+          1. Heavy frost — max blur on Apple UltraThin materials
+          2. Near-clear tint veil — the blur defines the surface
+          3. Top-lit specular gradient + inner bottom-edge light bounce
+          4. Horizontal top sheen — light catching the upper curve
+          5. 0.5pt specular hairline ring — crisp physical definition
+          6. Inner rim — light scattering just inside the edge
+          7. Ambient halo — soft light wrapping just outside the edge
          ─────────────────────────────────────────────────────────── */}
+      <View
+        pointerEvents="none"
+        style={[styles.iosRimHalo, { borderRadius: capsuleRadius + 1, borderColor: glass.halo }]}
+      />
+
       <View style={[styles.iosGlassContainer, { borderRadius: capsuleRadius }]}>
         <BlurView intensity={glass.intensity} tint={glass.tint} style={StyleSheet.absoluteFill} />
 
@@ -394,14 +413,20 @@ const IOSTabBar = React.memo(function IOSTabBar({
 
         <LinearGradient
           colors={glass.gradient}
-          locations={[0, 0.22, 0.55, 1]}
+          locations={[0, 0.3, 0.75, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
 
-        <View style={[styles.iosTopSheen, { backgroundColor: glass.sheen }]} pointerEvents="none" />
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0)', glass.sheen, 'rgba(255, 255, 255, 0)']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.iosTopSheen}
+          pointerEvents="none"
+        />
 
         <View
           style={[
@@ -409,6 +434,11 @@ const IOSTabBar = React.memo(function IOSTabBar({
             styles.iosGlassBorder,
             { borderRadius: capsuleRadius, borderColor: glass.edge },
           ]}
+          pointerEvents="none"
+        />
+
+        <View
+          style={[styles.iosInnerRim, { borderRadius: capsuleRadius - 2, borderColor: glass.innerRim }]}
           pointerEvents="none"
         />
       </View>
@@ -733,7 +763,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     elevation: 0,
     shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 26,
+    shadowRadius: 28,
     backgroundColor: 'transparent',
     borderWidth: 0,
   },
@@ -742,11 +772,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   iosGlassBorder: {
-    borderWidth: 1,
+    borderWidth: 0.5,
+  },
+  iosInnerRim: {
+    position: 'absolute',
+    top: 1,
+    left: 1,
+    right: 1,
+    bottom: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  iosRimHalo: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   iosTopSheen: {
     position: 'absolute',
-    top: 1,
+    top: 0.5,
     left: 16,
     right: 16,
     height: 1,
