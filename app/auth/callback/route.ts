@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
   const oauthError = requestUrl.searchParams.get('error')
   const oauthErrorDescription = requestUrl.searchParams.get('error_description')
 
+  // Mobile hand-off: the native app sends OAuth redirects here (this origin is
+  // in the Supabase allowlist) with mobile=1. Bounce everything straight back
+  // to the app scheme WITHOUT exchanging the code — the code is single-use and
+  // belongs to the mobile client's PKCE verifier.
+  const isMobileBounce = requestUrl.searchParams.get('mobile') === '1'
+  if (isMobileBounce) {
+    const params = new URLSearchParams(requestUrl.searchParams)
+    params.delete('mobile')
+    return NextResponse.redirect(`blejepronen://auth/callback?${params.toString()}`, 302)
+  }
+
   // Handle OAuth provider errors (e.g. user denied consent) before anything else.
   if (oauthError) {
     console.error('OAuth provider returned an error:', {
