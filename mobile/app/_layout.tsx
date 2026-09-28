@@ -1,3 +1,6 @@
+import 'react-native-gesture-handler'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import 'react-native-reanimated'
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Stack,
@@ -15,8 +18,6 @@ import {
   AlbertSans_800ExtraBold,
   AlbertSans_900Black,
 } from '@expo-google-fonts/albert-sans'
-import 'react-native-reanimated'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ThemeProvider, useTheme } from '@/constants/theme'
 import { StatusBar } from 'expo-status-bar'
 
