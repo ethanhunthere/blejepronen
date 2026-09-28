@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { PropertyHub } from '@/components/PropertyHub'
-import { createPublicSupabaseClient } from '@/lib/supabase'
-import { fetchListingsServer, fetchMarketStats } from '@/lib/listings-query'
+import { fetchHubStaticParams, fetchListingsServer, fetchMarketStats } from '@/lib/listings-query'
 import {
   SITE_URL,
   cityFromSlug,
@@ -18,30 +17,9 @@ import {
 
 export const revalidate = 3600
 
-interface Row {
-  city: string | null
-  type: string | null
-  neighborhood: string | null
-}
-
 export async function generateStaticParams() {
-  const supabase = createPublicSupabaseClient()
-  const { data } = await supabase
-    .from('listings')
-    .select('city,type,neighborhood')
-    .eq('is_active', true)
-    .not('neighborhood', 'is', null)
-    .limit(5000)
-  const seen = new Set<string>()
-  const params: { city: string; type: string; hood: string }[] = []
-  for (const r of (data || []) as Row[]) {
-    if (!r.city || !r.neighborhood || (r.type !== 'shitje' && r.type !== 'qira')) continue
-    const key = `${r.city}|${r.type}|${r.neighborhood}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    params.push({ city: slugify(r.city), type: r.type, hood: slugify(r.neighborhood) })
-  }
-  return params
+  const { hoods } = await fetchHubStaticParams()
+  return hoods.map(({ city, type, hood }) => ({ city: slugify(city), type, hood: slugify(hood) }))
 }
 
 interface PageProps {

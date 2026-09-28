@@ -2,14 +2,14 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { MarketPage } from '@/components/MarketPage'
-import { ALL_CITIES } from '@/lib/kosovo-locations'
-import { fetchMarketStats } from '@/lib/listings-query'
+import { fetchHubStaticParams, fetchMarketStats } from '@/lib/listings-query'
 import { SITE_URL, cityFromSlug, fmtInt, marketPathEn, marketPathSq, slugify } from '@/lib/seo-slugs'
 
 export const revalidate = 3600
 
-export function generateStaticParams() {
-  return ALL_CITIES.map((city) => ({ city: slugify(city) }))
+export async function generateStaticParams() {
+  const { cities } = await fetchHubStaticParams()
+  return cities.map((city) => ({ city: slugify(city) }))
 }
 
 interface PageProps {

@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { PropertyHub } from '@/components/PropertyHub'
-import { ALL_CITIES } from '@/lib/kosovo-locations'
-import { fetchListingsServer, fetchMarketStats } from '@/lib/listings-query'
+import { fetchHubStaticParams, fetchListingsServer, fetchMarketStats } from '@/lib/listings-query'
 import {
   SITE_URL,
   cityFromSlug,
@@ -17,10 +16,9 @@ import {
 
 export const revalidate = 3600
 
-const TYPES: HubType[] = ['shitje', 'qira']
-
-export function generateStaticParams() {
-  return ALL_CITIES.flatMap((city) => TYPES.map((type) => ({ city: slugify(city), type })))
+export async function generateStaticParams() {
+  const { cityTypes } = await fetchHubStaticParams()
+  return cityTypes.map(({ city, type }) => ({ city: slugify(city), type }))
 }
 
 interface PageProps {

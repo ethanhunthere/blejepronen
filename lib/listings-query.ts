@@ -1,5 +1,6 @@
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
+import { hoodFromSlug, slugify, type HubType } from '@/lib/seo-slugs'
 
 export const LISTING_CARD_COLUMNS =
   'id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features'
@@ -161,4 +162,71 @@ export async function fetchMarketStats(city: string | null): Promise<{
     neighborhoods,
     latestUpdate: latest,
   }
+}
+
+export interface HubStaticParams {
+  cityTypes: { city: string; type: HubType }[]
+  hoods: { city: string; type: HubType; hood: string }[]
+  cities: string[]
+}
+
+/**
+ * Inventory-gated generateStaticParams source: only combinations that clear
+ * the thin-content threshold are prerendered, so under-stocked paths render
+ * on demand and answer with a real 404 instead of a prerendered soft-404.
+ */
+export async function fetchHubStaticParams(minInventory = 3): Promise<HubStaticParams> {
+  const supabase = createPublicSupabaseClient()
+  const { data } = await supabase
+    .from('listings')
+    .select('city,type,neighborhood')
+    .eq('is_active', true)
+    .limit(5000)
+
+  const rows = (data || []) as { city: string | null; type: string | null; neighborhood: string | null }[]
+
+  const cityTypeCounts = new Map<string, number>()
+  const cityCounts = new Map<string, number>()
+  for (const r of rows) {
+    if (!r.city) continue
+    cityCounts.set(r.city, (cityCounts.get(r.city) || 0) + 1)
+    if (r.type === 'shitje' || r.type === 'qira') {
+      const key = `${r.city}|${r.type}`
+      cityTypeCounts.set(key, (cityTypeCounts.get(key) || 0) + 1)
+    }
+  }
+
+  const cityTypes: { city: string; type: HubType }[] = []
+  for (const [key, total] of cityTypeCounts) {
+    if (total < minInventory) continue
+    const [city, type] = key.split('|')
+    cityTypes.push({ city, type: type as HubType })
+  }
+
+  const hoodKeys = new Set<string>()
+  for (const r of rows) {
+    if (!r.city || !r.neighborhood || (r.type !== 'shitje' && r.type !== 'qira')) continue
+    hoodKeys.add(`${r.city}|${r.type}|${r.neighborhood}`)
+  }
+  const hoods: { city: string; type: HubType; hood: string }[] = []
+  for (const key of hoodKeys) {
+    const [city, type, neighborhood] = key.split('|')
+    const readable = hoodFromSlug(slugify(neighborhood)).toLowerCase()
+    let total = 0
+    for (const r of rows) {
+      if (
+        r.city === city &&
+        r.type === type &&
+        r.neighborhood &&
+        r.neighborhood.toLowerCase().includes(readable)
+      ) {
+        total += 1
+      }
+    }
+    if (total >= minInventory) {
+      hoods.push({ city, type: type as HubType, hood: hoodFromSlug(slugify(neighborhood)) })
+    }
+  }
+
+  return { cityTypes, hoods, cities: [...cityCounts.keys()] }
 }
