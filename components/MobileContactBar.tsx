@@ -87,7 +87,7 @@ export default function MobileContactBar({
 
           {phone ? (
             <a
-              href={`tel:${phone}`}
+              href={`tel:${normalizePhoneNumber(phone)}`}
               className="h-10 px-3.5 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
               aria-label="Telefono shitësin"
             >

@@ -1012,6 +1012,16 @@ export default function PostoPronaPage() {
 
     // Success!
     toast.success('Prona u postua me sukses!')
+    void fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        city: formData.city,
+        type: formData.type,
+        neighborhood: formData.neighborhood || undefined,
+        id: listing.id,
+      }),
+    }).catch(() => {})
     router.push(`/listings/${listing.id}`)
   }
 

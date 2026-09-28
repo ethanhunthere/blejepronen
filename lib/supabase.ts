@@ -308,26 +308,13 @@ export type Conversation = Database['public']['Tables']['conversations']['Row']
 export type Message = Database['public']['Tables']['messages']['Row']
 export type Favorite = Database['public']['Tables']['favorites']['Row']
 
-export type City =
-  | 'Prishtinë'
-  | 'Prizren'
-  | 'Pejë'
-  | 'Gjakovë'
-  | 'Gjilan'
-  | 'Mitrovicë'
-  | 'Ferizaj'
+import { ALL_CITIES, type KosovoCity } from './kosovo-locations'
+
+export type City = KosovoCity | string
 
 export type ListingType = 'shitje' | 'qira'
 
-export const CITIES: City[] = [
-  'Prishtinë',
-  'Prizren',
-  'Pejë',
-  'Gjakovë',
-  'Gjilan',
-  'Mitrovicë',
-  'Ferizaj',
-]
+export const CITIES: string[] = ALL_CITIES
 
 export const LISTING_TYPE_LABELS: Record<ListingType, string> = {
   shitje: 'Shitje',

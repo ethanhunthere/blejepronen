@@ -1,125 +1,203 @@
-import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { MetadataRoute } from 'next'
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : 'https://blejepronen.com'
+import { ALL_CITIES } from '@/lib/kosovo-locations'
+import { createPublicSupabaseClient } from '@/lib/supabase'
+import {
+  SITE_URL,
+  hubPathEn,
+  hubPathSq,
+  hoodFromSlug,
+  marketPathEn,
+  marketPathSq,
+  slugify,
+  type HubType,
+} from '@/lib/seo-slugs'
 
-const POPULAR_CITIES = [
-  'Prishtinë',
-  'Prizren',
-  'Pejë',
-  'Gjakovë',
-  'Gjilan',
-  'Ferizaj',
-  'Mitrovicë',
-  'Fushë Kosovë',
-]
+export const revalidate = 3600
+
+const HUB_MIN_INVENTORY = 3
+
+interface MatrixRow {
+  id: string
+  updated_at: string | null
+  city: string | null
+  type: string | null
+  neighborhood: string | null
+}
+
+interface ProfileRow {
+  id: string
+  updated_at?: string | null
+}
+
+function langAlternates(sqPath: string, enPath: string) {
+  return {
+    languages: {
+      sq: `${SITE_URL}${sqPath}`,
+      en: `${SITE_URL}${enPath}`,
+    },
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
+  const supabase = createPublicSupabaseClient()
 
-  let listingUrls: MetadataRoute.Sitemap = []
-  try {
-    const supabase = createPublicSupabaseClient()
-    const { data: listings } = await supabase
+  const [listingsRes, profilesRes] = await Promise.all([
+    supabase
       .from('listings')
-      .select('id,updated_at')
+      .select('id,updated_at,city,type,neighborhood')
       .eq('is_active', true)
-      .limit(2000)
+      .limit(5000),
+    supabase.from('profiles').select('id,updated_at').limit(1000),
+  ])
 
-    if (listings) {
-      listingUrls = listings.map(l => {
-        const listing = l as { id: string; updated_at: string }
-        return {
-          url: `${siteUrl}/listings/${listing.id}`,
-          lastModified: new Date(listing.updated_at || now),
-          changeFrequency: 'weekly' as const,
-          priority: 0.8,
-        }
-      })
+  const rows = (listingsRes.data || []) as MatrixRow[]
+  const profiles = (profilesRes.data || []) as ProfileRow[]
+
+  const cityTypeCounts = new Map<string, number>()
+  const cityCounts = new Map<string, number>()
+  for (const r of rows) {
+    if (!r.city) continue
+    cityCounts.set(r.city, (cityCounts.get(r.city) || 0) + 1)
+    if (r.type === 'shitje' || r.type === 'qira') {
+      const key = `${r.city}|${r.type}`
+      cityTypeCounts.set(key, (cityTypeCounts.get(key) || 0) + 1)
     }
-  } catch (err) {
-    console.error('Failed to generate dynamic listing sitemap entries:', err)
   }
 
-  let profileUrls: MetadataRoute.Sitemap = []
-  try {
-    const supabase = createPublicSupabaseClient()
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id,updated_at')
-      .limit(500)
-
-    if (profiles) {
-      profileUrls = profiles.map(p => {
-        const prof = p as { id: string; updated_at?: string }
-        return {
-          url: `${siteUrl}/profili/${prof.id}`,
-          lastModified: new Date(prof.updated_at || now),
-          changeFrequency: 'weekly' as const,
-          priority: 0.7,
-        }
-      })
+  const hoodKeys = new Set<string>()
+  for (const r of rows) {
+    if (!r.city || !r.neighborhood || (r.type !== 'shitje' && r.type !== 'qira')) continue
+    hoodKeys.add(`${r.city}|${r.type}|${r.neighborhood}`)
+  }
+  const hoodEntries: { city: string; type: HubType; hood: string; total: number }[] = []
+  for (const key of hoodKeys) {
+    const [city, type, neighborhood] = key.split('|')
+    const readable = hoodFromSlug(slugify(neighborhood)).toLowerCase()
+    let total = 0
+    for (const r of rows) {
+      if (
+        r.city === city &&
+        r.type === type &&
+        r.neighborhood &&
+        r.neighborhood.toLowerCase().includes(readable)
+      ) {
+        total += 1
+      }
     }
-  } catch (err) {
-    console.error('Failed to generate dynamic profile sitemap entries:', err)
+    if (total >= HUB_MIN_INVENTORY) {
+      hoodEntries.push({ city, type: type as HubType, hood: hoodFromSlug(slugify(neighborhood)), total })
+    }
   }
 
-  const cityUrls: MetadataRoute.Sitemap = POPULAR_CITIES.map(city => ({
-    url: `${siteUrl}/listings?city=${encodeURIComponent(city)}`,
-    lastModified: now,
-    changeFrequency: 'daily' as const,
-    priority: 0.75,
-  }))
-
-  return [
+  const entries: MetadataRoute.Sitemap = [
+    { url: SITE_URL, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${SITE_URL}/listings`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     {
-      url: siteUrl,
+      url: `${SITE_URL}/tregu`,
       lastModified: now,
-      changeFrequency: 'daily',
-      priority: 1.0,
+      changeFrequency: 'weekly',
+      priority: 0.75,
+      alternates: langAlternates('/tregu', '/en/market'),
     },
     {
-      url: `${siteUrl}/listings`,
+      url: `${SITE_URL}/en/market`,
       lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.9,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+      alternates: langAlternates('/tregu', '/en/market'),
     },
-    {
-      url: `${siteUrl}/listings?type=shitje`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.85,
-    },
-    {
-      url: `${siteUrl}/listings?type=qira`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.85,
-    },
-    ...cityUrls,
-    {
-      url: `${siteUrl}/kontakti`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${siteUrl}/kushtet`,
-      lastModified: now,
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    {
-      url: `${siteUrl}/privatesia`,
-      lastModified: now,
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    ...listingUrls,
-    ...profileUrls,
+    { url: `${SITE_URL}/kontakti`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/kushtet`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${SITE_URL}/privatesia`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ]
-}
 
+  for (const city of ALL_CITIES) {
+    for (const type of ['shitje', 'qira'] as HubType[]) {
+      const total = cityTypeCounts.get(`${city}|${type}`) || 0
+      if (total < HUB_MIN_INVENTORY) continue
+      const sq = hubPathSq(city, type)
+      const en = hubPathEn(city, type)
+      entries.push(
+        {
+          url: `${SITE_URL}${sq}`,
+          lastModified: now,
+          changeFrequency: 'daily',
+          priority: 0.85,
+          alternates: langAlternates(sq, en),
+        },
+        {
+          url: `${SITE_URL}${en}`,
+          lastModified: now,
+          changeFrequency: 'daily',
+          priority: 0.7,
+          alternates: langAlternates(sq, en),
+        }
+      )
+    }
+
+    const cityTotal = cityCounts.get(city) || 0
+    if (cityTotal > 0) {
+      const sq = marketPathSq(city)
+      const en = marketPathEn(city)
+      entries.push(
+        {
+          url: `${SITE_URL}${sq}`,
+          lastModified: now,
+          changeFrequency: 'weekly',
+          priority: 0.75,
+          alternates: langAlternates(sq, en),
+        },
+        {
+          url: `${SITE_URL}${en}`,
+          lastModified: now,
+          changeFrequency: 'weekly',
+          priority: 0.65,
+          alternates: langAlternates(sq, en),
+        }
+      )
+    }
+  }
+
+  for (const { city, type, hood } of hoodEntries) {
+    const sq = hubPathSq(city, type, hood)
+    const en = hubPathEn(city, type, hood)
+    entries.push(
+      {
+        url: `${SITE_URL}${sq}`,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.7,
+        alternates: langAlternates(sq, en),
+      },
+      {
+        url: `${SITE_URL}${en}`,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.55,
+        alternates: langAlternates(sq, en),
+      }
+    )
+  }
+
+  for (const l of rows) {
+    entries.push({
+      url: `${SITE_URL}/listings/${l.id}`,
+      lastModified: new Date(l.updated_at || now),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    })
+  }
+
+  for (const p of profiles) {
+    entries.push({
+      url: `${SITE_URL}/profili/${p.id}`,
+      lastModified: new Date(p.updated_at || now),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    })
+  }
+
+  return entries
+}

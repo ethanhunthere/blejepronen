@@ -34,11 +34,11 @@ export function AppleIcon({
   return (
     <svg
       className={className}
-      viewBox="0 0 170 170"
+      viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden="true"
     >
-      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.07-7.6-7.85-11.7-14.35-6.09-9.67-10.87-20.4-14.34-32.19-3.48-11.79-5.22-23.01-5.22-33.67 0-14.46 3.69-26.4 11.07-35.81 7.39-9.41 16.63-14.23 27.73-14.47 5.12 0 10.74 1.34 16.86 4.02 6.12 2.68 9.97 4.09 11.55 4.23 1.98-.27 6.06-1.78 12.24-4.53 6.18-2.75 11.55-4.04 16.12-3.87 13.92.73 24.89 5.62 32.9 14.68-12.19 7.38-18.15 17.5-17.88 30.36.27 10.22 4.16 18.79 11.67 25.7 7.51 6.92 16.38 10.76 26.6 11.54-2.18 6.64-4.94 13.43-8.28 20.37zM119.22 31.84c0-7.72 2.76-14.92 8.28-21.6 5.53-6.68 12.39-10.24 20.59-10.24.27 1.07.41 2.01.41 2.82 0 7.6-2.91 14.8-8.73 21.6-5.82 6.8-12.87 10.42-21.15 10.86-.27-.94-.4-1.9-.4-2.82z" />
+      <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
     </svg>
   )
 }
@@ -88,10 +88,10 @@ export default function AuthPanel({
   showAccountTypeSelector = false,
 }: AuthPanelProps) {
   return (
-    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/85 shadow-xl shadow-slate-900/[0.04] p-5 sm:p-7 backdrop-blur-sm">
+    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/85 shadow-xl shadow-slate-900/[0.04] p-6 sm:p-8 backdrop-blur-sm">
       {badge && <div className="mb-2">{badge}</div>}
 
-      <div className="space-y-1 text-left">
+      <div className="space-y-1.5 text-left">
         <h1 className="text-xl sm:text-[23px] font-black leading-tight tracking-tight text-slate-900">
           {title}
         </h1>
@@ -100,43 +100,43 @@ export default function AuthPanel({
 
       {/* Dual-Track Persona Architecture Switcher */}
       {showAccountTypeSelector && onAccountTypeChange && (
-        <div className="mt-3 p-1 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1">
+        <div className="mt-3.5 p-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1.5">
           <button
             type="button"
             onClick={() => onAccountTypeChange('individual')}
-            className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'individual'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="text-xs sm:text-[12.5px]">Individ</span>
+            <User className="h-4 w-4 shrink-0" />
+            <span className="text-xs sm:text-[13px]">Individ</span>
           </button>
 
           <button
             type="button"
             onClick={() => onAccountTypeChange('company')}
-            className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'company'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
-            <Building2 className="h-3.5 w-3.5 shrink-0" />
-            <span className="text-xs sm:text-[12.5px]">Kompani / Biznes</span>
+            <Building2 className="h-4 w-4 shrink-0" />
+            <span className="text-xs sm:text-[13px]">Kompani / Biznes</span>
           </button>
         </div>
       )}
 
-      <div className="mt-3 sm:mt-3.5">
+      <div className="mt-4 sm:mt-4.5">
         {error && (
           <Alert
             variant="destructive"
-            className="mb-3 py-2 px-3 bg-red-50/90 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[12.5px] leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
+            className="mb-3.5 py-2.5 px-3.5 bg-red-50/90 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[12.5px] leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
           >
-            <AlertDescription className="text-xs sm:text-[12.5px] font-medium flex items-center gap-1.5">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+            <AlertDescription className="text-xs sm:text-[12.5px] font-medium flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
               <span>{error}</span>
             </AlertDescription>
           </Alert>
@@ -144,20 +144,20 @@ export default function AuthPanel({
 
         {/* Branded, evenly spaced 3-button social auth row: Apple, Google, Facebook */}
         {(onApple || onGoogle || onFacebook) && (
-          <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
             {onApple && (
               <button
                 type="button"
                 onClick={onApple}
                 disabled={!!oauthLoading}
-                className="min-h-[38px] h-9.5 bg-black hover:bg-neutral-800 active:scale-[0.98] text-white border border-black text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="min-h-[42px] h-[42px] bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Apple"
               >
                 {oauthLoading === 'apple' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#00675B]" />
                 ) : (
                   <>
-                    <AppleIcon className="h-3.5 w-3.5 text-white" />
+                    <AppleIcon className="h-4 w-4 text-black" />
                     <span>Apple</span>
                   </>
                 )}
@@ -169,14 +169,14 @@ export default function AuthPanel({
                 type="button"
                 onClick={onGoogle}
                 disabled={!!oauthLoading}
-                className="min-h-[38px] h-9.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="min-h-[42px] h-[42px] bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Google"
               >
                 {oauthLoading === 'google' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00675B]" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#00675B]" />
                 ) : (
                   <>
-                    <GoogleIcon className="h-3.5 w-3.5" />
+                    <GoogleIcon className="h-4 w-4" />
                     <span>{googleLabel}</span>
                   </>
                 )}
@@ -188,14 +188,14 @@ export default function AuthPanel({
                 type="button"
                 onClick={onFacebook}
                 disabled={!!oauthLoading}
-                className="min-h-[38px] h-9.5 bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="min-h-[42px] h-[42px] bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Facebook"
               >
                 {oauthLoading === 'facebook' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#1877F2]" />
+                  <Loader2 className="h-4 w-4 animate-spin text-[#1877F2]" />
                 ) : (
                   <>
-                    <FacebookIcon className="h-3.5 w-3.5" />
+                    <FacebookIcon className="h-4 w-4" />
                     <span>Facebook</span>
                   </>
                 )}
@@ -205,12 +205,12 @@ export default function AuthPanel({
         )}
 
         {/* Clean "ose me email" / "or" divider */}
-        <div className="relative my-3 sm:my-3.5">
+        <div className="relative my-4 sm:my-4.5">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-slate-200/80" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-white px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               ose me email
             </span>
           </div>
@@ -219,7 +219,7 @@ export default function AuthPanel({
         {children}
       </div>
 
-      <div className="mt-3.5 sm:mt-4 border-t border-slate-100 pt-3 text-center text-xs text-slate-500 leading-normal">
+      <div className="mt-4 sm:mt-5 border-t border-slate-100 pt-3.5 text-center text-xs text-slate-500 leading-normal">
         {footer}
       </div>
     </div>

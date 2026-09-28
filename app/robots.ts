@@ -5,25 +5,27 @@ const siteUrl =
     ? process.env.NEXT_PUBLIC_SITE_URL
     : 'https://blejepronen.com'
 
+const PRIVATE_PATHS = [
+  '/admin',
+  '/auth',
+  '/api/',
+  '/mesazhet',
+  '/settings',
+  '/cilesimet',
+  '/posto-prona',
+  '/postimet-e-mia',
+  '/completo-profilin',
+  '/completo-profilin-fast',
+  '/completo-profilin-company',
+]
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/admin',
-          '/profili',
-          '/posto-prona',
-          '/postimet-e-mia',
-          '/completo-profilin',
-          '/completo-profilin-fast',
-          '/completo-profilin-company',
-          '/api/',
-          '/mesazhet',
-          '/settings',
-          '/cilesimet',
-        ],
+        disallow: PRIVATE_PATHS,
       },
       // AI Crawlers & LLM Search Agents (OpenAI, Anthropic, Google, Perplexity, Apple)
       {
@@ -40,23 +42,10 @@ export default function robots(): MetadataRoute.Robots {
           'Bytespider',
           'cohere-ai',
         ],
-        allow: ['/', '/listings', '/kontakti', '/kushtet', '/privatesia', '/llms.txt'],
-        disallow: [
-          '/admin',
-          '/profili',
-          '/posto-prona',
-          '/postimet-e-mia',
-          '/completo-profilin',
-          '/completo-profilin-fast',
-          '/completo-profilin-company',
-          '/api/',
-          '/mesazhet',
-          '/settings',
-          '/cilesimet',
-        ],
+        allow: ['/', '/listings', '/pronat', '/tregu', '/en', '/profili', '/kontakti', '/kushtet', '/privatesia', '/llms.txt'],
+        disallow: PRIVATE_PATHS,
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
   }
 }
-

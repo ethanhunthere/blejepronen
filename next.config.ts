@@ -109,6 +109,11 @@ const nextConfig: NextConfig = {
         destination: '/settings',
         permanent: true,
       },
+      {
+        source: '/completo-profilin',
+        destination: '/completo-profilin-fast',
+        permanent: true,
+      },
     ];
   },
 };

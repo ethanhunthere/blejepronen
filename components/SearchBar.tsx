@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Command } from 'lucide-react'
 import OmniSearchModal from './OmniSearchModal'
@@ -9,71 +9,16 @@ interface SearchBarProps {
   className?: string
   placeholder?: string
   buttonText?: string
-  hoverWords?: string[]
 }
-
-const DEFAULT_HOVER_WORDS = ['Pronë', 'Agjent', 'Kompani', 'Adresë']
-
-type TypePhase = 'typing' | 'pausing' | 'deleting'
 
 function SearchBar({
   className = '',
-  placeholder = 'Kërko pronë, agjent, kompani, adresë...',
-  hoverWords = DEFAULT_HOVER_WORDS,
+  placeholder = 'Kërko pronë, qytet, lagje ose agjenci...',
+  buttonText = 'Kërko',
 }: SearchBarProps) {
   const [value, setValue] = useState('')
-  const [typedWord, setTypedWord] = useState('Pronë')
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const wordIndexRef = useRef(0)
-  const charIndexRef = useRef(hoverWords[0]?.length || 5)
-  const phaseRef = useRef<TypePhase>('pausing')
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const runTypewriterRef = useRef<() => void>(() => {})
   const router = useRouter()
-
-  const runTypewriter = useCallback(() => {
-    const word = hoverWords[wordIndexRef.current] || 'Pronë'
-    const phase = phaseRef.current
-
-    if (phase === 'typing') {
-      if (charIndexRef.current < word.length) {
-        charIndexRef.current++
-        setTypedWord(word.slice(0, charIndexRef.current))
-        timerRef.current = setTimeout(() => runTypewriterRef.current(), 90)
-      } else {
-        phaseRef.current = 'pausing'
-        timerRef.current = setTimeout(() => runTypewriterRef.current(), 1800)
-      }
-    } else if (phase === 'pausing') {
-      phaseRef.current = 'deleting'
-      timerRef.current = setTimeout(() => runTypewriterRef.current(), 50)
-    } else if (phase === 'deleting') {
-      if (charIndexRef.current > 0) {
-        charIndexRef.current--
-        setTypedWord(word.slice(0, charIndexRef.current))
-        timerRef.current = setTimeout(() => runTypewriterRef.current(), 45)
-      } else {
-        wordIndexRef.current = (wordIndexRef.current + 1) % hoverWords.length
-        phaseRef.current = 'typing'
-        charIndexRef.current = 0
-        timerRef.current = setTimeout(() => runTypewriterRef.current(), 200)
-      }
-    }
-  }, [hoverWords])
-
-  useEffect(() => {
-    runTypewriterRef.current = runTypewriter
-  }, [runTypewriter])
-
-  useEffect(() => {
-    timerRef.current = setTimeout(() => runTypewriterRef.current(), 1500)
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
-    }
-  }, [])
 
   const handleOpenSearch = (initialVal?: string) => {
     setValue(initialVal || value)
@@ -94,15 +39,24 @@ function SearchBar({
   return (
     <>
       <div
-        className={`relative bg-white rounded-full border border-[#E5E7EB] shadow-sm hover:shadow-md focus-within:shadow-[0_2px_16px_rgba(0,0,0,0.12)] focus-within:border-[#00675B]/30 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto cursor-text ${className}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Hap kërkimin"
+        className={`relative bg-white rounded-full border border-slate-200/90 shadow-[0_2px_8px_rgba(15,23,42,0.06)] hover:shadow-[0_4px_20px_rgba(15,23,42,0.09)] hover:border-slate-300 focus-within:shadow-[0_4px_20px_rgba(0,103,91,0.12)] focus-within:border-[#00675B]/40 transition-all duration-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3 max-w-2xl mx-auto cursor-pointer select-none ${className}`}
         onClick={() => handleOpenSearch(value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleOpenSearch(value)
+          }
+        }}
       >
-        <Search className="h-4 w-4 text-[#00675B] flex-shrink-0 ml-1" />
+        <Search className="h-4 w-4 text-[#00675B] flex-shrink-0 ml-1.5" />
         <input
           type="text"
           placeholder={placeholder}
-          aria-label="Kërko prona, agjenci, lokacione"
-          className="flex-1 min-w-0 text-[16px] text-[#101828] placeholder:text-[#6B7280] outline-none border-none bg-transparent cursor-pointer"
+          aria-label="Kërko prona, qytet, lagje ose agjenci"
+          className="flex-1 min-w-0 text-[15px] sm:text-[16px] text-slate-900 placeholder:text-slate-400 outline-none border-none bg-transparent cursor-pointer"
           value={value}
           onChange={(e) => {
             setValue(e.target.value)
@@ -113,7 +67,7 @@ function SearchBar({
           readOnly
         />
 
-        <div className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+        <div className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-slate-100/80 border border-slate-200/70 px-2 py-1 rounded-md">
           <Command className="h-3 w-3" />
           <span>K</span>
         </div>
@@ -124,10 +78,9 @@ function SearchBar({
             e.stopPropagation()
             handleOpenSearch(value)
           }}
-          className="flex-shrink-0 min-h-[44px] min-w-[115px] sm:min-w-[145px] bg-[#00675B] text-white px-3 sm:px-5 py-2 rounded-full text-xs sm:text-[15px] font-semibold hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out cursor-pointer whitespace-nowrap flex items-center justify-center"
+          className="flex-shrink-0 min-h-[42px] bg-[#00675B] text-white px-5 sm:px-6 py-2 rounded-full text-sm sm:text-[15px] font-medium tracking-tight hover:bg-[#004D43] transition-colors duration-150 cursor-pointer flex items-center justify-center shadow-sm"
         >
-          <span>Kërko {typedWord || '\u00A0'}</span>
-          <span className="inline-block w-[1.5px] h-[13px] sm:h-[15px] bg-white/75 ml-1 align-middle animate-pulse" />
+          {buttonText}
         </button>
       </div>
 

@@ -23,7 +23,7 @@ import {
   ShieldCheck,
   Search,
 } from 'lucide-react'
-import { CITIES } from '@/lib/cities'
+import { MAJOR_CITIES } from '@/lib/cities'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import LogoutModal from './LogoutModal'
 import OmniSearchModal from './OmniSearchModal'
@@ -99,8 +99,33 @@ function getCookieUser(): SupabaseUser | null {
 function getCachedUser(): SupabaseUser | null {
   if (typeof window === 'undefined') return null
   try {
+    // Check if user is actively logging out
+    if (
+      sessionStorage.getItem('blejepronen_logging_out') === '1' ||
+      document.cookie.includes('blejepronen_logging_out=1')
+    ) {
+      clearNavbarCache()
+      return null
+    }
+
+    // Authoritative token validation guard:
+    // Verify that at least one active Supabase auth token exists in localStorage or cookies.
+    // If neither exists, any cached user is stale and must be immediately purged.
+    const hasTokenInStorage = Object.keys(localStorage).some(
+      k => k.startsWith('sb-') && k.endsWith('-auth-token')
+    )
+    const hasTokenInCookie = document.cookie.includes('-auth-token')
+
+    if (!hasTokenInStorage && !hasTokenInCookie) {
+      clearNavbarCache()
+      return null
+    }
+
     const direct = localStorage.getItem(NAVBAR_USER_CACHE_KEY)
-    if (direct) return JSON.parse(direct)
+    if (direct) {
+      const parsed = JSON.parse(direct)
+      if (parsed?.id) return parsed
+    }
 
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
@@ -670,6 +695,17 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
     } catch {}
 
+    // Synchronously unsubscribe realtime channels to eliminate zombie listeners
+    if (realtimeChannelRef.current) {
+      realtimeChannelRef.current.unsubscribe()
+      realtimeChannelRef.current = null
+    }
+    if (unreadChannelRef.current) {
+      unreadChannelRef.current.unsubscribe()
+      unreadChannelRef.current = null
+    }
+    userIdRef.current = null
+
     // 1. Synchronously clear ALL Supabase localStorage keys and navbar cache
     try {
       clearNavbarCache()
@@ -683,7 +719,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     // 2. Call server-side logout to clear cookies with correct domain
     try {
       await Promise.race([
-        fetch('/api/logout', { method: 'POST', keepalive: true }),
+        fetch('/api/logout', { method: 'POST', credentials: 'include', keepalive: true }),
         new Promise(resolve => setTimeout(resolve, 800))
       ])
     } catch (err) {
@@ -697,10 +733,17 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       console.error('Client sign out exception:', err)
     }
 
-    // 4. Reset user state
+    // 4. Reset user state synchronously
     setUser(null)
     setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
-  }, [])
+    setUnreadCount(0)
+
+    // 5. If currently on a protected route, immediately redirect to '/' to prevent bounce loop
+    const protectedPrefixes = ['/profili', '/postimet-e-mia', '/mesazhet', '/settings', '/completo-profilin', '/posto-prona']
+    if (protectedPrefixes.some(prefix => pathname.startsWith(prefix))) {
+      router.replace('/')
+    }
+  }, [pathname, router])
 
   const positionClasses = {
     fixed: 'fixed top-0 left-0 z-50 w-full',
@@ -750,14 +793,14 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <button
               type="button"
               onClick={() => setIsOmniSearchOpen(true)}
-              className="relative inline-flex items-center justify-between gap-2 w-full max-w-xl h-12 px-5 rounded-2xl bg-white/8 hover:bg-white/12 text-[#cceae8] hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200 cursor-pointer text-[14px] font-medium group shadow-lg shadow-black/10 focus:outline-none focus:ring-2 focus:ring-[#C8B882]/50 focus:ring-offset-2 focus:ring-offset-[#00675B]"
+              className="relative inline-flex items-center justify-between gap-3 w-full max-w-xl h-10 sm:h-10.5 px-4 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/15 text-[#cceae8] hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200 cursor-pointer text-[13.5px] font-medium group shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C8B882]/50 focus:ring-offset-2 focus:ring-offset-[#00675B]"
               aria-label="Kërko në Bleje Pronën"
             >
-              <div className="flex items-center gap-2.5">
-                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-110 transition-transform group-hover:text-white flex-shrink-0" />
-                <span className="hidden sm:inline">Kërko prona, qytet, postkod…</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-105 transition-transform group-hover:text-white flex-shrink-0" />
+                <span className="hidden sm:inline truncate">Kërko prona, qytet, postkod…</span>
               </div>
-              <kbd className="inline-flex items-center gap-0.5 text-[11px] font-mono bg-white/15 hover:bg-white/25 px-2 py-1 rounded-lg text-white/70 group-hover:text-white transition-colors border border-white/10">
+              <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide bg-white/12 text-white/80 rounded-md border border-white/15 select-none pointer-events-none group-hover:text-white group-hover:bg-white/20 transition-colors">
                 ⌘K
               </kbd>
             </button>
@@ -1369,7 +1412,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {CITIES.map((city) => (
+                  {MAJOR_CITIES.slice(0, 6).map((city) => (
                     <Link
                       key={city}
                       href={`/listings?city=${encodeURIComponent(city)}`}

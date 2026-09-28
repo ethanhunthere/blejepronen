@@ -132,30 +132,30 @@ export default function ContactSellerCard({
   return (
     <div
       id="contact-card"
-      className={`bg-white border border-gray-100/90 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.08)] rounded-3xl p-6 sticky top-24 transition-all ${className || ''}`}
+      className={`bg-white border border-slate-200/90 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.06)] rounded-2xl p-6 sticky top-24 transition-all ${className || ''}`}
     >
       {/* Price Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+      <div className="mb-5">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Çmimi i kërkuar
           </span>
-          <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#00675B] border border-emerald-100">
+          <span className="inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200/60">
             {type === 'shitje' ? 'Shitje direkte' : 'Qira mujore'}
           </span>
         </div>
 
         <div className="flex items-baseline gap-1.5 flex-wrap">
-          <span className="text-3xl xl:text-4xl font-black text-[#101828] tracking-tight">
+          <span className="text-3xl xl:text-4xl font-extrabold text-slate-900 tracking-tight">
             {price}
           </span>
           {type === 'qira' && (
-            <span className="text-sm font-semibold text-gray-500">/muaj</span>
+            <span className="text-sm font-medium text-slate-500">/muaj</span>
           )}
         </div>
 
         {pricePerSqm && (
-          <p className="text-xs font-semibold text-gray-500 mt-1">
+          <p className="text-xs font-medium text-slate-500 mt-1">
             ≈ {pricePerSqm}/m²
           </p>
         )}
@@ -172,44 +172,44 @@ export default function ContactSellerCard({
             if (!isFav) toast.success('U ruajt te të preferuarat!')
             else toast.info('U hoq nga të preferuarat.')
           }}
-          className={`h-10 flex items-center justify-center gap-1.5 rounded-xl border text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 ${
+          className={`h-10 flex items-center justify-center gap-1.5 rounded-xl border text-xs font-medium transition-all duration-150 cursor-pointer active:scale-95 ${
             isFav
-              ? 'border-rose-200 bg-rose-50 text-rose-600 shadow-2xs'
-              : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+              ? 'border-red-200 bg-red-50 text-red-600'
+              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300'
           }`}
           aria-label={isFav ? 'E ruajtur' : 'Ruaj pronën'}
         >
-          <Heart className={`h-3.5 w-3.5 ${isFav ? 'text-rose-500 fill-rose-500' : 'text-gray-500'}`} />
+          <Heart className={`h-3.5 w-3.5 ${isFav ? 'text-red-500 fill-red-500' : 'text-slate-500'}`} />
           <span>{isFav ? 'E ruajtur' : 'Ruaj pronën'}</span>
         </button>
 
         <button
           type="button"
           onClick={handleShare}
-          className="h-10 flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95"
+          className="h-10 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-xs font-medium transition-all duration-150 cursor-pointer active:scale-95"
           aria-label="Ndaj me dikë"
         >
           {copied ? (
             <>
               <Check className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="text-emerald-700">U kopjua</span>
+              <span className="text-emerald-700 font-medium">U kopjua</span>
             </>
           ) : (
             <>
-              <Share2 className="h-3.5 w-3.5 text-gray-500" />
+              <Share2 className="h-3.5 w-3.5 text-slate-500" />
               <span>Ndaj me mik</span>
             </>
           )}
         </button>
       </div>
 
-      <div className="border-t border-gray-100 pt-4 mb-4">
+      <div className="border-t border-slate-100 pt-4 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Informacioni i Shitësit
           </span>
           {seller.emailVerified && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
               I verifikuar
             </span>
@@ -217,19 +217,19 @@ export default function ContactSellerCard({
         </div>
 
         {/* Seller Info Row */}
-        <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-gray-50/70 border border-gray-100">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/60">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#00675B]/10 border border-gray-200">
+            <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 border border-slate-200">
               <Image
                 src={seller.avatarUrl || '/avatars/avatar-1.png'}
                 alt={seller.firstName || 'Shitësi'}
                 fill
-                sizes="48px"
+                sizes="44px"
                 className="object-cover"
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-[#101828] text-sm truncate">
+              <p className="font-semibold text-slate-900 text-sm truncate">
                 {seller.firstName} {seller.lastName}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
@@ -241,9 +241,9 @@ export default function ContactSellerCard({
                 </a>
                 {typeof seller.followersCount === 'number' && seller.followersCount > 0 && (
                   <>
-                    <span className="text-gray-300 text-[10px]">•</span>
-                    <span className="text-[11px] font-semibold text-gray-500">
-                      {seller.followersCount} {seller.followersCount === 1 ? 'ndiqës' : 'ndiqës'}
+                    <span className="text-slate-300 text-[10px]">•</span>
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {seller.followersCount} ndiqës
                     </span>
                   </>
                 )}
@@ -265,12 +265,12 @@ export default function ContactSellerCard({
       <div className="space-y-2.5">
         {cleanPhone ? (
           <>
-            {/* WhatsApp - #1 Conversion Driver */}
+            {/* WhatsApp */}
             <a
               href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full min-h-[46px] bg-[#25D366] hover:bg-[#20ba59] text-white py-3 px-4 rounded-2xl font-bold text-sm shadow-md shadow-[#25D366]/25 hover:shadow-lg hover:shadow-[#25D366]/35 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] bg-[#25D366] hover:bg-[#20ba59] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-xs active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageCircle className="h-4 w-4 fill-white" />
               <span>Shkruaj në WhatsApp</span>
@@ -278,15 +278,15 @@ export default function ContactSellerCard({
 
             {/* Direct Phone Call */}
             <a
-              href={`tel:${seller.phone}`}
-              className="w-full min-h-[44px] bg-[#00675B] hover:bg-[#004D43] text-white py-2.5 px-4 rounded-2xl font-bold text-sm shadow-md shadow-[#00675B]/20 hover:shadow-lg hover:shadow-[#00675B]/30 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              href={`tel:${normalizePhoneNumber(seller.phone || '')}`}
+              className="w-full min-h-[44px] bg-[#00675B] hover:bg-[#004D43] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-xs active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-4 w-4" />
               <span>Telefono ({displayPhone})</span>
             </a>
           </>
         ) : (
-          <p className="text-xs text-gray-500 text-center py-2 bg-gray-50 rounded-xl border border-gray-100">
+          <p className="text-xs text-slate-500 text-center py-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
             Shitësi nuk ka specifikuar numër telefoni.
           </p>
         )}
@@ -297,7 +297,7 @@ export default function ContactSellerCard({
             <button
               type="button"
               onClick={handleMessage}
-              className="w-full min-h-[42px] bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 px-4 rounded-2xl font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              className="w-full min-h-[40px] bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2 px-4 rounded-xl font-medium text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
               <MessagesSquare className="h-4 w-4 text-[#00675B]" />
               <span>Dërgo Mesazh në Platformë</span>
@@ -307,19 +307,19 @@ export default function ContactSellerCard({
           <div className="pt-1">
             <a
               href={loginUrl}
-              className="w-full min-h-[38px] bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2 px-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="w-full min-h-[38px] bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2 px-3 rounded-xl font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <MessagesSquare className="h-3.5 w-3.5 text-gray-500" />
+              <MessagesSquare className="h-3.5 w-3.5 text-slate-400" />
               <span>Hyr për të dërguar mesazh</span>
             </a>
           </div>
         )}
       </div>
 
-      {/* Seller Socials (Instagram, Facebook, WhatsApp, TikTok) - Positioned below CTAs */}
+      {/* Seller Socials */}
       {hasAnySocial(socials || seller.socials) && (
-        <div className="mt-4 pt-3.5 border-t border-gray-100">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+        <div className="mt-4 pt-3.5 border-t border-slate-100">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Rrjetet Sociale të Shitësit
           </p>
           <SocialLinksBar socials={socials || seller.socials} variant="pills" />
@@ -327,12 +327,12 @@ export default function ContactSellerCard({
       )}
 
       {/* Trust & Transparency Guarantee */}
-      <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-        <div className="flex items-center gap-1">
+      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="flex items-center gap-1.5">
           <Lock className="h-3 w-3 text-emerald-600" />
           <span>Kontakt direkt me pronarin</span>
         </div>
-        <span className="text-gray-300">•</span>
+        <span className="text-slate-300">•</span>
         <span>Pa komisione</span>
       </div>
     </div>

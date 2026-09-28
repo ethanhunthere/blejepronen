@@ -18,6 +18,17 @@ function getInitialFavorites(): string[] {
 function getInitialAuth(): boolean {
   if (typeof window === 'undefined') return false
   try {
+    if (
+      sessionStorage.getItem('blejepronen_logging_out') === '1' ||
+      document.cookie.includes('blejepronen_logging_out=1')
+    ) {
+      return false
+    }
+    const hasTokenInStorage = Object.keys(localStorage).some(
+      k => k.startsWith('sb-') && k.endsWith('-auth-token')
+    )
+    const hasTokenInCookie = document.cookie.includes('-auth-token')
+    if (!hasTokenInStorage && !hasTokenInCookie) return false
     return Boolean(localStorage.getItem('blejepronen_cached_user'))
   } catch {
     return false
