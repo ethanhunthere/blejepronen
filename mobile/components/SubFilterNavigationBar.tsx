@@ -5,13 +5,26 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Animated,
   Platform,
   LayoutChangeEvent,
 } from 'react-native'
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated'
 import { SlidersHorizontal } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
-import { useTheme, Fonts } from '@/constants/theme'
+import {
+  BorderWidths,
+  Fonts,
+  FontSizes,
+  Radii,
+  Spacing,
+  Tracking,
+  useTheme,
+} from '@/constants/theme'
+import { useReducedMotionEnabled } from '@/components/motion/useReducedMotion'
 
 export type SubFilter = 'all' | 'active' | 'sold' | 'inactive'
 
@@ -29,50 +42,39 @@ interface SubFilterNavigationBarProps {
   isCompact?: boolean
 }
 
-const BASE_INDICATOR_WIDTH = 100
+const SPRING_CONFIG = {
+  damping: 30,
+  stiffness: 340,
+  mass: 0.85,
+}
 
+/** Opacity dip while a tab is held — no colour swap, so it works in all themes. */
+const PRESSED_OPACITY = 0.75
+/** Small glyphs need a heavier stroke to survive the downscale. */
+const TAB_ICON_STROKE_WIDTH = 2.4
+/** Extra room around each tab so the 26dp-tall row stays a 44dp target. */
+const TAB_HIT_SLOP = { top: Spacing.s8, bottom: Spacing.s8, left: Spacing.s4, right: Spacing.s4 }
+
+/**
+ * Horizontally scrollable listing-status tab bar with a spring-driven pill.
+ *
+ * Two things to know before editing:
+ *
+ * - **Motion is optional.** Under a system "reduce motion" setting the pill
+ *   snaps to the active tab and the ScrollView jumps without animation. The
+ *   end state is identical either way; only the transition is dropped.
+ * - **No blur, no translucent overlays.** The bar sits directly above a
+ *   scrolling feed, so every fill is an opaque token from the semantic layer.
+ *   A backdrop blur here would be re-rasterised on every scrolled frame.
+ */
 function SubFilterNavigationBarComponent({
   activeFilter,
   onChangeFilter,
   counts,
   isCompact = false,
 }: SubFilterNavigationBarProps) {
-  const { colors, theme } = useTheme()
-  const specularBorder = colors.border
-
-  const isGreenTheme = theme === 'green'
-  const isBlackTheme = theme === 'black'
-
-  // Dynamic theme-derived palette
-  const activeBg = isGreenTheme
-    ? 'rgba(212, 168, 83, 0.18)'
-    : isBlackTheme
-    ? 'rgba(255, 255, 255, 0.14)'
-    : 'rgba(0, 103, 91, 0.10)'
-
-  const activeBorder = isGreenTheme
-    ? colors.gold
-    : isBlackTheme
-    ? 'rgba(255, 255, 255, 0.28)'
-    : colors.primary
-
-  const activeTextColor = isGreenTheme
-    ? colors.gold
-    : isBlackTheme
-    ? '#FFFFFF'
-    : colors.primary
-
-  const activeBadgeBg = isGreenTheme
-    ? 'rgba(212, 168, 83, 0.25)'
-    : isBlackTheme
-    ? 'rgba(255, 255, 255, 0.22)'
-    : 'rgba(0, 103, 91, 0.16)'
-
-  const activeBadgeTextColor = isGreenTheme
-    ? colors.gold
-    : isBlackTheme
-    ? '#FFFFFF'
-    : colors.primary
+  const { semantic, shadows } = useTheme()
+  const reducedMotion = useReducedMotionEnabled()
 
   // Layout storage
   const tabLayoutsRef = useRef<Partial<Record<SubFilter, { x: number; width: number; height: number }>>>({})
@@ -82,51 +84,36 @@ function SubFilterNavigationBarComponent({
   const scrollViewRef = useRef<ScrollView>(null)
   const activeTargetRef = useRef<SubFilter>(activeFilter)
 
-  // Strictly native driver Animated values (60/120 FPS locked)
-  const indicatorTranslateX = useRef(new Animated.Value(0)).current
-  const indicatorScaleX = useRef(new Animated.Value(1)).current
-  const indicatorOpacity = useRef(new Animated.Value(0)).current
+  // Reanimated shared values for undistorted width and position
+  const indicatorLeft = useSharedValue(0)
+  const indicatorWidth = useSharedValue(0)
+  const indicatorOpacity = useSharedValue(0)
 
-  // Spring animation targeting with Apple CASpringAnimation physics
+  const animatedIndicatorStyle = useAnimatedStyle(() => {
+    return {
+      left: indicatorLeft.value,
+      width: indicatorWidth.value,
+      opacity: indicatorOpacity.value,
+    }
+  })
+
   const animateToTab = useCallback(
     (filter: SubFilter, animated: boolean) => {
       const layout = tabLayoutsRef.current[filter]
       if (!layout) return
 
-      const targetCenter = layout.x + layout.width / 2
-      const targetTranslateX = targetCenter - BASE_INDICATOR_WIDTH / 2
-      const targetScaleX = layout.width / BASE_INDICATOR_WIDTH
-
-      if (!animated) {
-        indicatorTranslateX.setValue(targetTranslateX)
-        indicatorScaleX.setValue(targetScaleX)
-        indicatorOpacity.setValue(1)
+      if (!animated || reducedMotion) {
+        indicatorLeft.value = layout.x
+        indicatorWidth.value = layout.width
+        indicatorOpacity.value = 1
         return
       }
 
-      Animated.parallel([
-        Animated.spring(indicatorTranslateX, {
-          toValue: targetTranslateX,
-          stiffness: 340,
-          damping: 30,
-          mass: 0.85,
-          useNativeDriver: true,
-        }),
-        Animated.spring(indicatorScaleX, {
-          toValue: targetScaleX,
-          stiffness: 340,
-          damping: 30,
-          mass: 0.85,
-          useNativeDriver: true,
-        }),
-        Animated.timing(indicatorOpacity, {
-          toValue: 1,
-          duration: 120,
-          useNativeDriver: true,
-        }),
-      ]).start()
+      indicatorLeft.value = withSpring(layout.x, SPRING_CONFIG)
+      indicatorWidth.value = withSpring(layout.width, SPRING_CONFIG)
+      indicatorOpacity.value = withSpring(1)
     },
-    [indicatorTranslateX, indicatorScaleX, indicatorOpacity]
+    [indicatorLeft, indicatorWidth, indicatorOpacity, reducedMotion]
   )
 
   // Fluid auto-centering on ScrollView
@@ -145,17 +132,15 @@ function SubFilterNavigationBarComponent({
 
       scrollViewRef.current.scrollTo({
         x: clampedX,
-        animated,
+        animated: animated && !reducedMotion,
       })
     },
-    []
+    [reducedMotion]
   )
 
-  // Synchronize on external activeFilter change or layout readiness
   useEffect(() => {
     if (!layoutsReady) return
 
-    // Avoid double animating when the change was already triggered by handleTabPress
     if (activeTargetRef.current !== activeFilter) {
       activeTargetRef.current = activeFilter
       animateToTab(activeFilter, true)
@@ -176,10 +161,9 @@ function SubFilterNavigationBarComponent({
     if (!layoutsReady && allMeasured) {
       const layout = tabLayoutsRef.current[activeFilter]
       if (layout) {
-        const targetCenter = layout.x + layout.width / 2
-        indicatorTranslateX.setValue(targetCenter - BASE_INDICATOR_WIDTH / 2)
-        indicatorScaleX.setValue(layout.width / BASE_INDICATOR_WIDTH)
-        indicatorOpacity.setValue(1)
+        indicatorLeft.value = layout.x
+        indicatorWidth.value = layout.width
+        indicatorOpacity.value = 1
       }
       setLayoutsReady(true)
     }
@@ -237,35 +221,41 @@ function SubFilterNavigationBarComponent({
         onContentSizeChange={handleContentSizeChange}
         contentContainerStyle={[
           styles.scrollContent,
-          isCompact && { paddingHorizontal: 2 },
+          isCompact && { paddingHorizontal: Spacing.s2 },
         ]}
       >
         <View
+          accessibilityRole="tablist"
           style={[
             styles.track,
-            isCompact && { padding: 2.5, gap: 3 },
+            isCompact && { padding: Spacing.s2_5, gap: Spacing.s3 },
             {
-              backgroundColor: colors.surface,
-              borderColor: specularBorder,
+              backgroundColor: semantic.surface,
+              borderColor: semantic.border,
             },
           ]}
         >
-          {/* Gliding Active Indicator with Native Driver Spring Physics */}
+          {/* Gliding Active Indicator with Native Reanimated Spring Physics */}
           <Animated.View
             pointerEvents="none"
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
             style={[
               styles.glidingIndicator,
-              isCompact && { top: 2.5, bottom: 2.5, borderRadius: 10 },
-              {
-                backgroundColor: activeBg,
-                borderColor: activeBorder,
-                shadowColor: isGreenTheme ? colors.gold : colors.primary,
-                opacity: indicatorOpacity,
-                transform: [
-                  { translateX: indicatorTranslateX },
-                  { scaleX: indicatorScaleX },
-                ],
+              isCompact && {
+                top: Spacing.s2_5,
+                bottom: Spacing.s2_5,
+                borderRadius: Radii.r10,
               },
+              {
+                backgroundColor: semantic.selectedBg,
+                borderColor: semantic.selectedBorder,
+                // Brand-tinted lift rather than a neutral one, as before.
+                ...shadows.xs,
+                shadowColor: semantic.primary,
+              },
+              animatedIndicatorStyle,
             ]}
           />
 
@@ -278,38 +268,40 @@ function SubFilterNavigationBarComponent({
                 key={tab.id}
                 onLayout={(e) => handleTabLayout(tab.id, e)}
                 onPress={() => handleTabPress(tab.id)}
+                accessible
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={`${tab.label}, ${tab.count}`}
                 style={({ pressed }) => [
                   styles.tabButton,
                   isCompact && {
-                    paddingVertical: 6,
-                    paddingHorizontal: 9,
-                    gap: 5,
-                    borderRadius: 10,
+                    paddingVertical: Spacing.s6,
+                    paddingHorizontal: Spacing.s9,
+                    gap: Spacing.s5,
+                    borderRadius: Radii.r10,
                   },
-                  // Zero-flash fallback before measurements complete
                   !layoutsReady && isActive && {
-                    backgroundColor: activeBg,
-                    borderColor: activeBorder,
+                    backgroundColor: semantic.selectedBg,
+                    borderColor: semantic.selectedBorder,
                   },
                   pressed && styles.tabButtonPressed,
                 ]}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                hitSlop={TAB_HIT_SLOP}
               >
                 {tab.hasIcon && (
                   <SlidersHorizontal
-                    size={isCompact ? 11 : 12}
-                    color={isActive ? activeTextColor : colors.textSecondary}
-                    strokeWidth={2.4}
+                    size={isCompact ? Spacing.s11 : Spacing.s12}
+                    color={isActive ? semantic.selectedText : semantic.textSecondary}
+                    strokeWidth={TAB_ICON_STROKE_WIDTH}
                   />
                 )}
 
                 <Text
                   style={[
                     styles.tabLabel,
-                    isCompact && { fontSize: 11 },
+                    isCompact && { fontSize: FontSizes.caption },
                     {
-                      color: isActive ? activeTextColor : colors.textPrimary,
-                      fontFamily: Fonts.semiBold,
+                      color: isActive ? semantic.selectedText : semantic.text,
                     },
                   ]}
                   numberOfLines={1}
@@ -321,26 +313,25 @@ function SubFilterNavigationBarComponent({
                   style={[
                     styles.counterBadge,
                     isCompact && {
-                      paddingHorizontal: 4.5,
-                      paddingVertical: 1,
-                      borderRadius: 6,
+                      paddingHorizontal: Spacing.s4_5,
+                      paddingVertical: Spacing.s1,
+                      borderRadius: Radii.r6,
                     },
                     {
                       backgroundColor: isActive
-                        ? activeBadgeBg
-                        : colors.surfaceSubtle,
+                        ? semantic.selectedBadgeBg
+                        : semantic.surfaceMuted,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.counterBadgeText,
-                      isCompact && { fontSize: 10 },
+                      isCompact && { fontSize: FontSizes.micro },
                       {
                         color: isActive
-                          ? activeBadgeTextColor
-                          : colors.textSecondary,
-                        fontFamily: Fonts.semiBold,
+                          ? semantic.selectedBadgeText
+                          : semantic.textSecondary,
                       },
                     ]}
                   >
@@ -378,58 +369,56 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingVertical: Spacing.s2,
   },
   track: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 3,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 4,
+    padding: Spacing.s3,
+    borderRadius: Radii.r14,
+    borderCurve: 'continuous',
+    borderWidth: BorderWidths.thin,
+    gap: Spacing.s4,
     position: 'relative',
   },
   glidingIndicator: {
     position: 'absolute',
-    top: 3,
-    bottom: 3,
-    left: 0,
-    width: BASE_INDICATOR_WIDTH,
-    borderRadius: 11,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
+    top: Spacing.s3,
+    bottom: Spacing.s3,
+    borderRadius: Radii.r11,
+    borderCurve: 'continuous',
+    borderWidth: BorderWidths.thin,
     zIndex: 1,
   },
   tabButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 11,
-    borderWidth: 1,
+    paddingVertical: Spacing.s7,
+    paddingHorizontal: Spacing.s12,
+    borderRadius: Radii.r11,
+    borderCurve: 'continuous',
+    borderWidth: BorderWidths.thin,
     borderColor: 'transparent',
-    gap: 6,
+    gap: Spacing.s6,
     zIndex: 2,
   },
   tabButtonPressed: {
-    opacity: 0.75,
+    opacity: PRESSED_OPACITY,
   },
   tabLabel: {
-    fontSize: 12,
-    letterSpacing: -0.1,
+    fontSize: FontSizes.footnote,
+    letterSpacing: Tracking.t1,
     fontFamily: Fonts.semiBold,
   },
   counterBadge: {
-    paddingHorizontal: 5.5,
-    paddingVertical: 1.5,
-    borderRadius: 7,
+    paddingHorizontal: Spacing.s5_5,
+    paddingVertical: Spacing.s1_5,
+    borderRadius: Radii.r7,
+    borderCurve: 'continuous',
   },
   counterBadgeText: {
-    fontSize: 10.5,
+    fontSize: FontSizes.microLg,
     fontFamily: Fonts.semiBold,
   },
 })

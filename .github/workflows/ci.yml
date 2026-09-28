@@ -1,0 +1,110 @@
+name: CI
+
+# Typecheck-only CI for the two apps that live in this repository:
+#   - the Next.js 16 web app at the repo root
+#   - the Expo SDK 57 React Native app under mobile/
+# Plus a cheap guard that keeps ~200MB Android APK artifacts (Expo-Go.apk)
+# out of the tree for good. No build, no deploy — those stay out of CI.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Repo hygiene: runs before anything installs dependencies, so a re-committed
+  # APK fails the pipeline in ~20s instead of after a full npm ci.
+  # --------------------------------------------------------------------------
+  repo-guard:
+    name: Repo guard (no APKs, no oversized files)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fail if any .apk reappears in the tree
+        run: |
+          set -u
+          apks="$(find . -type f -name '*.apk' -not -path './.git/*' -not -path './node_modules/*' -not -path './mobile/node_modules/*')"
+          if [ -n "$apks" ]; then
+            echo "::error title=APK committed to repo::Android APK artifacts must never be committed (Expo-Go.apk was ~200MB). Offenders:"
+            printf '%s\n' "$apks" | while read -r f; do
+              [ -n "$f" ] && echo "  - $f ($(du -h "$f" | cut -f1))"
+            done
+            exit 1
+          fi
+          echo "OK: no .apk files in the tree."
+
+      - name: Fail on any file larger than 50MB
+        run: |
+          set -u
+          big="$(find . -type f -size +50M -not -path './.git/*' -not -path './node_modules/*' -not -path './mobile/node_modules/*')"
+          if [ -n "$big" ]; then
+            echo "::error title=Oversized file::Nothing over 50MB belongs in this repo (use Supabase Storage / R2 instead):"
+            printf '%s\n' "$big" | while read -r f; do
+              [ -n "$f" ] && echo "  - $f ($(du -h "$f" | cut -f1))"
+            done
+            exit 1
+          fi
+          echo "OK: no files larger than 50MB."
+
+  # --------------------------------------------------------------------------
+  # Web (Next.js 16, repo root)
+  # --------------------------------------------------------------------------
+  web-typecheck:
+    name: Web typecheck (Next.js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+  # --------------------------------------------------------------------------
+  # Mobile (Expo SDK 57, mobile/)
+  # --------------------------------------------------------------------------
+  mobile-typecheck:
+    name: Mobile typecheck (Expo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit

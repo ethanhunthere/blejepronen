@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   Pressable,
   Animated,
+  PixelRatio,
 } from 'react-native'
 import { BlurView, type BlurTint } from 'expo-blur'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -17,8 +18,20 @@ import { Compass, Building2, Plus, MessageSquare, User } from 'lucide-react-nati
 import { useTheme, Fonts, type ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
+import Reanimated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated'
+import { tabBarCollapse, expandTabBar } from '@/lib/tab-bar-scroll'
 
 import { isLogoutInProgress } from '@/lib/auth-cache'
+
+export const unstable_settings = {
+  initialRouteName: 'index',
+}
 
 // ==========================================
 // ANDROID NAVIGATION COMPONENTS (PRESERVED)
@@ -151,65 +164,74 @@ const TAB_CONFIG: Record<string, { icon: any; label: string; isPost?: boolean }>
 interface GlassRecipe {
   tint: BlurTint
   intensity: number
-  /** Near-clear tint veil — the blur, not the tint, must define the glass */
+  /** Calibrated translucent base wash */
   base: string
-  /** 0.5pt specular hairline ringing the capsule */
-  edge: string
-  /** Outer ambient halo — soft light wrapping just outside the edge */
-  halo: string
-  /** Inner rim — light scattering just inside the edge */
-  innerRim: string
-  /** Horizontal top sheen colour (fades out at both ends) */
+  /** 0.5pt specular hairline border */
+  border: string
+  /** Horizontal top specular highlight */
   sheen: string
-  /** Vertical specular gradient: top light, clear middle, inner bottom bounce */
-  gradient: readonly [string, string, string, string]
+  /** Bottom subtle light bounce */
+  bottomBounce: string
+  /** Far-field ambient ground shadow */
+  ambientShadowColor: string
+  ambientShadowOpacity: number
+  ambientShadowRadius: number
+  ambientShadowOffset: { width: number; height: number }
+  /** Near-field direct contact shadow */
+  directShadowColor: string
+  directShadowOpacity: number
+  directShadowRadius: number
+  directShadowOffset: { width: number; height: number }
 }
 
 const TAB_BAR_GLASS: Record<ThemeMode, GlassRecipe> = {
   white: {
     tint: 'systemUltraThinMaterialLight',
-    intensity: 100,
-    base: 'rgba(255, 255, 255, 0.30)',
-    edge: 'rgba(255, 255, 255, 0.85)',
-    halo: 'rgba(255, 255, 255, 0.28)',
-    innerRim: 'rgba(255, 255, 255, 0.34)',
-    sheen: 'rgba(255, 255, 255, 0.75)',
-    gradient: [
-      'rgba(255, 255, 255, 0.42)',
-      'rgba(255, 255, 255, 0.10)',
-      'rgba(255, 255, 255, 0.00)',
-      'rgba(255, 255, 255, 0.10)',
-    ],
+    intensity: 90,
+    base: 'rgba(255, 255, 255, 0.65)',
+    border: 'rgba(15, 23, 42, 0.08)',
+    sheen: 'rgba(255, 255, 255, 0.95)',
+    bottomBounce: 'rgba(15, 23, 42, 0.04)',
+    ambientShadowColor: '#0F172A',
+    ambientShadowOpacity: 0.12,
+    ambientShadowRadius: 30,
+    ambientShadowOffset: { width: 0, height: 12 },
+    directShadowColor: '#0F172A',
+    directShadowOpacity: 0.08,
+    directShadowRadius: 8,
+    directShadowOffset: { width: 0, height: 3 },
   },
   green: {
     tint: 'systemUltraThinMaterialDark',
-    intensity: 100,
-    base: 'rgba(7, 28, 24, 0.40)',
-    edge: 'rgba(212, 175, 55, 0.42)',
-    halo: 'rgba(255, 255, 255, 0.16)',
-    innerRim: 'rgba(255, 255, 255, 0.12)',
-    sheen: 'rgba(255, 255, 255, 0.30)',
-    gradient: [
-      'rgba(255, 255, 255, 0.20)',
-      'rgba(255, 255, 255, 0.05)',
-      'rgba(255, 255, 255, 0.00)',
-      'rgba(255, 255, 255, 0.07)',
-    ],
+    intensity: 95,
+    base: 'rgba(8, 30, 25, 0.65)',
+    border: 'rgba(212, 175, 55, 0.32)',
+    sheen: 'rgba(250, 226, 140, 0.50)',
+    bottomBounce: 'rgba(212, 175, 55, 0.14)',
+    ambientShadowColor: '#000000',
+    ambientShadowOpacity: 0.65,
+    ambientShadowRadius: 36,
+    ambientShadowOffset: { width: 0, height: 16 },
+    directShadowColor: '#000000',
+    directShadowOpacity: 0.45,
+    directShadowRadius: 10,
+    directShadowOffset: { width: 0, height: 4 },
   },
   black: {
     tint: 'systemUltraThinMaterialDark',
-    intensity: 100,
-    base: 'rgba(16, 22, 21, 0.40)',
-    edge: 'rgba(255, 255, 255, 0.28)',
-    halo: 'rgba(255, 255, 255, 0.18)',
-    innerRim: 'rgba(255, 255, 255, 0.12)',
-    sheen: 'rgba(255, 255, 255, 0.28)',
-    gradient: [
-      'rgba(255, 255, 255, 0.18)',
-      'rgba(255, 255, 255, 0.04)',
-      'rgba(255, 255, 255, 0.00)',
-      'rgba(255, 255, 255, 0.06)',
-    ],
+    intensity: 95,
+    base: 'rgba(20, 26, 24, 0.66)',
+    border: 'rgba(255, 255, 255, 0.16)',
+    sheen: 'rgba(255, 255, 255, 0.36)',
+    bottomBounce: 'rgba(47, 191, 139, 0.10)',
+    ambientShadowColor: '#000000',
+    ambientShadowOpacity: 0.80,
+    ambientShadowRadius: 40,
+    ambientShadowOffset: { width: 0, height: 18 },
+    directShadowColor: '#000000',
+    directShadowOpacity: 0.55,
+    directShadowRadius: 12,
+    directShadowOffset: { width: 0, height: 5 },
   },
 }
 
@@ -237,10 +259,10 @@ const IOSTabButton = React.memo(function IOSTabButton({
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.90,
+      toValue: 0.94,
       useNativeDriver: true,
-      speed: 30,
-      bounciness: 4,
+      tension: 200,
+      friction: 14,
     }).start()
   }
 
@@ -248,8 +270,8 @@ const IOSTabButton = React.memo(function IOSTabButton({
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 20,
-      bounciness: 8,
+      tension: 180,
+      friction: 12,
     }).start()
   }
 
@@ -260,48 +282,20 @@ const IOSTabButton = React.memo(function IOSTabButton({
     onPress()
   }
 
-  // Visual styling calculation based on active state and tab type
-  let pillBg = 'transparent'
-  let pillBorder = 'transparent'
-  let iconColor = colors.tabBarInactive
+  const pillBg = isPost
+    ? (theme === 'green' ? colors.gold : colors.primary)
+    : 'transparent'
 
-  if (isPost) {
-    if (isFocused) {
-      pillBg = theme === 'green' ? colors.gold : colors.primary
-      pillBorder = theme === 'green' ? colors.gold : colors.primary
-      iconColor =
-        theme === 'green' ? colors.chipTextActive : theme === 'black' ? '#000000' : '#FFFFFF'
-    } else {
-      pillBg =
-        theme === 'white'
-          ? 'rgba(0, 103, 91, 0.12)'
-          : theme === 'green'
-          ? 'rgba(212, 175, 55, 0.20)'
-          : 'rgba(47, 191, 139, 0.18)'
-      pillBorder =
-        theme === 'white'
-          ? 'rgba(0, 103, 91, 0.20)'
-          : theme === 'green'
-          ? 'rgba(212, 175, 55, 0.35)'
-          : 'rgba(47, 191, 139, 0.30)'
-      iconColor =
-        theme === 'white' ? colors.primary : theme === 'green' ? colors.gold : colors.primary
-    }
-  } else if (isFocused) {
-    pillBg =
-      theme === 'white'
-        ? 'rgba(0, 103, 91, 0.12)'
-        : theme === 'green'
-        ? 'rgba(212, 175, 55, 0.18)'
-        : 'rgba(47, 191, 139, 0.18)'
-    pillBorder =
-      theme === 'white'
-        ? 'rgba(0, 103, 91, 0.18)'
-        : theme === 'green'
-        ? 'rgba(212, 175, 55, 0.32)'
-        : 'rgba(47, 191, 139, 0.28)'
-    iconColor = colors.tabBarActive
-  }
+  const iconColor = isPost
+    ? (theme === 'green' ? colors.chipTextActive : theme === 'black' ? '#000000' : '#FFFFFF')
+    : (isFocused ? colors.tabBarActive : colors.tabBarInactive)
+
+  const badgeBorderColor =
+    theme === 'white'
+      ? 'rgba(255, 255, 255, 0.85)'
+      : theme === 'green'
+      ? '#071C18'
+      : '#101614'
 
   return (
     <Pressable
@@ -317,18 +311,23 @@ const IOSTabButton = React.memo(function IOSTabButton({
     >
       <Animated.View
         style={[
-          styles.iosIndicatorPill,
+          isPost ? styles.iosPostPill : styles.iosIndicatorPill,
           {
             backgroundColor: pillBg,
-            borderColor: pillBorder,
             transform: [{ scale: scaleAnim }],
+            ...(isPost
+              ? {
+                  shadowColor: theme === 'green' ? '#071C18' : '#000000',
+                  shadowOpacity: theme === 'white' ? 0.16 : 0.28,
+                }
+              : {}),
           },
         ]}
       >
         <Icon
-          size={isPost ? 21 : 22}
+          size={isPost ? 20 : 21}
           color={iconColor}
-          strokeWidth={isFocused ? 2.5 : 2.0}
+          strokeWidth={isPost ? 2.6 : isFocused ? 2.3 : 1.85}
         />
 
         {badgeCount && badgeCount > 0 ? (
@@ -336,7 +335,8 @@ const IOSTabButton = React.memo(function IOSTabButton({
             style={[
               styles.iosUnreadBadge,
               {
-                backgroundColor: theme === 'green' ? colors.gold : '#EF4444',
+                backgroundColor: theme === 'green' ? colors.gold : '#FF3B30',
+                borderColor: badgeBorderColor,
               },
             ]}
           >
@@ -355,6 +355,21 @@ const IOSTabButton = React.memo(function IOSTabButton({
   )
 })
 
+// Apple Human Interface kinetic motion parameters:
+// Snappy leading edge: instant departure, lightning rise time, high stiffness
+const SLIDE_LEAD_SPRING = {
+  damping: 28,
+  stiffness: 380,
+  mass: 0.65,
+}
+
+// Critically damped trailing edge: organic stretch, zero vibration, zero bounce delay
+const SLIDE_TRAIL_SPRING = {
+  damping: 29,
+  stiffness: 290,
+  mass: 0.75,
+}
+
 interface IOSTabBarProps {
   state: any
   navigation: any
@@ -366,124 +381,233 @@ const IOSTabBar = React.memo(function IOSTabBar({
   navigation,
   unreadCount,
 }: IOSTabBarProps) {
-  const { theme } = useTheme()
+  const { colors, theme } = useTheme()
   const glass = TAB_BAR_GLASS[theme]
   const insets = useSafeAreaInsets()
   const { width: screenWidth } = useWindowDimensions()
 
   const isLargeScreen = screenWidth > 500
   const horizontalMargin = isLargeScreen ? Math.round((screenWidth - 420) / 2) : 20
-  const bottomMargin = insets.bottom > 0 ? insets.bottom + 6 : 20
+
+  const collapsedExtra = isLargeScreen ? 26 : Math.min(38, Math.round(screenWidth * 0.095))
+
+  const collapseStyle = useAnimatedStyle(() => {
+    const extra = collapsedExtra * tabBarCollapse.value
+    return { left: horizontalMargin + extra, right: horizontalMargin + extra }
+  })
+
+  useEffect(() => {
+    expandTabBar()
+  }, [state.index])
+
+  const bottomMargin = insets.bottom > 0 ? insets.bottom + 6 : (Platform.OS === 'android' ? 12 : 20)
   const capsuleHeight = 60
   const capsuleRadius = 30
 
+  // ----------------------------------------
+  // FLUID SLIDING INDICATOR MOTION ARCHITECTURE
+  // The pill's geometry is a pure function of UI-thread shared values (tab
+  // position, collapse progress, slide stretch) and immutable layout constants,
+  // recomputed every frame: container collapse can never displace it off-center,
+  // and no onLayout/setState feedback loop exists to make it dance on scroll.
+  // ----------------------------------------
+  const numTabs = state.routes.length || 5
+  const ROW_PAD = 8
+  const PILL_WIDTH = 48
+
+  const centerU = useSharedValue(state.index + 0.5)
+  const stretchPx = useSharedValue(0)
+  const indicatorOpacity = useSharedValue(state.index === 2 ? 0 : 1)
+
+  useEffect(() => {
+    const curIndex = state.index
+    centerU.value = withSpring(curIndex + 0.5, SLIDE_LEAD_SPRING)
+    // Tactile stretch pulse at departure, settling back with trailing spring
+    stretchPx.value = withSequence(withTiming(12, { duration: 70 }), withSpring(0, SLIDE_TRAIL_SPRING))
+    // Seamlessly merge with Post button when at index 2, full opacity elsewhere
+    indicatorOpacity.value = withTiming(curIndex === 2 ? 0 : 1, { duration: 180 })
+  }, [state.index, centerU, stretchPx, indicatorOpacity])
+
+  // Collapse-immune slot mapping + volume-preserving squash & stretch,
+  // evaluated strictly on the UI thread at frame rate.
+  const indicatorStyle = useAnimatedStyle(() => {
+    const extra = collapsedExtra * tabBarCollapse.value
+    // Subtract the glass capsule's hairline border per side: the tabs row lives
+    // inside it, so slot geometry must match the row's true inner width or the
+    // pill accumulates a per-slot drift away from the icon centers.
+    const containerW =
+      screenWidth - 2 * (horizontalMargin + extra) - 2 * StyleSheet.hairlineWidth
+    const slot = (containerW - ROW_PAD * 2) / numTabs
+    const center = ROW_PAD + centerU.value * slot
+    const width = PILL_WIDTH + stretchPx.value
+    const left = center - width / 2
+
+    // Aerodynamic volume preservation (Poisson's ratio): as the pill stretches
+    // horizontally, its height subtly compresses to preserve physical density
+    const compression = Math.min(3.5, Math.max(0, width - PILL_WIDTH) * 0.12)
+    const height = 38 - compression
+    const top = 11 + compression / 2
+
+    return {
+      left,
+      width,
+      height,
+      top,
+      opacity: indicatorOpacity.value,
+    }
+  })
+
+  // Theme-tuned indicator wash and specular outline
+  const indicatorBg = useMemo(() => {
+    switch (theme) {
+      case 'white':
+        return 'rgba(0, 103, 91, 0.08)'
+      case 'green':
+        return 'rgba(212, 175, 55, 0.14)'
+      case 'black':
+      default:
+        return 'rgba(47, 191, 139, 0.12)'
+    }
+  }, [theme])
+
+  const indicatorBorder = useMemo(() => {
+    switch (theme) {
+      case 'white':
+        return 'rgba(0, 103, 91, 0.12)'
+      case 'green':
+        return 'rgba(212, 175, 55, 0.22)'
+      case 'black':
+      default:
+        return 'rgba(47, 191, 139, 0.18)'
+    }
+  }, [theme])
+
   return (
-    <View
+    <Reanimated.View
       style={[
         styles.iosCapsuleOuter,
         {
-          left: horizontalMargin,
-          right: horizontalMargin,
           bottom: bottomMargin,
           height: capsuleHeight,
           borderRadius: capsuleRadius,
-          shadowColor: theme === 'black' ? '#000000' : theme === 'green' ? '#020C0A' : '#0F172A',
-          shadowOpacity: theme === 'black' ? 0.36 : theme === 'green' ? 0.28 : 0.09,
+          shadowColor: glass.ambientShadowColor,
+          shadowOpacity: glass.ambientShadowOpacity,
+          shadowRadius: glass.ambientShadowRadius,
+          shadowOffset: glass.ambientShadowOffset,
         },
+        collapseStyle,
       ]}
     >
-      {/* ── Liquid Glass stack (bottom → top) ────────────────────────
-          1. Heavy frost — max blur on Apple UltraThin materials
-          2. Near-clear tint veil — the blur defines the surface
-          3. Top-lit specular gradient + inner bottom-edge light bounce
-          4. Horizontal top sheen — light catching the upper curve
-          5. 0.5pt specular hairline ring — crisp physical definition
-          6. Inner rim — light scattering just inside the edge
-          7. Ambient halo — soft light wrapping just outside the edge
-         ─────────────────────────────────────────────────────────── */}
+      {/* Layer 2: Tight Direct Contact Occlusion Shadow */}
       <View
-        pointerEvents="none"
-        style={[styles.iosRimHalo, { borderRadius: capsuleRadius + 1, borderColor: glass.halo }]}
-      />
-
-      <View style={[styles.iosGlassContainer, { borderRadius: capsuleRadius }]}>
-        <BlurView intensity={glass.intensity} tint={glass.tint} style={StyleSheet.absoluteFill} />
-
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: glass.base }]} />
-
-        <LinearGradient
-          colors={glass.gradient}
-          locations={[0, 0.3, 0.75, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-
-        <LinearGradient
-          colors={['rgba(255, 255, 255, 0)', glass.sheen, 'rgba(255, 255, 255, 0)']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.iosTopSheen}
-          pointerEvents="none"
-        />
-
+        style={[
+          styles.iosDirectShadowLayer,
+          {
+            borderRadius: capsuleRadius,
+            shadowColor: glass.directShadowColor,
+            shadowOpacity: glass.directShadowOpacity,
+            shadowRadius: glass.directShadowRadius,
+            shadowOffset: glass.directShadowOffset,
+          },
+        ]}
+      >
+        {/* Layer 3: Glass Prism Capsule with Continuous Chamfered Rim */}
         <View
           style={[
-            StyleSheet.absoluteFill,
-            styles.iosGlassBorder,
-            { borderRadius: capsuleRadius, borderColor: glass.edge },
+            styles.iosGlassContainer,
+            {
+              borderRadius: capsuleRadius,
+              borderColor: glass.border,
+            },
           ]}
-          pointerEvents="none"
-        />
+        >
+          {/* Genuine Apple Optical Translucency */}
+          <BlurView
+            intensity={glass.intensity}
+            tint={Platform.OS === 'ios' ? glass.tint : (theme === 'white' ? 'light' : 'dark')}
+            style={StyleSheet.absoluteFill}
+          />
 
-        <View
-          style={[styles.iosInnerRim, { borderRadius: capsuleRadius - 2, borderColor: glass.innerRim }]}
-          pointerEvents="none"
-        />
-      </View>
+          {/* Calibrated Translucent Surface Wash */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: glass.base }]} />
 
-      {/* Strict Optically Centered Tabs Row */}
-      <View style={styles.iosBarRow}>
-        {state.routes.map((route: { key: string; name: string; params?: any }, index: number) => {
-          const isFocused = state.index === index
-          const config = TAB_CONFIG[route.name] || { icon: Compass, label: route.name }
+          {/* Ambient Top Light Specular Highlight */}
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0)', glass.sheen, 'rgba(255, 255, 255, 0)']}
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.iosTopSheen}
+            pointerEvents="none"
+          />
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            })
+          {/* Ambient Bottom Light Bounce Highlight */}
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0)', glass.bottomBounce, 'rgba(255, 255, 255, 0)']}
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.iosBottomBounce}
+            pointerEvents="none"
+          />
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params)
-            }
-          }
-
-          const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            })
-          }
-
-          return (
-            <IOSTabButton
-              key={route.key}
-              icon={config.icon}
-              isFocused={isFocused}
-              isPost={config.isPost}
-              badgeCount={route.name === 'messages' ? unreadCount : undefined}
-              label={config.label}
-              onPress={onPress}
-              onLongPress={onLongPress}
+          {/* Optically Centered Tabs Row with Fluid Sliding Indicator */}
+          <View style={styles.iosBarRow} testID="tab-bar-row">
+            {/* Elastic Traveling Pill Indicator with Pure Apple Minimal Materiality */}
+            <Reanimated.View
+              testID="tab-indicator"
+              style={[
+                styles.iosSlidingIndicator,
+                {
+                  backgroundColor: indicatorBg,
+                  borderColor: indicatorBorder,
+                },
+                indicatorStyle,
+              ]}
+              pointerEvents="none"
             />
-          )
-        })}
+
+          {state.routes.map((route: { key: string; name: string; params?: any }, index: number) => {
+            const isFocused = state.index === index
+            const config = TAB_CONFIG[route.name] || { icon: Compass, label: route.name }
+
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              })
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name, route.params)
+              }
+            }
+
+            const onLongPress = () => {
+              navigation.emit({
+                type: 'tabLongPress',
+                target: route.key,
+              })
+            }
+
+            return (
+              <IOSTabButton
+                key={route.key}
+                icon={config.icon}
+                isFocused={isFocused}
+                isPost={config.isPost}
+                badgeCount={route.name === 'messages' ? unreadCount : undefined}
+                label={config.label}
+                onPress={onPress}
+                onLongPress={onLongPress}
+              />
+            )
+          })}
+        </View>
       </View>
     </View>
-  )
+  </Reanimated.View>
+)
 })
 
 // ==========================================
@@ -620,7 +744,7 @@ export default function TabLayout() {
       height: androidTabHeight,
       paddingTop: 6,
       paddingBottom: bottomInset,
-      elevation: 0,
+      elevation: 8,
       shadowColor: theme === 'green' ? '#071C18' : '#000',
       shadowOffset: { width: 0, height: -2 },
       shadowOpacity: theme === 'black' ? 0.35 : theme === 'green' ? 0.25 : 0.05,
@@ -631,13 +755,17 @@ export default function TabLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
-        detachInactiveScreens={true}
-        tabBar={isIOS ? (props) => <IOSTabBar {...props} unreadCount={unreadCount} /> : undefined}
+        detachInactiveScreens={false}
+        tabBar={(props) => <IOSTabBar {...props} unreadCount={unreadCount} />}
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
           lazy: true,
-          freezeOnBlur: true,
+          // freezeOnBlur stays OFF: freezing the active tab while a stack
+          // screen covers it makes the unfreeze/re-attach land inside the pop
+          // transition (blank/hitch frame under the sliding card). Lazy mount
+          // + virtualized lists already bound the offscreen cost.
+          freezeOnBlur: false,
           animation: 'none',
           sceneStyle: { backgroundColor: colors.background },
           tabBarBackground: renderTabBarBackground,
@@ -721,7 +849,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10.5,
-    lineHeight: 13,
+    lineHeight: Math.round(13 * Math.max(1, PixelRatio.getFontScale())),
     textAlign: 'center',
     letterSpacing: -0.2,
   },
@@ -761,40 +889,42 @@ const styles = StyleSheet.create({
   // iOS Modern Floating Frosted Glass Styles
   iosCapsuleOuter: {
     position: 'absolute',
-    elevation: 0,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 28,
+    elevation: Platform.OS === 'android' ? 12 : 0,
     backgroundColor: 'transparent',
     borderWidth: 0,
+    borderCurve: 'continuous',
+  },
+  iosDirectShadowLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderCurve: 'continuous',
   },
   iosGlassContainer: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     overflow: 'hidden',
-  },
-  iosGlassBorder: {
-    borderWidth: 0.5,
-  },
-  iosInnerRim: {
-    position: 'absolute',
-    top: 1,
-    left: 1,
-    right: 1,
-    bottom: 1,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  iosRimHalo: {
-    position: 'absolute',
-    top: -1,
-    left: -1,
-    right: -1,
-    bottom: -1,
+    borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
   },
   iosTopSheen: {
     position: 'absolute',
     top: 0.5,
-    left: 16,
-    right: 16,
+    left: 24,
+    right: 24,
+    height: 1.2,
+    borderRadius: 1,
+  },
+  iosBottomBounce: {
+    position: 'absolute',
+    bottom: 0.5,
+    left: 28,
+    right: 28,
     height: 1,
     borderRadius: 1,
   },
@@ -804,22 +934,43 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: '100%',
     paddingHorizontal: 8,
+    position: 'relative',
+  },
+  iosSlidingIndicator: {
+    position: 'absolute',
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    zIndex: 0,
   },
   iosTabItem: {
     flex: 1,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   iosIndicatorPill: {
-    width: 50,
-    height: 40,
-    borderRadius: 16,
+    width: 48,
+    height: 38,
+    borderRadius: 14,
     borderCurve: 'continuous',
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    backgroundColor: 'transparent',
+  },
+  iosPostPill: {
+    width: 44,
+    height: 32,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
   },
   iosUnreadBadge: {
     position: 'absolute',
@@ -828,6 +979,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
+    borderWidth: 1.5,
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   ActivityIndicator,
   Platform,
   Linking,
-  Dimensions,
   Alert,
   Share,
+  Modal,
+  Animated,
   useWindowDimensions,
+  TextInput,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
@@ -28,48 +31,148 @@ import {
   MessageCircle,
   MessageSquare,
   ShieldCheck,
-  Calculator,
-  Check,
-  Plus,
-  Minus,
+  BadgeCheck,
+  CheckCircle2,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Share2,
   Compass,
-  Send,
   Sparkles,
+  Building2,
+  Flame,
+  Wind,
+  Car,
+  Camera,
+  Star,
+  Calendar,
+  X,
+  Shield,
+  Eye,
+  UserCheck,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
-import { getAvatarSource, getAvatarUri } from '@/lib/avatars'
-import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
+import { getAvatarSource } from '@/lib/avatars'
+import { useFavorites } from '@/lib/favorites'
+import { openLoginScreen } from '@/lib/navigation'
 import { ListingDetailSkeleton } from '@/components/ListingSkeleton'
 import { safeBack } from '@/lib/navigation'
-import { getCachedListingById } from '@/lib/listings-cache'
-import { getSyncAuthUser } from '@/lib/auth-cache'
+import {
+  getCachedListingById,
+  getCachedListings,
+  getCachedListingDetail,
+  setCachedListingDetail,
+} from '@/lib/listings-cache'
+import { getSyncAuthUser, subscribeAuthCache } from '@/lib/auth-cache'
+import { setCachedProfile } from '@/lib/profile-cache'
+import { normalizePhoneNumber } from '@/lib/phone'
 import { FavoriteButton } from '@/components/FavoriteButton'
 import { TactilePressable } from '@/components/motion'
+import { CallModal } from '@/components/CallModal'
+import { MediaLightbox } from '@/components/MediaLightbox'
+
+const FALLBACK_GALLERY_IMAGE = require('@/assets/images/logo-icon.png')
+
+// Maps Albanian feature descriptions to intuitive iconography
+function getFeatureIcon(feat: string, color: string) {
+  const lower = feat.toLowerCase()
+  if (lower.includes('nxemje') || lower.includes('ngrohje') || lower.includes('pelet')) {
+    return <Flame size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('klim') || lower.includes('ajer') || lower.includes('ajr')) {
+    return <Wind size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('garazh') || lower.includes('park') || lower.includes('parking')) {
+    return <Car size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('ashensor') || lower.includes('lift')) {
+    return <Building2 size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('ballkon') || lower.includes('teras') || lower.includes('oborr')) {
+    return <Maximize2 size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('mobil') || lower.includes('mobiluar') || lower.includes('lux')) {
+    return <Sparkles size={15} color={color} strokeWidth={2.2} />
+  }
+  if (lower.includes('sigur') || lower.includes('alarm') || lower.includes('kamera')) {
+    return <ShieldCheck size={15} color={color} strokeWidth={2.2} />
+  }
+  return <CheckCircle2 size={15} color={color} strokeWidth={2.2} />
+}
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { colors, theme } = useTheme()
-  const { width: windowWidth } = useWindowDimensions()
-
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
   const insets = useSafeAreaInsets()
-  const cachedListing = id ? getCachedListingById(id) : null
+
+  const cachedListing = id ? (getCachedListingDetail(id) || getCachedListingById(id)) : null
   const [currentUser, setCurrentUser] = useState<any>(() => getSyncAuthUser())
+
+  // Reactive session observer
+  useEffect(() => {
+    return subscribeAuthCache((state) => {
+      setCurrentUser(state.user || null)
+    })
+  }, [])
+
   const [listing, setListing] = useState<Listing | null>(() => cachedListing)
   const [loading, setLoading] = useState(() => !cachedListing)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const { isFavorite: checkFavorite, toggleFavorite: toggleFav } = useFavorites()
+  const isFavorite = id ? checkFavorite(id) : false
+
+  // Gallery & View States
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [startingChat, setStartingChat] = useState(false)
+  const startingChatRef = useRef(false)
+  // Contact capability stays "pending" until the seller row (cache or network)
+  // has resolved, so the action bar never flashes a false "Pa numër" state.
+  // Feed caches embed the seller contact fragment, so warm entries resolve
+  // synchronously on frame one — no gray-to-green mutation.
+  const [contactResolved, setContactResolved] = useState(() =>
+    Boolean((cachedListing as any)?.profiles)
+  )
+  const [contactModalVisible, setContactModalVisible] = useState(false)
+  const [fullscreenVisible, setFullscreenVisible] = useState(false)
+  const [fullscreenIdx, setFullscreenIdx] = useState(0)
+  const [descExpanded, setDescExpanded] = useState(false)
+  const [loanYears, setLoanYears] = useState<10 | 15 | 20 | 25>(20)
+  const [loanDownPct, setLoanDownPct] = useState<10 | 15 | 20 | 30>(20)
+  const [loanRate, setLoanRate] = useState<3.9 | 4.5 | 5.0 | 5.5>(4.5)
+  const [loanMethod, setLoanMethod] = useState<'annuity' | 'linear'>('annuity')
+  const [incomeStr, setIncomeStr] = useState('')
+  const [loanExpanded, setLoanExpanded] = useState(false)
+  const [similarListings, setSimilarListings] = useState<Listing[]>([])
 
-  // Mortgage Calculator State
-  const [downPaymentPercent, setDownPaymentPercent] = useState(20)
-  const [interestRate, setInterestRate] = useState(4.5)
-  const [loanYears, setLoanYears] = useState(20)
+  // Dynamic Scroll Tracking for Apple-grade sticky header crossfade
+  const scrollY = useRef(new Animated.Value(0)).current
 
+  const heroHeight = Math.min(420, Math.round(windowWidth * 0.94))
+
+  // Header background interpolation
+  const headerBgOpacity = scrollY.interpolate({
+    inputRange: [heroHeight - 140, heroHeight - 60],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  })
+
+  // Header title & compact price interpolation
+  const headerContentOpacity = scrollY.interpolate({
+    inputRange: [heroHeight - 90, heroHeight - 40],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  })
+
+  const headerContentTranslateY = scrollY.interpolate({
+    inputRange: [heroHeight - 90, heroHeight - 40],
+    outputRange: [10, 0],
+    extrapolate: 'clamp',
+  })
+
+  // Fetch listing details
   useEffect(() => {
     let isMounted = true
 
@@ -80,15 +183,13 @@ export default function ListingDetailScreen() {
           setLoading(true)
         }
 
-        // Concurrently fetch auth user, listing details, and favorites in parallel (single network waterfall)
-        const [authRes, listingRes, favs] = await Promise.all([
+        const [authRes, listingRes] = await Promise.all([
           supabase.auth.getUser(),
           supabase
             .from('listings')
-            .select('*, profiles:user_id(id, first_name, last_name, phone, avatar_url)')
+            .select('*, profiles:user_id(*)')
             .eq('id', id)
             .single(),
-          fetchFavoriteIds(),
         ])
 
         if (!isMounted) return
@@ -97,9 +198,7 @@ export default function ListingDetailScreen() {
 
         let loadedListing: any = listingRes.data
 
-        // Resilient fallback: if the profiles join failed, load the listing row directly
         if (!loadedListing && listingRes.error) {
-          console.warn('Listing profiles join notice, falling back to base listing:', listingRes.error.message)
           const { data: fallbackData } = await supabase
             .from('listings')
             .select('*')
@@ -110,20 +209,39 @@ export default function ListingDetailScreen() {
           }
         }
 
+        // Resilient seller profile hydration: ensure phone and whatsapp are resolved
+        if (
+          loadedListing?.user_id &&
+          (!loadedListing.profiles || !loadedListing.profiles.phone)
+        ) {
+          try {
+            const { data: directProf } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', loadedListing.user_id)
+              .maybeSingle()
+
+            if (directProf && isMounted) {
+              loadedListing.profiles = {
+                ...(loadedListing.profiles || {}),
+                ...directProf,
+              }
+            }
+          } catch {}
+        }
+
         if (!isMounted) return
 
         if (loadedListing) {
           setListing(loadedListing as Listing)
-        }
-
-        if (favs && id in favs) {
-          setIsFavorite(true)
+          setCachedListingDetail(loadedListing as Listing)
         }
       } catch (err: any) {
-        console.warn('Listing catch:', err?.message || err)
+        console.warn('Listing fetch exception:', err?.message || err)
       } finally {
         if (isMounted) {
           setLoading(false)
+          setContactResolved(true)
         }
       }
     }
@@ -135,49 +253,165 @@ export default function ListingDetailScreen() {
     }
   }, [id])
 
-  const favPendingRef = useRef(false)
+  // Fetch similar properties for discovery momentum
+  useEffect(() => {
+    if (!listing) return
+    const currentId = listing.id
+    const currentCity = listing.city
+    const currentType = listing.type
+    const cached = getCachedListings()
+    const matches = cached
+      .filter((l) => l.id !== currentId && (l.city === currentCity || l.type === currentType))
+      .slice(0, 6)
 
-  const handleFavoriteToggle = async () => {
-    if (!listing || favPendingRef.current) return
+    if (matches.length >= 3) {
+      setSimilarListings(matches)
+    } else {
+      async function fetchSimilar() {
+        try {
+          const { data } = await supabase
+            .from('listings')
+            .select('*')
+            .eq('city', currentCity)
+            .neq('id', currentId)
+            .limit(6)
 
-    if (!currentUser) {
-      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+          if (data && data.length > 0) {
+            setSimilarListings(data as Listing[])
+          } else if (matches.length > 0) {
+            setSimilarListings(matches)
+          }
+        } catch {
+          if (matches.length > 0) setSimilarListings(matches)
+        }
+      }
+      void fetchSimilar()
+    }
+  }, [listing])
+
+  // Immediate profile pre-hydration when mounted with cached listing
+  useEffect(() => {
+    const targetUserId = listing?.user_id || cachedListing?.user_id
+    if (!targetUserId) return
+    const hasContact = Boolean(listing?.profiles?.phone || (listing?.profiles as any)?.whatsapp)
+    if (hasContact) {
+      setContactResolved(true)
       return
     }
 
-    favPendingRef.current = true
-    const wasFavorite = isFavorite
+    let isMounted = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', targetUserId)
+        .maybeSingle()
+      if (isMounted && data) {
+        setListing((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            profiles: {
+              ...(prev.profiles || {}),
+              ...data,
+            },
+          } as Listing
+        })
+      }
+    })()
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setContactResolved(true)
+      })
 
-    // Optimistic update, revert if the DB write fails (offline/guest)
-    setIsFavorite(!wasFavorite)
-    const ok = await persistFavoriteToggle(listing.id, wasFavorite)
-    if (!ok) setIsFavorite(wasFavorite)
-    favPendingRef.current = false
+    return () => {
+      isMounted = false
+    }
+  }, [listing?.user_id, cachedListing?.user_id])
+
+  const handleFavoriteToggle = async () => {
+    if (!listing) return
+    const user = getSyncAuthUser()
+    if (!user) {
+      openLoginScreen(router, { redirectTo: `/listings/${listing.id}`, reason: 'favorite' })
+      return
+    }
+
+    const res = await toggleFav(listing.id)
+    if (res.requiresAuth) {
+      openLoginScreen(router, { redirectTo: `/listings/${listing.id}`, reason: 'favorite' })
+    }
   }
 
-  const seller = listing?.profiles
+  const seller = listing?.profiles as (any)
+  const isCompany = seller?.account_type === 'company'
   const sellerName = seller
-    ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || 'Pronari'
+    ? (isCompany
+        ? seller.company_name || `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || 'Agjenci Imobiliare'
+        : `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || seller.company_name || 'Pronar Privat')
     : 'Pronari / Agjencia'
-  const sellerPhone = seller?.phone || '+38349123456'
+
+  // Unified communication resolution across profile and listing metadata
+  const directWhatsApp = seller?.whatsapp || (listing as any)?.whatsapp || null
+  const directPhone = seller?.phone || (listing as any)?.phone || (listing as any)?.contact_phone || null
+  const effectiveWhatsAppNumber = directWhatsApp || directPhone || null
+  const effectiveCallNumber = directPhone || directWhatsApp || null
+
+  // Seed the storefront cache with the seller fragment we already hold, so a
+  // host-card tap paints the identity on frame one (SWR revalidates behind).
+  useEffect(() => {
+    if (listing?.user_id && seller) {
+      setCachedProfile(listing.user_id, seller)
+    }
+  }, [listing?.user_id, seller])
+
+  const cleanWhatsAppDigits = effectiveWhatsAppNumber
+    ? normalizePhoneNumber(effectiveWhatsAppNumber).replace(/[^0-9]/g, '')
+    : ''
+  const cleanCallDigits = effectiveCallNumber
+    ? normalizePhoneNumber(effectiveCallNumber).replace(/[^0-9]/g, '')
+    : ''
+
+  const hasWhatsApp = Boolean(cleanWhatsAppDigits && cleanWhatsAppDigits.length >= 6)
+  const hasPhone = Boolean(cleanCallDigits && cleanCallDigits.length >= 6)
 
   const handleCall = () => {
-    Linking.openURL(`tel:${sellerPhone}`)
+    if (!hasPhone) {
+      Alert.alert(
+        'Numri nuk është publik',
+        'Publikuesi nuk ka listuar numër telefoni për thirrje direkte. Mund ta kontaktoni menjëherë përmes bisedës në aplikacion.'
+      )
+      return
+    }
+    setContactModalVisible(true)
   }
 
   const handleWhatsApp = (customText?: string) => {
-    const cleanPhone = sellerPhone.replace(/[^0-9]/g, '')
-    const defaultText = `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronën "${listing?.title || ''}" (${formatPrice(listing?.price)}).`
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    }
+
+    if (!hasWhatsApp) {
+      Alert.alert(
+        'WhatsApp i Padisponueshëm',
+        'Publikuesi nuk ka konfiguruar numër për WhatsApp. Mund ta kontaktoni menjëherë përmes telefonit ose bisedës në aplikacion.'
+      )
+      return
+    }
+
+    const defaultText = `Përshëndetje! Po ju kontaktoj nga Bleje Pronën lidhur me pronën "${listing?.title || ''}" (${formatPrice(listing?.price)}).`
     const body = customText ? `${defaultText}\n\nPyetje: ${customText}` : defaultText
     const encoded = encodeURIComponent(body)
-    Linking.openURL(`https://wa.me/${cleanPhone}?text=${encoded}`)
+    Linking.openURL(`https://wa.me/${cleanWhatsAppDigits}?text=${encoded}`).catch(() => {
+      Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni WhatsApp.')
+    })
   }
 
   const handleChat = async (initialQuery?: string) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
     if (!currentUser) {
-      router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'chat' } })
+      openLoginScreen(router, { redirectTo: `/listings/${listing?.id || id}`, reason: 'chat' })
       return
     }
 
@@ -188,6 +422,8 @@ export default function ListingDetailScreen() {
 
     if (!listing?.id || !listing?.user_id) return
 
+    if (startingChatRef.current) return
+    startingChatRef.current = true
     try {
       setStartingChat(true)
       const { data: existing } = await supabase
@@ -224,8 +460,9 @@ export default function ListingDetailScreen() {
         })
       }
     } catch (err: any) {
-      console.warn('Chat err:', err)
+      console.warn('Chat error:', err)
     } finally {
+      startingChatRef.current = false
       setStartingChat(false)
     }
   }
@@ -239,13 +476,16 @@ export default function ListingDetailScreen() {
       const shareUrl = `https://blejepronen.com/listings/${listing.id}`
       const m2Text = listing.area_m2 ? ` • ${listing.area_m2} m²` : ''
       const locText = [listing.neighborhood, listing.city].filter(Boolean).join(', ')
-      const message = `${listing.title}\n💰 ${formatPrice(listing.price)}${m2Text}\n📍 ${locText}\n\nShiko detajet në Bleje Pronën:\n${shareUrl}`
+      const messageBody = `${listing.title}\n💰 ${formatPrice(listing.price)}${m2Text}\n📍 ${locText}`
 
-      await Share.share({
-        title: listing.title,
-        message,
-        url: shareUrl,
-      })
+      await Share.share(
+        Platform.OS === 'ios'
+          ? { title: listing.title, message: messageBody, url: shareUrl }
+          : {
+              title: listing.title,
+              message: `${messageBody}\n\nShiko detajet në Bleje Pronën:\n${shareUrl}`,
+            }
+      )
     } catch (err) {
       console.warn('Share error:', err)
     }
@@ -256,37 +496,103 @@ export default function ListingDetailScreen() {
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync()
     }
+    const hasCoords = Boolean((listing as any).latitude && (listing as any).longitude)
+    const lat = (listing as any).latitude
+    const lng = (listing as any).longitude
+
     const query = encodeURIComponent(
       [listing.address, listing.neighborhood, listing.city, 'Kosovo']
         .filter(Boolean)
         .join(', ')
     )
-    const url = Platform.select({
-      ios: `maps:0,0?q=${query}`,
-      android: `geo:0,0?q=${query}`,
-      default: `https://maps.google.com/?q=${query}`,
-    })
+    const url = hasCoords
+      ? Platform.select({
+          ios: `maps://?ll=${lat},${lng}&q=${encodeURIComponent(listing.title || 'Prona')}`,
+          android: `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(listing.title || 'Prona')})`,
+          default: `https://maps.google.com/?q=${lat},${lng}`,
+        })
+      : Platform.select({
+          ios: `maps://?q=${query}`,
+          android: `geo:0,0?q=${query}`,
+          default: `https://maps.google.com/?q=${query}`,
+        })
+
     Linking.openURL(url!).catch(() => {
-      Linking.openURL(`https://maps.google.com/?q=${query}`)
+      const fallback = hasCoords
+        ? `https://maps.google.com/?q=${lat},${lng}`
+        : `https://maps.google.com/?q=${query}`
+      Linking.openURL(fallback).catch(() => {})
     })
   }
 
   const formatPrice = (val?: number) => {
-    if (!val) return '0 €'
+    if (!val || Number.isNaN(val) || val <= 0) return 'Me marrëveshje'
     return new Intl.NumberFormat('de-DE').format(val) + ' €'
   }
 
-  const calculateMortgage = () => {
-    if (!listing?.price) return 0
-    const principal = listing.price * (1 - downPaymentPercent / 100)
-    const monthlyRate = interestRate / 100 / 12
-    const totalMonths = loanYears * 12
-    if (monthlyRate === 0) return Math.round(principal / totalMonths)
-    const payment =
-      (principal * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
-      (Math.pow(1 + monthlyRate, totalMonths) - 1)
-    return Math.round(payment)
-  }
+  const fmtInt = (val: number) => new Intl.NumberFormat('de-DE').format(val)
+
+  // Mortgage affordability engine, calibrated to Kosovar retail market reality:
+  // down payments 10–30%, residential spreads 3.8–5.5%, tenors 10–25 years,
+  // both standard repayment schedules (annuity & declining/linear).
+  const loanEstimate = useMemo(() => {
+    if (!listing?.price || listing.price <= 0 || listing.type !== 'shitje') return null
+    const downPaymentAmount = Math.round((listing.price * loanDownPct) / 100)
+    const loanAmount = listing.price - downPaymentAmount
+    if (loanAmount <= 0) return null
+    const rm = loanRate / 100 / 12
+    const n = loanYears * 12
+
+    let monthlyPayment: number
+    let firstPayment: number
+    let lastPayment: number
+    let totalInterest: number
+    let balanceAfter5: number | null
+    if (loanMethod === 'annuity') {
+      monthlyPayment =
+        (loanAmount * (rm * Math.pow(1 + rm, n))) / (Math.pow(1 + rm, n) - 1)
+      firstPayment = monthlyPayment
+      lastPayment = monthlyPayment
+      totalInterest = monthlyPayment * n - loanAmount
+      const k = Math.min(60, n)
+      balanceAfter5 =
+        k >= n ? 0 : (loanAmount * (Math.pow(1 + rm, n) - Math.pow(1 + rm, k))) / (Math.pow(1 + rm, n) - 1)
+    } else {
+      const principalPart = loanAmount / n
+      firstPayment = principalPart + loanAmount * rm
+      lastPayment = principalPart + principalPart * rm
+      monthlyPayment = firstPayment
+      totalInterest = (rm * loanAmount * (n + 1)) / 2
+      const k = Math.min(60, n)
+      balanceAfter5 = k >= n ? 0 : loanAmount * (1 - k / n)
+    }
+
+    // Annuity total interest for the declining-method savings comparison
+    const annuityInterest =
+      loanMethod === 'linear'
+        ? ((loanAmount * (rm * Math.pow(1 + rm, n))) / (Math.pow(1 + rm, n) - 1)) * n - loanAmount
+        : null
+
+    const adminFee = Math.round(loanAmount * 0.005)
+    const incomeNum = parseFloat(incomeStr.replace(/[^\d.]/g, '')) || 0
+    const dti = incomeNum > 0 ? firstPayment / incomeNum : null
+
+    return {
+      monthlyPayment: Math.round(monthlyPayment),
+      firstPayment: Math.round(firstPayment),
+      lastPayment: Math.round(lastPayment),
+      downPaymentAmount,
+      loanAmount,
+      totalInterest: Math.round(totalInterest),
+      annuityInterest: annuityInterest != null ? Math.round(annuityInterest) : null,
+      balanceAfter5: balanceAfter5 != null ? Math.round(balanceAfter5) : null,
+      adminFee,
+      totalCost: Math.round(loanAmount + totalInterest + adminFee),
+      totalPayments: n,
+      dti,
+      incomeNum,
+    }
+  }, [listing?.price, listing?.type, loanYears, loanDownPct, loanRate, loanMethod, incomeStr])
 
   if (loading) {
     return (
@@ -312,62 +618,139 @@ export default function ListingDetailScreen() {
     )
   }
 
-  const imagesList =
+  const imagesList: (string | number)[] =
     listing.images && listing.images.length > 0
       ? listing.images
-      : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
+      : [FALLBACK_GALLERY_IMAGE]
+
+  const handleGalleryScrollEnd = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+    const slide = Math.min(
+      imagesList.length - 1,
+      Math.max(0, Math.round(e.nativeEvent.contentOffset.x / windowWidth))
+    )
+    if (slide !== activeImageIdx) setActiveImageIdx(slide)
+  }
+
+  const openFullscreen = (index: number = 0) => {
+    setFullscreenIdx(index)
+    setFullscreenVisible(true)
+  }
+
+  const isSale = listing.type === 'shitje'
+  const brandHighlight = theme === 'green' ? colors.gold : colors.primary
+  const specularBorder =
+    theme === 'white'
+      ? 'rgba(15, 23, 42, 0.08)'
+      : theme === 'green'
+      ? 'rgba(212, 175, 55, 0.24)'
+      : 'rgba(255, 255, 255, 0.09)'
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      {/* Floating Top Nav Bar */}
-      <View style={[styles.floatingNavSafeArea, { paddingTop: insets.top }]}>
-        <View style={styles.floatingNav}>
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 1. APPLE-TIER DYNAMIC TOP NAVIGATION BAR (CROSS-FADING)      */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <View style={[styles.floatingNavSafeArea, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Solid / Frosted Background that fades in seamlessly on scroll */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: headerBgOpacity,
+              backgroundColor: colors.background,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.border,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <BlurView
+            intensity={Platform.OS === 'ios' ? 95 : 100}
+            tint={colors.blurTint}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+
+        <View style={styles.floatingNavRow}>
+          {/* Back Button */}
           <TactilePressable
-            style={styles.navIconBtn}
+            style={styles.navCircleBtn}
             onPress={() => safeBack(router, '/(tabs)/listings')}
             hitSlop={8}
             activeScale={0.92}
             haptic="light"
           >
             <BlurView
-              intensity={Platform.OS === 'ios' ? 70 : 100}
+              intensity={Platform.OS === 'ios' ? 75 : 100}
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.4} />
+            <ArrowLeft size={19} color="#FFFFFF" strokeWidth={2.4} />
           </TactilePressable>
 
-          <View style={styles.navRight}>
+          {/* Sticky Header Center Title & Price (Fades in when hero scrolls out) */}
+          <Animated.View
+            style={[
+              styles.navCenterContent,
+              {
+                opacity: headerContentOpacity,
+                transform: [{ translateY: headerContentTranslateY }],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={[styles.navStickyTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+              {listing.title}
+            </Text>
+            <Text style={[styles.navStickyPrice, { color: brandHighlight }]}>
+              {formatPrice(listing.price)}
+              {listing.type === 'qira' && ' /muaj'}
+            </Text>
+          </Animated.View>
+
+          {/* Right Action Icons: Share & Favorite */}
+          <View style={styles.navRightGroup}>
             <TactilePressable
-              style={styles.navIconBtn}
+              style={styles.navCircleBtn}
               onPress={handleShare}
               hitSlop={8}
               activeScale={0.92}
               haptic="light"
             >
               <BlurView
-                intensity={Platform.OS === 'ios' ? 70 : 100}
+                intensity={Platform.OS === 'ios' ? 75 : 100}
                 tint="dark"
                 style={StyleSheet.absoluteFill}
               />
-              <Share2 size={18} color="#FFFFFF" strokeWidth={2.2} />
+              <Share2 size={17} color="#FFFFFF" strokeWidth={2.2} />
             </TactilePressable>
 
             <FavoriteButton
               isFavorite={isFavorite}
               onToggle={handleFavoriteToggle}
-              canToggle={() => !!currentUser}
-              size={42}
-              iconSize={20}
+              canToggle={() => !!getSyncAuthUser()}
+              size={40}
+              iconSize={19}
               variant="dark"
             />
           </View>
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Fullwidth Image Slider */}
-        <View style={[styles.galleryContainer, { width: windowWidth }]}>
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 2. MAIN SCROLLABLE CONTENT BODY                               */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <Animated.ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+      >
+        {/* ── CINEMATIC FULL-WIDTH HERO GALLERY ── */}
+        <View style={[styles.heroGalleryWrapper, { width: windowWidth, height: heroHeight }]}>
           <FlatList
             data={imagesList}
             keyExtractor={(_, i) => String(i)}
@@ -383,72 +766,123 @@ export default function ListingDetailScreen() {
               offset: windowWidth * index,
               index,
             })}
-            onMomentumScrollEnd={(e) => {
-              const slide = Math.min(
-                imagesList.length - 1,
-                Math.max(0, Math.round(e.nativeEvent.contentOffset.x / windowWidth))
-              )
-              if (slide !== activeImageIdx) setActiveImageIdx(slide)
-            }}
+            onMomentumScrollEnd={handleGalleryScrollEnd}
+            onScrollEndDrag={handleGalleryScrollEnd}
             renderItem={({ item: img, index: i }) => (
-              <Image
-                source={{ uri: img }}
-                recyclingKey={`gallery-${i}`}
-                style={[styles.galleryImage, { width: windowWidth, backgroundColor: colors.surfaceSubtle }]}
-                contentFit="cover"
-                priority={i === 0 ? 'high' : 'normal'}
-                cachePolicy="memory-disk"
-                transition={150}
-              />
+              <Pressable
+                onPress={() => openFullscreen(i)}
+                style={{ width: windowWidth, height: heroHeight }}
+              >
+                <Image
+                  source={typeof img === 'string' ? { uri: img } : (img as any)}
+                  recyclingKey={`gallery-${i}`}
+                  style={[styles.heroImage, { width: windowWidth, height: heroHeight, backgroundColor: colors.surfaceSubtle }]}
+                  contentFit="cover"
+                  priority={i === 0 ? 'high' : 'normal'}
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
+              </Pressable>
             )}
           />
 
-          <View style={styles.imageCounter}>
+          {/* Top Edge Vignette Gradient (for navigation contrast) */}
+          <LinearGradient
+            colors={['rgba(0, 0, 0, 0.55)', 'rgba(0, 0, 0, 0)']}
+            style={styles.topVignette}
+            pointerEvents="none"
+          />
+
+          {/* Bottom Edge Vignette Gradient */}
+          <LinearGradient
+            colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.60)']}
+            style={styles.bottomVignette}
+            pointerEvents="none"
+          />
+
+          {/* Dynamic Pagination Pill Indicator */}
+          {imagesList.length > 1 && (
+            <View style={styles.paginationDotsRow} pointerEvents="none">
+              {imagesList.map((_, i) => {
+                const isActive = i === activeImageIdx
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.paginationDot,
+                      {
+                        width: isActive ? 22 : 6,
+                        backgroundColor: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
+                      },
+                    ]}
+                  />
+                )
+              })}
+            </View>
+          )}
+
+          {/* Bottom Left: Property Type Badge & Featured Star */}
+          <View style={styles.heroLeftBadgesRow}>
+            <View
+              style={[
+                styles.typeTagCapsule,
+                { backgroundColor: isSale ? '#10B981' : '#3B82F6' },
+              ]}
+            >
+              <Text style={styles.typeTagText}>
+                {isSale ? 'NË SHITJE' : 'ME QIRA'}
+              </Text>
+            </View>
+
+            {listing.is_featured && (
+              <View style={[styles.featuredTagCapsule, { backgroundColor: colors.gold }]}>
+                <Star size={11} color="#3E2A00" fill="#3E2A00" strokeWidth={2} />
+                <Text style={styles.featuredTagText}>E VEÇUAR</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Bottom Right: Fullscreen Photo Counter Badge */}
+          <TactilePressable
+            style={styles.photoCountBtn}
+            onPress={() => openFullscreen(activeImageIdx)}
+            activeScale={0.93}
+            haptic="light"
+            hitSlop={6}
+          >
             <BlurView
-              intensity={Platform.OS === 'ios' ? 65 : 100}
+              intensity={Platform.OS === 'ios' ? 70 : 100}
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <Text style={styles.imageCounterText}>
-              {activeImageIdx + 1} / {imagesList.length}
+            <Camera size={13} color="#FFFFFF" strokeWidth={2.2} />
+            <Text style={styles.photoCountText}>
+              {activeImageIdx + 1}/{imagesList.length}
             </Text>
-          </View>
-
-          <View style={[styles.heroTypeBadge, { backgroundColor: theme === 'green' ? colors.gold : colors.primary }]}>
-            <Text
-              style={[
-                styles.heroTypeBadgeText,
-                { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-              ]}
-            >
-              {listing.type === 'shitje' ? 'NË SHITJE' : 'ME QIRA'}
-            </Text>
-          </View>
+          </TactilePressable>
         </View>
 
-        {/* Content Body */}
-        <View style={styles.body}>
-          {/* Price & Location Header */}
-          <View style={[styles.headerBlock, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {/* ── EDITORIAL PROPERTY NARRATIVE ── */}
+        <View style={styles.narrativeBody}>
+          {/* Price Command & Valuation Badges */}
+          <View style={styles.priceSection}>
             <View style={styles.priceRow}>
-              <View style={styles.priceWithPeriod}>
-                <Text
-                  style={[
-                    styles.priceText,
-                    { color: theme === 'green' ? colors.gold : colors.primary },
-                  ]}
-                >
+              <View style={styles.priceTextWrap}>
+                <Text style={[styles.priceHeroNumber, { color: brandHighlight }]}>
                   {formatPrice(listing.price)}
                 </Text>
                 {listing.type === 'qira' && (
-                  <Text style={[styles.periodText, { color: colors.textMuted }]}>/muaj</Text>
+                  <Text style={[styles.periodLabel, { color: colors.textMuted }]}>
+                    /muaj
+                  </Text>
                 )}
               </View>
 
-              {listing.type === 'shitje' && listing.price && listing.area_m2 && listing.area_m2 > 0 ? (
+              {/* Price per Square Meter Chip */}
+              {isSale && listing.price && listing.area_m2 && listing.area_m2 > 0 ? (
                 <View
                   style={[
-                    styles.pricePerM2Badge,
+                    styles.pricePerM2Pill,
                     {
                       backgroundColor:
                         theme === 'white'
@@ -458,24 +892,17 @@ export default function ListingDetailScreen() {
                           : 'rgba(52, 211, 153, 0.12)',
                       borderColor:
                         theme === 'white'
-                          ? 'rgba(0, 103, 91, 0.2)'
+                          ? 'rgba(0, 103, 91, 0.18)'
                           : theme === 'green'
-                          ? 'rgba(212, 175, 55, 0.35)'
-                          : 'rgba(52, 211, 153, 0.3)',
+                          ? 'rgba(212, 175, 55, 0.32)'
+                          : 'rgba(52, 211, 153, 0.25)',
                     },
                   ]}
                 >
                   <Text
                     style={[
-                      styles.pricePerM2Text,
-                      {
-                        color:
-                          theme === 'green'
-                            ? colors.gold
-                            : theme === 'black'
-                            ? '#34D399'
-                            : colors.primary,
-                      },
+                      styles.pricePerM2Label,
+                      { color: theme === 'green' ? colors.gold : theme === 'black' ? '#34D399' : colors.primary },
                     ]}
                   >
                     ≈ {new Intl.NumberFormat('de-DE').format(Math.round(listing.price / listing.area_m2))} €/m²
@@ -484,212 +911,576 @@ export default function ListingDetailScreen() {
               ) : null}
             </View>
 
-            <Text style={[styles.titleText, { color: colors.textPrimary }]}>{listing.title}</Text>
+            {/* Confident Editorial Title */}
+            <Text style={[styles.editorialTitle, { color: colors.textPrimary }]}>
+              {listing.title}
+            </Text>
 
-            <View style={styles.locationContainer}>
-              <View style={styles.locationRow}>
-                <MapPin size={16} color={colors.primary} strokeWidth={2.2} />
-                <Text style={[styles.locationText, { color: colors.textSecondary }]}>
+            {/* Geographic Context & Neighborhood Link */}
+            <View style={styles.locationBar}>
+              <View style={styles.locationPinGroup}>
+                <MapPin size={17} color={brandHighlight} strokeWidth={2.4} />
+                <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>
                   {listing.neighborhood ? `${listing.neighborhood}, ` : ''}
-                  {listing.city}
+                  <Text style={{ fontFamily: Fonts.bold, color: colors.textPrimary }}>{listing.city}</Text>
                   {listing.address ? ` • ${listing.address}` : ''}
                 </Text>
               </View>
+
               <TactilePressable
                 style={[
-                  styles.openMapsBtn,
-                  {
-                    backgroundColor: colors.surfaceSubtle,
-                    borderColor: colors.border,
-                  },
+                  styles.mapChipBtn,
+                  { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
                 ]}
                 onPress={handleOpenMaps}
-                activeScale={0.95}
+                activeScale={0.94}
                 haptic="selection"
                 hitSlop={6}
               >
-                <Compass size={13} color={colors.primary} strokeWidth={2.2} />
-                <Text style={[styles.openMapsBtnText, { color: colors.primary }]}>Harta</Text>
+                <Compass size={14} color={brandHighlight} strokeWidth={2.2} />
+                <Text style={[styles.mapChipText, { color: colors.textPrimary }]}>Harta</Text>
               </TactilePressable>
             </View>
           </View>
 
-          {/* Quick 1-Tap Inquiry Row */}
-          {currentUser?.id !== listing.user_id && (
-            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.quickInquiryHeader}>
-                <Sparkles size={16} color={theme === 'green' ? colors.gold : colors.primary} strokeWidth={2.2} />
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>
-                  Pyetje të shpejta për pronarin
-                </Text>
-              </View>
-              <Text style={[styles.quickInquirySub, { color: colors.textMuted }]}>
-                Zgjidhni një pyetje për të hapur bisedën me 1 prekje:
+          {/* ── ARCHITECTURAL SPECS STRIP (editorial canvas, hairline-ruled) ── */}
+          <View style={[styles.specStrip, { borderColor: colors.border }]}>
+            {/* Area */}
+            <View style={styles.architecturalSpecCell}>
+              <Maximize2 size={18} color={colors.textMuted} strokeWidth={2.2} />
+              <Text style={[styles.specValueText, { color: colors.textPrimary }]}>
+                {listing.area_m2 ? `${listing.area_m2} m²` : '-'}
               </Text>
-              <View style={styles.quickChipsWrap}>
-                {[
-                  'A është prona ende e lirë?',
-                  'Dua të caktoj një vizitë',
-                  'A ka fletë poseduese?',
-                  'A ka fleksibilitet në çmim?',
-                ].map((msg, i) => (
-                  <TactilePressable
-                    key={i}
-                    style={[
-                      styles.quickChip,
-                      {
-                        backgroundColor: colors.surfaceSubtle,
-                        borderColor: colors.borderSubtle,
-                      },
-                    ]}
-                    onPress={() => handleChat(msg)}
-                    activeScale={0.96}
-                    haptic="light"
-                  >
-                    <Text style={[styles.quickChipText, { color: colors.textPrimary }]}>
-                      {msg}
-                    </Text>
-                    <Send size={11} color={colors.primary} strokeWidth={2} />
-                  </TactilePressable>
-                ))}
-              </View>
+              <Text style={[styles.specLabelText, { color: colors.textMuted }]}>
+                Sipërfaqe
+              </Text>
+            </View>
+
+            <View style={[styles.specVerticalDivider, { backgroundColor: colors.border }]} />
+
+            {/* Rooms */}
+            <View style={styles.architecturalSpecCell}>
+              <BedDouble size={18} color={colors.textMuted} strokeWidth={2.2} />
+              <Text style={[styles.specValueText, { color: colors.textPrimary }]}>
+                {listing.rooms ? `${listing.rooms} Dhoma` : '-'}
+              </Text>
+              <Text style={[styles.specLabelText, { color: colors.textMuted }]}>
+                Struktura
+              </Text>
+            </View>
+
+            <View style={[styles.specVerticalDivider, { backgroundColor: colors.border }]} />
+
+            {/* Floor */}
+            <View style={styles.architecturalSpecCell}>
+              <Layers size={18} color={colors.textMuted} strokeWidth={2.2} />
+              <Text style={[styles.specValueText, { color: colors.textPrimary }]}>
+                {listing.floor != null && listing.floor !== '' ? `Kati ${listing.floor}` : '-'}
+              </Text>
+              <Text style={[styles.specLabelText, { color: colors.textMuted }]}>
+                Niveli
+              </Text>
+            </View>
+
+            <View style={[styles.specVerticalDivider, { backgroundColor: colors.border }]} />
+
+            {/* Type / Condition */}
+            <View style={styles.architecturalSpecCell}>
+              <Building2 size={18} color={colors.textMuted} strokeWidth={2.2} />
+              <Text style={[styles.specValueText, { color: colors.textPrimary }]} numberOfLines={1}>
+                {listing.apartment_type || listing.condition || 'Banesë'}
+              </Text>
+              <Text style={[styles.specLabelText, { color: colors.textMuted }]}>
+                Lloji
+              </Text>
+            </View>
+          </View>
+
+          {/* ── EXPANDABLE DESCRIPTION (editorial canvas section) ── */}
+          {Boolean(listing.description) && (
+            <View style={styles.canvasSection}>
+              <Text style={[styles.sectionOverline, { color: colors.textMuted }]}>
+                PËRSHKRIMI
+              </Text>
+              <Text
+                style={[styles.editorialDescriptionText, { color: colors.textSecondary }]}
+                numberOfLines={descExpanded ? undefined : 4}
+              >
+                {listing.description}
+              </Text>
+
+              {listing.description.length > 180 && (
+                <TactilePressable
+                  style={styles.expandDescBtn}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    setDescExpanded((p) => !p)
+                  }}
+                  activeScale={0.97}
+                  haptic="light"
+                  hitSlop={8}
+                >
+                  <Text style={[styles.expandDescBtnText, { color: brandHighlight }]}>
+                    {descExpanded ? 'Trego më pak' : 'Lexo përshkrimin e plotë'}
+                  </Text>
+                  {descExpanded ? (
+                    <ChevronUp size={16} color={brandHighlight} strokeWidth={2.4} />
+                  ) : (
+                    <ChevronDown size={16} color={brandHighlight} strokeWidth={2.4} />
+                  )}
+                </TactilePressable>
+              )}
             </View>
           )}
 
-          {/* Key Specs Grid */}
-          <View style={styles.specsGrid}>
-            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Maximize2 size={20} color={colors.primary} strokeWidth={2.2} />
-              <Text style={[styles.specValue, { color: colors.textPrimary }]}>{listing.area_m2} m²</Text>
-              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Sipërfaqja</Text>
-            </View>
-
-            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <BedDouble size={20} color={colors.primary} strokeWidth={2.2} />
-              <Text style={[styles.specValue, { color: colors.textPrimary }]}>{listing.rooms || '-'}</Text>
-              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Dhomat</Text>
-            </View>
-
-            <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Layers size={20} color={colors.primary} strokeWidth={2.2} />
-              <Text style={[styles.specValue, { color: colors.textPrimary }]}>
-                {listing.floor ? `Kati ${listing.floor}` : '-'}
-              </Text>
-              <Text style={[styles.specLabel, { color: colors.textMuted }]}>Kati</Text>
-            </View>
-          </View>
-
-          {/* Description Section */}
-          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Përshkrimi i pronës</Text>
-            <Text style={[styles.descText, { color: colors.textSecondary }]}>{listing.description}</Text>
-          </View>
-
-          {/* Amenities & Features */}
+          {/* ── CURATED AMENITIES (editorial canvas section) ── */}
           {listing.features && listing.features.length > 0 && (
-            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pajisjet dhe Veçoritë</Text>
-              <View style={styles.featuresGrid}>
+            <View style={styles.canvasSection}>
+              <View style={styles.cardHeaderWithCount}>
+                <Text style={[styles.sectionOverline, { color: colors.textMuted }]}>
+                  PAJISJET & KOMODITETET
+                </Text>
+                <Text style={[styles.countBadge, { color: colors.textMuted }]}>
+                  {listing.features.length} veçori
+                </Text>
+              </View>
+
+              <View style={styles.featuresTilesGrid}>
                 {listing.features.map((feat, idx) => (
                   <View
                     key={idx}
-                    style={[styles.featureItem, { backgroundColor: colors.surfaceSubtle }]}
+                    style={[
+                      styles.featureTile,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: specularBorder,
+                      },
+                    ]}
                   >
-                    <Check size={14} color={colors.primary} strokeWidth={2.6} />
-                    <Text style={[styles.featureItemText, { color: colors.textSecondary }]}>{feat}</Text>
+                    {getFeatureIcon(feat, brandHighlight)}
+                    <Text style={[styles.featureTileText, { color: colors.textPrimary }]}>
+                      {feat}
+                    </Text>
                   </View>
                 ))}
               </View>
             </View>
           )}
 
-          {/* Interactive Mortgage Calculator */}
-          {listing.type === 'shitje' && (
-            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.calculatorHeader}>
-                <Calculator size={18} color={colors.primary} strokeWidth={2.2} />
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                  Kalkulatori i Kredisë
-                </Text>
-              </View>
-
-              <View style={[styles.calcResultBox, { backgroundColor: colors.surfaceSubtle }]}>
-                <Text style={[styles.calcResultLabel, { color: colors.textSecondary }]}>
-                  Pagesa mujore e llogaritur:
-                </Text>
-                <Text style={[styles.calcResultValue, { color: colors.primary }]}>
-                  {calculateMortgage()} € / muaj
-                </Text>
-                <Text style={[styles.calcResultNote, { color: colors.textMuted }]}>
-                  Pjesëmarrja {downPaymentPercent}%, Interesi {interestRate}%, Kohëzgjatja {loanYears} vite.
-                </Text>
-              </View>
-
-              {/* Controls */}
-              <View style={styles.calcControlsRow}>
-                <View style={styles.calcControl}>
-                  <Text style={[styles.calcControlLabel, { color: colors.textMuted }]}>Pjesëmarrja</Text>
-                  <View style={styles.stepperWrap}>
-                    <Pressable
-                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.selectionAsync()
-                        setDownPaymentPercent((p) => Math.max(10, p - 5))
-                      }}
-                      hitSlop={8}
-                    >
-                      <Minus size={12} color={colors.textPrimary} />
-                    </Pressable>
-                    <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{downPaymentPercent}%</Text>
-                    <Pressable
-                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.selectionAsync()
-                        setDownPaymentPercent((p) => Math.min(50, p + 5))
-                      }}
-                      hitSlop={8}
-                    >
-                      <Plus size={12} color={colors.textPrimary} />
-                    </Pressable>
+          {/* ── INTERACTIVE MORTGAGE & AFFORDABILITY CALCULATOR (FOR SALES) ── */}
+          {isSale && loanEstimate && (
+            <View
+              style={[
+                styles.contentCard,
+                { backgroundColor: colors.surface, borderColor: specularBorder },
+              ]}
+            >
+              {/* Resting state: one confident metric + disclosure affordance */}
+              <TactilePressable
+                activeScale={0.985}
+                haptic="selection"
+                style={styles.loanHeadRow}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setLoanExpanded((v) => !v)
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.loanOverline, { color: colors.textMuted }]}>
+                    VLERËSIMI I KREDISË BANKARE
+                  </Text>
+                  <View style={styles.loanHeadlineRow}>
+                    <Text style={[styles.loanBigValue, { color: colors.textPrimary }]}>
+                      {fmtInt(loanEstimate.monthlyPayment)} €
+                    </Text>
+                    <Text style={[styles.loanPerMonth, { color: colors.textMuted }]}>/ muaj</Text>
                   </View>
+                  <Text
+                    style={[styles.loanHeadSub, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {loanDownPct}% pjesëmarrje • {loanYears} vjet •{' '}
+                    {loanRate.toFixed(1).replace('.', ',')}% •{' '}
+                    {loanMethod === 'annuity' ? 'anuitet' : 'këste zbritëse'}
+                  </Text>
                 </View>
+                <ChevronDown
+                  size={18}
+                  color={colors.textMuted}
+                  strokeWidth={2.2}
+                  style={{ transform: [{ rotate: loanExpanded ? '180deg' : '0deg' }] }}
+                />
+              </TactilePressable>
 
-                <View style={styles.calcControl}>
-                  <Text style={[styles.calcControlLabel, { color: colors.textMuted }]}>Kohëzgjatja</Text>
-                  <View style={styles.stepperWrap}>
-                    <Pressable
-                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.selectionAsync()
-                        setLoanYears((y) => Math.max(5, y - 5))
-                      }}
-                      hitSlop={8}
-                    >
-                      <Minus size={12} color={colors.textPrimary} />
-                    </Pressable>
-                    <Text style={[styles.stepValue, { color: colors.textPrimary }]}>{loanYears} v</Text>
-                    <Pressable
-                      style={[styles.stepBtn, { backgroundColor: colors.surfaceHighlight }]}
-                      onPress={() => {
-                        if (Platform.OS !== 'web') Haptics.selectionAsync()
-                        setLoanYears((y) => Math.min(30, y + 5))
-                      }}
-                      hitSlop={8}
-                    >
-                      <Plus size={12} color={colors.textPrimary} />
-                    </Pressable>
+              {loanExpanded && (
+                <View style={styles.loanExpandedBody}>
+                  {/* Repayment schedule method — the two standard bank models */}
+                  <View
+                    style={[
+                      styles.loanSegmentRow,
+                      { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                    ]}
+                  >
+                    {(['annuity', 'linear'] as const).map((m) => {
+                      const selected = loanMethod === m
+                      return (
+                        <TactilePressable
+                          key={m}
+                          activeScale={0.97}
+                          haptic="selection"
+                          style={[
+                            styles.loanSegmentBtn,
+                            selected && { backgroundColor: colors.surface, borderColor: specularBorder },
+                          ]}
+                          onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setLoanMethod(m)
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.loanSegmentBtnText,
+                              {
+                                color: selected ? colors.textPrimary : colors.textMuted,
+                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {m === 'annuity' ? 'Këste të barabarta' : 'Këste zbritëse'}
+                          </Text>
+                        </TactilePressable>
+                      )
+                    })}
                   </View>
+
+                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
+                    Pjesëmarrja fillestare
+                  </Text>
+                  <View style={styles.loanChipRow}>
+                    {([10, 15, 20, 30] as const).map((pct) => {
+                      const selected = loanDownPct === pct
+                      return (
+                        <TactilePressable
+                          key={pct}
+                          activeScale={0.94}
+                          haptic="selection"
+                          style={[
+                            styles.loanChip,
+                            {
+                              backgroundColor: selected
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.surfaceSubtle,
+                              borderColor: selected ? 'transparent' : specularBorder,
+                            },
+                          ]}
+                          onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setLoanDownPct(pct)
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.loanChipText,
+                              {
+                                color: selected
+                                  ? theme === 'green'
+                                    ? '#071C18'
+                                    : '#FFFFFF'
+                                  : colors.textSecondary,
+                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                              },
+                            ]}
+                          >
+                            {pct}%
+                          </Text>
+                        </TactilePressable>
+                      )
+                    })}
+                  </View>
+
+                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
+                    Afati i kredisë
+                  </Text>
+                  <View style={styles.loanChipRow}>
+                    {([10, 15, 20, 25] as const).map((yr) => {
+                      const selected = loanYears === yr
+                      return (
+                        <TactilePressable
+                          key={yr}
+                          activeScale={0.94}
+                          haptic="selection"
+                          style={[
+                            styles.loanChip,
+                            {
+                              backgroundColor: selected
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.surfaceSubtle,
+                              borderColor: selected ? 'transparent' : specularBorder,
+                            },
+                          ]}
+                          onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setLoanYears(yr)
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.loanChipText,
+                              {
+                                color: selected
+                                  ? theme === 'green'
+                                    ? '#071C18'
+                                    : '#FFFFFF'
+                                  : colors.textSecondary,
+                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                              },
+                            ]}
+                          >
+                            {yr} vjet
+                          </Text>
+                        </TactilePressable>
+                      )
+                    })}
+                  </View>
+
+                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
+                    Norma vjetore e interesit
+                  </Text>
+                  <View style={styles.loanChipRow}>
+                    {([3.9, 4.5, 5.0, 5.5] as const).map((rt) => {
+                      const selected = loanRate === rt
+                      return (
+                        <TactilePressable
+                          key={rt}
+                          activeScale={0.94}
+                          haptic="selection"
+                          style={[
+                            styles.loanChip,
+                            {
+                              backgroundColor: selected
+                                ? theme === 'green'
+                                  ? colors.gold
+                                  : colors.primary
+                                : colors.surfaceSubtle,
+                              borderColor: selected ? 'transparent' : specularBorder,
+                            },
+                          ]}
+                          onPress={() => {
+                            if (Platform.OS !== 'web') Haptics.selectionAsync()
+                            setLoanRate(rt)
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.loanChipText,
+                              {
+                                color: selected
+                                  ? theme === 'green'
+                                    ? '#071C18'
+                                    : '#FFFFFF'
+                                  : colors.textSecondary,
+                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                              },
+                            ]}
+                          >
+                            {rt.toFixed(1).replace('.', ',')}%
+                          </Text>
+                        </TactilePressable>
+                      )
+                    })}
+                  </View>
+
+                  {/* Amortization breakdown — hairline ledger, no nested cards */}
+                  <View style={[styles.loanBreakBox, { borderColor: specularBorder }]}>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Pjesëmarrja fillestare
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {fmtInt(loanEstimate.downPaymentAmount)} €
+                      </Text>
+                    </View>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Shuma e kredisë
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {fmtInt(loanEstimate.loanAmount)} €
+                      </Text>
+                    </View>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Interesi total ({loanEstimate.totalPayments} këste)
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {fmtInt(loanEstimate.totalInterest)} €
+                      </Text>
+                    </View>
+                    {loanMethod === 'linear' && (
+                      <View style={styles.loanBreakRow}>
+                        <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                          Kësti i fundit (i zbritur)
+                        </Text>
+                        <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                          {fmtInt(loanEstimate.lastPayment)} €
+                        </Text>
+                      </View>
+                    )}
+                    {loanMethod === 'linear' && loanEstimate.annuityInterest != null && (
+                      <View style={styles.loanBreakRow}>
+                        <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                          Kursim interesi vs anuitet
+                        </Text>
+                        <Text
+                          style={[
+                            styles.loanBreakValue,
+                            { color: theme === 'green' ? colors.gold : colors.primary },
+                          ]}
+                        >
+                          − {fmtInt(Math.max(0, loanEstimate.annuityInterest - loanEstimate.totalInterest))} €
+                        </Text>
+                      </View>
+                    )}
+                    {loanEstimate.balanceAfter5 != null && loanYears > 5 && (
+                      <View style={styles.loanBreakRow}>
+                        <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                          Borxhi i mbetur pas 5 vjetëve
+                        </Text>
+                        <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                          {fmtInt(loanEstimate.balanceAfter5)} €
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Tarifa administrative (njëherësh)
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {fmtInt(loanEstimate.adminFee)} €
+                      </Text>
+                    </View>
+                    <View style={[styles.loanBreakRow, { paddingTop: 10 }]}>
+                      <Text
+                        style={[
+                          styles.loanBreakLabel,
+                          { color: colors.textPrimary, fontFamily: Fonts.bold },
+                        ]}
+                      >
+                        Kostoja totale e kredisë
+                      </Text>
+                      <Text
+                        style={[
+                          styles.loanBreakValue,
+                          { color: theme === 'green' ? colors.gold : colors.primary },
+                        ]}
+                      >
+                        {fmtInt(loanEstimate.totalCost)} €
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Cost structure: principal vs interest vs fees, to scale */}
+                  <View style={styles.loanCostBar}>
+                    <View
+                      style={{
+                        flex: loanEstimate.loanAmount,
+                        backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                      }}
+                    />
+                    <View style={{ flex: loanEstimate.totalInterest, backgroundColor: colors.textMuted }} />
+                    <View style={{ flex: loanEstimate.adminFee, backgroundColor: colors.border }} />
+                  </View>
+                  <View style={styles.loanCostLegendRow}>
+                    <View style={styles.loanLegendItem}>
+                      <View
+                        style={[
+                          styles.loanLegendDot,
+                          { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
+                        ]}
+                      />
+                      <Text style={[styles.loanLegendText, { color: colors.textMuted }]}>
+                        Kredia {fmtInt(loanEstimate.loanAmount)} €
+                      </Text>
+                    </View>
+                    <View style={styles.loanLegendItem}>
+                      <View style={[styles.loanLegendDot, { backgroundColor: colors.textMuted }]} />
+                      <Text style={[styles.loanLegendText, { color: colors.textMuted }]}>
+                        Interesi {fmtInt(loanEstimate.totalInterest)} €
+                      </Text>
+                    </View>
+                    <View style={styles.loanLegendItem}>
+                      <View style={[styles.loanLegendDot, { backgroundColor: colors.border }]} />
+                      <Text style={[styles.loanLegendText, { color: colors.textMuted }]}>
+                        Tarifa {fmtInt(loanEstimate.adminFee)} €
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Optional affordability check — DTI against prudent bank norm */}
+                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
+                    Përballueshmëria (opsionale)
+                  </Text>
+                  <View
+                    style={[
+                      styles.loanIncomeRow,
+                      { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                    ]}
+                  >
+                    <Text style={[styles.loanIncomeLabel, { color: colors.textMuted }]}>
+                      Të ardhurat neto mujore
+                    </Text>
+                    <TextInput
+                      style={[styles.loanIncomeInput, { color: colors.textPrimary }]}
+                      placeholder="psh. 800"
+                      placeholderTextColor={colors.textLight}
+                      value={incomeStr}
+                      onChangeText={(v) => setIncomeStr(v.replace(/[^\d]/g, '').slice(0, 6))}
+                      keyboardType="number-pad"
+                      returnKeyType="done"
+                    />
+                    <Text style={[styles.loanIncomeSuffix, { color: colors.textMuted }]}>€</Text>
+                  </View>
+                  {loanEstimate.dti != null && (
+                    <Text
+                      style={[
+                        styles.loanDtiText,
+                        {
+                          color:
+                            loanEstimate.dti <= 0.4
+                              ? colors.textSecondary
+                              : theme === 'green'
+                              ? colors.gold
+                              : '#B45309',
+                        },
+                      ]}
+                    >
+                      Kësti i parë = {(loanEstimate.dti * 100).toFixed(0)}% e të ardhurave • kufiri
+                      prudent i bankave ≈ 40%
+                    </Text>
+                  )}
+
+                  <Text style={[styles.mortgageDisclaimer, { color: colors.textMuted }]}>
+                    Vlerësim orientues i kushteve të tregut kosovar (norma 3,8–5,5%). Nuk është
+                    ofertë e detyrueshme — kushtet finale i përcakton banka juaj.
+                  </Text>
                 </View>
-              </View>
+              )}
             </View>
           )}
 
-          {/* Seller / Agent Card with direct navigation to public profile */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.sellerCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
+          {/* ── VERIFIED CREATOR & AGENCY SHOWCASE (AIRBNB SUPERHOST ARCHITECTURE) ── */}
+          <TactilePressable
+            style={[
+              styles.hostProfileCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: specularBorder,
+              },
             ]}
             onPress={() => {
               if (listing?.user_id) {
@@ -700,56 +1491,131 @@ export default function ListingDetailScreen() {
                 })
               }
             }}
+            activeScale={0.985}
+            haptic="selection"
             hitSlop={6}
           >
-            <View style={[styles.sellerAvatar, { backgroundColor: colors.primaryLight }]}>
-              {seller?.avatar_url ? (
-                <Image
-                  source={getAvatarSource(seller.avatar_url)}
-                  style={[styles.sellerAvatarImg, { backgroundColor: colors.surfaceSubtle }]}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  priority="high"
-                  transition={0}
-                />
-              ) : (
-                <Text style={[styles.sellerAvatarInitials, { color: colors.primary }]}>
-                  {(seller?.first_name?.[0] || 'P').toUpperCase()}
-                </Text>
-              )}
-            </View>
-            <View style={styles.sellerInfo}>
-              <Text style={[styles.sellerName, { color: colors.textPrimary }]}>{sellerName}</Text>
-              <View style={styles.sellerVerifiedRow}>
-                <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
-                <Text style={[styles.sellerRole, { color: colors.textMuted }]}>
-                  Shiko profilin & të gjitha pronat
+            {/* Core Identity Row */}
+            <View style={styles.hostIdentityMainRow}>
+              <View style={[styles.hostAvatarPlain, { backgroundColor: colors.surfaceSubtle }]}>
+                {seller?.avatar_url ? (
+                  <Image
+                    source={getAvatarSource(seller.avatar_url)}
+                    style={styles.hostAvatarImg}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    priority="high"
+                  />
+                ) : (
+                  <View style={[styles.hostAvatarFallback, { backgroundColor: colors.primaryLight }]}>
+                    <Text style={[styles.hostAvatarInitials, { color: colors.primary }]}>
+                      {(seller?.first_name?.[0] || seller?.company_name?.[0] || 'P').toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <View style={styles.hostNameRow}>
+                  <Text
+                    style={[styles.hostNameText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {sellerName}
+                  </Text>
+                  {seller?.email_verified === true && (
+                    <BadgeCheck size={15} color={brandHighlight} strokeWidth={2.2} />
+                  )}
+                </View>
+                <Text
+                  style={[styles.hostRoleLine, { color: colors.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {isCompany ? 'Agjenci imobiliare' : 'Pronar privat'}
                 </Text>
               </View>
-              {seller?.phone && (
-                <Text style={[styles.sellerPhoneText, { color: colors.textSecondary }]}>
-                  {seller.phone}
-                </Text>
-              )}
+
+              <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
             </View>
-            <ChevronRight size={18} color={colors.textMuted} />
-          </Pressable>
+          </TactilePressable>
 
-          <View style={{ height: 110 }} />
+          {/* ── PRONA TË NGJASHME (CONTINUOUS DISCOVERY MOMENTUM) ── */}
+          {similarListings.length > 0 && (
+            <View style={styles.similarPropertiesSection}>
+              <View style={styles.similarHeaderRow}>
+                <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
+                  Prona të Ngjashme
+                </Text>
+                <Text style={[styles.similarCitySubtitle, { color: colors.textMuted }]}>
+                  Në {listing.city}
+                </Text>
+              </View>
+
+              <FlatList
+                data={similarListings}
+                keyExtractor={(item) => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.similarListContent}
+                renderItem={({ item }) => {
+                  const cardImg = item.images && item.images.length > 0 ? { uri: item.images[0] } : FALLBACK_GALLERY_IMAGE
+                  return (
+                    <TactilePressable
+                      style={[
+                        styles.similarCard,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: specularBorder,
+                        },
+                      ]}
+                      onPress={() => {
+                        router.push(`/listings/${item.id}` as any)
+                      }}
+                      activeScale={0.96}
+                      haptic="light"
+                    >
+                      <Image
+                        source={cardImg}
+                        style={[styles.similarCardImg, { backgroundColor: colors.surfaceSubtle }]}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={150}
+                      />
+                      <View style={styles.similarCardBody}>
+                        <Text style={[styles.similarCardPrice, { color: brandHighlight }]}>
+                          {formatPrice(item.price)}
+                          {item.type === 'qira' && ' /muaj'}
+                        </Text>
+                        <Text style={[styles.similarCardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                        <Text style={[styles.similarCardMeta, { color: colors.textMuted }]}>
+                          {item.area_m2 ? `${item.area_m2} m²` : ''} {item.rooms ? `• ${item.rooms} Dhoma` : ''}
+                        </Text>
+                      </View>
+                    </TactilePressable>
+                  )
+                }}
+              />
+            </View>
+          )}
+
+          {/* Bottom spacing so content never gets covered by floating action bar */}
+          <View style={{ height: 130 }} />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
-      {/* Sticky Bottom Action Bar with Native iOS Frosted Glass */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 3. AIRBNB & APPLE FLOATING HIGH-CONVERSION BOTTOM ACTION BAR  */}
+      {/* ───────────────────────────────────────────────────────────── */}
       <View
         style={[
-          styles.bottomBarWrapper,
-          {
-            borderTopColor: colors.tabBarBorder,
-          },
+          styles.bottomFloatingBarOuter,
+          { borderTopColor: colors.tabBarBorder },
         ]}
       >
         <BlurView
-          intensity={Platform.OS === 'ios' ? 88 : 100}
+          intensity={Platform.OS === 'ios' ? 95 : 100}
           tint={colors.blurTint}
           style={StyleSheet.absoluteFill}
         />
@@ -759,113 +1625,154 @@ export default function ListingDetailScreen() {
             {
               backgroundColor:
                 theme === 'white'
-                  ? 'rgba(255, 255, 255, 0.72)'
+                  ? 'rgba(255, 255, 255, 0.76)'
                   : theme === 'green'
-                  ? 'rgba(7, 28, 24, 0.78)'
-                  : 'rgba(12, 17, 16, 0.75)',
+                  ? 'rgba(7, 28, 24, 0.82)'
+                  : 'rgba(12, 17, 16, 0.80)',
             },
           ]}
         />
-        <View
-          style={[styles.bottomBarSafeArea, { paddingBottom: Math.max(insets.bottom, 12) }]}
-        >
+
+        <View style={[styles.bottomBarContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {currentUser?.id === listing.user_id ? (
-            <View style={styles.ownerNoticeBar}>
-              <ShieldCheck size={18} color={colors.primary} strokeWidth={2.2} />
-              <Text style={[styles.ownerNoticeText, { color: colors.textPrimary }]}>
-                Kjo është prona juaj e publikuar në Bleje Pronën
-              </Text>
+            <View style={styles.ownerBarContent}>
+              <View style={styles.ownerBarLeft}>
+                <ShieldCheck size={18} color={brandHighlight} strokeWidth={2.4} />
+                <Text style={[styles.ownerBarTitle, { color: colors.textPrimary }]}>
+                  Kjo është prona juaj
+                </Text>
+              </View>
+              <TactilePressable
+                style={[styles.ownerShareBtn, { backgroundColor: brandHighlight }]}
+                onPress={handleShare}
+                activeScale={0.94}
+                haptic="selection"
+              >
+                <Share2 size={15} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.4} />
+                <Text style={[styles.ownerShareBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
+                  Shpërndaj
+                </Text>
+              </TactilePressable>
             </View>
           ) : (
-            <View style={styles.bottomBar}>
-              {/* 1. In-App Direct Chat */}
-              <TactilePressable
-                activeScale={0.97}
-                haptic="medium"
-                style={[
-                  styles.chatActionBtn,
-                  {
-                    backgroundColor: theme === 'green' ? colors.gold : colors.primary,
-                  },
-                ]}
-                onPress={() => handleChat()}
-                disabled={startingChat}
-                hitSlop={8}
-              >
-                {startingChat ? (
-                  <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
-                ) : (
-                  <>
-                    <MessageSquare
-                      size={17}
-                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                      strokeWidth={2.4}
-                    />
-                    <Text
-                      style={[
-                        styles.chatActionBtnText,
-                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                    >
-                      Bisedo
-                    </Text>
-                  </>
-                )}
-              </TactilePressable>
-
-              {/* 2. WhatsApp Button */}
-              <TactilePressable
-                activeScale={0.97}
-                haptic="medium"
-                style={styles.whatsAppBtn}
-                onPress={() => handleWhatsApp()}
-                hitSlop={8}
-              >
-                <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.whatsAppBtnText} numberOfLines={1} adjustsFontSizeToFit>
-                  WhatsApp
+            <View style={styles.buyerActionGrid}>
+              {/* Left Column: Price Anchor with Subtitle */}
+              <View style={styles.bottomPriceCol}>
+                <Text style={[styles.bottomPriceValue, { color: brandHighlight }]}>
+                  {formatPrice(listing.price)}
                 </Text>
-              </TactilePressable>
+                <Text style={[styles.bottomPriceSub, { color: colors.textMuted }]}>
+                  {listing.type === 'shitje' && listing.area_m2
+                    ? `≈ ${new Intl.NumberFormat('de-DE').format(Math.round(listing.price / listing.area_m2))} €/m²`
+                    : listing.type === 'qira'
+                    ? 'Kësti mujor'
+                    : 'Çmimi i plotë'}
+                </Text>
+              </View>
 
-              {/* 3. Phone Call Button */}
-              <TactilePressable
-                activeScale={0.97}
-                haptic="medium"
-                style={[
-                  styles.callBtn,
-                  {
-                    backgroundColor:
-                      theme === 'white'
-                        ? 'rgba(15, 23, 42, 0.04)'
-                        : theme === 'green'
-                        ? 'rgba(212, 175, 55, 0.12)'
-                        : 'rgba(255, 255, 255, 0.08)',
-                    borderColor:
-                      theme === 'white'
-                        ? 'rgba(15, 23, 42, 0.08)'
-                        : theme === 'green'
-                        ? 'rgba(212, 175, 55, 0.25)'
-                        : 'rgba(255, 255, 255, 0.12)',
-                  },
-                ]}
-                onPress={handleCall}
-                hitSlop={8}
-              >
-                <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text
-                  style={[styles.callBtnText, { color: colors.textPrimary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
+              {/* Right Column: High-Conversion Tactile Actions */}
+              <View style={styles.bottomActionsCol}>
+                {/* 1. Direct Cellular / Voice Call Button */}
+                <TactilePressable
+                  activeScale={0.92}
+                  haptic="medium"
+                  style={[
+                    styles.roundCallIconBtn,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                  onPress={handleCall}
+                  hitSlop={6}
+                  accessibilityLabel="Telefono shitësin"
                 >
-                  Telefono
-                </Text>
-              </TactilePressable>
+                  <Phone size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                </TactilePressable>
+
+                {/* 2. WhatsApp Direct Button — solid, stable, and synchronous brand green from frame 0 */}
+                <TactilePressable
+                  activeScale={0.94}
+                  haptic="medium"
+                  style={styles.whatsAppActionPill}
+                  onPress={() => handleWhatsApp()}
+                  hitSlop={6}
+                  accessibilityLabel="Bisedo në WhatsApp"
+                >
+                  <MessageCircle
+                    size={17}
+                    color="#FFFFFF"
+                    strokeWidth={2.4}
+                  />
+                  <Text style={styles.whatsAppActionPillText}>
+                    WhatsApp
+                  </Text>
+                </TactilePressable>
+
+                {/* 3. In-App Direct Chat Primary CTA */}
+                <TactilePressable
+                  activeScale={0.94}
+                  haptic="medium"
+                  style={[
+                    styles.primaryChatCta,
+                    { backgroundColor: brandHighlight },
+                  ]}
+                  onPress={() => handleChat()}
+                  disabled={startingChat}
+                  hitSlop={6}
+                >
+                  {startingChat ? (
+                    <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
+                  ) : (
+                    <>
+                      <MessageSquare
+                        size={17}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        style={[
+                          styles.primaryChatCtaText,
+                          { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                        ]}
+                      >
+                        Bisedo
+                      </Text>
+                    </>
+                  )}
+                </TactilePressable>
+              </View>
             </View>
           )}
         </View>
       </View>
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 4. IMMERSIVE FULLSCREEN PHOTO LIGHTBOX (DRAG-TO-DISMISS)      */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <MediaLightbox
+        images={imagesList}
+        visible={fullscreenVisible}
+        initialIndex={fullscreenIdx}
+        title={listing?.title}
+        onClose={() => setFullscreenVisible(false)}
+        onIndexChange={setFullscreenIdx}
+        onShare={handleShare}
+      />
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 5. CONTACT OPTIONS SHEET                                      */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <CallModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+        counterpartName={sellerName}
+        counterpartAvatar={seller?.avatar_url}
+        counterpartPhone={effectiveCallNumber}
+        listingTitle={listing?.title}
+        counterpartUserId={listing?.user_id ?? null}
+        isSignedIn={Boolean(currentUser)}
+      />
     </View>
   )
 }
@@ -880,441 +1787,828 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
-  loadingText: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-  },
   notFoundTitle: {
     fontSize: 18,
     fontFamily: Fonts.bold,
   },
   backBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
     marginTop: 8,
   },
   backBtnText: {
     fontFamily: Fonts.bold,
+    fontSize: 14,
   },
+
+  // 1. Dynamic Floating & Sticky Top Navigation Bar
   floatingNavSafeArea: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
+    zIndex: 30,
   },
-  floatingNav: {
+  floatingNavRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 10 : 0,
+    paddingVertical: 8,
+    height: 52,
   },
-  navIconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  navCenterContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  navStickyTitle: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+  },
+  navStickyPrice: {
+    fontSize: 12,
+    fontFamily: Fonts.extraBold,
+  },
+  navCircleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.48)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.32)',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navRight: {
+  navRightGroup: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
+
+  // 2. Cinematic Hero Gallery
   scrollView: {
     flex: 1,
   },
-  galleryContainer: {
-    width: '100%',
-    height: 320,
+  heroGalleryWrapper: {
     position: 'relative',
     backgroundColor: '#0F172A',
   },
-  galleryImage: {
-    height: 320,
+  heroImage: {
+    width: '100%',
   },
-  imageCounter: {
+  topVignette: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0,0,0,0.65)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.28)',
-    paddingHorizontal: 10,
-    paddingVertical: 4.5,
-    borderRadius: 12,
-    overflow: 'hidden',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 110,
   },
-  imageCounterText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontFamily: Fonts.bold,
+  bottomVignette: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
   },
-  heroTypeBadge: {
+  paginationDotsRow: {
+    position: 'absolute',
+    bottom: 18,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 5,
+  },
+  paginationDot: {
+    height: 5,
+    borderRadius: 2.5,
+  },
+  heroLeftBadgesRow: {
     position: 'absolute',
     bottom: 16,
     left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  typeTagCapsule: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  heroTypeBadgeText: {
-    fontSize: 11,
+  typeTagText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
     fontFamily: Fonts.black,
+    letterSpacing: 0.5,
   },
-  body: {
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 20,
-    gap: 18,
+  featuredTagCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  featuredTagText: {
+    color: '#3E2A00',
+    fontSize: 10.5,
+    fontFamily: Fonts.black,
+    letterSpacing: 0.4,
+  },
+  photoCountBtn: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.65)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
+  },
+  photoCountText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontFamily: Fonts.bold,
+  },
+
+  // 3. Editorial Narrative Body
+  narrativeBody: {
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    gap: 20,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
-  headerBlock: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
+  priceSection: {
     gap: 10,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
     flexWrap: 'wrap',
+    gap: 8,
   },
-  priceWithPeriod: {
+  priceTextWrap: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
   },
-  pricePerM2Badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 8,
-    borderWidth: 0.5,
+  priceHeroNumber: {
+    fontSize: 28,
+    fontFamily: Fonts.black,
+    letterSpacing: -0.6,
   },
-  pricePerM2Text: {
-    fontSize: 12,
+  periodLabel: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+  },
+  pricePerM2Pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  pricePerM2Label: {
+    fontSize: 12.5,
     fontFamily: Fonts.bold,
     letterSpacing: -0.2,
   },
-  priceText: {
-    fontSize: 26,
-    fontFamily: Fonts.black,
-  },
-  periodText: {
-    fontSize: 14,
-    fontFamily: Fonts.semiBold,
-  },
-  titleText: {
-    fontSize: 19,
+  editorialTitle: {
+    fontSize: 21,
     fontFamily: Fonts.extraBold,
-    lineHeight: 26,
-    letterSpacing: -0.3,
+    lineHeight: 28,
+    letterSpacing: -0.4,
   },
-  locationContainer: {
+  locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 4,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    flex: 1,
-  },
-  locationText: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-    flex: 1,
-  },
-  openMapsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 0.5,
-  },
-  openMapsBtnText: {
-    fontSize: 12,
-    fontFamily: Fonts.bold,
-  },
-  quickInquiryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  quickInquirySub: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    marginTop: -4,
-  },
-  quickChipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  quickChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 18,
-    borderWidth: 0.5,
-  },
-  quickChipText: {
-    fontSize: 12,
-    fontFamily: Fonts.semiBold,
-  },
-  specsGrid: {
-    flexDirection: 'row',
     gap: 10,
-  },
-  specBox: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    gap: 5,
-  },
-  specValue: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-  },
-  specLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-  },
-  sectionCard: {
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 16.5,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
-  },
-  descText: {
-    fontSize: 15,
-    fontFamily: Fonts.regular,
-    lineHeight: 24,
-    letterSpacing: -0.1,
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  featureItemText: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-  },
-  calculatorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  calcResultBox: {
-    padding: 16,
-    borderRadius: 16,
-    gap: 6,
-  },
-  calcResultLabel: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-  },
-  calcResultValue: {
-    fontSize: 24,
-    fontFamily: Fonts.black,
-    letterSpacing: -0.5,
-  },
-  calcResultNote: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
-  },
-  calcControlsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  calcControl: {
-    flex: 1,
-    gap: 4,
-  },
-  calcControlLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-  },
-  stepperWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     marginTop: 2,
   },
-  stepBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  locationPinGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  locationLabel: {
+    fontSize: 13.5,
+    fontFamily: Fonts.medium,
+    lineHeight: 18,
+    flex: 1,
+  },
+  mapChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  mapChipText: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+
+  // 4. Architectural Specs Strip — hairline-ruled canvas band, no card chrome
+  specStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    marginTop: 4,
+  },
+  // Editorial canvas section: overline heading on the bare background
+  canvasSection: {
+    marginTop: 8,
+    gap: 12,
+  },
+  sectionOverline: {
+    fontSize: 10.5,
+    letterSpacing: 1.1,
+    fontFamily: Fonts.bold,
+  },
+  architecturalSpecCell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 4,
+  },
+  specValueText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
+  specLabelText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
+  },
+  specVerticalDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 38,
+  },
+
+  // 5. Section Typography
+  sectionHeading: {
+    fontSize: 17,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
+
+  // 6. Generic Content Card
+  contentCard: {
+    borderRadius: 24,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 20,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  editorialDescriptionText: {
+    fontSize: 14.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 23,
+    letterSpacing: -0.15,
+  },
+  expandDescBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingTop: 4,
+    alignSelf: 'flex-start',
+  },
+  expandDescBtnText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+  },
+
+  // 7. Amenities Tiles Grid
+  cardHeaderWithCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  countBadge: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+  },
+  featuresTilesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  featureTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  featureTileText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+    letterSpacing: -0.1,
+  },
+
+  // 8. Mortgage & Affordability Engine
+  loanHeadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loanOverline: {
+    fontSize: 10.5,
+    letterSpacing: 1.1,
+    fontFamily: Fonts.bold,
+    marginBottom: 6,
+  },
+  loanHeadlineRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  loanBigValue: {
+    fontSize: 30,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.8,
+    fontVariant: ['tabular-nums'],
+  },
+  loanPerMonth: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+  },
+  loanHeadSub: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+    marginTop: 4,
+  },
+  loanExpandedBody: {
+    marginTop: 6,
+  },
+  loanGroupLabel: {
+    fontSize: 11.5,
+    letterSpacing: 0.2,
+    fontFamily: Fonts.semiBold,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  loanChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  loanChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepValue: {
+  loanChipText: {
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+  },
+  loanBreakBox: {
+    marginTop: 18,
+  },
+  loanBreakRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 9,
+    gap: 12,
+  },
+  loanBreakLabel: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+    flexShrink: 1,
+  },
+  loanBreakValue: {
     fontSize: 13,
     fontFamily: Fonts.bold,
-    minWidth: 42,
-    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
-  sellerCard: {
-    borderRadius: 22,
-    padding: 18,
+  loanSegmentRow: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 3,
+    gap: 3,
+    marginTop: 16,
+  },
+  loanSegmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 9,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loanSegmentBtnText: {
+    fontSize: 12.5,
+    letterSpacing: -0.1,
+  },
+  loanCostBar: {
+    flexDirection: 'row',
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginTop: 16,
+    gap: 2,
+  },
+  loanCostLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 8,
+  },
+  loanLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  loanLegendDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  loanLegendText: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    fontVariant: ['tabular-nums'],
+  },
+  loanIncomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  loanIncomeLabel: {
+    flex: 1,
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+  },
+  loanIncomeInput: {
+    width: 84,
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    paddingVertical: 0,
+  },
+  loanIncomeSuffix: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+  },
+  loanDtiText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    lineHeight: 16,
+    marginTop: -4,
+  },
+  mortgageDisclaimer: {
+    fontSize: 10.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 14,
+    marginTop: 12,
+  },
+
+  // 9. Host & Agency Identity Card
+  hostProfileCard: {
+    borderRadius: 24,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    elevation: 3,
+    padding: 16,
+  },
+  hostIdentityMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    borderWidth: 1,
   },
-  sellerAvatar: {
+  hostAvatarPlain: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
+  hostAvatarImg: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  hostAvatarFallback: {
     width: 52,
     height: 52,
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  sellerAvatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  sellerAvatarInitials: {
-    fontSize: 19,
+  hostAvatarInitials: {
+    fontSize: 20,
     fontFamily: Fonts.extraBold,
   },
-  sellerInfo: {
-    flex: 1,
-    gap: 3,
-  },
-  sellerName: {
-    fontSize: 15.5,
-    fontFamily: Fonts.bold,
-  },
-  sellerVerifiedRow: {
+  hostNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  sellerRole: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
+  hostNameText: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+    flexShrink: 1,
   },
-  sellerPhoneText: {
-    fontSize: 12,
-    fontFamily: Fonts.semiBold,
+  hostRoleLine: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
     marginTop: 2,
   },
-  bottomBarWrapper: {
+
+  // 10. Similar Properties Section
+  similarPropertiesSection: {
+    gap: 14,
+    marginTop: 4,
+  },
+  similarHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+  },
+  similarCitySubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+  },
+  similarListContent: {
+    paddingRight: 18,
+    gap: 14,
+  },
+  similarCard: {
+    width: 220,
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  similarCardImg: {
+    width: '100%',
+    height: 130,
+  },
+  similarCardBody: {
+    padding: 12,
+    gap: 3,
+  },
+  similarCardPrice: {
+    fontSize: 15,
+    fontFamily: Fonts.black,
+  },
+  similarCardTitle: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+  },
+  similarCardMeta: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+
+  // 12. Floating Luxury Bottom Action Bar
+  bottomFloatingBarOuter: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopWidth: 0.5,
-    borderTopColor: 'rgba(0, 0, 0, 0.08)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    zIndex: 20,
   },
-  bottomBarSafeArea: {
-    backgroundColor: 'transparent',
-  },
-  ownerNoticeBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+  bottomBarContainer: {
     paddingHorizontal: 16,
-  },
-  ownerNoticeText: {
-    fontSize: 14,
-    fontFamily: Fonts.semiBold,
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
+    paddingTop: 12,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
-  chatActionBtn: {
-    flex: 1.1,
-    paddingVertical: 14,
-    borderRadius: 16,
+  buyerActionGrid: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  bottomPriceCol: {
     justifyContent: 'center',
-    gap: 6,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 1,
+    minWidth: 100,
   },
-  chatActionBtnText: {
-    fontSize: 14.5,
-    fontFamily: Fonts.bold,
+  bottomPriceValue: {
+    fontSize: 19,
+    fontFamily: Fonts.black,
+    letterSpacing: -0.4,
   },
-  whatsAppBtn: {
-    flex: 1.1,
-    backgroundColor: '#25D366',
-    paddingVertical: 14,
-    borderRadius: 16,
+  bottomPriceSub: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+  },
+  bottomActionsCol: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  whatsAppBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14.5,
-    fontFamily: Fonts.bold,
-  },
-  callBtn: {
+    gap: 8,
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  roundCallIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
   },
-  callBtnText: {
-    fontSize: 14.5,
+  whatsAppActionPill: {
+    backgroundColor: '#25D366',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  whatsAppActionPillText: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontFamily: Fonts.bold,
+  },
+  primaryChatCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  primaryChatCtaText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+  },
+  ownerBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  ownerBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ownerBarTitle: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+  },
+  ownerShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+  ownerShareBtnText: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+  },
+
+  // 13. Fullscreen Lightbox Modal
+  fullscreenModalRoot: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  lightboxHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  lightboxIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  lightboxCounterBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  lightboxCounterText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+  },
+  fullscreenSlide: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxThumbnailStrip: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingTop: 10,
+  },
+  lightboxThumbItem: {
+    width: 60,
+    height: 48,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  lightboxThumbSelected: {
+    borderColor: '#FFFFFF',
   },
 })

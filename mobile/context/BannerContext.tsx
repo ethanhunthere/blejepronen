@@ -15,7 +15,6 @@ import {
   AlertCircle,
   LogOut,
   Trash2,
-  X,
   ShieldAlert,
   ShieldCheck,
   Info,
@@ -154,25 +153,44 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 4
+        return Math.abs(gestureState.dy) > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 4 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+      },
+      onPanResponderGrant: () => {
+        translateY.stopAnimation()
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy < 0) {
           translateY.setValue(gestureState.dy)
+        } else {
+          translateY.setValue(gestureState.dy * 0.16)
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy < -15 || gestureState.vy < -0.5) {
+        if (gestureState.dy < -15 || gestureState.vy < -0.3) {
           hideBanner()
         } else {
           Animated.spring(translateY, {
             toValue: 0,
-            friction: 8,
-            tension: 60,
+            friction: 9,
+            tension: 70,
             useNativeDriver: true,
           }).start()
         }
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderTerminate: () => {
+        Animated.spring(translateY, {
+          toValue: 0,
+          friction: 9,
+          tension: 70,
+          useNativeDriver: true,
+        }).start()
       },
     })
   ).current
@@ -435,29 +453,20 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
                       {banner.message}
                     </Text>
                   </View>
+                </View>
 
-                  {/* Tactile Close Touchpoint */}
-                  <Pressable
-                    onPress={hideBanner}
+                {/* Subtle tactile swipe indicator pill */}
+                <View style={styles.bannerGestureHint}>
+                  <View
                     style={[
-                      styles.closeBtn,
+                      styles.bannerGrabberPill,
                       {
-                        backgroundColor:
-                          isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                        borderColor:
-                          isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.20)'
+                          : 'rgba(0, 0, 0, 0.12)',
                       },
                     ]}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel="Mbyll njoftimin"
-                  >
-                    <X
-                      size={13}
-                      color={isDark ? 'rgba(255, 255, 255, 0.70)' : colors.textMuted}
-                      strokeWidth={2.4}
-                    />
-                  </Pressable>
+                  />
                 </View>
               </Pressable>
             </View>
@@ -562,13 +571,16 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     lineHeight: 17,
   },
-  closeBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  bannerGestureHint: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    flexShrink: 0,
+    paddingTop: 5,
+    paddingBottom: 4,
+  },
+  bannerGrabberPill: {
+    width: 32,
+    height: 3.5,
+    borderRadius: 2,
   },
 })

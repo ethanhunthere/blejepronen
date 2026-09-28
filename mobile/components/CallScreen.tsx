@@ -11,10 +11,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
+import { BlurView } from 'expo-blur'
 import { Mic, MicOff, Phone, PhoneOff } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { Fonts } from '@/constants/theme'
-import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
+import { getAvatarSource } from '@/lib/avatars'
 import { callEngine, type CallState } from '@/lib/calling'
 
 /**
@@ -69,7 +70,7 @@ export function CallScreen() {
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
-          toValue: 1.07,
+          toValue: 1.06,
           duration: 700,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
@@ -88,7 +89,7 @@ export function CallScreen() {
 
   if (state.status === 'idle' || !state.peer) return null
 
-  const { status, role, peer, muted } = state
+  const { status, peer, muted } = state
   const ended = status === 'ended'
 
   const statusText =
@@ -120,69 +121,94 @@ export function CallScreen() {
   }
 
   const showIncomingActions = status === 'incoming'
-  const showActiveActions = (status === 'outgoing' || status === 'connecting' || status === 'connected')
+  const showActiveActions = status === 'outgoing' || status === 'connecting' || status === 'connected'
 
   return (
-    <Modal visible animationType="fade" transparent statusBarTranslucent>
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.backdrop}>
-          {/* ── Identity ── */}
-          <View style={styles.identity}>
-            <Animated.View
-              style={[
-                styles.avatarRing,
-                { transform: [{ scale: pulse }], opacity: ringing ? 0.55 : 0 },
-              ]}
-            />
-            <Image
-              source={getAvatarSource(peer.avatarUrl)}
-              style={styles.avatar}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              priority="high"
-              transition={0}
-            />
-            <Text style={styles.name} numberOfLines={2}>
-              {peer.name}
-            </Text>
-            <Text style={[styles.status, ended && styles.statusEnded]}>{statusText}</Text>
+    <Modal
+      visible
+      animationType="fade"
+      transparent
+      statusBarTranslucent
+      onRequestClose={() => {
+        // Android hardware/gesture back: decline a ringing call, otherwise
+        // end the active one — never trap the user inside the call Modal.
+        if (status === 'incoming') decline()
+        else hangup()
+      }}
+    >
+      <View style={styles.safe}>
+        {/* Subtle Ambient Blurred Backdrop from avatar */}
+        {peer.avatarUrl && (
+          <Image
+            source={getAvatarSource(peer.avatarUrl)}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            blurRadius={40}
+          />
+        )}
+        <View style={[StyleSheet.absoluteFill, styles.darkOverlay]} />
+        <BlurView intensity={Platform.OS === 'ios' ? 60 : 100} tint="dark" style={StyleSheet.absoluteFill} />
+
+        <SafeAreaView style={styles.contentWrap}>
+          <View style={styles.backdrop}>
+            {/* ── Identity ── */}
+            <View style={styles.identity}>
+              <Animated.View
+                style={[
+                  styles.avatarRing,
+                  { transform: [{ scale: pulse }], opacity: ringing ? 0.45 : 0 },
+                ]}
+              />
+              <Image
+                source={getAvatarSource(peer.avatarUrl)}
+                style={styles.avatar}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={0}
+              />
+              <Text style={styles.name} numberOfLines={2}>
+                {peer.name}
+              </Text>
+              <Text style={[styles.status, ended && styles.statusEnded]}>{statusText}</Text>
+            </View>
+
+            {/* ── Controls ── */}
+            <View style={styles.controls}>
+              {showIncomingActions && (
+                <>
+                  <Pressable style={[styles.circle, styles.decline]} onPress={decline}>
+                    <PhoneOff size={26} color="#FFFFFF" strokeWidth={2.4} />
+                  </Pressable>
+                  <Pressable style={[styles.circle, styles.accept]} onPress={accept}>
+                    <Phone size={26} color="#FFFFFF" strokeWidth={2.4} />
+                  </Pressable>
+                </>
+              )}
+
+              {showActiveActions && !ended && (
+                <>
+                  <Pressable
+                    style={[styles.circle, muted && styles.circleActive]}
+                    onPress={toggleMute}
+                  >
+                    {muted ? (
+                      <MicOff size={24} color={muted ? '#0A0C0B' : '#FFFFFF'} strokeWidth={2.2} />
+                    ) : (
+                      <Mic size={24} color="#FFFFFF" strokeWidth={2.2} />
+                    )}
+                  </Pressable>
+                  <Pressable style={[styles.circle, styles.end]} onPress={hangup}>
+                    <PhoneOff size={26} color="#FFFFFF" strokeWidth={2.4} />
+                  </Pressable>
+                </>
+              )}
+            </View>
+
+            <Text style={styles.brand}>Bleje Pronën · Thirrje e sigurt</Text>
           </View>
-
-          {/* ── Controls ── */}
-          <View style={styles.controls}>
-            {showIncomingActions && (
-              <>
-                <Pressable style={[styles.circle, styles.decline]} onPress={decline}>
-                  <PhoneOff size={26} color="#FFFFFF" strokeWidth={2.4} />
-                </Pressable>
-                <Pressable style={[styles.circle, styles.accept]} onPress={accept}>
-                  <Phone size={26} color="#FFFFFF" strokeWidth={2.4} />
-                </Pressable>
-              </>
-            )}
-
-            {showActiveActions && !ended && (
-              <>
-                <Pressable
-                  style={[styles.circle, muted && styles.circleActive]}
-                  onPress={toggleMute}
-                >
-                  {muted ? (
-                    <MicOff size={24} color={muted ? '#0A0C0B' : '#FFFFFF'} strokeWidth={2.2} />
-                  ) : (
-                    <Mic size={24} color="#FFFFFF" strokeWidth={2.2} />
-                  )}
-                </Pressable>
-                <Pressable style={[styles.circle, styles.end]} onPress={hangup}>
-                  <PhoneOff size={26} color="#FFFFFF" strokeWidth={2.4} />
-                </Pressable>
-              </>
-            )}
-          </View>
-
-          <Text style={styles.brand}>Bleje Pronën · Thirrje në aplikacion</Text>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
     </Modal>
   )
 }
@@ -190,7 +216,13 @@ export function CallScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0A0C0B',
+    backgroundColor: '#070908',
+  },
+  darkOverlay: {
+    backgroundColor: 'rgba(7, 9, 8, 0.82)',
+  },
+  contentWrap: {
+    flex: 1,
   },
   backdrop: {
     flex: 1,
@@ -204,32 +236,32 @@ const styles = StyleSheet.create({
   },
   identity: {
     alignItems: 'center',
-    gap: 18,
+    gap: 16,
   },
   avatarRing: {
     position: 'absolute',
-    top: -28,
-    width: 216,
-    height: 216,
-    borderRadius: 108,
+    top: -24,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
   },
   avatar: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.22)',
+    width: 152,
+    height: 152,
+    borderRadius: 76,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   name: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 32,
     fontFamily: Fonts.bold,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
     letterSpacing: -0.4,
     paddingHorizontal: 24,
   },
@@ -237,25 +269,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     fontFamily: Fonts.medium,
-    color: 'rgba(255,255,255,0.66)',
-    marginTop: -8,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: -6,
     letterSpacing: 0.1,
+    fontVariant: ['tabular-nums'],
   },
   statusEnded: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255, 255, 255, 0.45)',
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 56,
+    gap: 52,
   },
   circle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
   },
   circleActive: {
     backgroundColor: '#FFFFFF',
@@ -273,8 +306,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     fontFamily: Fonts.medium,
-    color: 'rgba(255,255,255,0.28)',
+    color: 'rgba(255, 255, 255, 0.3)',
     letterSpacing: 0.4,
   },
 })
-

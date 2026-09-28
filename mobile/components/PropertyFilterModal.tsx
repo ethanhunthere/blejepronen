@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Modal,
   View,
@@ -9,6 +9,8 @@ import {
   Pressable,
   Platform,
   KeyboardAvoidingView,
+  Animated,
+  PanResponder,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -21,15 +23,21 @@ import {
   Minimize2,
   Layers,
   ChevronDown,
+  Search,
+  ChevronRight,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
-import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
+import {
+  KOSOVO_LOCATIONS,
+  ALL_CITIES,
+  POPULAR_CITIES,
+  getNeighborhoods,
+  normalizeCity,
+} from '@/lib/kosovo-locations'
 import {
   PropertyFilterState,
   DEFAULT_FILTER_STATE,
-  POPULAR_CITIES,
-  ALL_CITIES,
   ROOM_OPTIONS,
   FLOOR_OPTIONS,
   CONDITION_OPTIONS,
@@ -39,14 +47,35 @@ import {
   AREA_PRESETS,
   SORT_OPTIONS,
   countActiveFilters,
+  toListingsQueryParams,
   SortType,
 } from '@/lib/property-filters'
+import { countListings } from '@/lib/listings-query'
+import { normalizeSearchString } from '@/lib/omni-search'
 
 interface PropertyFilterModalProps {
   visible: boolean
   onClose: () => void
   filters: PropertyFilterState
   onApply: (updated: PropertyFilterState) => void
+}
+
+// Numeric draft cleanup on blur: a negative bound is dropped…
+function clampNegative(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  const n = parseFloat(trimmed)
+  return !isNaN(n) && n < 0 ? '' : trimmed
+}
+
+// …and an inverted min/max pair is swapped back into a usable range.
+function clampRange(min: string, max: string): [string, string] {
+  const cleanMin = clampNegative(min)
+  const cleanMax = clampNegative(max)
+  const nMin = parseFloat(cleanMin)
+  const nMax = parseFloat(cleanMax)
+  if (!isNaN(nMin) && !isNaN(nMax) && nMin > nMax) return [cleanMax, cleanMin]
+  return [cleanMin, cleanMax]
 }
 
 export function PropertyFilterModal({
@@ -60,6 +89,8 @@ export function PropertyFilterModal({
   // Local copy of filter state for drafting before applying
   const [draft, setDraft] = useState<PropertyFilterState>(filters)
   const [focusedInput, setFocusedInput] = useState<string | null>(null)
+  const [allCitiesModalOpen, setAllCitiesModalOpen] = useState(false)
+  const [citySearchQuery, setCitySearchQuery] = useState('')
 
   useEffect(() => {
     if (visible) {
@@ -70,11 +101,38 @@ export function PropertyFilterModal({
   const pricePresets =
     draft.transactionType === 'qira' ? PRICE_PRESETS_RENT : PRICE_PRESETS_SALE
 
-  const availableNeighborhoods = draft.city
-    ? KOSOVO_LOCATIONS[draft.city as keyof typeof KOSOVO_LOCATIONS] || []
-    : []
+  const availableNeighborhoods = draft.city ? getNeighborhoods(draft.city) : []
+
+  const filteredAllCities = ALL_CITIES.filter((c) => {
+    if (!citySearchQuery.trim()) return true
+    // Diacritic-folded match so "peje", "Gjakove" or "Mitrovica" still hit.
+    return normalizeSearchString(c).includes(normalizeSearchString(citySearchQuery))
+  })
 
   const activeCount = countActiveFilters(draft)
+
+  // Live result preview for the apply button: an exact server count of the
+  // drafted filters (same query builder as the catalog), so the number the user
+  // commits to is never derived from a window of already-loaded rows.
+  const [previewCount, setPreviewCount] = useState<number | null>(null)
+  const previewReqRef = useRef(0)
+
+  useEffect(() => {
+    if (!visible) {
+      setPreviewCount(null)
+      return
+    }
+
+    const rid = ++previewReqRef.current
+    setPreviewCount(null)
+
+    const timer = setTimeout(async () => {
+      const count = await countListings(toListingsQueryParams(draft))
+      if (rid === previewReqRef.current) setPreviewCount(count)
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [visible, draft])
 
   const handleReset = () => {
     if (Platform.OS !== 'web') {
@@ -96,6 +154,25 @@ export function PropertyFilterModal({
     onClose()
   }
 
+  // Blur cleanup for the numeric bounds: negatives clear, inverted pairs swap.
+  const handlePriceBlur = () => {
+    setFocusedInput(null)
+    setDraft((prev) => {
+      const [minPrice, maxPrice] = clampRange(prev.minPrice, prev.maxPrice)
+      if (minPrice === prev.minPrice && maxPrice === prev.maxPrice) return prev
+      return { ...prev, minPrice, maxPrice }
+    })
+  }
+
+  const handleAreaBlur = () => {
+    setFocusedInput(null)
+    setDraft((prev) => {
+      const [minArea, maxArea] = clampRange(prev.minArea, prev.maxArea)
+      if (minArea === prev.minArea && maxArea === prev.maxArea) return prev
+      return { ...prev, minArea, maxArea }
+    })
+  }
+
   const toggleFeature = (feature: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setDraft((prev) => {
@@ -109,6 +186,74 @@ export function PropertyFilterModal({
     })
   }
 
+  // Apple/Airbnb-grade drag-to-dismiss for modal header
+  const filterDragY = useRef(new Animated.Value(0)).current
+  const allCitiesDragY = useRef(new Animated.Value(0)).current
+
+  const filterHeaderPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 6 && gs.dy > Math.abs(gs.dx) * 1.1,
+      onMoveShouldSetPanResponderCapture: (_, gs) => gs.dy > 6 && gs.dy > Math.abs(gs.dx) * 1.1,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) {
+          filterDragY.setValue(gs.dy)
+        } else {
+          filterDragY.setValue(gs.dy * 0.16)
+        }
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 70 || gs.vy > 0.4) {
+          onClose()
+          filterDragY.setValue(0)
+        } else {
+          Animated.spring(filterDragY, {
+            toValue: 0,
+            tension: 80,
+            friction: 9,
+            useNativeDriver: true,
+          }).start()
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(filterDragY, { toValue: 0, tension: 80, friction: 9, useNativeDriver: true }).start()
+      },
+    })
+  ).current
+
+  const allCitiesHeaderPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy > 6 && gs.dy > Math.abs(gs.dx) * 1.1,
+      onMoveShouldSetPanResponderCapture: (_, gs) => gs.dy > 6 && gs.dy > Math.abs(gs.dx) * 1.1,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) {
+          allCitiesDragY.setValue(gs.dy)
+        } else {
+          allCitiesDragY.setValue(gs.dy * 0.16)
+        }
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > 70 || gs.vy > 0.4) {
+          setAllCitiesModalOpen(false)
+          allCitiesDragY.setValue(0)
+        } else {
+          Animated.spring(allCitiesDragY, {
+            toValue: 0,
+            tension: 80,
+            friction: 9,
+            useNativeDriver: true,
+          }).start()
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(allCitiesDragY, { toValue: 0, tension: 80, friction: 9, useNativeDriver: true }).start()
+      },
+    })
+  ).current
+
   return (
     <Modal
       visible={visible}
@@ -120,26 +265,32 @@ export function PropertyFilterModal({
         style={[styles.safeArea, { backgroundColor: colors.background }]}
         edges={['top', 'bottom']}
       >
-        {/* Modal Top Bar */}
-        <View style={[styles.headerBar, { borderBottomColor: colors.border }]}>
-          <Pressable onPress={handleReset} hitSlop={10} style={styles.headerActionBtn}>
-            <RotateCcw size={15} color={colors.textMuted} />
-            <Text style={[styles.headerActionText, { color: colors.textMuted }]}>Pastro</Text>
-          </Pressable>
-
-          <View style={styles.headerTitleWrap}>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Filtrat</Text>
-            {activeCount > 0 && (
-              <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.activeBadgeText}>{activeCount}</Text>
-              </View>
-            )}
+        <Animated.View style={[styles.flex1, { transform: [{ translateY: filterDragY }] }]}>
+          {/* Tactile Grab Zone */}
+          <View style={styles.sheetGrabZone} {...filterHeaderPanResponder.panHandlers}>
+            <View style={[styles.sheetGrabPill, { backgroundColor: colors.border }]} />
           </View>
 
-          <Pressable onPress={onClose} hitSlop={10} style={styles.closeBtn}>
-            <X size={18} color={colors.textSecondary} strokeWidth={2.4} />
-          </Pressable>
-        </View>
+          {/* Modal Top Bar */}
+          <View style={[styles.headerBar, { borderBottomColor: colors.border }]} {...filterHeaderPanResponder.panHandlers}>
+            <Pressable onPress={handleReset} hitSlop={10} style={styles.headerActionBtn}>
+              <RotateCcw size={15} color={colors.textMuted} />
+              <Text style={[styles.headerActionText, { color: colors.textMuted }]}>Pastro</Text>
+            </Pressable>
+
+            <View style={styles.headerTitleWrap}>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Filtrat</Text>
+              {activeCount > 0 && (
+                <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.activeBadgeText}>{activeCount}</Text>
+                </View>
+              )}
+            </View>
+
+            <Pressable onPress={onClose} hitSlop={10} style={styles.closeBtn}>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.4} />
+            </Pressable>
+          </View>
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -199,7 +350,30 @@ export function PropertyFilterModal({
 
             {/* 2. City Selector */}
             <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Qyteti</Text>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Qyteti</Text>
+                <Pressable
+                  style={[
+                    styles.allCitiesTrigger,
+                    {
+                      backgroundColor: theme === 'green' ? 'rgba(200, 184, 130, 0.12)' : 'rgba(0, 103, 91, 0.08)',
+                      borderColor: theme === 'green' ? 'rgba(200, 184, 130, 0.25)' : 'rgba(0, 103, 91, 0.2)',
+                    },
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    setCitySearchQuery('')
+                    setAllCitiesModalOpen(true)
+                  }}
+                  hitSlop={8}
+                >
+                  <Text style={[styles.allCitiesTriggerText, { color: theme === 'green' ? colors.gold : colors.primary }]}>
+                    Të gjitha (38)
+                  </Text>
+                  <ChevronRight size={14} color={theme === 'green' ? colors.gold : colors.primary} />
+                </Pressable>
+              </View>
+
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillsRow}>
                 <Pressable
                   style={[
@@ -231,8 +405,52 @@ export function PropertyFilterModal({
                   </Text>
                 </Pressable>
 
+                {/* If selected city is outside popular list, show active pill */}
+                {Boolean(draft.city) &&
+                  !POPULAR_CITIES.some(
+                    (p) => p.toLowerCase() === normalizeCity(draft.city).toLowerCase()
+                  ) && (
+                    <Pressable
+                      style={[
+                        styles.filterPill,
+                        {
+                          backgroundColor: colors.primary,
+                          borderColor: colors.primary,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                        },
+                      ]}
+                      onPress={() => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync()
+                        setDraft((prev) => ({ ...prev, city: '', neighborhood: '' }))
+                      }}
+                    >
+                      <MapPin
+                        size={12}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      />
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          {
+                            color: theme === 'green' ? '#071C18' : '#FFFFFF',
+                            fontFamily: Fonts.bold,
+                          },
+                        ]}
+                      >
+                        {normalizeCity(draft.city)}
+                      </Text>
+                      <X
+                        size={12}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      />
+                    </Pressable>
+                  )}
+
                 {POPULAR_CITIES.map((c) => {
-                  const isSelected = draft.city.toLowerCase() === c.toLowerCase()
+                  const isSelected =
+                    normalizeCity(draft.city).toLowerCase() === c.toLowerCase()
                   return (
                     <Pressable
                       key={c}
@@ -270,6 +488,38 @@ export function PropertyFilterModal({
                     </Pressable>
                   )
                 })}
+
+                <Pressable
+                  style={[
+                    styles.filterPill,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: colors.border,
+                      borderStyle: 'dashed',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                    },
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    setCitySearchQuery('')
+                    setAllCitiesModalOpen(true)
+                  }}
+                >
+                  <MapPin size={12} color={colors.textSecondary} />
+                  <Text
+                    style={[
+                      styles.filterPillText,
+                      {
+                        color: colors.textSecondary,
+                        fontFamily: Fonts.medium,
+                      },
+                    ]}
+                  >
+                    + 30 të tjera
+                  </Text>
+                </Pressable>
               </ScrollView>
             </View>
 
@@ -424,7 +674,7 @@ export function PropertyFilterModal({
                     value={draft.minPrice}
                     onChangeText={(v) => setDraft((p) => ({ ...p, minPrice: v }))}
                     onFocus={() => setFocusedInput('minPrice')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={handlePriceBlur}
                   />
                 </View>
 
@@ -447,7 +697,7 @@ export function PropertyFilterModal({
                     value={draft.maxPrice}
                     onChangeText={(v) => setDraft((p) => ({ ...p, maxPrice: v }))}
                     onFocus={() => setFocusedInput('maxPrice')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={handlePriceBlur}
                   />
                 </View>
               </View>
@@ -525,7 +775,7 @@ export function PropertyFilterModal({
                     value={draft.minArea}
                     onChangeText={(v) => setDraft((p) => ({ ...p, minArea: v }))}
                     onFocus={() => setFocusedInput('minArea')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={handleAreaBlur}
                   />
                 </View>
 
@@ -548,7 +798,7 @@ export function PropertyFilterModal({
                     value={draft.maxArea}
                     onChangeText={(v) => setDraft((p) => ({ ...p, maxArea: v }))}
                     onFocus={() => setFocusedInput('maxArea')}
-                    onBlur={() => setFocusedInput(null)}
+                    onBlur={handleAreaBlur}
                   />
                 </View>
               </View>
@@ -812,11 +1062,183 @@ export function PropertyFilterModal({
                   { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                 ]}
               >
-                Shiko Rezultatet {activeCount > 0 ? `(${activeCount} filtra)` : ''}
+                {previewCount !== null
+                  ? `Shiko ${previewCount} ${previewCount === 1 ? 'rezultat' : 'rezultate'}`
+                  : activeCount > 0
+                  ? `Shiko Rezultatet (${activeCount} filtra)`
+                  : 'Shiko Rezultatet'}
               </Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
+        </Animated.View>
+
+        {/* 38 Municipalities Selector Sub-Modal */}
+        <Modal
+          visible={allCitiesModalOpen}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setAllCitiesModalOpen(false)}
+        >
+          <SafeAreaView style={[styles.allCitiesModalContainer, { backgroundColor: colors.background }]}>
+            <Animated.View style={[styles.flex1, { transform: [{ translateY: allCitiesDragY }] }]}>
+              {/* Tactile Grab Zone */}
+              <View style={styles.sheetGrabZone} {...allCitiesHeaderPanResponder.panHandlers}>
+                <View style={[styles.sheetGrabPill, { backgroundColor: colors.border }]} />
+              </View>
+
+              {/* Header */}
+              <View
+                style={[styles.allCitiesModalHeader, { borderBottomColor: colors.border }]}
+                {...allCitiesHeaderPanResponder.panHandlers}
+              >
+                <View>
+                  <Text style={[styles.allCitiesModalTitle, { color: colors.textPrimary }]}>
+                    Komunat e Kosovës
+                  </Text>
+                  <Text style={[styles.allCitiesModalSubtitle, { color: colors.textMuted }]}>
+                    Zgjidhni nga 38 komunat zyrtare
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setAllCitiesModalOpen(false)}
+                  style={[styles.closeBtn, { backgroundColor: colors.surfaceSubtle, borderRadius: 10 }]}
+                  hitSlop={10}
+                >
+                  <X size={18} color={colors.textPrimary} />
+                </Pressable>
+              </View>
+
+            {/* Search Box */}
+            <View style={[styles.allCitiesSearchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Search size={16} color={colors.textMuted} />
+              <TextInput
+                style={[styles.allCitiesSearchInput, { color: colors.textPrimary }]}
+                placeholder="Kërko komunën (psh. Prishtinë, Suharekë, Lipjan)..."
+                placeholderTextColor={colors.textMuted}
+                value={citySearchQuery}
+                onChangeText={setCitySearchQuery}
+                autoCapitalize="words"
+                clearButtonMode="while-editing"
+              />
+              {citySearchQuery.length > 0 && (
+                <Pressable onPress={() => setCitySearchQuery('')} hitSlop={8}>
+                  <X size={16} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+
+            {/* Quick Option: All Cities */}
+            <Pressable
+              style={[
+                styles.allCitiesRow,
+                { borderBottomColor: colors.border },
+                !draft.city && {
+                  backgroundColor:
+                    theme === 'green' ? 'rgba(200, 184, 130, 0.12)' : 'rgba(0, 103, 91, 0.08)',
+                },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync()
+                setDraft((p) => ({ ...p, city: '', neighborhood: '' }))
+                setAllCitiesModalOpen(false)
+              }}
+            >
+              <View style={styles.allCitiesRowLeft}>
+                <View style={[styles.allCitiesIconBox, { backgroundColor: colors.surfaceSubtle }]}>
+                  <MapPin size={16} color={colors.textMuted} />
+                </View>
+                <View>
+                  <Text
+                    style={[
+                      styles.allCitiesRowName,
+                      { color: colors.textPrimary, fontFamily: !draft.city ? Fonts.bold : Fonts.medium },
+                    ]}
+                  >
+                    Të gjitha qytetet
+                  </Text>
+                  <Text style={[styles.allCitiesRowSub, { color: colors.textMuted }]}>
+                    Kërko në tërë territorin e Kosovës
+                  </Text>
+                </View>
+              </View>
+              {!draft.city && (
+                <Check size={18} color={theme === 'green' ? colors.gold : colors.primary} />
+              )}
+            </Pressable>
+
+            {/* City List */}
+            <ScrollView
+              style={styles.allCitiesList}
+              contentContainerStyle={styles.allCitiesListContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {filteredAllCities.map((cityName) => {
+                const isSelected =
+                  normalizeCity(draft.city).toLowerCase() === cityName.toLowerCase()
+                const hoodCount = KOSOVO_LOCATIONS[cityName]?.length || 0
+                return (
+                  <Pressable
+                    key={cityName}
+                    style={[
+                      styles.allCitiesRow,
+                      { borderBottomColor: colors.border },
+                      isSelected && {
+                        backgroundColor:
+                          theme === 'green' ? 'rgba(200, 184, 130, 0.12)' : 'rgba(0, 103, 91, 0.08)',
+                      },
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.selectionAsync()
+                      setDraft((p) => ({ ...p, city: cityName, neighborhood: '' }))
+                      setAllCitiesModalOpen(false)
+                    }}
+                  >
+                    <View style={styles.allCitiesRowLeft}>
+                      <View
+                        style={[
+                          styles.allCitiesIconBox,
+                          {
+                            backgroundColor: isSelected
+                              ? theme === 'green'
+                                ? colors.gold
+                                : colors.primary
+                              : colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <MapPin
+                          size={16}
+                          color={isSelected ? (theme === 'green' ? '#071C18' : '#FFFFFF') : colors.textMuted}
+                        />
+                      </View>
+                      <View>
+                        <Text
+                          style={[
+                            styles.allCitiesRowName,
+                            {
+                              color: colors.textPrimary,
+                              fontFamily: isSelected ? Fonts.bold : Fonts.medium,
+                            },
+                          ]}
+                        >
+                          {cityName}
+                        </Text>
+                        <Text style={[styles.allCitiesRowSub, { color: colors.textMuted }]}>
+                          {hoodCount} lagje & fshatra
+                        </Text>
+                      </View>
+                    </View>
+                    {isSelected && (
+                      <Check size={18} color={theme === 'green' ? colors.gold : colors.primary} />
+                    )}
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            </Animated.View>
+          </SafeAreaView>
+        </Modal>
       </SafeAreaView>
     </Modal>
   )
@@ -826,12 +1248,27 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  flex1: {
+    flex: 1,
+  },
+  sheetGrabZone: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  sheetGrabPill: {
+    width: 36,
+    height: 4.5,
+    borderRadius: 2.5,
+  },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 0.5,
   },
   headerTitleWrap: {
@@ -1038,5 +1475,91 @@ const styles = StyleSheet.create({
   applyBtnText: {
     fontSize: 15,
     fontFamily: Fonts.bold,
+  },
+  allCitiesTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  allCitiesTriggerText: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+  allCitiesModalContainer: {
+    flex: 1,
+  },
+  allCitiesModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+  },
+  allCitiesModalTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.3,
+  },
+  allCitiesModalSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 2,
+  },
+  allCitiesSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+  },
+  allCitiesSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+  },
+  allCitiesList: {
+    flex: 1,
+  },
+  allCitiesListContent: {
+    paddingBottom: 32,
+  },
+  allCitiesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderBottomWidth: 0.5,
+  },
+  allCitiesRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  allCitiesIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  allCitiesRowName: {
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
+  },
+  allCitiesRowSub: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 1,
   },
 })

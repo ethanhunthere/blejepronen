@@ -18,8 +18,17 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
-import { getSyncAuthUser, isAuthCacheHydrated, isLogoutInProgress } from '@/lib/auth-cache'
-import { getCachedListings } from '@/lib/listings-cache'
+import {
+  getSyncAuthUser,
+  isAuthCacheHydrated,
+  isLogoutInProgress,
+  subscribeAuthCache,
+} from '@/lib/auth-cache'
+import {
+  getCachedListings,
+  updateCachedListing,
+  removeCachedListing,
+} from '@/lib/listings-cache'
 import { Image } from 'expo-image'
 import { BlurView } from 'expo-blur'
 import {
@@ -32,6 +41,7 @@ import {
   Tag,
   CheckCircle2,
   XCircle,
+  EyeOff,
   MapPin,
   BedDouble,
   Maximize2,
@@ -43,11 +53,12 @@ import {
   AlertTriangle,
   Bookmark,
   HeartOff,
+  Pause,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
-import { fetchFavoriteListings, persistFavoriteToggle } from '@/lib/favorites'
+import { fetchFavoriteListings, removeFavorite } from '@/lib/favorites'
 import { consumeShpalljetFilter, type ShpalljetFilterIntent } from '@/lib/nav-intent'
 import { useBanner } from '@/context/BannerContext'
 import {
@@ -57,11 +68,118 @@ import {
   playThemeSound,
   playUnlikeSound,
 } from '@/lib/sound'
-import { safeBack } from '@/lib/navigation'
+import { safeBack, openLoginScreen } from '@/lib/navigation'
 import { SubFilterNavigationBar, type SubFilterCounts } from '@/components/SubFilterNavigationBar'
 
 type MainTab = 'all' | 'saved'
 type SubFilter = 'all' | 'active' | 'sold' | 'inactive'
+
+/**
+ * ── Listing lifecycle (audit §5) ─────────────────────────────────────────────
+ * One canonical status vocabulary, decoupled from `is_active`:
+ *
+ *   active  → publicly visible, taking enquiries
+ *   paused  → hidden by the owner, temporary ("Ndaluar përkohësisht")
+ *   sold    → transaction closed for a sale ("Shënuar si e shitur")
+ *   rented  → transaction closed for a rental ("E dhënë me qira")
+ *
+ * Rules this screen obeys:
+ *  • `status` is written ONLY when the column exists on the live table. The
+ *    column is added by a migration that may not be applied yet, so every write
+ *    probes once and falls back to `is_active` alone on Postgres 42703.
+ *  • `is_active` remains the visibility flag and is always written, so public
+ *    search (`where is_active = true`) behaves identically before and after the
+ *    migration. sold/rented/paused ⇒ is_active false; active ⇒ true.
+ *  • `condition` and every other descriptive/historical column is NEVER touched
+ *    by a lifecycle change. Marking a home sold must not rewrite what the owner
+ *    said about its state, and a sold listing keeps its full history.
+ *  • Lifecycle changes never delete. "Fshi" stays a separate, explicit action.
+ */
+type ListingLifecycleStatus = 'active' | 'paused' | 'sold' | 'rented'
+
+/** Visibility side-effect of each status (what public queries already filter on). */
+const STATUS_IS_ACTIVE: Record<ListingLifecycleStatus, boolean> = {
+  active: true,
+  paused: false,
+  sold: false,
+  rented: false,
+}
+
+/**
+ * Module-level probe result. Starts optimistic (write `status`), flips to false
+ * the first time Postgres answers 42703 "column listings.status does not exist"
+ * so the rest of the session skips the failed column instead of erroring twice.
+ */
+let statusColumnSupported = true
+
+/** Accept the canonical vocabulary plus the legacy Albanian sentinels. */
+function normalizeStatusValue(raw: unknown): ListingLifecycleStatus | null {
+  if (typeof raw !== 'string') return null
+  const value = raw.trim().toLowerCase()
+  switch (value) {
+    case 'active':
+    case 'aktive':
+    case 'active_':
+      return 'active'
+    case 'paused':
+    case 'pushim':
+    case 'ndaluar':
+    case 'inactive':
+      return 'paused'
+    case 'sold':
+    case 'shitur':
+      return 'sold'
+    case 'rented':
+    case 'leased':
+    case 'qiradhene':
+    case 'dhene_me_qira':
+      return 'rented'
+    default:
+      return null
+  }
+}
+
+/**
+ * Read the lifecycle status of a row, tolerating all three schema states:
+ *  1. `status` present and canonical (post-migration) → authoritative;
+ *  2. `status` absent but the legacy `condition === 'shitur'` sentinel set →
+ *     sold/rented while hidden, and treated as *active* if the owner has since
+ *     re-activated the listing (is_active wins, condition is history we do not
+ *     rewrite);
+ *  3. neither → derived from `is_active` (paused when false).
+ */
+function readListingStatus(listing: Listing): ListingLifecycleStatus {
+  const explicit = normalizeStatusValue((listing as unknown as { status?: unknown }).status)
+  if (explicit) return explicit
+
+  const hidden = listing.is_active === false
+  if (listing.condition === 'shitur') {
+    if (!hidden) return 'active'
+    return listing.type === 'qira' ? 'rented' : 'sold'
+  }
+  return hidden ? 'paused' : 'active'
+}
+
+/** Albanian label for a status. */
+function statusLabel(status: ListingLifecycleStatus): string {
+  switch (status) {
+    case 'active':
+      return 'Aktive'
+    case 'paused':
+      return 'Në pushim'
+    case 'sold':
+      return 'E shitur'
+    case 'rented':
+      return 'E dhënë me qira'
+    default:
+      return 'Aktive'
+  }
+}
+
+/** The status a "mark as sold / rented" action should write for this listing. */
+function closedStatusFor(listing: Listing): ListingLifecycleStatus {
+  return listing.type === 'qira' ? 'rented' : 'sold'
+}
 
 export default function ShpalljetEMiaScreen() {
   const router = useRouter()
@@ -99,29 +217,42 @@ export default function ShpalljetEMiaScreen() {
     : []
 
   const [currentUser, setCurrentUser] = useState<any>(syncUser)
-  const [loading, setLoading] = useState(!syncUser ? false : initialUserListings.length === 0)
+  // Mirrors the Post screen's auth gate: while the auth cache is still hydrating we stay
+  // in the loading state, so a logged-in cold deep-link never flashes the guest gate.
+  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated())
+  const [loading, setLoading] = useState(() =>
+    syncUser ? initialUserListings.length === 0 : !isAuthCacheHydrated()
+  )
   const [refreshing, setRefreshing] = useState(false)
   const [listings, setListings] = useState<Listing[]>(initialUserListings)
   const [mainTab, setMainTab] = useState<MainTab>(initialMainTab)
   const [subFilter, setSubFilter] = useState<SubFilter>(initialSubFilter)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Robust status classification helpers (handles true, false, and legacy null/undefined in DB)
+  // Robust status classification helpers — all three funnel through
+  // readListingStatus(), so the sub-filter counts, the pill and the action row
+  // can never disagree about what state a listing is in.
+  const listingStatus = useCallback((l: Listing) => readListingStatus(l), [])
+
+  // "Të shitura" bucket groups both closed-deal statuses (sold + rented).
   const isListingSold = useCallback((l: Listing) => {
-    return l.condition === 'shitur' || (l as any).status === 'shitur'
+    const status = readListingStatus(l)
+    return status === 'sold' || status === 'rented'
   }, [])
 
-  const isListingActive = useCallback((l: Listing) => {
-    return l.is_active !== false && l.condition !== 'shitur' && (l as any).status !== 'shitur'
-  }, [])
+  const isListingActive = useCallback((l: Listing) => readListingStatus(l) === 'active', [])
 
-  const isListingInactive = useCallback((l: Listing) => {
-    return l.is_active === false && l.condition !== 'shitur' && (l as any).status !== 'shitur'
-  }, [])
+  const isListingInactive = useCallback((l: Listing) => readListingStatus(l) === 'paused', [])
 
   // Të Ruajturat (Saved listings) — DB-backed via Supabase `favorites`
   const [savedListings, setSavedListings] = useState<Listing[]>([])
   const [loadingSaved, setLoadingSaved] = useState(false)
+  // Latest-value mirror: `renderListingItem` is memoized without savedListings in its deps,
+  // so handlers captured inside it would otherwise read a stale array (rollback index).
+  const savedListingsRef = useRef<Listing[]>(savedListings)
+  useEffect(() => {
+    savedListingsRef.current = savedListings
+  }, [savedListings])
 
   // Price Edit Modal
   const [editPriceListing, setEditPriceListing] = useState<Listing | null>(null)
@@ -130,6 +261,8 @@ export default function ShpalljetEMiaScreen() {
 
   // Action busy state per listing
   const [actionBusyId, setActionBusyId] = useState<string | null>(null)
+  // Re-entrancy guard that is correct inside stale render closures (state lags one frame)
+  const actionBusyRef = useRef(false)
 
   const isMountedRef = useRef(true)
   useEffect(() => {
@@ -137,6 +270,20 @@ export default function ShpalljetEMiaScreen() {
     return () => {
       isMountedRef.current = false
     }
+  }, [])
+
+  // Live auth subscription: resolves the gate as soon as the cache hydrates or the
+  // Supabase session emits, and keeps `currentUser` in sync on sign-in/sign-out.
+  useEffect(() => {
+    const unsub = subscribeAuthCache((state) => {
+      setAuthChecking(false)
+      if (isLogoutInProgress()) return
+      setCurrentUser(state.user)
+      if (!state.user && isMountedRef.current) setLoading(false)
+    })
+    // Hydration can finish between render and subscribe — resolve the flag immediately.
+    if (isAuthCacheHydrated()) setAuthChecking(false)
+    return unsub
   }, [])
 
   const fetchUserListings = useCallback(async (userId: string) => {
@@ -155,10 +302,9 @@ export default function ShpalljetEMiaScreen() {
     } catch (e) {
       console.warn('Listings fetch exception:', e)
     } finally {
-      if (isMountedRef.current && !isLogoutInProgress()) {
-        setLoading(false)
-        setRefreshing(false)
-      }
+      // Progress flags always reset — a logout mid-flight must not wedge the spinner.
+      setLoading(false)
+      setRefreshing(false)
     }
   }, [])
 
@@ -171,9 +317,7 @@ export default function ShpalljetEMiaScreen() {
         setSavedListings(rows as unknown as Listing[])
       }
     } finally {
-      if (isMountedRef.current && !isLogoutInProgress()) {
-        setLoadingSaved(false)
-      }
+      setLoadingSaved(false)
     }
   }, [])
 
@@ -181,6 +325,7 @@ export default function ShpalljetEMiaScreen() {
     async function init() {
       try {
         if (isLogoutInProgress()) {
+          setAuthChecking(false)
           if (isMountedRef.current) setLoading(false)
           return
         }
@@ -188,8 +333,12 @@ export default function ShpalljetEMiaScreen() {
           data: { user },
         } = await supabase.auth.getUser()
 
-        if (!isMountedRef.current || isLogoutInProgress()) return
+        if (!isMountedRef.current || isLogoutInProgress()) {
+          setAuthChecking(false)
+          return
+        }
 
+        setAuthChecking(false)
         setCurrentUser(user || null)
         if (user) {
           await fetchUserListings(user.id)
@@ -201,6 +350,7 @@ export default function ShpalljetEMiaScreen() {
         }
       } catch (err) {
         console.warn('Auth check in shpalljet-e-mia notice:', err)
+        setAuthChecking(false)
         if (isMountedRef.current) setLoading(false)
       }
     }
@@ -243,11 +393,19 @@ export default function ShpalljetEMiaScreen() {
    * Të Ruajturat tab, even when this screen instance was already mounted
    * (React Navigation reuses instances, so mount-time state alone isn't enough).
    */
+  // The ?filter= param is a one-shot entry intent — re-applying it on every focus would
+  // yank the user back to that tab after they navigate elsewhere inside the screen.
+  const hasAppliedDeepLinkParamRef = useRef(false)
+
   useFocusEffect(
     useCallback(() => {
       const intent = consumeShpalljetFilter()
-      const fromParam: ShpalljetFilterIntent | null =
-        searchParams.filter === 'saved'
+      const shouldApplyParam =
+        Boolean(searchParams.filter) && !hasAppliedDeepLinkParamRef.current
+      if (shouldApplyParam) hasAppliedDeepLinkParamRef.current = true
+      const fromParam: ShpalljetFilterIntent | null = !shouldApplyParam
+        ? null
+        : searchParams.filter === 'saved'
           ? 'saved'
           : searchParams.filter === 'active'
           ? 'active'
@@ -272,8 +430,14 @@ export default function ShpalljetEMiaScreen() {
         }
       }
 
-      // Re-sync user's listings and saved items when screen gains focus
+      // Re-sync the auth gate + user's listings and saved items when screen gains focus.
+      // Login/logout resolves on another screen that pops back to this mounted instance,
+      // so the gate must be re-read from the live auth cache here.
       const user = getSyncAuthUser()
+      if (isMountedRef.current && !isLogoutInProgress() && isAuthCacheHydrated()) {
+        setCurrentUser(user ?? null)
+        setAuthChecking(false)
+      }
       if (user) {
         fetchUserListings(user.id)
         fetchSavedListings()
@@ -285,11 +449,12 @@ export default function ShpalljetEMiaScreen() {
   const handleUnsave = async (item: Listing) => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-    // Optimistic removal
+    // Optimistic removal (remember the slot so a rollback restores the original order)
+    const originalIndex = savedListingsRef.current.findIndex((l) => l.id === item.id)
     setSavedListings((prev) => prev.filter((l) => l.id !== item.id))
 
-    const ok = await persistFavoriteToggle(item.id, true)
-    if (ok) {
+    const res = await removeFavorite(item.id)
+    if (res.success) {
       playUnlikeSound()
       showBanner({
         type: 'info',
@@ -297,8 +462,23 @@ export default function ShpalljetEMiaScreen() {
         message: `«${item.title}» nuk është më në listën tuaj të ruajtur.`,
       })
     } else {
-      // Revert on failure
-      setSavedListings((prev) => [item, ...prev])
+      // Revert on failure, back into its original position
+      setSavedListings((prev) => {
+        if (prev.some((l) => l.id === item.id)) return prev
+        const restored = [...prev]
+        restored.splice(
+          originalIndex >= 0 ? Math.min(originalIndex, restored.length) : restored.length,
+          0,
+          item
+        )
+        return restored
+      })
+
+      if (res.requiresAuth) {
+        openLoginScreen(router, { redirectTo: '/shpalljet-e-mia' })
+        return
+      }
+
       showBanner({
         type: 'error',
         title: 'Gabim',
@@ -307,29 +487,63 @@ export default function ShpalljetEMiaScreen() {
     }
   }
 
-  // Toggle Active/Sold Status
-  const handleToggleStatus = async (item: Listing) => {
-    const active = isListingActive(item)
-    const nextActive = !active
-    const nextCondition = nextActive ? 'e-re' : 'shitur'
+  // ─── Lifecycle actions: Rikthe aktive / Ndalo përkohësisht / Shëno si e shitur ───
+  // One shared mutation so every explicit action reuses the same update call,
+  // busy-guard, schema-drift fallback, optimistic patch, cache sync and feedback.
+  const applyStatusChange = async (
+    item: Listing,
+    nextStatus: ListingLifecycleStatus,
+    successTitle: string,
+    successMessage: string
+  ) => {
+    if (actionBusyRef.current) return
+    actionBusyRef.current = true
     setActionBusyId(item.id)
 
+    const nextActive = STATUS_IS_ACTIVE[nextStatus]
+
+    // True for Postgres 42703 — `listings.status` is not on the live table yet
+    // because the migration has not been applied. Anything else (RLS, network)
+    // is a real failure and must surface to the user.
+    const isMissingStatusColumn = (err: { code?: string; message?: string }) =>
+      err.code === '42703' ||
+      /column "?(listings\.)?status"? does not exist|Could not find the 'status' column/i.test(
+        err.message ?? ''
+      )
+
+    const writeStatus = async (withStatusColumn: boolean) => {
+      // `condition` and the other descriptive columns are deliberately absent:
+      // a lifecycle change records the state of the deal and never rewrites the
+      // property's history. Sold listings keep their full record.
+      const payload: Record<string, unknown> = { is_active: nextActive }
+      if (withStatusColumn) payload.status = nextStatus
+      return supabase.from('listings').update(payload).eq('id', item.id)
+    }
+
     try {
-      const { error } = await supabase
-        .from('listings')
-        .update({ is_active: nextActive, condition: nextCondition })
-        .eq('id', item.id)
+      let { error } = await writeStatus(statusColumnSupported)
+
+      if (error && statusColumnSupported && isMissingStatusColumn(error)) {
+        // Degrade to the pre-migration semantics (visibility flag only) and stop
+        // probing the column for the rest of this session.
+        statusColumnSupported = false
+        const retry = await writeStatus(false)
+        error = retry.error
+      }
 
       if (error) {
         Alert.alert('Gabim', 'Dështoi përditësimi i statusit: ' + error.message)
         return
       }
 
-      setListings((prev) =>
-        prev.map((l) =>
-          l.id === item.id ? { ...l, is_active: nextActive, condition: nextCondition } : l
-        )
-      )
+      const updatedListing = {
+        ...item,
+        is_active: nextActive,
+        ...(statusColumnSupported ? { status: nextStatus } : {}),
+      } as Listing
+
+      setListings((prev) => prev.map((l) => (l.id === item.id ? updatedListing : l)))
+      updateCachedListing(updatedListing)
 
       playSuccessSound()
       if (Platform.OS !== 'web') {
@@ -338,16 +552,50 @@ export default function ShpalljetEMiaScreen() {
 
       showBanner({
         type: 'success',
-        title: nextActive ? 'Shpallja u Aktivizua' : 'Shpallja u Shënua si e Shitur',
-        message: nextActive
-          ? `Prona "${item.title}" tani është aktive dhe shfaqet për blerësit.`
-          : `Prona "${item.title}" u shënua me sukses si e shitur.`,
+        title: successTitle,
+        message: successMessage,
       })
     } catch (err: any) {
       Alert.alert('Gabim', err?.message || 'Ndodhi një problem gjatë përditësimit.')
     } finally {
+      actionBusyRef.current = false
       setActionBusyId(null)
     }
+  }
+
+  // Reactivate: the listing goes back on the market exactly as it was. Nothing
+  // descriptive is touched — a sold home keeps its recorded condition, and a
+  // paused home keeps whatever the owner had set.
+  const handleReactivate = (item: Listing) =>
+    applyStatusChange(
+      item,
+      'active',
+      'Shpallja u Rikthye Aktive',
+      `Prona "${item.title}" është sërish aktive dhe shfaqet për blerësit.`
+    )
+
+  // Pause: hides the listing temporarily. Reversible at any time, history intact.
+  const handlePause = (item: Listing) =>
+    applyStatusChange(
+      item,
+      'paused',
+      'Shpallja u Ndalua Përkohësisht',
+      `Prona "${item.title}" u fsheh përkohësisht. Riktheheni aktive kur të doni — asgjë nuk fshihet nga historiku.`
+    )
+
+  // Close the deal: sold for a sale, rented for a rental. The listing leaves
+  // public search but is NEVER deleted and keeps its full history.
+  const handleMarkClosed = (item: Listing) => {
+    const nextStatus = closedStatusFor(item)
+    const isRental = nextStatus === 'rented'
+    return applyStatusChange(
+      item,
+      nextStatus,
+      isRental ? 'Shpallja u Shënua si e Dhënë me Qira' : 'Shpallja u Shënua si e Shitur',
+      isRental
+        ? `Prona "${item.title}" u shënua si e dhënë me qira. Mbetet në historikun tuaj me gjithë të dhënat.`
+        : `Prona "${item.title}" u shënua si e shitur. Mbetet në historikun tuaj me gjithë të dhënat.`
+    )
   }
 
   // Quick Price Edit Modal
@@ -360,7 +608,15 @@ export default function ShpalljetEMiaScreen() {
 
   const handleSavePrice = async () => {
     if (!editPriceListing) return
-    const numericPrice = parseFloat(newPrice.trim().replace(/[^0-9.]/g, ''))
+    const sanitizedPrice = newPrice.trim().replace(/[^0-9.]/g, '')
+
+    // parseFloat('1.2.3') silently returns 1.2 — reject ambiguous decimal input outright
+    if ((sanitizedPrice.match(/\./g) || []).length > 1) {
+      Alert.alert('Vërejtje', 'Çmimi mund të përmbajë vetëm një presje dhjetore.')
+      return
+    }
+
+    const numericPrice = parseFloat(sanitizedPrice)
 
     if (isNaN(numericPrice) || numericPrice <= 0) {
       Alert.alert('Vërejtje', 'Ju lutemi vendosni një çmim të vlefshëm numerik.')
@@ -380,11 +636,12 @@ export default function ShpalljetEMiaScreen() {
         return
       }
 
+      const updatedListing: Listing = { ...editPriceListing, price: numericPrice }
+
       setListings((prev) =>
-        prev.map((l) =>
-          l.id === editPriceListing.id ? { ...l, price: numericPrice } : l
-        )
+        prev.map((l) => (l.id === editPriceListing.id ? updatedListing : l))
       )
+      updateCachedListing(updatedListing)
 
       playSuccessSound()
       if (Platform.OS !== 'web') {
@@ -416,6 +673,8 @@ export default function ShpalljetEMiaScreen() {
           text: 'Fshi Shpalljen',
           style: 'destructive',
           onPress: async () => {
+            if (actionBusyRef.current) return
+            actionBusyRef.current = true
             setActionBusyId(item.id)
             try {
               const { error } = await supabase
@@ -429,6 +688,7 @@ export default function ShpalljetEMiaScreen() {
               }
 
               setListings((prev) => prev.filter((l) => l.id !== item.id))
+              removeCachedListing(item.id)
               playDeleteSound()
 
               if (Platform.OS !== 'web') {
@@ -440,9 +700,30 @@ export default function ShpalljetEMiaScreen() {
                 title: 'Shpallja u Fshi',
                 message: `Prona "${item.title}" u fshi me sukses nga llogaria juaj.`,
               })
+
+              // Best-effort Storage cleanup — the stored URLs are getPublicUrl outputs of
+              // `${userId}/...jpg` in the 'listings' bucket. A failure here must never
+              // block or roll back the delete that already succeeded.
+              try {
+                const paths = (Array.isArray(item.images) ? item.images : [])
+                  .map((url) => decodeURIComponent(String(url).split('/listings/')[1] ?? ''))
+                  .filter((path) => path.length > 0)
+
+                if (paths.length > 0) {
+                  const { error: storageError } = await supabase.storage
+                    .from('listings')
+                    .remove(paths)
+                  if (storageError) {
+                    console.warn('Listing photo cleanup warning:', storageError.message)
+                  }
+                }
+              } catch (cleanupEx: any) {
+                console.warn('Listing photo cleanup exception:', cleanupEx?.message || cleanupEx)
+              }
             } catch (err: any) {
               Alert.alert('Gabim', err?.message || 'Ndodhi një gabim gjatë fshirjes.')
             } finally {
+              actionBusyRef.current = false
               setActionBusyId(null)
             }
           },
@@ -888,8 +1169,10 @@ export default function ShpalljetEMiaScreen() {
       }
 
       const isBusy = actionBusyId === item.id
-      const active = isListingActive(item)
-      const isSold = isListingSold(item)
+      const status = listingStatus(item)
+      const active = status === 'active'
+      // "Sold" bucket covers both closed-deal statuses (sold + rented).
+      const isSold = status === 'sold' || status === 'rented'
 
       return (
         <View
@@ -905,10 +1188,18 @@ export default function ShpalljetEMiaScreen() {
           >
             <Image
               source={{ uri: mainImage }}
-              style={styles.coverImage}
+              style={[styles.coverImage, !active && { opacity: 0.58 }]}
               contentFit="cover"
               transition={200}
             />
+
+            {/* Off-market stamp. A sold / rented listing keeps its full record and
+                photo history — it is only *marked* as closed, never deleted. */}
+            {isSold ? (
+              <View style={styles.closedStamp} pointerEvents="none">
+                <Text style={styles.closedStampText}>{statusLabel(status).toUpperCase()}</Text>
+              </View>
+            ) : null}
 
             {/* Top Badges Overlay */}
             <View style={styles.coverBadgesRow}>
@@ -940,9 +1231,7 @@ export default function ShpalljetEMiaScreen() {
                   },
                 ]}
               >
-                <Text style={styles.statusPillText}>
-                  {isSold ? 'E Shitur' : active ? 'Aktive' : 'Jo aktive'}
-                </Text>
+                <Text style={styles.statusPillText}>{statusLabel(status)}</Text>
               </View>
             </View>
 
@@ -1018,104 +1307,164 @@ export default function ShpalljetEMiaScreen() {
           {/* Bottom Action Controls (Apple Glass Grid) */}
           <View
             style={[
-              styles.cardActionGrid,
+              styles.cardActionColumn,
               isCompact && { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
               { borderTopColor: specularBorder },
             ]}
           >
-            {/* 1. Toggle Active / Inactive */}
-            <Pressable
-              style={[
-                styles.actionBtn,
-                isCompact && { height: 36, paddingHorizontal: 6 },
-                {
-                  backgroundColor: active
-                    ? theme === 'white'
-                      ? '#FEF2F2'
-                      : 'rgba(239, 68, 68, 0.12)'
-                    : theme === 'white'
-                    ? '#ECFDF5'
-                    : 'rgba(16, 185, 129, 0.12)',
-                },
-              ]}
-              onPress={() => handleToggleStatus(item)}
-              disabled={isBusy}
-            >
-              {isBusy ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : active ? (
+            {/* 1. Lifecycle actions — explicit and separate, so a paused listing keeps
+                   its real `condition`, and sold/rented listings stay reachable with
+                   their full history instead of being deleted. */}
+            <View style={[styles.statusActionRow, isCompact && { gap: 6 }]}>
+              {active ? (
                 <>
-                  <XCircle size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
-                  <Text
+                  {/* Ndalo përkohësisht: status → paused, is_active false. Nothing
+                      descriptive is written. */}
+                  <Pressable
                     style={[
-                      styles.actionBtnText,
-                      isCompact && { fontSize: 11.5 },
-                      { color: '#EF4444' },
+                      styles.actionBtn,
+                      isCompact && { height: 36, paddingHorizontal: 6 },
+                      {
+                        backgroundColor:
+                          theme === 'white' ? '#F3F4F6' : 'rgba(107, 114, 128, 0.14)',
+                      },
                     ]}
-                    numberOfLines={1}
+                    onPress={() => handlePause(item)}
+                    disabled={isBusy}
                   >
-                    {isCompact ? 'Shëno Shitur' : 'Shëno si të Shitur'}
-                  </Text>
+                    {isBusy ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <>
+                        <Pause size={isCompact ? 14 : 15} color="#6B7280" strokeWidth={2.2} />
+                        <Text
+                          style={[
+                            styles.actionBtnText,
+                            isCompact && { fontSize: 11.5 },
+                            { color: '#6B7280' },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {isCompact ? 'Ndalo' : 'Ndalo përkohësisht'}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+
+                  {/* Shëno si e shitur / e dhënë me qira: status → sold | rented */}
+                  <Pressable
+                    style={[
+                      styles.actionBtn,
+                      styles.actionBtnWide,
+                      isCompact && { height: 36, paddingHorizontal: 6 },
+                      {
+                        backgroundColor:
+                          theme === 'white' ? '#FEF2F2' : 'rgba(239, 68, 68, 0.12)',
+                      },
+                    ]}
+                    onPress={() => handleMarkClosed(item)}
+                    disabled={isBusy}
+                  >
+                    <XCircle size={isCompact ? 14 : 15} color="#EF4444" strokeWidth={2.2} />
+                    <Text
+                      style={[
+                        styles.actionBtnText,
+                        isCompact && { fontSize: 11.5 },
+                        { color: '#EF4444' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.type === 'qira'
+                        ? isCompact
+                          ? 'Shëno si e Dhënë'
+                          : 'Shëno si e Dhënë me Qira'
+                        : isCompact
+                        ? 'Shëno Shitur'
+                        : 'Shëno si e Shitur'}
+                    </Text>
+                  </Pressable>
                 </>
               ) : (
-                <>
-                  <CheckCircle2 size={isCompact ? 14 : 15} color="#10B981" strokeWidth={2.2} />
-                  <Text
-                    style={[
-                      styles.actionBtnText,
-                      isCompact && { fontSize: 11.5 },
-                      { color: '#10B981' },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    Rikthe Aktiv
-                  </Text>
-                </>
+                /* Rikthe aktive: status → active, is_active true. The listing comes
+                   back exactly as it was — no descriptive field is rewritten. */
+                <Pressable
+                  style={[
+                    styles.actionBtn,
+                    isCompact && { height: 36, paddingHorizontal: 6 },
+                    {
+                      backgroundColor:
+                        theme === 'white' ? '#ECFDF5' : 'rgba(16, 185, 129, 0.12)',
+                    },
+                  ]}
+                  onPress={() => handleReactivate(item)}
+                  disabled={isBusy}
+                >
+                  {isBusy ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <>
+                      <CheckCircle2 size={isCompact ? 14 : 15} color="#10B981" strokeWidth={2.2} />
+                      <Text
+                        style={[
+                          styles.actionBtnText,
+                          isCompact && { fontSize: 11.5 },
+                          { color: '#10B981' },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {isSold ? 'Rikthe në Treg' : 'Rikthe Aktive'}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
               )}
-            </Pressable>
+            </View>
 
-            {/* 2. Share */}
-            <Pressable
-              style={[
-                styles.actionSquareBtn,
-                isCompact && { width: 36, height: 36 },
-                { backgroundColor: colors.surfaceSubtle },
-              ]}
-              onPress={() => handleShare(item)}
-              hitSlop={6}
-            >
-              <Share2 size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
-            </Pressable>
+            {/* 2. Utility actions */}
+            <View style={[styles.utilityActionRow, isCompact && { gap: 6 }]}>
+              {/* Share */}
+              <Pressable
+                style={[
+                  styles.actionSquareBtn,
+                  isCompact && { width: 36, height: 36 },
+                  { backgroundColor: colors.surfaceSubtle },
+                ]}
+                onPress={() => handleShare(item)}
+                hitSlop={6}
+              >
+                <Share2 size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
+              </Pressable>
 
-            {/* 3. View Details */}
-            <Pressable
-              style={[
-                styles.actionSquareBtn,
-                isCompact && { width: 36, height: 36 },
-                { backgroundColor: colors.surfaceSubtle },
-              ]}
-              onPress={() => router.push(`/listings/${item.id}` as any)}
-              hitSlop={6}
-            >
-              <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
-            </Pressable>
+              {/* View Details */}
+              <Pressable
+                style={[
+                  styles.actionSquareBtn,
+                  isCompact && { width: 36, height: 36 },
+                  { backgroundColor: colors.surfaceSubtle },
+                ]}
+                onPress={() => router.push(`/listings/${item.id}` as any)}
+                hitSlop={6}
+              >
+                <Eye size={isCompact ? 15 : 16} color={colors.textPrimary} strokeWidth={2.2} />
+              </Pressable>
 
-            {/* 4. Delete */}
-            <Pressable
-              style={[
-                styles.actionSquareBtn,
-                isCompact && { width: 36, height: 36 },
-                {
-                  backgroundColor:
-                    theme === 'white' ? '#FEE2E2' : 'rgba(239, 68, 68, 0.18)',
-                },
-              ]}
-              onPress={() => handleDeleteListing(item)}
-              disabled={isBusy}
-              hitSlop={6}
-            >
-              <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
-            </Pressable>
+              {/* Delete */}
+              <Pressable
+                style={[
+                  styles.actionSquareBtn,
+                  isCompact && { width: 36, height: 36 },
+                  {
+                    backgroundColor:
+                      theme === 'white' ? '#FEE2E2' : 'rgba(239, 68, 68, 0.18)',
+                  },
+                ]}
+                onPress={() => handleDeleteListing(item)}
+                disabled={isBusy}
+                hitSlop={6}
+              >
+                <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
+              </Pressable>
+            </View>
           </View>
         </View>
       )
@@ -1151,7 +1500,10 @@ export default function ShpalljetEMiaScreen() {
             <Text style={[styles.navTitle, isCompact && { fontSize: 16 }, { color: colors.textPrimary }]}>
               Shpalljet e Mia
             </Text>
-            <Text style={[styles.navSubtitle, isCompact && { fontSize: 11 }, { color: colors.textMuted }]}>
+            <Text
+              style={[styles.navSubtitle, isCompact && { fontSize: 11 }, { color: colors.textMuted }]}
+              numberOfLines={1}
+            >
               {mainTab === 'saved'
                 ? `${savedCount} ${savedCount === 1 ? 'pronë e ruajtur' : 'prona të ruajtura'}`
                 : `${activeCount} aktive • ${soldCount} të shitura • ${inactiveCount} jo aktive`}
@@ -1176,7 +1528,7 @@ export default function ShpalljetEMiaScreen() {
       </View>
 
       {/* Guest Mode Protection */}
-      {!currentUser && !loading ? (
+      {!currentUser && !loading && !authChecking ? (
         <View style={styles.guestContainer}>
           <View
             style={[
@@ -1199,7 +1551,7 @@ export default function ShpalljetEMiaScreen() {
             </Text>
             <Pressable
               style={[styles.guestLoginBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login' } })}
+              onPress={() => openLoginScreen(router, { redirectTo: '/shpalljet-e-mia' })}
             >
               <LogIn size={18} color="#FFFFFF" strokeWidth={2.2} />
               <Text style={styles.guestLoginBtnText}>Kyçu në Llogari</Text>
@@ -1670,6 +2022,8 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
   },
   navTitleWrap: {
+    flex: 1,
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
   navTitle: {
@@ -2013,6 +2367,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     gap: 8,
   },
+  cardActionColumn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: 0.5,
+    gap: 8,
+  },
+  statusActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  utilityActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
   actionBtn: {
     flex: 1,
     height: 38,
@@ -2023,9 +2394,14 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
   },
+  actionBtnWide: {
+    flex: 1.55,
+  },
   actionBtnText: {
     fontSize: 12.5,
     fontFamily: Fonts.bold,
+    flexShrink: 1,
+    textAlign: 'center',
   },
   actionSquareBtn: {
     width: 38,
@@ -2118,5 +2494,22 @@ const styles = StyleSheet.create({
   modalSaveBtnText: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+  },
+  closedStamp: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  closedStampText: {
+    fontSize: 10.5,
+    fontFamily: Fonts.bold,
+    color: '#F8FAFC',
+    letterSpacing: 0.8,
   },
 })

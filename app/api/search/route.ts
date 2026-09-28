@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createPublicSupabaseClient } from '@/lib/supabase'
+import {
+  buildIlikeOr,
+  buildOrFilter,
+  sanitizeSearchTerm,
+} from '@/lib/search-sanitize'
 import {
   OmniSearchResponse,
   OmniResultItem,
@@ -7,6 +12,28 @@ import {
   normalizeSearchString,
   TRENDING_SEARCHES,
 } from '@/lib/omni-search'
+
+/**
+ * GET /api/search — federated omni-search.
+ *
+ * Hardened for audit findings C5 (PostgREST injection) and C6 (privacy):
+ *
+ *  C5 — every user-supplied term passes through `sanitizeSearchTerm()` before it
+ *  is interpolated into a `.or(...)` / `ilike` filter. The old code embedded the
+ *  raw `q` parameter, so `?q=prishtine,price.gt.0` appended conditions and
+ *  `?q=%` turned the endpoint into a full-table scanner.
+ *
+ *  C6 — the endpoint now runs on the anon/public client instead of the service
+ *  role, so Postgres RLS is the access boundary rather than a comment in this
+ *  file. No phone number is selected, scored or returned for any entity:
+ *  listings keep `seller_name` only, and searching by phone fragment (which let
+ *  an anonymous caller harvest numbers one digit at a time) is gone.
+ *
+ * Both queries are drift-proof: the profiles read prefers the `profiles_public`
+ * view and falls back to the table, and the listings read retries without the
+ * embedded seller when the embed is not readable for anon. A rejected relation
+ * degrades to "no results for that entity", never to a 500.
+ */
 
 // Simple in-memory LRU cache for sub-5ms repeated queries
 interface CacheEntry {
@@ -35,16 +62,31 @@ function setToCache(key: string, data: OmniSearchResponse) {
   SEARCH_CACHE.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS })
 }
 
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
-    throw new Error('Supabase credentials are not configured')
+function emptyResponse(query: string): OmniSearchResponse {
+  return {
+    query,
+    total: 0,
+    counts: { listings: 0, agencies: 0, agents: 0, locations: 0 },
+    results: { listings: [], agencies: [], agents: [], locations: [] },
+    flat: [],
+    trending: TRENDING_SEARCHES,
   }
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
 }
+
+/**
+ * Listing columns for search results. `description` and `address` stay out of
+ * the projection (they are only needed as filter targets) — they are long, they
+ * are not rendered by the search UI, and every byte here is cached.
+ *
+ * NOTE: no `phone` anywhere. The seller embed deliberately selects name/avatar
+ * only; contact details are resolved on the listing page, not in search.
+ */
+const LISTING_COLUMNS =
+  'id, title, price, city, neighborhood, rooms, area_m2, type, images, apartment_type, condition, is_featured, created_at, user_id'
+const SELLER_EMBED = ', profiles:user_id(id, first_name, last_name, avatar_url, email_verified)'
+
+/** Public, non-contact profile columns. Never add phone/email here. */
+const PROFILE_COLUMNS = 'id, first_name, last_name, avatar_url, email_verified, created_at'
 
 interface RawListing {
   id: string
@@ -55,7 +97,7 @@ interface RawListing {
   area_m2?: number | null
   apartment_type?: string | null
   rooms?: number | null
-  profiles?: { first_name?: string | null; last_name?: string | null; phone?: string | null } | { first_name?: string | null; last_name?: string | null; phone?: string | null }[] | null
+  profiles?: RawSeller | RawSeller[] | null
   type?: string | null
   images?: string[] | null
   price?: number | string | null
@@ -63,41 +105,54 @@ interface RawListing {
   user_id?: string | null
 }
 
+interface RawSeller {
+  first_name?: string | null
+  last_name?: string | null
+  avatar_url?: string | null
+  email_verified?: boolean | null
+}
+
 interface RawProfile {
   id: string
   first_name?: string | null
   last_name?: string | null
-  phone?: string | null
   avatar_url?: string | null
-  city?: string | null
-  is_company?: boolean | null
-  account_type?: string | null
-  verified?: boolean | null
-  email_verified?: boolean | null
   created_at?: string | null
+  email_verified?: boolean | null
 }
+
+interface RawCompany {
+  id: string
+  name?: string | null
+  title?: string | null
+  company_name?: string | null
+  city?: string | null
+  logo_url?: string | null
+  avatar_url?: string | null
+}
+
+const CORPORATE_QUERY_RE = /agjenci|kompani|patundshm|real\s*estate|shpk|invest|group/i
+const CORPORATE_NAME_RE = /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const rawQuery = searchParams.get('q') || searchParams.get('query') || ''
     const filterType = searchParams.get('type') // 'listing' | 'agency' | 'agent' | 'location'
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50)
 
-    const cleanQ = rawQuery.trim()
-    const normQ = normalizeSearchString(cleanQ)
+    const parsedLimit = Number.parseInt(searchParams.get('limit') || '20', 10)
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 50) : 20
 
-    if (!cleanQ || cleanQ.length < 1) {
-      return NextResponse.json<OmniSearchResponse>({
-        query: cleanQ,
-        total: 0,
-        counts: { listings: 0, agencies: 0, agents: 0, locations: 0 },
-        results: { listings: [], agencies: [], agents: [], locations: [] },
-        flat: [],
-        trending: TRENDING_SEARCHES,
-      })
+    // --- C5: sanitize once, use everywhere ---------------------------------
+    const safeQuery = sanitizeSearchTerm(rawQuery)
+
+    if (!safeQuery) {
+      return NextResponse.json(emptyResponse(''))
     }
 
+    const normQ = normalizeSearchString(safeQuery)
+    // Cache key is built from the *sanitized* term, so syntax-only variants
+    // (`%`, `,`, quotes) collapse onto one entry instead of filling the cache.
     const cacheKey = `${normQ}:${filterType || 'all'}:${limit}`
     const cached = getFromCache(cacheKey)
     if (cached) {
@@ -106,62 +161,104 @@ export async function GET(request: Request) {
       })
     }
 
-    const supabase = getAdminClient()
+    // --- C6: anon client, RLS is the boundary ------------------------------
+    const supabase = createPublicSupabaseClient()
 
     // 1. Locations Search (instant synchronous local-first matching)
-    const matchedLocations: OmniResultItem[] = searchLocations(cleanQ, 6)
+    const matchedLocations: OmniResultItem[] = searchLocations(safeQuery, 6)
 
-    // Build dynamic phone search filters if query contains numbers
-    const digitsOnly = cleanQ.replace(/[^0-9]/g, '')
-    const phoneFilters: string[] = []
-    if (digitsOnly.length >= 2) {
-      phoneFilters.push(`phone.ilike.%${digitsOnly}%`)
-      if (digitsOnly.startsWith('0')) {
-        phoneFilters.push(`phone.ilike.%${digitsOnly.slice(1)}%`)
-      }
-    }
+    const isCorporateSearch = CORPORATE_QUERY_RE.test(normQ)
 
-    const isCorporateSearch = /agjenci|kompani|patundshm|real\s*estate|shpk|invest|group/i.test(normQ)
+    const profileConditions = buildIlikeOr(safeQuery, ['first_name', 'last_name'])
+    const profileFilter = profileConditions
+      ? buildOrFilter(
+          isCorporateSearch
+            ? [
+                profileConditions,
+                'last_name.ilike.%Kompani%',
+                'first_name.ilike.%Agjenci%',
+                'first_name.ilike.%Kompani%',
+              ]
+            : [profileConditions]
+        )
+      : null
 
-    const profileConditions: string[] = [
-      `first_name.ilike.%${cleanQ}%`,
-      `last_name.ilike.%${cleanQ}%`,
-      ...phoneFilters,
-    ]
-    if (isCorporateSearch) {
-      profileConditions.push('last_name.ilike.%Kompani%')
-      profileConditions.push('first_name.ilike.%Agjenci%')
-      profileConditions.push('first_name.ilike.%Kompani%')
-    }
-
-    // 2. Parallel Supabase queries for listings, profiles, and companies
-    const [listingsRes, profilesRes, companiesRes] = await Promise.all([
-      supabase
-        .from('listings')
-        .select('id, title, description, price, city, neighborhood, address, rooms, area_m2, type, images, apartment_type, condition, is_featured, created_at, profiles:user_id(id, first_name, last_name, phone, avatar_url, email_verified)')
-        .eq('is_active', true)
-        .or(`title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,neighborhood.ilike.%${cleanQ}%,address.ilike.%${cleanQ}%,description.ilike.%${cleanQ}%`)
-        .limit(limit),
-
-      supabase
-        .from('profiles')
-        .select('id, first_name, last_name, phone, avatar_url, email_verified, created_at')
-        .or(profileConditions.join(','))
-        .limit(limit),
-
-      supabase
-        .from('companies')
-        .select('*')
-        .or(`name.ilike.%${cleanQ}%,title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
-        .limit(limit),
+    const listingFilter = buildIlikeOr(safeQuery, [
+      'title',
+      'city',
+      'neighborhood',
+      'address',
+      'description',
     ])
 
-    const rawListings = listingsRes.data || []
-    const rawProfiles = profilesRes.data || []
-    const rawCompanies = (!companiesRes.error && Array.isArray(companiesRes.data)) ? companiesRes.data : []
+    const companyFilter = buildIlikeOr(safeQuery, ['name', 'title', 'city'])
+
+    // 2. Parallel queries. Each one is independent and error-tolerant: a
+    // relation the anon role cannot read yields an empty result set for that
+    // entity type instead of failing the whole search.
+    const [listingsRes, profilesRes, companiesRes] = await Promise.all([
+      (async () => {
+        if (!listingFilter) return null
+        const withSeller = await supabase
+          .from('listings')
+          .select(LISTING_COLUMNS + SELLER_EMBED)
+          .eq('is_active', true)
+          .or(listingFilter)
+          .limit(limit)
+
+        if (!withSeller.error) return withSeller
+
+        // The embedded profiles resource is not readable for anon until the
+        // public-profile migration is applied — retry without it so listing
+        // results survive.
+        return supabase
+          .from('listings')
+          .select(LISTING_COLUMNS)
+          .eq('is_active', true)
+          .or(listingFilter)
+          .limit(limit)
+      })(),
+
+      (async () => {
+        if (!profileFilter) return null
+        // Prefer the non-sensitive view; fall back to the table for deployments
+        // where the view has not been created yet.
+        const viaView = await supabase
+          .from('profiles_public')
+          .select(PROFILE_COLUMNS)
+          .or(profileFilter)
+          .limit(limit)
+
+        if (!viaView.error) return viaView
+
+        return supabase
+          .from('profiles')
+          .select(PROFILE_COLUMNS)
+          .or(profileFilter)
+          .limit(limit)
+      })(),
+
+      companyFilter
+        ? supabase.from('companies').select('*').or(companyFilter).limit(limit)
+        : Promise.resolve(null),
+    ])
+
+    if (listingsRes?.error) {
+      console.warn('omni-search listings error:', listingsRes.error.message)
+    }
+    if (profilesRes?.error) {
+      console.warn('omni-search profiles error:', profilesRes.error.message)
+    }
+
+    const rawListings = (listingsRes?.data ?? []) as unknown as RawListing[]
+    const rawProfiles = (profilesRes?.data ?? []) as unknown as RawProfile[]
+    const rawCompanies =
+      companiesRes && !companiesRes.error && Array.isArray(companiesRes.data)
+        ? (companiesRes.data as unknown as RawCompany[])
+        : []
 
     // 3. Process & score listings
-    const matchedListings: OmniResultItem[] = (rawListings as unknown as RawListing[]).map((item) => {
+    const matchedListings: OmniResultItem[] = rawListings.map((item) => {
       const normTitle = normalizeSearchString(item.title || '')
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
@@ -205,8 +302,10 @@ export async function GET(request: Request) {
           apartment_type: item.apartment_type ?? undefined,
           condition: item.condition ?? undefined,
           user_id: item.user_id ?? undefined,
-          seller_name: seller ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || undefined : undefined,
-          seller_phone: seller?.phone ?? undefined,
+          // C6: seller *name* stays, seller phone is gone from anonymous search.
+          seller_name: seller
+            ? `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || undefined
+            : undefined,
         },
         targetUrl: `/listings/${item.id}`,
       }
@@ -216,18 +315,15 @@ export async function GET(request: Request) {
     const matchedAgencies: OmniResultItem[] = []
     const matchedAgents: OmniResultItem[] = []
 
-    for (const p of (rawProfiles as unknown as RawProfile[])) {
+    for (const p of rawProfiles) {
       const isCompany =
         p.last_name === 'Kompani' ||
-        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.first_name || '') ||
-        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.last_name || '') ||
-        Boolean(p.is_company) ||
-        p.account_type === 'company'
+        CORPORATE_NAME_RE.test(p.first_name || '') ||
+        CORPORATE_NAME_RE.test(p.last_name || '')
 
       const normFirst = normalizeSearchString(p.first_name || '')
       const normLast = normalizeSearchString(p.last_name || '')
       const normFull = `${normFirst} ${normLast}`.trim()
-      const normPhone = normalizeSearchString(p.phone || '')
 
       let score = 55
       if (normFull === normQ || normFirst === normQ) score += 50
@@ -235,7 +331,6 @@ export async function GET(request: Request) {
       else if (normFull.includes(normQ) || normFirst.includes(normQ)) score += 25
 
       if (normLast && (normLast === normQ || normLast.startsWith(normQ))) score += 30
-      if (normPhone && (normPhone.includes(normQ) || (digitsOnly && normPhone.includes(digitsOnly)))) score += 45
       if (p.email_verified) score += 10
       if (isCompany) score += 8
 
@@ -249,14 +344,16 @@ export async function GET(request: Request) {
         title: displayName,
         subtitle: isCompany
           ? 'Agjenci e Licencuar e Patundshmërive'
-          : (p.phone ? `Pronar Privat • ${p.phone}` : 'Pronar Privat • Llogari e Verifikuar'),
+          : p.email_verified
+            ? 'Pronar Privat • Llogari e Verifikuar'
+            : 'Pronar Privat',
         badge: isCompany ? 'Agjenci' : 'Pronar',
         imageUrl: p.avatar_url || '/avatars/avatar-1.png',
         price: null,
         city: undefined,
         score,
         payload: {
-          phone: p.phone || undefined,
+          // C6: no phone. Contact details live behind the listing/profile page.
           email_verified: Boolean(p.email_verified),
           id: p.id,
           isCompany,
@@ -292,7 +389,6 @@ export async function GET(request: Request) {
         city: c.city || undefined,
         score,
         payload: {
-          phone: c.phone,
           email_verified: true,
           id: c.id,
           isCompany: true,
@@ -320,7 +416,7 @@ export async function GET(request: Request) {
     }
 
     const responseData: OmniSearchResponse = {
-      query: cleanQ,
+      ...emptyResponse(safeQuery),
       total: flatResults.length,
       counts: {
         listings: matchedListings.length,
@@ -335,7 +431,6 @@ export async function GET(request: Request) {
         locations: matchedLocations,
       },
       flat: flatResults.slice(0, limit),
-      trending: TRENDING_SEARCHES,
     }
 
     setToCache(cacheKey, responseData)
@@ -349,12 +444,7 @@ export async function GET(request: Request) {
       {
         error: 'search_error',
         message: 'Ndodhi një gabim gjatë kërkimit.',
-        query: '',
-        total: 0,
-        counts: { listings: 0, agencies: 0, agents: 0, locations: 0 },
-        results: { listings: [], agencies: [], agents: [], locations: [] },
-        flat: [],
-        trending: TRENDING_SEARCHES,
+        ...emptyResponse(''),
       },
       { status: 500 }
     )

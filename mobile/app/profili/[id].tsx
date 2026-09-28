@@ -10,6 +10,7 @@ import {
   Share,
   Linking,
   Alert,
+  ActivityIndicator,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -40,10 +41,18 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing, Profile } from '@/lib/supabase'
 import { getAvatarSource } from '@/lib/avatars'
 import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
-import { safeBack } from '@/lib/navigation'
+import { safeBack, openLoginScreen } from '@/lib/navigation'
 import { ListingCard } from '@/components/ListingCard'
 import { SkeletonBox } from '@/components/ListingSkeleton'
-import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
+import { useFavorites } from '@/lib/favorites'
+import { getSyncAuthUser } from '@/lib/auth-cache'
+import {
+  getCachedProfile,
+  setCachedProfile,
+  getCachedProfileListings,
+  setCachedProfileListings,
+  clearCachedProfile,
+} from '@/lib/profile-cache'
 
 export interface PublicProfile extends Profile {
   whatsapp?: string | null
@@ -60,15 +69,23 @@ export default function PublicProfileScreen() {
   const params = useLocalSearchParams<{ id?: string }>()
   const profileId = params.id
 
-  const [profile, setProfile] = useState<PublicProfile | null>(null)
-  const [listings, setListings] = useState<Listing[]>([])
-  const [loading, setLoading] = useState(true)
+  // Stale-while-revalidate: paint instantly from the in-memory profile cache
+  // (seeded by the listing detail and feed caches), revalidate in background.
+  const cachedProfile = getCachedProfile(profileId)
+  const cachedListings = getCachedProfileListings(profileId)
+  const [profile, setProfile] = useState<PublicProfile | null>(
+    () => (cachedProfile as PublicProfile) || null
+  )
+  const [listings, setListings] = useState<Listing[]>(() => cachedListings || [])
+  const [loading, setLoading] = useState(() => !cachedProfile)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'shitje' | 'qira'>('all')
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+  const { favorites, toggleFavorite } = useFavorites()
 
   const isMountedRef = useRef(true)
+  // A background revalidation failure must never replace painted cache content
+  const hasProfileRef = useRef(Boolean(cachedProfile))
 
   useEffect(() => {
     isMountedRef.current = true
@@ -77,7 +94,7 @@ export default function PublicProfileScreen() {
     }
   }, [])
 
-  // Concurrently fetch profile, active listings, and user's favorites
+  // Concurrently fetch profile and active listings
   const loadData = useCallback(async (isRefresh = false) => {
     if (!profileId) {
       if (isMountedRef.current) {
@@ -92,7 +109,7 @@ export default function PublicProfileScreen() {
     setError(null)
 
     try {
-      const [profileRes, listingsRes, favsMap] = await Promise.all([
+      const [profileRes, listingsRes] = await Promise.all([
         supabase
           .from('profiles')
           .select('*')
@@ -100,11 +117,12 @@ export default function PublicProfileScreen() {
           .maybeSingle(),
         supabase
           .from('listings')
-          .select('*')
+          .select(
+            'id,title,price,type,images,rooms,area_m2,floor,apartment_type,city,neighborhood,address,is_featured,is_active,created_at,user_id,condition,features'
+          )
           .eq('user_id', profileId)
           .eq('is_active', true)
           .order('created_at', { ascending: false }),
-        fetchFavoriteIds().catch(() => ({})),
       ])
 
       if (!isMountedRef.current) return
@@ -114,17 +132,22 @@ export default function PublicProfileScreen() {
       }
 
       if (!profileRes.data) {
+        clearCachedProfile(profileId)
         setError('Profili nuk u gjet ose është çaktivizuar.')
         setProfile(null)
         setListings([])
       } else {
-        setProfile(profileRes.data as PublicProfile)
-        setListings((listingsRes.data || []) as unknown as Listing[])
-        setFavorites(favsMap || {})
+        const freshProfile = profileRes.data as PublicProfile
+        const freshListings = (listingsRes.data || []) as unknown as Listing[]
+        setCachedProfile(profileId, freshProfile)
+        setCachedProfileListings(profileId, freshListings)
+        setProfile(freshProfile)
+        setListings(freshListings)
+        hasProfileRef.current = true
       }
     } catch (err: any) {
       console.warn('Public profile load exception:', err)
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !hasProfileRef.current) {
         setError(err?.message || 'Ndodhi një problem gjatë ngarkimit të profilit.')
       }
     } finally {
@@ -139,23 +162,21 @@ export default function PublicProfileScreen() {
     loadData()
   }, [loadData])
 
-  // Favorite toggle handling with optimistic rollback and stable reference
-  const handleToggleFavorite = useCallback(async (listingId: string) => {
-    let wasFav = false
-    setFavorites((prev) => {
-      wasFav = Boolean(prev[listingId])
-      return { ...prev, [listingId]: !wasFav }
-    })
-
-    try {
-      const ok = await persistFavoriteToggle(listingId, wasFav)
-      if (!ok) {
-        setFavorites((prev) => ({ ...prev, [listingId]: wasFav }))
+  // Favorite toggle handling with guest guard & global reactive sync
+  const handleToggleFavorite = useCallback(
+    async (listingId: string) => {
+      const user = getSyncAuthUser()
+      if (!user) {
+        openLoginScreen(router, {
+          redirectTo: `/profili/${profileId}`,
+          reason: 'favorite',
+        })
+        return
       }
-    } catch {
-      setFavorites((prev) => ({ ...prev, [listingId]: wasFav }))
-    }
-  }, [])
+      await toggleFavorite(listingId)
+    },
+    [router, profileId, toggleFavorite]
+  )
 
   // Profile entity classification & display name
   const isCompany = useMemo(() => {
@@ -178,15 +199,16 @@ export default function PublicProfileScreen() {
 
   const isVerified = useMemo(() => {
     if (!profile) return false
-    return profile.email_verified === true || isCompany
-  }, [profile, isCompany])
+    // Trust status must reflect actual verification, never account type.
+    return profile.email_verified === true
+  }, [profile])
 
   const memberYear = useMemo(() => {
-    if (!profile?.created_at) return '2026'
+    if (!profile?.created_at) return null
     try {
       return new Date(profile.created_at).getFullYear().toString()
     } catch {
-      return '2026'
+      return null
     }
   }, [profile?.created_at])
 
@@ -233,7 +255,9 @@ export default function PublicProfileScreen() {
     const smsMsg = encodeURIComponent(
       `Përshëndetje, po ju kontaktoj nga Bleje Pronën lidhur me pronat tuaja.`
     )
-    Linking.openURL(`sms:${normalized}?body=${smsMsg}`).catch(() => {
+    Linking.openURL(
+      `sms:${normalized}${Platform.OS === 'ios' ? '&' : '?'}body=${smsMsg}`
+    ).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni i mesazheve.')
     })
   }, [profile?.phone, profile?.whatsapp])
@@ -252,6 +276,100 @@ export default function PublicProfileScreen() {
     }
   }, [displayName, profileId])
 
+  const [startingChat, setStartingChat] = useState(false)
+  const startingChatRef = useRef(false)
+
+  const handleDirectChat = useCallback(async () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+    const currentUser = getSyncAuthUser()
+    if (!currentUser) {
+      openLoginScreen(router, { redirectTo: `/profili/${profileId}`, reason: 'chat' })
+      return
+    }
+
+    if (currentUser.id === profileId) {
+      Alert.alert('Profili Juaj', 'Ky është profili juaj i regjistruar në Bleje Pronën.')
+      return
+    }
+
+    if (!profileId) return
+    if (startingChatRef.current) return
+    startingChatRef.current = true
+    setStartingChat(true)
+
+    try {
+      // 1. Check if a 1-on-1 conversation with this user already exists
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(
+          `and(buyer_id.eq.${currentUser.id},seller_id.eq.${profileId}),and(buyer_id.eq.${profileId},seller_id.eq.${currentUser.id})`
+        )
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existing?.id) {
+        router.push(`/messages/${existing.id}` as any)
+        return
+      }
+
+      // 2. Resolve an active listing ID to anchor the new conversation thread
+      let targetListingId = listings?.[0]?.id
+      if (!targetListingId) {
+        const { data: foundListing } = await supabase
+          .from('listings')
+          .select('id')
+          .eq('user_id', profileId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+        targetListingId = foundListing?.id
+      }
+
+      if (!targetListingId) {
+        const { data: anyListing } = await supabase
+          .from('listings')
+          .select('id')
+          .eq('user_id', profileId)
+          .limit(1)
+          .maybeSingle()
+        targetListingId = anyListing?.id
+      }
+
+      if (!targetListingId) {
+        Alert.alert(
+          'Biseda nuk mund të hapet',
+          'Ky profil nuk ka ende asnjë shpallje të listuar për të filluar një bisedë.'
+        )
+        return
+      }
+
+      // 3. Create conversation thread
+      const { data: created, error: createErr } = await supabase
+        .from('conversations')
+        .insert({
+          listing_id: targetListingId,
+          buyer_id: currentUser.id,
+          seller_id: profileId,
+        })
+        .select('id')
+        .single()
+
+      if (createErr) {
+        Alert.alert('Vërejtje', 'Nuk mund të hapet biseda: ' + createErr.message)
+      } else if (created?.id) {
+        router.push(`/messages/${created.id}` as any)
+      }
+    } catch (err: any) {
+      console.warn('Profile direct chat notice:', err?.message || err)
+    } finally {
+      startingChatRef.current = false
+      setStartingChat(false)
+    }
+  }, [profileId, listings, router])
+
   // Filter listings
   const filteredListings = useMemo(() => {
     if (activeFilter === 'all') return listings
@@ -260,6 +378,8 @@ export default function PublicProfileScreen() {
 
   const countSales = useMemo(() => listings.filter((l) => l.type === 'shitje').length, [listings])
   const countRentals = useMemo(() => listings.filter((l) => l.type === 'qira').length, [listings])
+  // Portfolio skeleton only when there is nothing cached to show yet
+  const portfolioPending = loading && listings.length === 0
 
   const resolvedBottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'ios' ? 24 : 16)
   const specularBorder = colors.border
@@ -579,6 +699,40 @@ export default function PublicProfileScreen() {
 
               {/* ─── Corporate Contact Suite ─── */}
               <View style={styles.contactContainer}>
+                {/* Primary Action: Direct In-App Chat */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.agencyDirectChatBtn,
+                    {
+                      backgroundColor: colors.primary,
+                      borderColor: theme === 'green' ? colors.gold : colors.primaryDark,
+                    },
+                    pressed && styles.btnPressed,
+                  ]}
+                  onPress={handleDirectChat}
+                  disabled={startingChat}
+                >
+                  {startingChat ? (
+                    <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
+                  ) : (
+                    <MessageSquare size={18} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.4} />
+                  )}
+                  <View style={styles.actionBtnTextCol}>
+                    <Text style={[styles.agencyChatBtnTitle, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
+                      Bisedo në Aplikacion
+                    </Text>
+                    <Text
+                      style={[
+                        styles.agencyChatBtnSubtitle,
+                        { color: theme === 'green' ? 'rgba(7, 28, 24, 0.7)' : 'rgba(255, 255, 255, 0.85)' },
+                      ]}
+                    >
+                      Dërgo mesazh të drejtpërdrejtë agjencisë
+                    </Text>
+                  </View>
+                  <ChevronRight size={18} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.4} />
+                </Pressable>
+
                 <View style={styles.contactRow}>
                   {/* Primary: Call Agency */}
                   <Pressable
@@ -813,7 +967,12 @@ export default function PublicProfileScreen() {
               </View>
 
               {/* Listings Cards / Empty State */}
-              {filteredListings.length === 0 ? (
+              {portfolioPending ? (
+                <View style={styles.skeletonCardsWrap}>
+                  <SkeletonBox width="100%" height={260} borderRadius={18} />
+                  <SkeletonBox width="100%" height={260} borderRadius={18} />
+                </View>
+              ) : filteredListings.length === 0 ? (
                 <View
                   style={[
                     styles.emptyListingsCard,
@@ -962,14 +1121,18 @@ export default function PublicProfileScreen() {
                       </Text>
                     </View>
 
-                    <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+                    {memberYear && (
+                      <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+                    )}
 
-                    <View style={styles.metaItem}>
-                      <Calendar size={11} color={colors.textMuted} strokeWidth={2} />
-                      <Text style={[styles.metaText, { color: colors.textMuted }]}>
-                        Anëtar që nga {memberYear}
-                      </Text>
-                    </View>
+                    {memberYear && (
+                      <View style={styles.metaItem}>
+                        <Calendar size={11} color={colors.textMuted} strokeWidth={2} />
+                        <Text style={[styles.metaText, { color: colors.textMuted }]}>
+                          Anëtar që nga {memberYear}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
@@ -993,12 +1156,38 @@ export default function PublicProfileScreen() {
 
               {/* ─── Streamlined Personal Actions ─── */}
               <View style={styles.personalActionsRow}>
+                {/* 1. Direct In-App Chat */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.personalActionBtn,
+                    {
+                      backgroundColor: colors.primary,
+                      borderColor: theme === 'green' ? colors.gold : colors.primaryDark,
+                    },
+                    pressed && styles.btnPressed,
+                  ]}
+                  onPress={handleDirectChat}
+                  disabled={startingChat}
+                >
+                  {startingChat ? (
+                    <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
+                  ) : (
+                    <MessageSquare size={16} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.4} />
+                  )}
+                  <Text style={[styles.personalActionBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
+                    Bisedo
+                  </Text>
+                </Pressable>
+
+                {/* 2. Direct Call */}
                 <Pressable
                   style={({ pressed }) => [
                     styles.personalActionBtn,
                     styles.personalPhoneBtn,
                     {
-                      backgroundColor: colors.primary,
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                      borderWidth: StyleSheet.hairlineWidth,
                     },
                     pressed && styles.btnPressed,
                     !profile.phone && styles.btnDisabled,
@@ -1006,12 +1195,13 @@ export default function PublicProfileScreen() {
                   onPress={handleCall}
                   disabled={!profile.phone}
                 >
-                  <Phone size={16} color="#FFFFFF" strokeWidth={2.4} />
-                  <Text style={styles.personalActionBtnText}>
-                    {profile.phone ? formatPhoneDisplay(profile.phone) : 'Pa numër'}
+                  <Phone size={15} color={colors.textPrimary} strokeWidth={2.2} />
+                  <Text style={[styles.personalActionBtnText, { color: colors.textPrimary }]}>
+                    {profile.phone ? 'Telefono' : 'Pa numër'}
                   </Text>
                 </Pressable>
 
+                {/* 3. WhatsApp */}
                 <Pressable
                   style={({ pressed }) => [
                     styles.personalActionBtn,
@@ -1022,7 +1212,7 @@ export default function PublicProfileScreen() {
                   onPress={handleWhatsApp}
                   disabled={!(profile.whatsapp || profile.phone)}
                 >
-                  <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.4} />
+                  <MessageCircle size={16} color="#FFFFFF" strokeWidth={2.4} />
                   <Text style={styles.personalActionBtnText}>WhatsApp</Text>
                 </Pressable>
               </View>
@@ -1144,7 +1334,12 @@ export default function PublicProfileScreen() {
                 )}
               </View>
 
-              {filteredListings.length === 0 ? (
+              {portfolioPending ? (
+                <View style={styles.skeletonCardsWrap}>
+                  <SkeletonBox width="100%" height={260} borderRadius={18} />
+                  <SkeletonBox width="100%" height={260} borderRadius={18} />
+                </View>
+              ) : filteredListings.length === 0 ? (
                 <View
                   style={[
                     styles.emptyListingsCard,
@@ -1368,13 +1563,38 @@ const styles = StyleSheet.create({
   contactContainer: {
     gap: 10,
   },
+  agencyDirectChatBtn: {
+    width: '100%',
+    minHeight: 52,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 12,
+    borderWidth: 0.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  agencyChatBtnTitle: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+  },
+  agencyChatBtnSubtitle: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    marginTop: 0.5,
+  },
   contactRow: {
     flexDirection: 'row',
     gap: 10,
   },
   actionBtn: {
     flex: 1,
-    height: 52,
+    minHeight: 52,
     borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1501,16 +1721,17 @@ const styles = StyleSheet.create({
   },
   personalActionsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   personalActionBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 14,
+    height: 44,
+    borderRadius: 13,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 5,
+    paddingHorizontal: 4,
   },
   personalPhoneBtn: {},
   personalWhatsAppBtn: {

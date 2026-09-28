@@ -191,8 +191,7 @@ ${condLabel ? `• Gjendja: ${condLabel}` : ''}`
       specSection = `Truall me potencial të lartë në ${locationStr}.
 Detajet e parcelës:
 • Sipërfaqe totale: ${areaStr}
-• Terren i përshtatshëm me qasje direkte
-• Dokumentacion i rregullt kadastral`
+• Terren i përshtatshëm me qasje direkte`
     } else if (data.category === 'lokal') {
       specSection = `Hapësirë afariste ${transType} me pozitë të favorshme në ${locationStr}.
 Përparësitë kryesore:
@@ -244,7 +243,7 @@ ${condLabel ? `• Gjendja e lokalit: ${condLabel}` : ''}`
     enhanced += `Përparësitë & Pajisjet:\n${featuresList.map((f) => `• ${f}`).join('\n')}\n\n`
   }
 
-  enhanced += `Dokumentacioni është i rregullt. Për më shumë informata apo për të planifikuar një vizitë në pronë, ju mirëpresim të na kontaktoni.`
+  enhanced += `Për më shumë informata apo për të planifikuar një vizitë në pronë, ju mirëpresim të na kontaktoni.`
 
   return enhanced.trim()
 }

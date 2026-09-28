@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   Alert,
   KeyboardAvoidingView,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { Image } from 'expo-image'
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -28,29 +30,34 @@ import {
   Image as ImageIcon,
   X,
   Check,
-  ShieldCheck,
   LogIn,
   UserPlus,
+  Calculator,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { CATEGORIES, PropertyCategory } from '@/lib/categories'
-import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
+import {
+  ALL_CITIES,
+  getNeighborhoods,
+} from '@/lib/kosovo-locations'
 import {
   generateOrEnhanceDescription,
   generateProfessionalTitle,
   validatePropertyFilters,
 } from '@/lib/description-helper'
 import { useBanner } from '@/context/BannerContext'
+import { openLoginScreen, openRegisterScreen } from '@/lib/navigation'
 
 const CATEGORY_KEYS: PropertyCategory[] = ['banese', 'shtepi', 'vile', 'toke', 'lokal', 'garazh']
-const CITIES = Object.keys(KOSOVO_LOCATIONS)
+const CITIES = ALL_CITIES
 
 export default function PostPropertyScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const tabBarScrollHandler = useTabBarCollapseOnScroll()
 
   const specularBorder = colors.border
 
@@ -66,11 +73,11 @@ export default function PostPropertyScreen() {
   const [rooms, setRooms] = useState<string>('3')
   const [floor, setFloor] = useState<string>('2')
   const [condition, setCondition] = useState<string>('e-re')
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
-    'Parking',
-    'Ashensor',
-    'Ballkon',
-  ])
+  // Only features that actually exist for the initial category ('banese') are seeded,
+  // so the form never ships feature values that aren't rendered/selectable.
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(() =>
+    ['Parking', 'Ashensor', 'Ballkon'].filter((f) => CATEGORIES.banese.features.includes(f))
+  )
   const [title, setTitle] = useState<string>('')
   const [undoTitle, setUndoTitle] = useState<string | null>(null)
   const [description, setDescription] = useState<string>('')
@@ -100,6 +107,9 @@ export default function PostPropertyScreen() {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     setCategory(catKey)
     const nextCat = CATEGORIES[catKey]
+    // Drop any selected feature that the new category doesn't offer, so we never
+    // submit values that aren't rendered as chips for this category.
+    setSelectedFeatures((prev) => prev.filter((f) => nextCat.features.includes(f)))
     if (catKey === 'banese') {
       setSubtype('2+1')
       setRooms('3')
@@ -275,7 +285,14 @@ export default function PostPropertyScreen() {
 
     if (!result.canceled && result.assets) {
       const newUris = result.assets.map((a) => a.uri)
-      setImages((prev) => [...prev, ...newUris].slice(0, 10))
+      setImages((prev) => {
+        const merged = [...prev]
+        for (const uri of newUris) {
+          if (merged.length >= 10) break
+          if (!merged.includes(uri)) merged.push(uri)
+        }
+        return merged
+      })
     }
   }
 
@@ -298,7 +315,7 @@ export default function PostPropertyScreen() {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const newUri = result.assets[0].uri
-      setImages((prev) => [...prev, newUri].slice(0, 10))
+      setImages((prev) => (prev.includes(newUri) ? prev : [...prev, newUri].slice(0, 10)))
     }
   }
 
@@ -321,13 +338,31 @@ export default function PostPropertyScreen() {
     setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
+  /**
+   * Best-effort cleanup of Storage objects uploaded during a submission attempt that
+   * never made it into the database, so we don't leave orphaned photos behind.
+   */
+  const discardUploadedPhotos = async (paths: string[]) => {
+    if (paths.length === 0) return
+    try {
+      const { error } = await supabase.storage.from('listings').remove(paths)
+      if (error) console.warn('Listing photo cleanup warning:', error.message)
+    } catch (cleanupEx: any) {
+      console.warn('Listing photo cleanup exception:', cleanupEx?.message || cleanupEx)
+    }
+  }
+
   const toggleFeature = (feat: string) => {
     setSelectedFeatures((prev) =>
       prev.includes(feat) ? prev.filter((f) => f !== feat) : [...prev, feat]
     )
   }
 
+  // Re-entrancy guard: the Pressable can fire twice before `loading` re-renders.
+  const submittingRef = useRef(false)
+
   const handleSubmit = async () => {
+    if (submittingRef.current) return
     if (!title.trim()) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
       showBanner({
@@ -337,21 +372,23 @@ export default function PostPropertyScreen() {
       })
       return
     }
-    if (!price || isNaN(Number(price))) {
+    const priceNum = Number(price)
+    if (!price || isNaN(priceNum) || priceNum <= 0) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
       showBanner({
         type: 'error',
         title: 'Çmimi i Pavlefshëm',
-        message: 'Ju lutemi vendosni një çmim të vlefshëm për pronën.',
+        message: 'Ju lutemi vendosni një çmim më të madh se 0 €.',
       })
       return
     }
-    if (!area || isNaN(Number(area))) {
+    const areaNum = Number(area)
+    if (!area || isNaN(areaNum) || areaNum <= 0) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
       showBanner({
         type: 'error',
         title: 'Sipërfaqja Mungon',
-        message: 'Ju lutemi vendosni sipërfaqen e pronës në m².',
+        message: 'Ju lutemi vendosni një sipërfaqe më të madhe se 0 m².',
       })
       return
     }
@@ -365,6 +402,12 @@ export default function PostPropertyScreen() {
       return
     }
 
+    // The rooms pill offers a '6+' label — map it to 6 so we never store 0 rooms.
+    const roomsNum = rooms === '6+' ? 6 : Number(rooms) || 0
+    // Storage paths uploaded during this attempt, so a failed insert can clean them up.
+    const uploadedStoragePaths: string[] = []
+
+    submittingRef.current = true
     try {
       setLoading(true)
       const {
@@ -372,28 +415,30 @@ export default function PostPropertyScreen() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        Alert.alert(
-          'Kërkohet Llogari',
-          'Ju lutemi kyçuni në llogari para se të publikoni pronën tuaj.',
-          [
-            { text: 'Anulo', style: 'cancel' },
-            {
-              text: 'Kyçu',
-              onPress: () => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'post' } }),
-            },
-          ]
-        )
+        openLoginScreen(router, { redirectTo: '/(tabs)/post', reason: 'post' })
         return
       }
 
-      // Upload local device images to Supabase Storage concurrently with hardware-accelerated downsampling
+      // Upload local device images to Supabase Storage through a small concurrency pool
+      // (hardware-accelerated downsampling), preserving the user's photo order.
       let uploadedImageUrls: string[] = []
       if (images.length > 0) {
-        uploadedImageUrls = await Promise.all(
-          images.map(async (imgUri) => {
+        const UPLOAD_CONCURRENCY = 3
+        const uploadFailure: { message: string | null } = { message: null }
+        const results: Array<string | null> = new Array(images.length).fill(null)
+        let cursor = 0
+
+        const uploadWorker = async () => {
+          while (cursor < images.length) {
+            if (uploadFailure.message) return
+            const index = cursor++
+            const imgUri = images[index]
+
             if (imgUri.startsWith('http://') || imgUri.startsWith('https://')) {
-              return imgUri
+              results[index] = imgUri
+              continue
             }
+
             try {
               const optimizedUri = await optimizeListingImage(imgUri)
               const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
@@ -411,41 +456,70 @@ export default function PostPropertyScreen() {
 
               if (uploadError) {
                 console.warn('Listing photo upload error:', uploadError.message)
-                return imgUri
+                uploadFailure.message = uploadError.message
+                continue
               }
 
+              uploadedStoragePaths.push(path)
               const { data: publicData } = supabase.storage.from('listings').getPublicUrl(path)
-              return publicData.publicUrl
+              results[index] = publicData.publicUrl
             } catch (uploadEx: any) {
               console.warn('Listing photo upload exception:', uploadEx?.message || uploadEx)
-              return imgUri
+              uploadFailure.message = uploadEx?.message || 'Ngarkimi i fotografisë dështoi.'
             }
-          })
+          }
+        }
+
+        await Promise.all(
+          Array.from({ length: Math.min(UPLOAD_CONCURRENCY, images.length) }, () => uploadWorker())
         )
+
+        // A local file:// URI must never reach listings.images — abort before the insert.
+        if (uploadFailure.message || results.some((url) => url === null)) {
+          await discardUploadedPhotos(uploadedStoragePaths)
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+          }
+          showBanner({
+            type: 'error',
+            title: 'Dështoi Ngarkimi i Fotove',
+            message:
+              'Fotografitë nuk u ngarkuan dot në server. Kontrolloni lidhjen tuaj dhe provoni përsëri.',
+          })
+          return
+        }
+
+        uploadedImageUrls = results.filter((url): url is string => url !== null)
       }
 
-      const { error } = await supabase.from('listings').insert([
-        {
-          user_id: user.id,
-          title: title.trim(),
-          description: description.trim(),
-          price: Number(price),
-          city,
-          neighborhood: neighborhood || null,
-          address: address.trim() || city,
-          rooms: Number(rooms) || 0,
-          area_m2: Number(area) || 0,
-          type,
-          condition,
-          floor,
-          apartment_type: subtype || activeCategory.titleShort,
-          features: selectedFeatures,
-          images: uploadedImageUrls,
-          is_active: true,
-        },
-      ])
+      const { data: insertedListing, error } = await supabase
+        .from('listings')
+        .insert([
+          {
+            user_id: user.id,
+            title: title.trim(),
+            description: description.trim(),
+            price: Number(price),
+            city,
+            neighborhood: neighborhood || null,
+            address: address.trim() || city,
+            rooms: roomsNum,
+            area_m2: Number(area) || 0,
+            type,
+            condition,
+            floor,
+            apartment_type: subtype || activeCategory.titleShort,
+            features: selectedFeatures,
+            images: uploadedImageUrls,
+            is_active: true,
+          },
+        ])
+        .select('id')
+        .single()
 
       if (error) throw error
+
+      const newListingId: string | undefined = insertedListing?.id
 
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -465,8 +539,15 @@ export default function PostPropertyScreen() {
         title: 'Prona u Publikua!',
         message: 'Prona juaj u postua me sukses në Bleje Pronën.',
       })
-      router.push('/listings' as any)
+      // Land on the freshly published property instead of the generic listings feed
+      if (newListingId) {
+        router.replace(`/listings/${newListingId}` as any)
+      } else {
+        router.replace('/listings' as any)
+      }
     } catch (err: any) {
+      // The insert never landed — discard the photos already pushed to Storage
+      await discardUploadedPhotos(uploadedStoragePaths)
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       }
@@ -476,6 +557,7 @@ export default function PostPropertyScreen() {
         message: err.message || 'Ndodhi një problem gjatë postimit.',
       })
     } finally {
+      submittingRef.current = false
       setLoading(false)
     }
   }
@@ -508,7 +590,7 @@ export default function PostPropertyScreen() {
             <View style={styles.gateActions}>
               <Pressable
                 style={[styles.gatePrimaryBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'post' } })}
+                onPress={() => openLoginScreen(router, { redirectTo: '/(tabs)/post', reason: 'post' })}
               >
                 <LogIn size={18} color={gateBtnText} strokeWidth={2.2} />
                 <Text style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
@@ -521,7 +603,7 @@ export default function PostPropertyScreen() {
                   styles.gateSecondaryBtn,
                   { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
                 ]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register', reason: 'post' } })}
+                onPress={() => openRegisterScreen(router, { redirectTo: '/(tabs)/post', reason: 'post' })}
               >
                 <UserPlus size={18} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>
@@ -549,7 +631,9 @@ export default function PostPropertyScreen() {
         </Text>
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={tabBarScrollHandler}
+        scrollEventThrottle={16}
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -672,11 +756,11 @@ export default function PostPropertyScreen() {
             })}
           </ScrollView>
 
-          {city && KOSOVO_LOCATIONS[city]?.length > 0 && (
+          {city && getNeighborhoods(city).length > 0 && (
             <>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Lagjja në {city}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalChips}>
-                {KOSOVO_LOCATIONS[city].map((n) => {
+                {getNeighborhoods(city).map((n) => {
                   const isNSelected = neighborhood === n
                   return (
                     <Pressable
@@ -794,6 +878,18 @@ export default function PostPropertyScreen() {
               />
             </View>
           </View>
+
+          {Number(price) > 0 && Number(area) > 0 && (
+            <View style={[styles.pricePerM2Badge, { backgroundColor: colors.badgeBg, borderColor: colors.border }]}>
+              <Calculator size={13} color={colors.badgeText} strokeWidth={2.2} />
+              <Text style={[styles.pricePerM2Label, { color: colors.textSecondary }]}>
+                Çmimi për m²:
+              </Text>
+              <Text style={[styles.pricePerM2Value, { color: colors.badgeText }]}>
+                {Math.round(Number(price) / Number(area)).toLocaleString('de-DE')} €/m²
+              </Text>
+            </View>
+          )}
 
           {activeCategory.hasRooms && (
             <View style={styles.fieldBlock}>
@@ -994,7 +1090,7 @@ export default function PostPropertyScreen() {
 
           <View style={styles.imagesGrid}>
             {images.map((uri, idx) => (
-              <View key={uri} style={styles.imageThumbContainer}>
+              <View key={`${uri}-${idx}`} style={styles.imageThumbContainer}>
                 <Image source={{ uri }} style={styles.imageThumb} />
                 {idx === 0 && (
                   <View style={[styles.coverBadge, { backgroundColor: colors.primary }]}>
@@ -1078,7 +1174,7 @@ export default function PostPropertyScreen() {
             </Text>
           )}
         </Pressable>
-      </ScrollView>
+      </Animated.ScrollView>
       </View>
     </KeyboardAvoidingView>
   )
@@ -1198,11 +1294,31 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 6,
   },
+  pricePerM2Badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    marginTop: 2,
+  },
+  pricePerM2Label: {
+    fontSize: 12.5,
+    fontFamily: Fonts.medium,
+  },
+  pricePerM2Value: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+  },
   fieldBlock: {
     gap: 8,
   },
   pillGroup: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   pillBtn: {

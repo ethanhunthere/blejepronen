@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   View,
   Text,
@@ -8,13 +8,15 @@ import {
   TextInput,
   Switch,
   Platform,
-  Alert,
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
+  Alert,
+  Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
+import { Image as ExpoImage } from 'expo-image'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   getSyncAuthUser,
   getSyncProfile,
@@ -25,11 +27,9 @@ import { playThemeSound, playTapSound, playSuccessSound } from '@/lib/sound'
 import {
   ArrowLeft,
   User,
-  Building2,
   Bell,
   Shield,
   Lock,
-  Camera,
   CheckCircle2,
   Trash2,
   LogOut,
@@ -37,11 +37,7 @@ import {
   Eye,
   EyeOff,
   Check,
-  Globe,
-  MapPin,
-  Phone,
   Mail,
-  Share2,
   Smartphone,
   Volume2,
   Vibrate,
@@ -50,15 +46,21 @@ import {
   Leaf,
   Moon,
   ChevronRight,
-  Fingerprint,
   RefreshCw,
   HardDrive,
   Info,
+  ScanFace,
+  Fingerprint,
+  ShieldCheck,
+  ExternalLink,
+  VolumeX,
+  AlertCircle,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
+import { useLogout } from '@/context/LogoutContext'
 import {
   apiSaveProfileSettings,
   apiDeleteAccount,
@@ -66,34 +68,17 @@ import {
 } from '@/lib/api'
 import { safeBack } from '@/lib/navigation'
 import { subscribeAvatarChange } from '@/lib/avatars'
+import { isAppSoundEnabled, setAppSoundEnabled } from '@/lib/sound'
+import {
+  isBiometricLockEnabled,
+  setBiometricLockEnabled,
+  authenticateWithBiometrics,
+  getDeviceBiometricCapability,
+  setSessionUnlocked,
+  BiometricCapability,
+} from '@/lib/biometrics'
 
 type SettingsTab = 'notifications' | 'security' | 'app'
-
-const CITIES = [
-  'Prishtinë',
-  'Prizren',
-  'Pejë',
-  'Gjakovë',
-  'Gjilan',
-  'Mitrovicë',
-  'Ferizaj',
-  'Fushë Kosovë',
-  'Tiranë',
-  'Durrës',
-  'Vlorë',
-  'Shkup',
-]
-
-const AVATARS = [
-  '/avatars/avatar-1.png',
-  '/avatars/avatar-2.png',
-  '/avatars/avatar-3.png',
-  '/avatars/avatar-4.png',
-  '/avatars/avatar-5.png',
-  '/avatars/avatar-6.png',
-  '/avatars/avatar-7.png',
-  '/avatars/avatar-8.png',
-]
 
 function getPasswordStrength(pwd: string): { score: number; label: string; color: string } {
   if (!pwd) return { score: 0, label: '', color: '#E5E7EB' }
@@ -120,17 +105,40 @@ export default function SettingsScreen() {
   const router = useRouter()
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
+  const { requestLogout, executeLogout } = useLogout()
 
   const insets = useSafeAreaInsets()
   const syncUser = getSyncAuthUser()
   const syncProfile = getSyncProfile()
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('notifications')
-  const [loading, setLoading] = useState(false)
+  const scrollRef = useRef<ScrollView>(null)
+
+  // Ensure every screen/tab always opens cleanly at the very top (y: 0) on focus with zero visual jump
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false })
+    }, [])
+  )
+
+  const handleTabChange = useCallback((newTab: SettingsTab) => {
+    if (newTab === activeTab) {
+      scrollRef.current?.scrollTo({ y: 0, animated: true })
+      return
+    }
+    playTapSound()
+    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+    scrollRef.current?.scrollTo({ y: 0, animated: false })
+    setActiveTab(newTab)
+  }, [activeTab])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(syncUser?.id || null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState(syncUser?.email || '')
+  const [isOAuthUser, setIsOAuthUser] = useState(false)
   const [isEmailVerified, setIsEmailVerified] = useState(
     Boolean(syncProfile?.email_verified || syncUser?.user_metadata?.email_verified)
   )
@@ -219,12 +227,15 @@ export default function SettingsScreen() {
     showListingsOnProfile: true,
   })
 
-  // App Specific Preferences
+  // Native Biometric Security (Face ID / Touch ID / Android BiometricPrompt)
   const [biometricLock, setBiometricLock] = useState(false)
-  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'CHF'>('EUR')
-  const [language, setLanguage] = useState<'sq' | 'en'>('sq')
-  const [highContrast, setHighContrast] = useState(false)
-  const [cacheSize, setCacheSize] = useState('38.4 MB')
+  const [biometricCapability, setBiometricCapability] = useState<BiometricCapability | null>(null)
+  const [biometricLoading, setBiometricLoading] = useState(false)
+
+  // General In-App Sound and Haptic System (Default: ON)
+  const [appSound, setAppSound] = useState(true)
+
+  const [clearingCache, setClearingCache] = useState(false)
 
   // Password Change
   const [newPassword, setNewPassword] = useState('')
@@ -232,12 +243,19 @@ export default function SettingsScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [updatingPassword, setUpdatingPassword] = useState(false)
-  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Focus state for inputs
   const [focusedField, setFocusedField] = useState<string | null>(null)
 
   // Load user data on mount
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   useEffect(() => {
     async function loadUserData() {
       try {
@@ -246,6 +264,7 @@ export default function SettingsScreen() {
         } = await supabase.auth.getSession()
 
         const activeUser = session?.user || (await supabase.auth.getUser()).data.user
+        if (!isMountedRef.current) return
         if (!activeUser) {
           router.replace('/(tabs)/profile')
           return
@@ -261,6 +280,8 @@ export default function SettingsScreen() {
           .eq('id', activeUser.id)
           .single()
 
+        if (!isMountedRef.current) return
+
         const meta = activeUser.user_metadata || {}
         const isComp =
           meta.account_type === 'company' ||
@@ -269,6 +290,11 @@ export default function SettingsScreen() {
           prof?.last_name === 'Kompani'
 
         setIsCompany(isComp)
+
+        const isOAuth =
+          activeUser.app_metadata?.provider === 'google' ||
+          activeUser.app_metadata?.provider === 'apple'
+        setIsOAuthUser(Boolean(isOAuth))
 
         const isGoogle = activeUser.app_metadata?.provider === 'google'
         const verified =
@@ -348,21 +374,36 @@ export default function SettingsScreen() {
         if (meta.privacy) {
           setPrivacy((prev) => ({ ...prev, ...meta.privacy }))
         }
-        if (meta.app_preferences) {
-          if (meta.app_preferences.biometricLock !== undefined) {
-            setBiometricLock(meta.app_preferences.biometricLock)
-          }
-          if (meta.app_preferences.currency) {
-            setCurrency(meta.app_preferences.currency)
-          }
-          if (meta.app_preferences.language) {
-            setLanguage(meta.app_preferences.language)
-          }
+
+        // Biometrics & Sound Preferences
+        const [bioLock, bioCap] = await Promise.all([
+          isBiometricLockEnabled(),
+          getDeviceBiometricCapability(),
+        ])
+        if (isMountedRef.current) {
+          setBiometricCapability(bioCap)
+          setBiometricLock(
+            bioLock ||
+              meta.biometric_lock === true ||
+              meta.app_preferences?.biometricLock === true
+          )
+        }
+
+        const soundEnabled = isAppSoundEnabled()
+        if (isMountedRef.current) {
+          setAppSound(soundEnabled)
         }
       } catch (err) {
         console.warn('Load user settings error:', err)
+        if (isMountedRef.current) {
+          showBanner({
+            type: 'error',
+            title: 'Vërejtje',
+            message: 'Cilësimet nuk u ngarkuan plotësisht. Kontrolloni lidhjen dhe provoni përsëri.',
+          })
+        }
       } finally {
-        setLoading(false)
+        if (isMountedRef.current) setLoading(false)
       }
     }
 
@@ -370,11 +411,14 @@ export default function SettingsScreen() {
   }, [])
 
   // Handle Save All Settings
-  const handleSave = async () => {
+  const handleSave = async (overrideNotifications?: typeof notifications, overridePrivacy?: typeof privacy) => {
     setSaving(true)
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
     }
+
+    const currentNotifications = overrideNotifications || notifications
+    const currentPrivacy = overridePrivacy || privacy
 
     try {
       // 1. Fetch freshest user & session from Supabase client
@@ -394,116 +438,27 @@ export default function SettingsScreen() {
           title: 'Sesioni ka Skaduar',
           message: 'Ju lutemi kyçuni përsëri për të ruajtur ndryshimet.',
         })
-        router.replace('/modal')
+        router.replace('/login')
         return
       }
 
-      const activeFirstName = isCompany
-        ? (companyName.trim() || 'Kompani')
-        : (individualFirstName.trim() || 'Përdorues')
-      const activeLastName = isCompany
-        ? (companyContactPerson.trim() || 'Kompani')
-        : (individualLastName.trim() || 'Përdorues')
-      const activePhone = isCompany
-        ? companyPhone.trim() || individualPhone.trim()
-        : individualPhone.trim() || companyPhone.trim()
-      const activeBio = isCompany
-        ? companyDescription.trim() || individualBio.trim()
-        : individualBio.trim() || companyDescription.trim()
-      const activeCity = city.trim()
+      const existingMeta = activeUser.user_metadata || {}
 
-      const payload: ProfileSettingsPayload = {
-        isCompany,
-        accountType: isCompany ? 'company' : 'individual',
-        firstName: activeFirstName,
-        lastName: activeLastName,
-        phone: activePhone,
-        bio: activeBio,
-        city: activeCity,
-        avatarUrl,
-        emailVerified: isEmailVerified,
-
-        // Preserved individual data
-        individualFirstName: individualFirstName.trim(),
-        individualLastName: individualLastName.trim(),
-        individualPhone: individualPhone.trim(),
-        individualEmail: individualEmail.trim(),
-        individualBio: individualBio.trim(),
-
-        // Preserved company data
-        companyName: companyName.trim(),
-        companyContactPerson: companyContactPerson.trim(),
-        companyPhone: companyPhone.trim(),
-        companyEmail: companyEmail.trim(),
-        companyDescription: companyDescription.trim(),
-        foundedYear: foundedYear.trim(),
-        nipt: nipt.trim(),
-        officeAddress: officeAddress.trim(),
-        website: website.trim(),
-
-        // Socials
-        instagram: instagram.trim(),
-        facebook: facebook.trim(),
-        whatsapp: whatsapp.trim(),
-        tiktok: tiktok.trim(),
-        linkedin: linkedin.trim(),
-        youtube: youtube.trim(),
-        twitter: twitter.trim(),
-
-        // Notifications & Privacy
-        notifications,
-        privacy,
-
-        // App Preferences
-        appPreferences: {
-          biometricLock,
-          currency,
-          language,
-          highContrast,
+      // 2. Authoritative Supabase Auth Metadata Update - preserve existing user profile data
+      const updatedMetadata = {
+        ...existingMeta,
+        notifications: currentNotifications,
+        privacy: currentPrivacy,
+        biometric_lock: biometricLock,
+        app_preferences: {
+          ...(existingMeta.app_preferences || {}),
+          biometricLock: biometricLock,
+          soundEnabled: appSound,
         },
       }
 
-      // 2. Authoritative Supabase Auth Metadata Update
       const { data: authUpdateData, error: authUpdateError } = await supabase.auth.updateUser({
-        data: {
-          account_type: isCompany ? 'company' : 'individual',
-          is_company: isCompany,
-          first_name: activeFirstName,
-          last_name: activeLastName,
-          company_name: isCompany ? companyName.trim() : undefined,
-          contact_person: isCompany ? companyContactPerson.trim() : undefined,
-          bio: activeBio,
-          city: activeCity,
-          avatar_url: avatarUrl,
-          phone: activePhone,
-          individual_first_name: individualFirstName.trim(),
-          individual_last_name: individualLastName.trim(),
-          individual_phone: individualPhone.trim(),
-          individual_email: individualEmail.trim(),
-          individual_bio: individualBio.trim(),
-          company_phone: companyPhone.trim(),
-          company_email: companyEmail.trim(),
-          company_description: companyDescription.trim(),
-          founded_year: foundedYear.trim(),
-          nipt: nipt.trim(),
-          office_address: officeAddress.trim(),
-          website: website.trim(),
-          instagram: instagram.trim(),
-          facebook: facebook.trim(),
-          whatsapp: whatsapp.trim(),
-          tiktok: tiktok.trim(),
-          linkedin: linkedin.trim(),
-          youtube: youtube.trim(),
-          twitter: twitter.trim(),
-          notifications,
-          privacy,
-          app_preferences: {
-            biometricLock,
-            currency,
-            language,
-            highContrast,
-          },
-        },
+        data: updatedMetadata,
       })
 
       if (authUpdateError) {
@@ -511,87 +466,61 @@ export default function SettingsScreen() {
         throw new Error(authUpdateError.message || 'Dështoi përditësimi i të dhënave në llogari.')
       }
 
-      // 3. Authoritative Supabase profiles table update
-      const now = new Date().toISOString()
-      const updatedProfileRow = {
-        first_name: activeFirstName,
-        last_name: activeLastName,
-        phone: activePhone,
-        avatar_url: avatarUrl,
-        updated_at: now,
+      // 3. Instant Global Auth Cache Hydration for 0ms multi-screen sync
+      const freshUser = authUpdateData?.user || {
+        ...activeUser,
+        user_metadata: updatedMetadata,
       }
-
-      const { data: updateData, error: updateError } = await supabase
-        .from('profiles')
-        .update(updatedProfileRow)
-        .eq('id', activeUser.id)
-        .select()
-
-      if (updateError || !updateData || updateData.length === 0) {
-        const { error: upsertError } = await supabase.from('profiles').upsert(
-          {
-            id: activeUser.id,
-            ...updatedProfileRow,
-            email: activeUser.email || undefined,
-            email_verified: isEmailVerified,
-          },
-          { onConflict: 'id' }
-        )
-
-        if (upsertError) {
-          console.error('Supabase profiles upsert error in settings:', upsertError)
-          throw new Error(upsertError.message || 'Dështoi ruajtja e profilit në databazë.')
-        }
-      }
-
-      // 4. Instant Global Auth Cache Hydration for 0ms multi-screen sync
-      const freshUser = authUpdateData?.user || activeUser
       const freshProfile = {
         ...(syncProfile || {}),
-        id: activeUser.id,
-        first_name: activeFirstName,
-        last_name: activeLastName,
-        phone: activePhone,
-        avatar_url: avatarUrl,
-        account_type: isCompany ? 'company' : 'individual',
-        is_company: isCompany,
-        city: activeCity,
-        bio: activeBio,
-        company_name: isCompany ? companyName.trim() : undefined,
-        contact_person: isCompany ? companyContactPerson.trim() : undefined,
+        notifications: currentNotifications,
+        privacy: currentPrivacy,
       }
 
       setSyncAuthUser(freshUser)
       setSyncProfile(freshProfile)
 
-      // 5. Concurrently sync with Next.js web backend (non-blocking)
+      // 4. Concurrently sync with Next.js web backend (non-blocking, safe)
       const token = session?.access_token || accessToken
       if (token) {
-        apiSaveProfileSettings(payload, token)
-          .then((res) => {
-            if (!res.success) {
-              console.warn('Background web sync notice (settings):', res.error)
-            }
-          })
-          .catch((e) => {
-            console.warn('Background web sync catch (settings):', e)
-          })
+        const payload: ProfileSettingsPayload = {
+          isCompany: Boolean(existingMeta.is_company || existingMeta.account_type === 'company'),
+          accountType: existingMeta.account_type === 'company' ? 'company' : 'individual',
+          firstName: existingMeta.first_name || syncProfile?.first_name,
+          lastName: existingMeta.last_name || syncProfile?.last_name,
+          phone: existingMeta.phone || syncProfile?.phone,
+          bio: existingMeta.bio || syncProfile?.bio,
+          city: existingMeta.city || syncProfile?.city,
+          avatarUrl: existingMeta.avatar_url || syncProfile?.avatar_url || avatarUrl,
+          emailVerified: isEmailVerified,
+          notifications: currentNotifications,
+          privacy: currentPrivacy,
+          appPreferences: {
+            biometricLock: biometricLock,
+          },
+        }
+
+        apiSaveProfileSettings(payload, token).catch((e) => {
+          console.warn('Background web sync notice (settings):', e)
+        })
       }
 
-      // 6. Tactile haptic & sound confirmation
+      // 5. Tactile haptic & sound confirmation
       playSuccessSound()
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       }
+
+      setHasUnsavedChanges(false)
 
       showBanner({
         type: 'success',
         title: 'Cilësimet u Ruajtën!',
-        message: 'Të gjitha ndryshimet u sinkronizuan me sukses.',
+        message: 'Ndryshimet u ruajtën me sukses në llogarinë tuaj.',
       })
     } catch (err: any) {
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
       }
       showBanner({
         type: 'error',
@@ -599,7 +528,7 @@ export default function SettingsScreen() {
         message: err?.message || 'Dështoi ruajtja e të dhënave.',
       })
     } finally {
-      setSaving(false)
+      if (isMountedRef.current) setSaving(false)
     }
   }
 
@@ -607,7 +536,7 @@ export default function SettingsScreen() {
   const handleUpdatePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
       }
       showBanner({
         type: 'error',
@@ -619,7 +548,7 @@ export default function SettingsScreen() {
 
     if (newPassword !== confirmPassword) {
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
       }
       showBanner({
         type: 'error',
@@ -638,7 +567,7 @@ export default function SettingsScreen() {
       setConfirmPassword('')
       playSuccessSound()
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       }
       showBanner({
         type: 'success',
@@ -647,7 +576,7 @@ export default function SettingsScreen() {
       })
     } catch (err: any) {
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
       }
       showBanner({
         type: 'error',
@@ -655,39 +584,209 @@ export default function SettingsScreen() {
         message: err?.message || 'Dështoi përditësimi i fjalëkalimit.',
       })
     } finally {
-      setUpdatingPassword(false)
+      if (isMountedRef.current) setUpdatingPassword(false)
     }
+  }
+
+  // Universal Native Biometric Security Toggle (iOS Face ID/Touch ID & Android BiometricPrompt)
+  const handleToggleBiometric = async (nextVal: boolean) => {
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'E padisponueshme në Web',
+        'Kyçja biometrike mbështetet vetëm në pajisjet mobile (iOS dhe Android).'
+      )
+      return
+    }
+
+    // Switch onValueChange can double-fire on some Android builds; a second
+    // invocation while the native prompt is up would reject instantly.
+    if (biometricLoading) return
+
+    const biometryName = biometricCapability?.displayName || 'Biometria'
+
+    if (biometricCapability && !biometricCapability.supported) {
+      Alert.alert('E pambështetur', 'Kjo pajisje nuk mbështet sensorë biometrikë.')
+      return
+    }
+
+    if (biometricCapability && !biometricCapability.enrolled) {
+      Alert.alert(
+        `${biometryName} nuk është konfiguruar`,
+        biometricCapability.enrollmentGuide ||
+          'Ju lutemi regjistroni biometrinë në Cilësimet e telefonit tuaj për ta përdorur.',
+        [
+          { text: 'Mbyll', style: 'cancel' },
+          { text: 'Hap Cilësimet', onPress: () => Linking.openSettings() },
+        ]
+      )
+      return
+    }
+
+    setBiometricLoading(true)
+
+    if (nextVal) {
+      // 1. Enabling: STRICT Native Biometric verification required (no passcode fallback)
+      const promptMsg =
+        Platform.OS === 'ios'
+          ? `Skanoni ${biometryName} për ta aktivizuar mbrojtjen`
+          : `Vendosni gishtin ose skanoni fytyrën për të aktivizuar ${biometryName}`
+
+      const result = await authenticateWithBiometrics(promptMsg)
+
+      setBiometricLoading(false)
+
+      if (result.success) {
+        setBiometricLock(true)
+        await setBiometricLockEnabled(true, accessToken)
+        setSessionUnlocked(true)
+        setHasUnsavedChanges(true)
+        playSuccessSound()
+        showBanner({
+          type: 'success',
+          title: biometryName,
+          message: `Kyçja me ${biometryName} u aktivizua me sukses në këtë pajisje.`,
+        })
+      } else {
+        // Revert switch to OFF
+        setBiometricLock(false)
+        if (!result.cancelled && result.error) {
+          Alert.alert(biometryName, result.error)
+        }
+      }
+    } else {
+      // 2. Removing: STRICT Native Biometric verification required (cannot remove without biometrics)
+      const promptMsg =
+        Platform.OS === 'ios'
+          ? `Skanoni ${biometryName} për ta hequr këtë opsion`
+          : `Verifikoni ${biometryName} për ta hequr mbrojtjen`
+
+      const result = await authenticateWithBiometrics(promptMsg)
+
+      setBiometricLoading(false)
+
+      if (result.success) {
+        setBiometricLock(false)
+        await setBiometricLockEnabled(false)
+        setSessionUnlocked(true)
+        setHasUnsavedChanges(true)
+        playTapSound()
+        showBanner({
+          type: 'info',
+          title: biometryName,
+          message: `Kyçja me ${biometryName} u çaktivizua.`,
+        })
+      } else {
+        // Verification failed or cancelled: keep switch ON
+        setBiometricLock(true)
+        if (!result.cancelled && result.error) {
+          Alert.alert(biometryName, result.error)
+        }
+      }
+    }
+  }
+
+  // General App Sound & Haptics Toggle (Default: ON)
+  const handleToggleSound = async (nextVal: boolean) => {
+    setAppSound(nextVal)
+    await setAppSoundEnabled(nextVal)
+    if (nextVal) {
+      playTapSound()
+    }
+    setHasUnsavedChanges(true)
   }
 
   // Clear Cache Action
-  const handleClearCache = () => {
+  const handleClearCache = async () => {
+    if (clearingCache) return
+    setClearingCache(true)
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {})
     }
-    setCacheSize('0.0 MB')
-    showBanner({
-      type: 'info',
-      title: 'Memorja u Pastrua',
-      message: '38.4 MB memorje e përkohshme u lirua nga pajisja.',
-    })
+    try {
+      await Promise.all([
+        ExpoImage.clearMemoryCache(),
+        ExpoImage.clearDiskCache(),
+        AsyncStorage.removeItem('@blejepronen_recent_searches').catch(() => {}),
+      ])
+      showBanner({
+        type: 'info',
+        title: 'Memorja u Pastrua',
+        message: 'Kesh-i i përkohshëm i imazheve dhe kërkimeve u pastrua nga pajisja.',
+      })
+    } catch {
+      showBanner({
+        type: 'error',
+        title: 'Vërejtje',
+        message: 'Pastrimi i kesh-it dështoi. Provoni përsëri.',
+      })
+    } finally {
+      if (isMountedRef.current) setClearingCache(false)
+    }
   }
 
-  // Account Type Switcher with Smooth Haptics
-  const handleSwitchAccountType = (targetIsCompany: boolean) => {
-    if (targetIsCompany === isCompany) return
+  // Apple App Store & GDPR Account Deletion
+  const handleDeleteAccount = () => {
+    if (deletingAccount) return
     if (Platform.OS !== 'web') {
-      Haptics.selectionAsync()
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
     }
-    setIsCompany(targetIsCompany)
+
+    Alert.alert(
+      'Fshirja e Llogarisë',
+      'Ky veprim është i pakthyeshëm. Të gjitha shpalljet tuaja, mesazhet dhe të dhënat e profilit do të fshihen përfundimisht.',
+      [
+        { text: 'Anulo', style: 'cancel' },
+        {
+          text: 'Fshi Llogarinë',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingAccount(true)
+            try {
+              const {
+                data: { session },
+              } = await supabase.auth.getSession()
+
+              await executeLogout({
+                isDelete: true,
+                title: 'Duke fshirë llogarinë...',
+                subtitle: 'Po fshijmë të gjitha të dhënat dhe shpalljet tuaja',
+                successTitle: 'Llogaria u Fshi',
+                successMessage: 'Të gjitha të dhënat dhe shpalljet tuaja u fshinë përfundimisht.',
+                onBeforeTeardown: async () => {
+                  if (session?.access_token) {
+                    const res = await apiDeleteAccount(session.access_token)
+                    if (!res.success) {
+                      throw new Error(
+                        res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
+                      )
+                    }
+                  }
+                },
+              })
+            } catch (err: any) {
+              if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
+              }
+              showBanner({
+                type: 'error',
+                title: 'Gabim gjatë fshirjes',
+                message: err?.message || 'Ndodhi një problem gjatë fshirjes së llogarisë.',
+              })
+            } finally {
+              if (isMountedRef.current) setDeletingAccount(false)
+            }
+          },
+        },
+      ]
+    )
   }
 
   // Theme Selector
-  const handleThemeSelect = (selectedTheme: ThemeMode) => {
+  const handleThemeSelect = useCallback((selectedTheme: ThemeMode) => {
     if (theme === selectedTheme) return
     playThemeSound()
-    if (Platform.OS !== 'web') Haptics.selectionAsync()
     setTheme(selectedTheme)
-  }
+  }, [theme, setTheme])
 
   // Apple-grade specular styling
   const specularBorder = colors.border
@@ -736,7 +835,7 @@ export default function SettingsScreen() {
             { backgroundColor: brandHighlight },
             saving && { opacity: 0.7 },
           ]}
-          onPress={handleSave}
+          onPress={() => handleSave()}
           disabled={saving}
           hitSlop={8}
         >
@@ -745,7 +844,9 @@ export default function SettingsScreen() {
           ) : (
             <>
               <Save size={15} color={primaryBtnText} strokeWidth={2.4} />
-              <Text style={[styles.saveButtonText, { color: primaryBtnText }]}>Ruaj</Text>
+              <Text style={[styles.saveButtonText, { color: primaryBtnText }]}>
+                {hasUnsavedChanges ? 'Ruaj *' : 'Ruaj'}
+              </Text>
             </>
           )}
         </Pressable>
@@ -769,11 +870,7 @@ export default function SettingsScreen() {
 
           <Pressable
             style={[styles.tabButton, activeTab === 'notifications' && styles.tabButtonActive]}
-            onPress={() => {
-              playTapSound()
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setActiveTab('notifications')
-            }}
+            onPress={() => handleTabChange('notifications')}
           >
             <Bell
               size={15}
@@ -795,11 +892,7 @@ export default function SettingsScreen() {
 
           <Pressable
             style={[styles.tabButton, activeTab === 'security' && styles.tabButtonActive]}
-            onPress={() => {
-              playTapSound()
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setActiveTab('security')
-            }}
+            onPress={() => handleTabChange('security')}
           >
             <Shield
               size={15}
@@ -821,11 +914,7 @@ export default function SettingsScreen() {
 
           <Pressable
             style={[styles.tabButton, activeTab === 'app' && styles.tabButtonActive]}
-            onPress={() => {
-              playTapSound()
-              if (Platform.OS !== 'web') Haptics.selectionAsync()
-              setActiveTab('app')
-            }}
+            onPress={() => handleTabChange('app')}
           >
             <Smartphone
               size={15}
@@ -847,6 +936,8 @@ export default function SettingsScreen() {
         </View>
 
         <ScrollView
+          key={activeTab}
+          ref={scrollRef}
           style={styles.scrollArea}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -862,7 +953,7 @@ export default function SettingsScreen() {
             ]}
             onPress={() => {
               playTapSound()
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
               router.push('/completo-profilin')
             }}
           >
@@ -923,9 +1014,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.pushEnabled}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, pushEnabled: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -948,9 +1041,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.pushSound}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, pushSound: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -973,9 +1068,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.pushVibrate}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, pushVibrate: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -995,9 +1092,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.priceDropAlerts}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, priceDropAlerts: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1017,9 +1116,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.newMatchAlerts}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, newMatchAlerts: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1057,9 +1158,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.messages}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, messages: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1079,9 +1182,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.inquiries}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, inquiries: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1101,9 +1206,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.followers}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, followers: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1123,9 +1230,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={notifications.weeklyReport}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setNotifications((p) => ({ ...p, weeklyReport: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1205,128 +1314,142 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.formGap}>
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      Fjalëkalimi i Ri
+                {isOAuthUser ? (
+                  <View style={{ paddingVertical: 4 }}>
+                    <Text style={[styles.cardSubtitle, { color: colors.textMuted, marginBottom: 0 }]}>
+                      Jeni kyçur përmes llogarisë Google / Apple. Fjalëkalimi menaxhohet drejtpërdrejt tek ofruesi i llogarisë tuaj.
                     </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor:
-                            focusedField === 'newPwd' ? brandHighlight : specularBorder,
-                          borderWidth: focusedField === 'newPwd' ? 1.5 : 0.5,
-                        },
-                      ]}
-                    >
-                      <Lock size={17} color={colors.textMuted} />
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                        onFocus={() => setFocusedField('newPwd')}
-                        onBlur={() => setFocusedField(null)}
-                        placeholder="Të paktën 6 karaktere"
-                        placeholderTextColor={colors.textLight}
-                        secureTextEntry={!showPassword}
-                      />
-                      <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-                        {showPassword ? (
-                          <EyeOff size={17} color={colors.textMuted} />
-                        ) : (
-                          <Eye size={17} color={colors.textMuted} />
-                        )}
-                      </Pressable>
-                    </View>
-
-                    {newPassword.length > 0 && (
-                      <View style={styles.pwdStrengthRow}>
-                        <View
-                          style={[
-                            styles.pwdStrengthBar,
-                            { backgroundColor: pwdStrength.color, flex: pwdStrength.score / 4 },
-                          ]}
-                        />
-                        <Text style={[styles.pwdStrengthLabel, { color: pwdStrength.color }]}>
-                          {pwdStrength.label}
-                        </Text>
-                      </View>
-                    )}
                   </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                      Konfirmo Fjalëkalimin e Ri
-                    </Text>
-                    <View
-                      style={[
-                        styles.inputField,
-                        {
-                          backgroundColor: colors.surfaceSubtle,
-                          borderColor:
-                            focusedField === 'confPwd' ? brandHighlight : specularBorder,
-                          borderWidth: focusedField === 'confPwd' ? 1.5 : 0.5,
-                        },
-                      ]}
-                    >
-                      <Lock size={17} color={colors.textMuted} />
-                      <TextInput
-                        style={[styles.textInput, { color: colors.textPrimary }]}
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        onFocus={() => setFocusedField('confPwd')}
-                        onBlur={() => setFocusedField(null)}
-                        placeholder="Përsërit fjalëkalimin"
-                        placeholderTextColor={colors.textLight}
-                        secureTextEntry={!showConfirmPassword}
-                      />
-                      <Pressable
-                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                        hitSlop={8}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={17} color={colors.textMuted} />
-                        ) : (
-                          <Eye size={17} color={colors.textMuted} />
-                        )}
-                      </Pressable>
-                    </View>
-                  </View>
-
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      {
-                        backgroundColor:
-                          newPassword.length >= 6 ? brandHighlight : colors.surfaceSubtle,
-                        borderColor: specularBorder,
-                      },
-                    ]}
-                    onPress={handleUpdatePassword}
-                    disabled={updatingPassword || newPassword.length < 6}
-                    hitSlop={8}
-                  >
-                    {updatingPassword ? (
-                      <ActivityIndicator size="small" color={primaryBtnText} />
-                    ) : (
-                      <Text
+                ) : (
+                  <View style={styles.formGap}>
+                    <View style={styles.inputGroup}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                        Fjalëkalimi i Ri
+                      </Text>
+                      <View
                         style={[
-                          styles.actionButtonText,
+                          styles.inputField,
                           {
-                            color: newPassword.length >= 6 ? primaryBtnText : colors.textMuted,
+                            backgroundColor: colors.surfaceSubtle,
+                            borderColor:
+                              focusedField === 'newPwd' ? brandHighlight : specularBorder,
+                            borderWidth: focusedField === 'newPwd' ? 1.5 : 0.5,
                           },
                         ]}
                       >
-                        Përditëso Fjalëkalimin
+                        <Lock size={17} color={colors.textMuted} />
+                        <TextInput
+                          style={[styles.textInput, { color: colors.textPrimary }]}
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          onFocus={() => setFocusedField('newPwd')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="Të paktën 6 karaktere"
+                          placeholderTextColor={colors.textLight}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          textContentType="newPassword"
+                        />
+                        <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                          {showPassword ? (
+                            <EyeOff size={17} color={colors.textMuted} />
+                          ) : (
+                            <Eye size={17} color={colors.textMuted} />
+                          )}
+                        </Pressable>
+                      </View>
+
+                      {newPassword.length > 0 && (
+                        <View style={styles.pwdStrengthRow}>
+                          <View
+                            style={[
+                              styles.pwdStrengthBar,
+                              { backgroundColor: pwdStrength.color, flex: pwdStrength.score / 4 },
+                            ]}
+                          />
+                          <Text style={[styles.pwdStrengthLabel, { color: pwdStrength.color }]}>
+                            {pwdStrength.label}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                        Konfirmo Fjalëkalimin e Ri
                       </Text>
-                    )}
-                  </Pressable>
-                </View>
+                      <View
+                        style={[
+                          styles.inputField,
+                          {
+                            backgroundColor: colors.surfaceSubtle,
+                            borderColor:
+                              focusedField === 'confPwd' ? brandHighlight : specularBorder,
+                            borderWidth: focusedField === 'confPwd' ? 1.5 : 0.5,
+                          },
+                        ]}
+                      >
+                        <Lock size={17} color={colors.textMuted} />
+                        <TextInput
+                          style={[styles.textInput, { color: colors.textPrimary }]}
+                          value={confirmPassword}
+                          onChangeText={setConfirmPassword}
+                          onFocus={() => setFocusedField('confPwd')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder="Përsërit fjalëkalimin"
+                          placeholderTextColor={colors.textLight}
+                          secureTextEntry={!showConfirmPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          textContentType="newPassword"
+                        />
+                        <Pressable
+                          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                          hitSlop={8}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={17} color={colors.textMuted} />
+                          ) : (
+                            <Eye size={17} color={colors.textMuted} />
+                          )}
+                        </Pressable>
+                      </View>
+                    </View>
+
+                    <Pressable
+                      style={[
+                        styles.actionButton,
+                        {
+                          backgroundColor:
+                            newPassword.length >= 6 ? brandHighlight : colors.surfaceSubtle,
+                          borderColor: specularBorder,
+                        },
+                      ]}
+                      onPress={handleUpdatePassword}
+                      disabled={updatingPassword || newPassword.length < 6}
+                      hitSlop={8}
+                    >
+                      {updatingPassword ? (
+                        <ActivityIndicator size="small" color={primaryBtnText} />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.actionButtonText,
+                            {
+                              color: newPassword.length >= 6 ? primaryBtnText : colors.textMuted,
+                            },
+                          ]}
+                        >
+                          Përditëso Fjalëkalimin
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
               </View>
 
-              {/* Biometrics (Face ID / Touch ID) */}
+              {/* Native Universal Biometric Security (Face ID / Touch ID / Android BiometricPrompt) */}
               <View
                 style={[
                   styles.card,
@@ -1334,35 +1457,93 @@ export default function SettingsScreen() {
                 ]}
               >
                 <View style={styles.cardHeaderRow}>
-                  <Fingerprint size={18} color={brandHighlight} strokeWidth={2.2} />
+                  {biometricCapability?.iconName === 'face' ? (
+                    <ScanFace size={18} color={brandHighlight} strokeWidth={2.2} />
+                  ) : biometricCapability?.iconName === 'fingerprint' ? (
+                    <Fingerprint size={18} color={brandHighlight} strokeWidth={2.2} />
+                  ) : (
+                    <ShieldCheck size={18} color={brandHighlight} strokeWidth={2.2} />
+                  )}
                   <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Mbrojtja me Biometri (Face ID / Touch ID)
+                    Kyçja me {biometricCapability?.displayName || 'Biometri'}
                   </Text>
                 </View>
-                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Kërko identifikim biometrik sa herë hapet aplikacioni për të mbrojtur mesazhet dhe
-                  shpalljet tuaja.
-                </Text>
 
-                <View style={styles.switchRow}>
-                  <View style={styles.switchTextWrap}>
-                    <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>
-                      Kyçja me Face ID / Gjurmë Gishti
-                    </Text>
-                    <Text style={[styles.switchDesc, { color: colors.textMuted }]}>
-                      Autentifikim i sigurt lokal i pajisjes
-                    </Text>
+                {!biometricCapability?.supported ? (
+                  <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                    Kjo pajisje nuk mbështet sensorë biometrikë (Face ID ose Gjurmë Gishti).
+                  </Text>
+                ) : !biometricCapability?.enrolled ? (
+                  <View style={{ gap: 10, marginTop: 2 }}>
+                    <View style={styles.verifiedRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.emailValue, { color: colors.textPrimary }]}>
+                          {biometricCapability.displayName} e paregjistruar
+                        </Text>
+                        <Text style={[styles.emailHelp, { color: colors.textMuted }]}>
+                          {biometricCapability.enrollmentGuide}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.statusPill,
+                          { backgroundColor: 'rgba(234, 179, 8, 0.15)' },
+                        ]}
+                      >
+                        <AlertCircle size={13} color="#EAB308" strokeWidth={2.4} />
+                        <Text style={[styles.statusPillText, { color: '#EAB308' }]}>
+                          E paregjistruar
+                        </Text>
+                      </View>
+                    </View>
+
+                    {Platform.OS !== 'web' && (
+                      <Pressable
+                        style={[
+                          styles.openSettingsBtn,
+                          { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                        ]}
+                        onPress={() => Linking.openSettings()}
+                        hitSlop={8}
+                      >
+                        <ExternalLink size={14} color={brandHighlight} />
+                        <Text style={[styles.openSettingsBtnText, { color: brandHighlight }]}>
+                          Hap Cilësimet e Telefonit
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
-                  <Switch
-                    value={biometricLock}
-                    onValueChange={(val) => {
-                      if (Platform.OS !== 'web') Haptics.selectionAsync()
-                      setBiometricLock(val)
-                    }}
-                    trackColor={{ false: colors.border, true: brandHighlight }}
-                    ios_backgroundColor={colors.border}
-                  />
-                </View>
+                ) : (
+                  <>
+                    <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                      {biometricCapability.description}
+                    </Text>
+
+                    <View style={styles.switchGroup}>
+                      <View style={styles.switchRow}>
+                        <View style={styles.switchTextWrap}>
+                          <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>
+                            {biometricCapability.actionLabel}
+                          </Text>
+                          <Text style={[styles.switchDesc, { color: colors.textMuted }]}>
+                            Kërkon verifikim sa herë që hapni aplikacionin ose riktheheni nga sfondi
+                          </Text>
+                        </View>
+                        {biometricLoading ? (
+                          <ActivityIndicator size="small" color={brandHighlight} />
+                        ) : (
+                          <Switch
+                            value={biometricLock}
+                            onValueChange={handleToggleBiometric}
+                            disabled={biometricLoading}
+                            trackColor={{ false: colors.border, true: brandHighlight }}
+                            ios_backgroundColor={colors.border}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </>
+                )}
               </View>
 
               {/* Privacy Preferences */}
@@ -1391,7 +1572,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={privacy.showPhone}
-                      onValueChange={(val) => setPrivacy((p) => ({ ...p, showPhone: val }))}
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                        setPrivacy((p) => ({ ...p, showPhone: val }))
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1410,7 +1595,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={privacy.showOnline}
-                      onValueChange={(val) => setPrivacy((p) => ({ ...p, showOnline: val }))}
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                        setPrivacy((p) => ({ ...p, showOnline: val }))
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1429,9 +1618,11 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={privacy.allowDirectMsgs}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setPrivacy((p) => ({ ...p, allowDirectMsgs: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
@@ -1450,15 +1641,76 @@ export default function SettingsScreen() {
                     </View>
                     <Switch
                       value={privacy.showListingsOnProfile}
-                      onValueChange={(val) =>
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
                         setPrivacy((p) => ({ ...p, showListingsOnProfile: val }))
-                      }
+                        setHasUnsavedChanges(true)
+                      }}
                       trackColor={{ false: colors.border, true: brandHighlight }}
                       ios_backgroundColor={colors.border}
                     />
                   </View>
                 </View>
               </View>
+
+              {/* Apple App Store & GDPR Account Deletion Card */}
+              {Boolean(currentUserId) && (
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor:
+                        theme === 'white'
+                          ? '#FFF5F5'
+                          : theme === 'green'
+                          ? 'rgba(239, 68, 68, 0.08)'
+                          : '#1A0E0E',
+                      borderColor:
+                        theme === 'white'
+                          ? '#FECACA'
+                          : 'rgba(239, 68, 68, 0.28)',
+                    },
+                  ]}
+                >
+                  <View style={styles.cardHeaderRow}>
+                    <Trash2 size={18} color="#EF4444" strokeWidth={2.2} />
+                    <Text style={[styles.cardTitle, { color: '#EF4444' }]}>
+                      Fshirja e Llogarisë
+                    </Text>
+                  </View>
+                  <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                    Fshin përfundimisht profilin, të gjitha shpalljet aktive, fotot, të preferuarat dhe historikun e bisedave. Ky veprim nuk mund të kthehet.
+                  </Text>
+
+                  <Pressable
+                    style={[
+                      styles.deleteAccountActionBtn,
+                      {
+                        backgroundColor:
+                          theme === 'white'
+                            ? '#FEE2E2'
+                            : 'rgba(239, 68, 68, 0.18)',
+                        borderColor: '#EF4444',
+                      },
+                      deletingAccount && { opacity: 0.6 },
+                    ]}
+                    onPress={handleDeleteAccount}
+                    disabled={deletingAccount}
+                    hitSlop={8}
+                  >
+                    {deletingAccount ? (
+                      <ActivityIndicator size="small" color="#EF4444" />
+                    ) : (
+                      <>
+                        <Trash2 size={15} color="#EF4444" strokeWidth={2.2} />
+                        <Text style={[styles.deleteAccountActionBtnText, { color: '#EF4444' }]}>
+                          Fshi Llogarinë Përfundimisht
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
             </View>
           )}
 
@@ -1580,7 +1832,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
 
-              {/* Currency & Language */}
+              {/* General In-App Sound and Haptic System */}
               <View
                 style={[
                   styles.card,
@@ -1588,50 +1840,36 @@ export default function SettingsScreen() {
                 ]}
               >
                 <View style={styles.cardHeaderRow}>
-                  <Globe size={18} color={brandHighlight} strokeWidth={2.2} />
+                  {appSound ? (
+                    <Volume2 size={18} color={brandHighlight} strokeWidth={2.2} />
+                  ) : (
+                    <VolumeX size={18} color={colors.textMuted} strokeWidth={2.2} />
+                  )}
                   <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-                    Monedha & Gjuha
+                    Tingujt & Reagimi Haptik
                   </Text>
                 </View>
-
-                {/* Currency selector */}
-                <Text
-                  style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 8 }]}
-                >
-                  Monedha e Çmimeve
+                <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                  Kontrollon efektet zanore dhe vibrimin taktil të motorit haptik në aplikacion:
                 </Text>
-                <View style={styles.currencyRow}>
-                  {(['EUR', 'USD', 'CHF'] as const).map((curr) => {
-                    const active = currency === curr
-                    return (
-                      <Pressable
-                        key={curr}
-                        style={[
-                          styles.currencyBtn,
-                          {
-                            backgroundColor: active ? brandHighlight : colors.surfaceSubtle,
-                            borderColor: active ? brandHighlight : specularBorder,
-                          },
-                        ]}
-                        onPress={() => {
-                          if (Platform.OS !== 'web') Haptics.selectionAsync()
-                          setCurrency(curr)
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.currencyBtnText,
-                            {
-                              color: active ? primaryBtnText : colors.textPrimary,
-                              fontFamily: active ? Fonts.bold : Fonts.medium,
-                            },
-                          ]}
-                        >
-                          {curr === 'EUR' ? '€ Euro (EUR)' : curr === 'USD' ? '$ Dollar (USD)' : 'CHF Frangë'}
-                        </Text>
-                      </Pressable>
-                    )
-                  })}
+
+                <View style={styles.switchGroup}>
+                  <View style={styles.switchRow}>
+                    <View style={styles.switchTextWrap}>
+                      <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>
+                        Aktivizo Tingujt & Haptikën
+                      </Text>
+                      <Text style={[styles.switchDesc, { color: colors.textMuted }]}>
+                        Tinguj të ndërfaqes, klikime taktile dhe dridhje konfirmuese
+                      </Text>
+                    </View>
+                    <Switch
+                      value={appSound}
+                      onValueChange={handleToggleSound}
+                      trackColor={{ false: colors.border, true: brandHighlight }}
+                      ios_backgroundColor={colors.border}
+                    />
+                  </View>
                 </View>
               </View>
 
@@ -1649,30 +1887,27 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                  Fotot dhe të dhënat e ruajtura për shpejtësi maksimale të hapjes:
+                  Liron kesh-in e imazheve të ruajtura në pajisje. Cilësimet dhe sesioni nuk preken.
                 </Text>
 
                 <View style={styles.cacheRow}>
-                  <View>
-                    <Text style={[styles.cacheSizeText, { color: colors.textPrimary }]}>
-                      {cacheSize}
-                    </Text>
-                    <Text style={[styles.cacheSubText, { color: colors.textMuted }]}>
-                      Memorje e përdorur nga fotot
-                    </Text>
-                  </View>
-
                   <Pressable
                     style={[
                       styles.clearCacheBtn,
                       { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      clearingCache && { opacity: 0.5 },
                     ]}
                     onPress={handleClearCache}
+                    disabled={clearingCache}
                     hitSlop={8}
                   >
-                    <RefreshCw size={14} color={brandHighlight} />
+                    {clearingCache ? (
+                      <ActivityIndicator size="small" color={brandHighlight} />
+                    ) : (
+                      <RefreshCw size={14} color={brandHighlight} />
+                    )}
                     <Text style={[styles.clearCacheBtnText, { color: brandHighlight }]}>
-                      Pastro Memorjen
+                      {clearingCache ? 'Duke pastruar…' : 'Pastro Memorjen'}
                     </Text>
                   </Pressable>
                 </View>
@@ -1710,6 +1945,43 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </View>
+
+              {/* Çkyçu nga Llogaria */}
+              {Boolean(currentUserId) && (
+                <Pressable
+                  style={[
+                    styles.settingsLogoutBtn,
+                    {
+                      backgroundColor:
+                        theme === 'white'
+                          ? '#FEE2E2'
+                          : theme === 'green'
+                          ? 'rgba(239, 68, 68, 0.16)'
+                          : '#241212',
+                      borderColor:
+                        theme === 'white'
+                          ? '#FECACA'
+                          : 'rgba(239, 68, 68, 0.35)',
+                    },
+                  ]}
+                  onPress={() => requestLogout()}
+                  hitSlop={8}
+                >
+                  <LogOut
+                    size={17}
+                    color={theme === 'green' ? '#FCA5A5' : '#EF4444'}
+                    strokeWidth={2.2}
+                  />
+                  <Text
+                    style={[
+                      styles.settingsLogoutBtnText,
+                      { color: theme === 'green' ? '#FCA5A5' : '#EF4444' },
+                    ]}
+                  >
+                    Çkyçu nga llogaria
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )}
         </ScrollView>
@@ -1846,60 +2118,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 4,
   },
-  accountTypeSelector: {
-    gap: 10,
-    marginTop: 4,
-  },
-  accountTypeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  accountTypeOptionActive: {
-    borderWidth: 1.5,
-  },
-  accountTypeTitle: {
-    fontSize: 14,
-  },
-  accountTypeSub: {
-    fontSize: 11,
-    marginTop: 1,
-  },
-  avatarRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 6,
-  },
-  avatarItem: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  avatarItemSelected: {
-    borderWidth: 2.5,
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarCheckBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   formGap: {
     gap: 12,
   },
@@ -1923,32 +2141,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.regular,
   },
-  textAreaField: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 13,
-    minHeight: 80,
-  },
-  textAreaInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: Fonts.regular,
-    textAlignVertical: 'top',
-  },
-  cityPillsGrid: {
+  deleteAccountActionBtn: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    marginTop: 4,
-  },
-  cityPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingVertical: 13,
+    borderRadius: 14,
     borderWidth: 1,
+    marginTop: 6,
   },
-  cityPillText: {
-    fontSize: 12.5,
+  deleteAccountActionBtnText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
   },
   switchGroup: {
     marginTop: 4,
@@ -2073,33 +2278,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  currencyRow: {
-    flexDirection: 'column',
-    gap: 8,
-  },
-  currencyBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  currencyBtnText: {
-    fontSize: 13,
-  },
   cacheRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
-  },
-  cacheSizeText: {
-    fontSize: 20,
-    fontFamily: Fonts.bold,
-  },
-  cacheSubText: {
-    fontSize: 11.5,
-    fontFamily: Fonts.regular,
-    marginTop: 2,
   },
   clearCacheBtn: {
     flexDirection: 'row',
@@ -2161,5 +2344,35 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.regular,
     marginTop: 2,
+  },
+  settingsLogoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  settingsLogoutBtnText: {
+    fontSize: 13.5,
+    fontFamily: Fonts.bold,
+  },
+  openSettingsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+  },
+  openSettingsBtnText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.bold,
   },
 })

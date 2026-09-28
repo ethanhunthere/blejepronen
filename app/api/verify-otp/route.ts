@@ -1,147 +1,204 @@
 import { NextResponse } from 'next/server'
+import type { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient, getCookieDomain } from '@/lib/supabase'
-import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import {
+  AUTH_COPY,
+  OTP_MAX_ATTEMPTS,
+  clientIp,
+  clearOtpCounters,
+  consumeRequestBudget,
+  findAuthUserByEmail,
+  getAdminClient,
+  isLocked,
+  isValidEmail,
+  normalizeEmail,
+  readOtpState,
+  readPhantomOtpState,
+  recordOtpFailure,
+  recordPhantomFailure,
+  safeCodeEqual,
+} from '@/lib/auth-security'
 
-const MAX_ATTEMPTS = 5
-const LOCKOUT_MS = 15 * 60 * 1000
-const attempts = new Map<string, { count: number; lockedUntil?: number }>()
+/**
+ * POST /api/verify-otp
+ *
+ * Hardened for audit finding C3 (OTP brute force):
+ *
+ *  - Attempt counters moved out of a per-instance `Map` (which a cold start or a
+ *    second serverless region reset to zero) into durable per-user state in
+ *    `auth.users.user_metadata` (`otp_fail_count`, `otp_locked_until`), written
+ *    with `auth.admin.updateUserById`. The long-term home for the same counters
+ *    is `supabase/migrations/20260928_002_profiles_otp_lockout.sql`.
+ *  - Codes are compared with `crypto.timingSafeEqual` behind a length check.
+ *  - Addresses with no account get the same treatment through a bounded
+ *    in-memory shadow, so "locked after 5 tries" no longer proves the address
+ *    exists.
+ *  - Wrong code, expired code, missing profile and unknown address all return
+ *    one identical message; the directory scan is gone.
+ */
 
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !serviceKey) {
-    throw new Error('Supabase admin environment variables are not configured')
-  }
-  return createClient(url, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+/** Coarse per-device brake. Deliberately generous: shared NATs are common. */
+const VERIFY_IP_HOURLY_LIMIT = 200
+
+const SIX_DIGITS_RE = /^[0-9]{6}$/
+
+type ProfileRow = Record<string, unknown> & { id?: string }
+
+function uniformInvalid() {
+  return NextResponse.json({ error: 'invalid', message: AUTH_COPY.otpInvalid }, { status: 400 })
+}
+
+function uniformLocked() {
+  return NextResponse.json(
+    { error: 'too_many_attempts', message: AUTH_COPY.otpLocked },
+    { status: 429 }
+  )
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const code = typeof body?.code === 'string' ? body.code.trim() : ''
-    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const email = normalizeEmail(body?.email)
     const password = typeof body?.password === 'string' ? body.password : ''
 
-    if (!code || code.length !== 6) {
-      return NextResponse.json({ error: 'invalid', message: 'Kodi duhet të ketë saktësisht 6 shifra.' }, { status: 400 })
-    }
-
-    const supabaseAdmin = getAdminClient()
-    let userId: string | null = null
-
-    if (email) {
-      // Find user by email
-      const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-      })
-
-      if (listError) {
-        console.error('List users error in verify-otp:', listError)
-        return NextResponse.json({ error: 'server_error', message: 'Gabim në lidhje me serverin.' }, { status: 500 })
-      }
-
-      const foundUser = listData.users.find(u => u.email?.toLowerCase() === email)
-      if (!foundUser) {
-        return NextResponse.json({ error: 'not_found', message: 'Përdoruesi me këtë email nuk u gjet.' }, { status: 404 })
-      }
-      userId = foundUser.id
-    } else {
-      // Fall back to current authenticated session
-      const supabase = await createServerSupabaseClient()
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        return NextResponse.json({ error: 'unauthorized', message: 'Ju lutemi jepni email-in ose kyçuni.' }, { status: 401 })
-      }
-      userId = user.id
-    }
-
-    // Check lockout from previous failed attempts
-    const attempt = attempts.get(userId)
-    if (attempt?.lockedUntil && Date.now() < attempt.lockedUntil) {
-      return NextResponse.json({ error: 'too_many_attempts', message: 'Shumë përpjekje të dështuara. Ju lutemi prisni 15 minuta.' }, { status: 429 })
-    }
-
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('verification_code, verification_code_expires_at')
-      .eq('id', userId)
-      .single()
-
-    if (profileError || !profile) {
-      console.error('Profile fetch error:', profileError)
-      return NextResponse.json({ error: 'profile_not_found', message: 'Profili nuk u gjet.' }, { status: 404 })
-    }
-
-    if (!profile.verification_code_expires_at || new Date(profile.verification_code_expires_at) < new Date()) {
-      attempts.delete(userId)
-      return NextResponse.json({ error: 'expired', message: 'Kodi ka skaduar. Klikoni "Ridërgo kodin" për një kod të ri.' }, { status: 400 })
-    }
-
-    if (profile.verification_code !== code) {
-      const nextAttempt = attempt ? { count: attempt.count + 1 } : { count: 1 }
-      let locked = false
-      if (nextAttempt.count >= MAX_ATTEMPTS) {
-        attempts.set(userId, { count: nextAttempt.count, lockedUntil: Date.now() + LOCKOUT_MS })
-        locked = true
-      } else {
-        attempts.set(userId, nextAttempt)
-      }
-
+    // Input shape only — reveals nothing about any account.
+    if (!SIX_DIGITS_RE.test(code)) {
       return NextResponse.json(
-        {
-          error: 'invalid',
-          message: locked
-            ? 'Keni tejkaluar numrin maksimal të provave. Ju lutemi prisni 15 minuta.'
-            : `Kodi është i gabuar. Keni edhe ${MAX_ATTEMPTS - nextAttempt.count} prova.`,
-        },
+        { error: 'invalid', message: 'Kodi duhet të ketë saktësisht 6 shifra.' },
         { status: 400 }
       )
     }
 
-    // Code is correct -> Clear attempts
-    attempts.delete(userId)
+    if (!consumeRequestBudget(`verify-otp:${clientIp(request)}`, VERIFY_IP_HOURLY_LIMIT)) {
+      return NextResponse.json(
+        { error: 'rate_limited', message: AUTH_COPY.rateLimited },
+        { status: 429 }
+      )
+    }
 
-    // Update profile: keep email_verified: false until profile is completed by user
-    const { error: updateError } = await supabaseAdmin
+    const admin = getAdminClient()
+    let user: User | null = null
+
+    if (email) {
+      if (!isValidEmail(email)) return uniformInvalid()
+      user = await findAuthUserByEmail(admin, email)
+    } else {
+      // Fall back to the current authenticated session (web OTP screen).
+      const supabase = await createServerSupabaseClient()
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser()
+      if (!sessionUser) {
+        return NextResponse.json(
+          { error: 'unauthorized', message: 'Ju lutemi jepni email-in ose kyçuni.' },
+          { status: 401 }
+        )
+      }
+      user = sessionUser
+    }
+
+    // ---- Unknown address: behave exactly like a known one -----------------
+    if (!user) {
+      const phantom = readPhantomOtpState(email)
+      if (isLocked(phantom)) return uniformLocked()
+      const { justLocked } = recordPhantomFailure(email)
+      return justLocked ? uniformLocked() : uniformInvalid()
+    }
+
+    // ---- Durable lockout check -------------------------------------------
+    const otpState = readOtpState(user)
+    if (isLocked(otpState)) return uniformLocked()
+
+    const { data: profileData, error: profileError } = await admin
+      .from('profiles')
+      // `select('*')`: the live table has drifted, so naming columns risks a
+      // hard 42703 on an otherwise healthy verification.
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError.message)
+      return uniformInvalid()
+    }
+
+    const profile = (profileData as ProfileRow | null) ?? null
+    const storedCode = typeof profile?.verification_code === 'string' ? profile.verification_code : ''
+    const expiresAt =
+      typeof profile?.verification_code_expires_at === 'string'
+        ? new Date(profile.verification_code_expires_at).getTime()
+        : NaN
+
+    // Missing profile, no pending code, or an expired code: one uniform answer.
+    if (!profile || !storedCode || !Number.isFinite(expiresAt) || expiresAt < Date.now()) {
+      return uniformInvalid()
+    }
+
+    if (!safeCodeEqual(code, storedCode)) {
+      const { justLocked } = await recordOtpFailure(admin, user)
+      console.warn('verify-otp failed attempt', {
+        userId: user.id,
+        attempts: otpState.failCount + 1,
+        max: OTP_MAX_ATTEMPTS,
+        locked: justLocked,
+      })
+      return justLocked ? uniformLocked() : uniformInvalid()
+    }
+
+    // ---- Success ----------------------------------------------------------
+    const { error: updateError } = await admin
       .from('profiles')
       .update({
         email_verified: true,
         verification_code: null,
         verification_code_expires_at: null,
       })
-      .eq('id', userId)
+      .eq('id', user.id)
 
     if (updateError) {
-      console.error('Verify update error:', updateError)
-      return NextResponse.json({ error: 'update_failed', message: 'Dështoi përditësimi i profilit.' }, { status: 500 })
+      console.error('Verify update error:', updateError.message)
+      return NextResponse.json(
+        { error: 'update_failed', message: 'Dështoi përditësimi i profilit.' },
+        { status: 500 }
+      )
     }
 
-    // Confirm user in Supabase auth so user can authenticate
-    const { error: confirmAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    // Confirm in auth, flag the product-level verification and clear the OTP
+    // counters in a single write. Existing metadata is spread in first because
+    // GoTrue replaces `user_metadata` wholesale on some versions — a bare patch
+    // would drop `account_type` / `company_name` / `onboarding_completed`.
+    const { error: confirmAuthError } = await admin.auth.admin.updateUserById(user.id, {
       email_confirm: true,
       user_metadata: {
+        ...(user.user_metadata || {}),
         email_verified: true,
+        otp_fail_count: 0,
+        otp_locked_until: null,
       },
     })
 
     if (confirmAuthError) {
-      console.error('Confirm auth user error:', confirmAuthError)
+      console.error('Confirm auth user error:', confirmAuthError.message)
+      // Not fatal: the profile is already verified. Make sure the counters are
+      // still cleared so a later attempt is not locked out by stale state.
+      await clearOtpCounters(admin, user)
     }
 
     const response = NextResponse.json({
       success: true,
-      message: 'Email-i u konfirmua me sukses!',
+      message: AUTH_COPY.otpVerified,
     })
 
     if (password && email) {
       try {
         const cookieStore = await cookies()
-        const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).hostname
+        const host =
+          request.headers.get('x-forwarded-host') ||
+          request.headers.get('host') ||
+          new URL(request.url).hostname
         const cookieDomain = getCookieDomain(host)
 
         const ssrClient = createServerClient(
@@ -171,13 +228,11 @@ export async function POST(request: Request) {
         })
 
         if (!signInErr && signInData?.session) {
-          const finalResponse = NextResponse.json(
-            {
-              success: true,
-              session: signInData.session,
-              message: 'Email-i u konfirmua me sukses!',
-            }
-          )
+          const finalResponse = NextResponse.json({
+            success: true,
+            session: signInData.session,
+            message: AUTH_COPY.otpVerified,
+          })
           response.cookies.getAll().forEach((cookie) => {
             finalResponse.cookies.set(cookie)
           })
@@ -191,6 +246,9 @@ export async function POST(request: Request) {
     return response
   } catch (err) {
     console.error('Verify OTP error:', err)
-    return NextResponse.json({ error: 'internal_error', message: 'Gabim i brendshëm i serverit.' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'internal_error', message: AUTH_COPY.serverError },
+      { status: 500 }
+    )
   }
 }

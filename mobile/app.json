@@ -11,7 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.blejepronen.app",
-      "backgroundColor": "#00675B"
+      "backgroundColor": "#00675B",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj."
+      }
     },
     "android": {
       "backgroundColor": "#00675B",
@@ -28,7 +31,9 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -62,6 +67,12 @@
         {
           "photosPermission": "Bleje Pron\u00ebn p\u00ebrdor galerin\u00eb tuaj p\u00ebr t\u00eb shtuar fotot e banes\u00ebs dhe foton e profilit.",
           "cameraPermission": "Bleje Pron\u00ebn p\u00ebrdor kamer\u00ebn p\u00ebr t\u00eb fotografuar banes\u00ebn q\u00eb po postoni."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Bleje Pron\u00ebn p\u00ebrdor Face ID p\u00ebr ky\u00e7je t\u00eb sigurt dhe t\u00eb shpejt\u00eb n\u00eb llogarin\u00eb tuaj."
         }
       ],
       "expo-secure-store"

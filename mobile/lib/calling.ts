@@ -124,6 +124,8 @@ interface CallSignal {
 
 const RING_TIMEOUT_MS = 45_000
 const CONNECT_TIMEOUT_MS = 25_000
+/** Sentinel: the call was abandoned while its channel was still joining. */
+const CALL_ABANDONED = 'CALL_ABANDONED'
 
 type AnyChannel = ReturnType<typeof supabase.channel>
 
@@ -147,6 +149,8 @@ class CallEngine {
 
   private ringChannel: AnyChannel | null = null
   private callChannel: AnyChannel | null = null
+  /** Call channel created but still joining — tracked so hangup can drop it. */
+  private joiningChannel: AnyChannel | null = null
   /** ICE candidates that arrived before the remote description was applied */
   private pendingIce: unknown[] = []
 
@@ -156,8 +160,8 @@ class CallEngine {
   private callId: string | null = null
   private timers: ReturnType<typeof setTimeout>[] = []
   private lastOfferSdp: unknown = null
-  /** Topic of the ring channel the CURRENT incoming call arrived on (callee side) */
-  private incomingRingTopic: string | null = null
+  /** Permanent ring listener channel owned by listenForIncoming — never remove elsewhere */
+  private incomingChannel: AnyChannel | null = null
 
   // Caller display info (set before starting a call)
   private callerName = ''
@@ -179,16 +183,27 @@ class CallEngine {
     return this.state
   }
 
-  /** Listen for incoming calls. Call once per auth user (from the root layout). */
+  /**
+   * Listen for incoming calls. Registered ONCE per auth user.
+   *
+   * Idempotent by design: the root layout re-invokes this from
+   * `onAuthStateChange`, which also fires on routine `TOKEN_REFRESHED` events.
+   * The previous implementation tore the ring channel down and rebuilt it on
+   * every one of those, so each token refresh cost a websocket leave/join and
+   * silently dropped any ring that was in flight at that moment. Same user +
+   * live channel now short-circuits.
+   */
   listenForIncoming(userId: string | null): void {
+    if (userId && userId === this.myUserId && this.incomingChannel && this.incomingTeardown) {
+      return
+    }
+
+    this.teardownIncoming()
     this.myUserId = userId
-    this.incomingTeardown?.()
-    this.incomingTeardown = null
     if (!userId) return
 
-    let channel: AnyChannel | null = null
-
-    channel = supabase.channel(`bp_call_ring_${userId}`)
+    const channel: AnyChannel = supabase.channel(`bp_call_ring_${userId}`)
+    this.incomingChannel = channel
     channel
       .on('broadcast', { event: 'ring' }, ({ payload }: { payload: IncomingPayload }) => {
         const inc = payload
@@ -203,7 +218,6 @@ class CallEngine {
           return
         }
         this.callId = inc.callId
-        this.incomingRingTopic = `bp_call_ring_${this.myUserId}`
         this.reset({
           status: 'incoming',
           role: 'callee',
@@ -225,7 +239,57 @@ class CallEngine {
       .subscribe()
 
     this.incomingTeardown = () => {
-      if (channel) supabase.removeChannel(channel)
+      this.incomingChannel = null
+      try {
+        supabase.removeChannel(channel)
+      } catch (e) {
+        console.warn('Ring channel teardown notice:', e)
+      }
+    }
+  }
+
+  /** Drops the permanent incoming-call listener (sign-out). */
+  stopListening(): void {
+    this.teardownIncoming()
+    this.myUserId = null
+  }
+
+  private teardownIncoming(): void {
+    const teardown = this.incomingTeardown
+    this.incomingTeardown = null
+    this.incomingChannel = null
+    if (teardown) {
+      try {
+        teardown()
+      } catch (e) {
+        console.warn('Incoming listener teardown notice:', e)
+      }
+    }
+  }
+
+  /**
+   * Sends a ring-reply on the permanent ring listener channel.
+   * supabase.channel(topic) returns the EXISTING channel for a topic, and
+   * subscribe() is a no-op on an already-joined channel — so the reply must be
+   * sent directly on the stored reference, and that reference must NEVER be
+   * removed here (listenForIncoming owns its lifecycle).
+   */
+  private sendRingReply(type: RingReply['type']): void {
+    const replyCh = this.incomingChannel
+    if (!replyCh || !this.callId) return
+    const payload: RingReply = { type, callId: this.callId }
+    if ((replyCh as any).state === 'joined') {
+      void replyCh
+        .send({ type: 'broadcast', event: 'ring-reply', payload })
+        .catch(() => {})
+    } else {
+      replyCh.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          void replyCh
+            .send({ type: 'broadcast', event: 'ring-reply', payload })
+            .catch(() => {})
+        }
+      })
     }
   }
 
@@ -247,14 +311,17 @@ class CallEngine {
 
     // Resolve the CALLER's own display identity from the profiles table so the
     // callee sees who is calling (self-contained — works from any screen).
+    // Explicit column list: profiles has drifted before (email / account_type /
+    // company_name / whatsapp are gone), so never `select('*')` and read fields
+    // that may no longer exist.
     try {
       const { data: prof } = await supabase
         .from('profiles')
-        .select('first_name, last_name, company_name, avatar_url')
+        .select('id, first_name, last_name, avatar_url')
         .eq('id', this.myUserId)
         .single()
       if (prof) {
-        const nm = prof.company_name || [prof.first_name, prof.last_name].filter(Boolean).join(' ')
+        const nm = [prof.first_name, prof.last_name].filter(Boolean).join(' ')
         this.callerName = (nm || '').trim()
         this.callerAvatar = (prof as any).avatar_url ?? null
       }
@@ -307,22 +374,7 @@ class CallEngine {
     this.setState({ status: 'connecting' })
     // Tell the caller immediately (before WebRTC negotiation) so their UI
     // switches from "Po telefonon…" to "Po lidhet…" without waiting.
-    if (this.incomingRingTopic) {
-      const replyCh = supabase.channel(this.incomingRingTopic)
-      replyCh
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            void replyCh.send({
-              type: 'broadcast',
-              event: 'ring-reply',
-              payload: { type: 'accepted', callId: this.callId } as RingReply,
-            })
-            setTimeout(() => {
-              supabase.removeChannel(replyCh)
-            }, 1500)
-          }
-        })
-    }
+    this.sendRingReply('accepted')
     void this.runCalleeNegotiation(this.callId)
   }
 
@@ -331,22 +383,7 @@ class CallEngine {
     this.stopRingback()
     // Reply on the ring channel the call arrived on (callee side has no
     // this.ringChannel — that belongs to the caller only).
-    if (this.incomingRingTopic) {
-      const replyCh = supabase.channel(this.incomingRingTopic)
-      replyCh
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            void replyCh.send({
-              type: 'broadcast',
-              event: 'ring-reply',
-              payload: { type: 'declined', callId: this.callId } as RingReply,
-            })
-            setTimeout(() => {
-              supabase.removeChannel(replyCh)
-            }, 1500)
-          }
-        })
-    }
+    this.sendRingReply('declined')
     this.cleanupMedia()
     this.finish('declined')
   }
@@ -394,6 +431,11 @@ class CallEngine {
   }
 
   // ── Negotiation ───────────────────────────────────────────────────
+  /** True when the call was already torn down while its channel was joining. */
+  private isAbandoned(e: unknown): boolean {
+    return e instanceof Error && e.message === CALL_ABANDONED
+  }
+
   private async runCallerNegotiation(): Promise<void> {
     try {
       await this.openCallChannel(this.callId!)
@@ -420,6 +462,8 @@ class CallEngine {
         }, CONNECT_TIMEOUT_MS)
       )
     } catch (e) {
+      // Already finished elsewhere — do not overwrite its endedReason.
+      if (this.isAbandoned(e)) return
       console.warn('Caller negotiation failed:', e)
       this.finish('failed')
     }
@@ -444,6 +488,8 @@ class CallEngine {
         }, CONNECT_TIMEOUT_MS)
       )
     } catch (e) {
+      // The callee hung up before the channel joined — already cleaned up.
+      if (this.isAbandoned(e)) return
       console.warn('Callee negotiation failed:', e)
       this.finish('failed')
     }
@@ -493,21 +539,61 @@ class CallEngine {
     })
   }
 
+  /**
+   * Joins the per-call signalling channel.
+   *
+   * Leak-safe on every exit path: a channel that errors, times out, or finishes
+   * joining AFTER the call was abandoned is removed here rather than adopted —
+   * previously it stayed joined forever because `this.callChannel` was still
+   * null when `leaveChannels()` ran.
+   */
   private openCallChannel(callId: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      let ch: AnyChannel
       try {
-        const ch = supabase.channel(`bp_call_${callId}`)
+        ch = supabase.channel(`bp_call_${callId}`)
+      } catch (e) {
+        reject(e)
+        return
+      }
+
+      this.joiningChannel = ch
+
+      const abandon = () => {
+        this.joiningChannel = null
+        try {
+          supabase.removeChannel(ch)
+        } catch {
+          // Already gone
+        }
+      }
+
+      try {
         ch.on('broadcast', { event: 'signal' }, ({ payload }: { payload: CallSignal }) => {
           void this.handleSignal(payload)
         }).subscribe((status) => {
           if (status === 'SUBSCRIBED') {
+            const stale =
+              this.callId !== callId ||
+              this.state.status === 'idle' ||
+              this.state.status === 'ended'
+            if (stale) {
+              abandon()
+              reject(new Error(CALL_ABANDONED))
+              return
+            }
+            this.joiningChannel = null
             this.callChannel = ch
             resolve()
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            return
+          }
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            abandon()
             reject(new Error(`Call channel error: ${status}`))
           }
         })
       } catch (e) {
+        abandon()
         reject(e)
       }
     })
@@ -670,8 +756,9 @@ class CallEngine {
   private finish(reason: string): void {
     this.clearTimers()
     this.stopRingback()
+    this.cleanupMedia()
+    this.leaveChannels()
     this.callId = null
-    this.incomingRingTopic = null
     this.pendingIce = []
     this.lastOfferSdp = null
     this.setState({ status: 'ended', endedReason: reason, connectedAt: null })
@@ -695,16 +782,33 @@ class CallEngine {
     this.localTrack = null
   }
 
+  /**
+   * Leaves every channel owned by the CURRENT call.
+   *
+   * The permanent incoming-call listener (`incomingChannel`) is deliberately
+   * NOT touched here — it outlives individual calls so the user keeps receiving
+   * rings after hangup. It is owned exclusively by listenForIncoming /
+   * teardownIncoming.
+   */
   private leaveChannels(): void {
-    try {
-      if (this.callChannel) supabase.removeChannel(this.callChannel)
-    } catch {}
-    try {
-      if (this.ringChannel && this.state.role === 'caller') {
-        supabase.removeChannel(this.ringChannel)
+    // Includes a channel that was still joining when the call ended.
+    for (const ch of [this.callChannel, this.joiningChannel]) {
+      if (!ch) continue
+      try {
+        supabase.removeChannel(ch)
+      } catch {
+        // Already removed
       }
-    } catch {}
+    }
+    if (this.ringChannel && this.state.role === 'caller') {
+      try {
+        supabase.removeChannel(this.ringChannel)
+      } catch {
+        // Already removed
+      }
+    }
     this.callChannel = null
+    this.joiningChannel = null
     this.ringChannel = null
   }
 

@@ -9,7 +9,6 @@ import {
   FlatList,
   Platform,
   KeyboardAvoidingView,
-  Linking,
   ActivityIndicator,
   StatusBar as RNStatusBar,
 } from 'react-native'
@@ -28,10 +27,8 @@ import {
   Home,
   Clock,
   TrendingUp,
-  Phone,
   ChevronRight,
   ShieldCheck,
-  Check,
 } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import {
@@ -101,6 +98,9 @@ export function OmniSearchContent({
 
   const inputRef = useRef<TextInput>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Newest debounced search wins: older in-flight responses — and anything that
+  // resolves after unmount — are dropped instead of writing to state.
+  const reqIdRef = useRef(0)
 
   // Load recent searches from AsyncStorage
   useEffect(() => {
@@ -125,30 +125,32 @@ export function OmniSearchContent({
   }, [initialQuery])
 
   // Save to recent searches
-  const saveRecent = useCallback(async (searchTerm: string) => {
-    const clean = searchTerm.trim()
-    if (!clean || clean.length < 2) return
-    try {
-      setRecentSearches((prev) => {
-        const next = [
-          clean,
-          ...prev.filter((i) => i.toLowerCase() !== clean.toLowerCase()),
-        ].slice(0, MAX_RECENT)
-        AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
-        return next
-      })
-    } catch {}
-  }, [])
+  const saveRecent = useCallback(
+    async (searchTerm: string) => {
+      const clean = searchTerm.trim()
+      if (!clean || clean.length < 2) return
+      const next = [
+        clean,
+        ...recentSearches.filter((i) => i.toLowerCase() !== clean.toLowerCase()),
+      ].slice(0, MAX_RECENT)
+      setRecentSearches(next)
+      try {
+        await AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
+      } catch {}
+    },
+    [recentSearches]
+  )
 
-  const removeRecent = useCallback(async (searchTerm: string) => {
-    try {
-      setRecentSearches((prev) => {
-        const next = prev.filter((i) => i !== searchTerm)
-        AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
-        return next
-      })
-    } catch {}
-  }, [])
+  const removeRecent = useCallback(
+    async (searchTerm: string) => {
+      const next = recentSearches.filter((i) => i !== searchTerm)
+      setRecentSearches(next)
+      try {
+        await AsyncStorage.setItem(ASYNC_RECENT_KEY, JSON.stringify(next))
+      } catch {}
+    },
+    [recentSearches]
+  )
 
   const clearAllRecent = useCallback(async () => {
     try {
@@ -177,7 +179,6 @@ export function OmniSearchContent({
             counts: { listings: 0, agencies: 0, agents: 0, locations: instantLocs.length },
             results: { listings: [], agencies: [], agents: [], locations: instantLocs },
             flat: instantLocs,
-            trending: TRENDING_SEARCHES,
           }
         }
         return prev
@@ -198,20 +199,28 @@ export function OmniSearchContent({
     }
 
     setLoading(true)
+    const id = ++reqIdRef.current
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
         const res = await executeMobileOmniSearch(query)
+        if (id !== reqIdRef.current) return
         setResults(res)
       } catch (err) {
-        console.warn('Mobile omni search error:', err)
+        if (id === reqIdRef.current) {
+          console.warn('Mobile omni search error:', err)
+        }
       } finally {
-        setLoading(false)
+        if (id === reqIdRef.current) {
+          setLoading(false)
+        }
       }
     }, 90)
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      // Invalidate whatever this effect dispatched, on re-run and on unmount.
+      reqIdRef.current++
     }
   }, [query])
 
@@ -241,6 +250,18 @@ export function OmniSearchContent({
     if (activeTab === 'agent') return results.results.agents
     if (activeTab === 'location') return results.results.locations
     return results.flat
+  }, [results, activeTab])
+
+  // Exact server total behind the active tab. `visibleItems` is only ever a
+  // relevance-ranked window of it, so the footer states the difference instead
+  // of letting the tab badge imply the whole set is on screen.
+  const totalForActiveTab = React.useMemo(() => {
+    if (!results) return 0
+    if (activeTab === 'all') return results.total
+    if (activeTab === 'listing') return results.counts.listings
+    if (activeTab === 'agency') return results.counts.agencies
+    if (activeTab === 'agent') return results.counts.agents
+    return results.counts.locations
   }, [results, activeTab])
 
   const handleCancel = useCallback(() => {
@@ -514,29 +535,10 @@ export function OmniSearchContent({
               <Text style={[styles.itemPrice, { color: colors.primary }]}>
                 {formatPrice(item.price)}
               </Text>
-            ) : isAgency || isAgent ? (
-              <View style={styles.agencyActionCol}>
-                {item.payload?.phone ? (
-                  <Pressable
-                    onPress={(e) => {
-                      e.stopPropagation()
-                      if (item.payload?.phone) {
-                        Linking.openURL(`tel:${item.payload.phone}`)
-                      }
-                    }}
-                    hitSlop={8}
-                    style={[
-                      styles.phoneActionBtn,
-                      { backgroundColor: colors.primaryLight },
-                    ]}
-                  >
-                    <Phone size={14} color={colors.primary} />
-                  </Pressable>
-                ) : null}
-                <ChevronRight size={17} color={colors.textMuted} />
-              </View>
             ) : (
-              <ChevronRight size={18} color={colors.textMuted} />
+              // No direct-dial shortcut here: search results never carry a phone
+              // number. Contact happens on the profile screen instead.
+              <ChevronRight size={isAgency || isAgent ? 17 : 18} color={colors.textMuted} />
             )}
           </View>
         </Pressable>
@@ -607,7 +609,7 @@ export function OmniSearchContent({
               clearButtonMode="never"
             />
             {loading && <ActivityIndicator size="small" color={colors.primary} />}
-            {query.length > 0 && !loading && (
+            {query.length > 0 && (
               <Pressable
                 onPress={() => setQuery('')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -668,7 +670,7 @@ export function OmniSearchContent({
           keyboardVerticalOffset={0}
         >
           {/* Empty Query Default State: Recent & Trending */}
-          {!query.trim() && (
+          {!query.trim() ? (
             <FlatList
               data={[]}
               renderItem={() => null}
@@ -768,10 +770,10 @@ export function OmniSearchContent({
                 </View>
               }
             />
-          )}
+          ) : null}
 
           {/* Active Search Results List */}
-          {query.trim() && (
+          {query.trim() ? (
             <FlatList
               data={visibleItems}
               keyExtractor={(item) => item.id}
@@ -787,6 +789,15 @@ export function OmniSearchContent({
               initialNumToRender={8}
               windowSize={5}
               renderItem={renderResultItem}
+              ListFooterComponent={
+                visibleItems.length > 0 && totalForActiveTab > visibleItems.length ? (
+                  <View style={styles.windowNoticeWrap}>
+                    <Text style={[styles.windowNoticeText, { color: colors.textMuted }]}>
+                      Duke shfaqur {visibleItems.length} nga {totalForActiveTab} rezultate
+                    </Text>
+                  </View>
+                ) : null
+              }
               ListEmptyComponent={
                 !loading ? (
                   <View style={styles.zeroResultsWrap}>
@@ -808,7 +819,7 @@ export function OmniSearchContent({
                 ) : null
               }
             />
-          )}
+          ) : null}
         </KeyboardAvoidingView>
       </View>
   )
@@ -1068,17 +1079,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.bold,
   },
-  agencyActionCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  phoneActionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  windowNoticeWrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+  },
+  windowNoticeText: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
   },
   zeroResultsWrap: {
     alignItems: 'center',

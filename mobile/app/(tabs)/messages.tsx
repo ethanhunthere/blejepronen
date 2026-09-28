@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useSyncExternalStore } from 'react'
 import {
   View,
   Text,
@@ -9,15 +9,12 @@ import {
   Platform,
   TextInput,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
-import {
-  getSyncAuthUser,
-  isAuthCacheHydrated,
-  subscribeAuthCache,
-  isLogoutInProgress,
-} from '@/lib/auth-cache'
+import { getSyncAuthUser, subscribeAuthCache } from '@/lib/auth-cache'
 import {
   MessageSquare,
   ShieldCheck,
@@ -35,29 +32,24 @@ import {
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
-import { supabase } from '@/lib/supabase'
-import { createSafeChannel } from '@/lib/realtime'
+import {
+  getConversationsSnapshot,
+  refreshConversations,
+  subscribeConversations,
+  type ConversationSummary,
+} from '@/lib/conversations'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound } from '@/lib/sound'
 import { ConversationFeedSkeleton } from '@/components/ListingSkeleton'
+import { openLoginScreen, openRegisterScreen } from '@/lib/navigation'
 
-interface ConversationItem {
-  id: string
-  listing_id: string
-  listing_title?: string
-  listing_image?: string
-  counterpart_id?: string
-  counterpart_name?: string
-  counterpart_avatar?: string
-  counterpart_phone?: string
-  is_agency?: boolean
-  last_message?: string
-  last_time?: string
-  unread_count?: number
-  is_last_message_mine?: boolean
-  is_last_message_read?: boolean
-}
+/**
+ * The row shape now comes straight from the shared store (audit §4.2): it is a
+ * conversation + ONE aggregated last message + an unread count, never the full
+ * message history of the thread.
+ */
+type ConversationItem = ConversationSummary
 
 type TabMode = 'chats' | 'contacts'
 type FilterChip = 'all' | 'unread' | 'agencies' | 'owners'
@@ -65,23 +57,26 @@ type FilterChip = 'all' | 'unread' | 'agencies' | 'owners'
 export default function MessagesScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const tabBarScrollHandler = useTabBarCollapseOnScroll()
   const [activeTab, setActiveTab] = useState<TabMode>('chats')
   const insets = useSafeAreaInsets()
   const syncUser = getSyncAuthUser()
   const [currentUser, setCurrentUser] = useState<any>(() => syncUser)
-  const [conversations, setConversations] = useState<ConversationItem[]>([])
-  const [loading, setLoading] = useState(() => !isAuthCacheHydrated() && !!syncUser)
-  const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState<FilterChip>('all')
+
+  // One subscription to the module-level store. It owns the single multiplexed
+  // realtime channel and the 250ms coalescer, so a burst of message events
+  // produces exactly one new snapshot object and one render of this screen —
+  // and the channel is released when the last subscriber unmounts.
+  const store = useSyncExternalStore(subscribeConversations, getConversationsSnapshot)
+  const conversations = store.items
+  const loading = Boolean(currentUser && !store.ready && conversations.length === 0)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     const unsub = subscribeAuthCache((state) => {
       setCurrentUser(state.user)
-      if (!state.user) {
-        setConversations([])
-        setLoading(false)
-      }
     })
     return unsub
   }, [])
@@ -103,148 +98,11 @@ export default function MessagesScreen() {
     listingTitle: null,
   })
 
-  const loadConversations = useCallback(async () => {
-    if (isLogoutInProgress()) {
-      setConversations([])
-      setLoading(false)
-      return
-    }
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (isLogoutInProgress()) {
-        setCurrentUser(null)
-        setConversations([])
-        return
-      }
-
-      setCurrentUser(user || null)
-
-      if (!user) {
-        setConversations([])
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          listing_id,
-          buyer_id,
-          seller_id,
-          listings(id, title, images),
-          buyer:buyer_id(id, first_name, last_name, phone, avatar_url),
-          seller:seller_id(id, first_name, last_name, phone, avatar_url),
-          messages(id, content, sender_id, created_at, is_read)
-        `)
-        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false })
-
-      if (isLogoutInProgress()) return
-
-      if (error) {
-        console.warn('Conversations notice:', error.message)
-      } else if (data) {
-        const mapped: ConversationItem[] = data.map((c: any) => {
-          const isBuyer = user.id === c.buyer_id
-          const counterpart = isBuyer ? c.seller : c.buyer
-          const counterpartName = counterpart
-            ? `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim() || (isBuyer ? 'Shitësi' : 'Blerësi')
-            : (isBuyer ? 'Shitësi' : 'Blerësi')
-
-          const isAgency = /agjenci|real estate|invest|patundshm|group|shpk/i.test(counterpartName)
-
-          const sortedMsgs = Array.isArray(c.messages)
-            ? c.messages.slice().sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-            : []
-          const lastMsgObj = sortedMsgs[sortedMsgs.length - 1]
-          const lastMsg = lastMsgObj?.content || 'Bisedë e re'
-          const isMine = lastMsgObj?.sender_id === user.id
-          const isRead = !!lastMsgObj?.is_read
-
-          let lastTime = 'Sot'
-          if (lastMsgObj?.created_at) {
-            const d = new Date(lastMsgObj.created_at)
-            const now = new Date()
-            const isToday = d.toDateString() === now.toDateString()
-            lastTime = isToday
-              ? d.toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })
-              : d.toLocaleDateString('sq-AL', { day: 'numeric', month: 'short' })
-          }
-
-          const unreadCount = sortedMsgs.filter(
-            (m: any) => !m.is_read && m.sender_id !== user.id
-          ).length
-
-          return {
-            id: c.id,
-            listing_id: c.listing_id,
-            listing_title: c.listings?.title || 'Pronë në Bleje Pronën',
-            listing_image: c.listings?.images?.[0] || '',
-            counterpart_id: counterpart?.id,
-            counterpart_name: counterpartName,
-            counterpart_avatar: counterpart?.avatar_url || '',
-            counterpart_phone: counterpart?.phone || '',
-            is_agency: isAgency,
-            last_message: lastMsg,
-            last_time: lastTime,
-            unread_count: unreadCount,
-            is_last_message_mine: isMine,
-            is_last_message_read: isRead,
-          }
-        })
-        setConversations(mapped)
-      }
-    } catch (err: any) {
-      console.warn('Conversations catch:', err?.message || err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadConversations()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isLogoutInProgress()) {
-        setCurrentUser(null)
-        setConversations([])
-        return
-      }
-      setCurrentUser(session?.user || null)
-      loadConversations()
-    })
-
-    let channel: ReturnType<typeof createSafeChannel> | null = null
-    try {
-      channel = createSafeChannel('conversations_list_watch')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'messages' },
-          () => {
-            loadConversations()
-          }
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'conversations' },
-          () => {
-            loadConversations()
-          }
-        )
-        .subscribe()
-    } catch (err) {
-      console.warn('Conversations realtime notice:', err)
-    }
-
-    return () => {
-      authListener?.subscription?.unsubscribe()
-      if (channel) supabase.removeChannel(channel)
-    }
-  }, [loadConversations])
+  // Conversation rows, last-message previews and unread badges all come from
+  // the shared store (lib/conversations). It owns ONE multiplexed realtime
+  // channel for messages + conversations and coalesces every burst into a
+  // single snapshot write, so this screen no longer subscribes to anything
+  // itself and no longer downloads full chat histories.
 
   const onRefresh = async () => {
     if (Platform.OS !== 'web') {
@@ -253,7 +111,7 @@ export default function MessagesScreen() {
     setRefreshing(true)
     const startTime = Date.now()
 
-    await loadConversations()
+    await refreshConversations()
 
     const elapsed = Date.now() - startTime
     if (elapsed < 600) {
@@ -290,10 +148,10 @@ export default function MessagesScreen() {
     })
   }, [conversations, searchQuery, selectedFilter])
 
-  // Total unread messages
-  const totalUnread = useMemo(() => {
-    return conversations.reduce((acc, curr) => acc + (curr.unread_count || 0), 0)
-  }, [conversations])
+  // Total unread — read straight from the store's aggregated map, NOT recomputed
+  // from the rows, so this badge and any other consumer (e.g. the tab bar) can
+  // never disagree about the same number.
+  const totalUnread = store.totalUnread
 
   // Real Contacts extracted strictly from user's genuine conversations
   const contactsList = useMemo(() => {
@@ -441,7 +299,9 @@ export default function MessagesScreen() {
         )}
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={tabBarScrollHandler}
+        scrollEventThrottle={16}
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -485,7 +345,7 @@ export default function MessagesScreen() {
             <View style={styles.authActionsRow}>
               <Pressable
                 style={[styles.loginBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'chat' } })}
+                onPress={() => openLoginScreen(router, { redirectTo: '/(tabs)/messages', reason: 'chat' })}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
                 <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -498,7 +358,7 @@ export default function MessagesScreen() {
                   styles.registerBtn,
                   { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
                 ]}
-                onPress={() => router.push({ pathname: '/modal', params: { initialTab: 'register', reason: 'chat' } })}
+                onPress={() => openRegisterScreen(router, { redirectTo: '/(tabs)/messages', reason: 'chat' })}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
                 <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -841,7 +701,7 @@ export default function MessagesScreen() {
                           </Text>
                         )}
 
-                        {contact.listing_title && (
+                        {Boolean(contact.listing_title) && (
                           <Text
                             style={[
                               styles.contactListingTag,
@@ -872,7 +732,7 @@ export default function MessagesScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Apple iOS 18 Contact Sheet */}
       <CallModal
@@ -1057,6 +917,7 @@ const styles = StyleSheet.create({
   convoName: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+    flexShrink: 1,
   },
   convoTimeText: {
     fontSize: 11,
@@ -1142,6 +1003,7 @@ const styles = StyleSheet.create({
   contactName: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+    flexShrink: 1,
   },
   contactPhoneText: {
     fontSize: 12,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -7,43 +7,63 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  ActivityIndicator,
   Platform,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { BlurView } from 'expo-blur'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { Search, X, SlidersHorizontal, Building2, ArrowDownUp } from 'lucide-react-native'
+import {
+  Search,
+  X,
+  SlidersHorizontal,
+  Building2,
+  ArrowDownUp,
+  ChevronDown,
+  RotateCcw,
+} from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
-import { supabase, Listing } from '@/lib/supabase'
-import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
+import type { Listing } from '@/lib/supabase'
+import { useFavorites, fetchFavoriteIds } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { PropertyFilterBar } from '@/components/PropertyFilterBar'
 import { PropertyFilterModal } from '@/components/PropertyFilterModal'
+import { SortBottomSheet } from '@/components/SortBottomSheet'
 import {
   PropertyFilterState,
   DEFAULT_FILTER_STATE,
   countActiveFilters,
-  filterAndSortListings,
-  matchesCategory,
+  toListingsQueryParams,
   CATEGORY_ITEMS,
+  SORT_OPTIONS,
 } from '@/lib/property-filters'
+import {
+  fetchCategoryCounts,
+  fetchListingsPage,
+  isCanonicalFeedQuery,
+  type ListingsQueryParams,
+} from '@/lib/listings-query'
 import {
   getCachedListings,
   hasCachedListings,
   setCachedListings,
   subscribeCachedListings,
+  getCachedQueryListings,
+  setCachedQueryListings,
+  filterCachedListingsOptimistic,
 } from '@/lib/listings-cache'
 import { getSyncAuthUser } from '@/lib/auth-cache'
 import { TactilePressable } from '@/components/motion'
+import { openLoginScreen } from '@/lib/navigation'
 
-const QUICK_SORT_OPTIONS: { id: PropertyFilterState['sortBy']; label: string }[] = [
-  { id: 'newest', label: 'Më të rejat' },
-  { id: 'price_asc', label: 'Çmimi: Ulët-Lart' },
-  { id: 'price_desc', label: 'Çmimi: Lart-Ulët' },
-  { id: 'area_desc', label: 'Sipërfaqja' },
-]
+// Range-based paging. The first page keeps the previous single-shot payload size
+// so the shared cache seed stays identical; later pages come in smaller batches.
+const FIRST_PAGE_SIZE = 100
+const PAGE_SIZE = 40
 
 export default function ListingsScreen() {
   const params = useLocalSearchParams<{
@@ -55,6 +75,7 @@ export default function ListingsScreen() {
   }>()
 
   const { colors, theme } = useTheme()
+  const tabBarScrollHandler = useTabBarCollapseOnScroll()
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
@@ -68,10 +89,70 @@ export default function ListingsScreen() {
   }))
 
   const [showFilterModal, setShowFilterModal] = useState(false)
-  const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
-  const [loading, setLoading] = useState(() => !hasCachedListings())
+  const [showSortSheet, setShowSortSheet] = useState(false)
+  // The offline cache only ever holds the canonical newest-first feed, but we can
+  // seed from query cache or optimistic in-memory filter on frame zero.
+  const [listings, setListings] = useState<Listing[]>(() => {
+    const p = toListingsQueryParams({
+      ...DEFAULT_FILTER_STATE,
+      category: params.category || 'all',
+      transactionType: params.type || 'all',
+      searchQuery: params.search || '',
+      city: params.city || '',
+      neighborhood: params.neighborhood || '',
+    })
+    if (isCanonicalFeedQuery(p)) return getCachedListings()
+    const cachedHit = getCachedQueryListings(JSON.stringify(p))
+    if (cachedHit && cachedHit.rows.length > 0) return cachedHit.rows
+    const all = getCachedListings()
+    if (all.length > 0) return filterCachedListingsOptimistic(all, p)
+    return []
+  })
+  const [loading, setLoading] = useState(() => {
+    const p = toListingsQueryParams({
+      ...DEFAULT_FILTER_STATE,
+      category: params.category || 'all',
+      transactionType: params.type || 'all',
+      searchQuery: params.search || '',
+      city: params.city || '',
+      neighborhood: params.neighborhood || '',
+    })
+    if (isCanonicalFeedQuery(p) && hasCachedListings()) return false
+    const cachedHit = getCachedQueryListings(JSON.stringify(p))
+    if (cachedHit && cachedHit.rows.length > 0) return false
+    const all = getCachedListings()
+    return all.length === 0
+  })
+  // Honest server total for the active filter set — `null` until the first
+  // counted response lands, so no counter ever renders a windowed guess.
+  const [total, setTotal] = useState<number | null>(null)
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const [refreshing, setRefreshing] = useState(false)
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const { favorites, toggleFavorite } = useFavorites()
+
+  // Monotonic request id: only the newest response may touch state, so rapid
+  // Shitje ↔ Qira toggles can never let a slower older payload win.
+  const reqIdRef = useRef(0)
+  const nextFromRef = useRef(0)
+  const loadingMoreRef = useRef(false)
+
+  // Filtering, sorting and paging all live in the Supabase query now: this param
+  // object is the single source of truth for what the list shows.
+  const queryParams = useMemo<ListingsQueryParams>(
+    () => toListingsQueryParams(filters),
+    [filters]
+  )
+  const queryKey = useMemo(() => JSON.stringify(queryParams), [queryParams])
+  const paramsRef = useRef(queryParams)
+  paramsRef.current = queryParams
+
+  const currentSortOption = useMemo(
+    () => SORT_OPTIONS.find((s) => s.id === filters.sortBy) || SORT_OPTIONS[0],
+    [filters.sortBy]
+  )
+  const isCustomSort = filters.sortBy !== 'newest'
 
   // Update filters if search params change
   useEffect(() => {
@@ -89,57 +170,136 @@ export default function ListingsScreen() {
 
   // Instant sync with shared cache updates
   useEffect(() => {
-    const cached = getCachedListings()
-    if (cached.length > 0 && listings.length === 0) {
-      setListings(cached)
-      setLoading(false)
-    }
-
     const unsubscribe = subscribeCachedListings((fresh) => {
-      if (filters.transactionType === 'all') {
-        setListings(fresh)
-        setLoading(false)
-      }
+      // The shared cache mirrors the canonical newest-first feed only, so it may
+      // never overwrite a filtered, searched or re-ordered result set.
+      if (!isCanonicalFeedQuery(paramsRef.current)) return
+      setListings((prev) => (prev.length === 0 ? fresh : prev))
+      // Keep the paging cursor aligned with the externally seeded page.
+      nextFromRef.current = fresh.length
+      setHasMore(fresh.length > 0)
+      setLoading(false)
     })
 
     return unsubscribe
-  }, [filters.transactionType])
+  }, [])
 
-  const fetchListings = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('listings')
-        .select(
-          'id,title,description,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features'
-        )
-        .order('created_at', { ascending: false })
-        .limit(100)
+  const fetchListings = useCallback(
+    async (reset = true) => {
+      if (!reset && (loadingMoreRef.current || !nextFromRef.current)) return
 
-      if (filters.transactionType !== 'all') {
-        query = query.eq('type', filters.transactionType)
+      const rid = ++reqIdRef.current
+      const from = reset ? 0 : nextFromRef.current
+      const size = reset ? FIRST_PAGE_SIZE : PAGE_SIZE
+      const request = paramsRef.current
+      const canonical = isCanonicalFeedQuery(request)
+
+      if (reset) {
+        const cachedHit = getCachedQueryListings(queryKey)
+        if (cachedHit && cachedHit.rows.length > 0) {
+          setListings(cachedHit.rows)
+          setTotal(cachedHit.total)
+          setLoading(false)
+        } else if (!canonical) {
+          const all = getCachedListings()
+          if (all.length > 0) {
+            const optimistic = filterCachedListingsOptimistic(all, request)
+            if (optimistic.length > 0) {
+              setListings(optimistic)
+              setTotal(optimistic.length)
+              setLoading(false)
+            } else {
+              setLoading(true)
+            }
+          } else {
+            setLoading(true)
+          }
+        } else {
+          setLoading(true)
+        }
+      } else {
+        loadingMoreRef.current = true
+        setLoadingMore(true)
       }
 
-      const { data, error } = await query
+      try {
+        // Server-side filtering, sorting and exact counting in one query —
+        // card columns only, is_active enforced by the shared query layer.
+        const { rows, total: serverTotal, error } = await fetchListingsPage({
+          ...request,
+          from,
+          limit: size,
+        })
 
-      if (error) {
-        console.warn('Listings tab query notice:', error.message)
-      } else if (data) {
-        setListings(data as unknown as Listing[])
-        if (filters.transactionType === 'all') {
-          setCachedListings(data as unknown as Listing[])
+        // A newer request already superseded this one — drop the stale payload.
+        if (rid !== reqIdRef.current) return
+
+        if (error) {
+          console.warn('Listings tab query notice:', error)
+        }
+
+        if (reset) {
+          setListings(rows)
+          setCachedQueryListings(queryKey, { rows, total: serverTotal })
+          // Only the canonical window may seed the shared offline cache.
+          if (canonical) setCachedListings(rows)
+        } else {
+          setListings((prev) => {
+            const seen = new Set(prev.map((l) => l.id))
+            const merged = [...prev]
+            for (const row of rows) {
+              if (seen.has(row.id)) continue
+              seen.add(row.id)
+              merged.push(row)
+            }
+            return merged
+          })
+        }
+
+        setTotal(serverTotal)
+        nextFromRef.current = from + rows.length
+        // Honest paging: measured against the server total, not the window size.
+        setHasMore(from + rows.length < serverTotal)
+      } catch (err: any) {
+        if (rid === reqIdRef.current) {
+          console.warn('Listings fetch catch:', err?.message || err)
+        }
+      } finally {
+        if (rid === reqIdRef.current) {
+          setLoading(false)
+        }
+        if (!reset) {
+          loadingMoreRef.current = false
+          setLoadingMore(false)
         }
       }
-    } catch (err: any) {
-      console.warn('Listings fetch catch:', err?.message || err)
-    } finally {
-      setLoading(false)
-    }
-  }, [filters.transactionType])
+    },
+    [queryKey]
+  )
 
+  // Every filter, category, search or sort change rewinds to page 0 and re-queries
+  // the server — `fetchListings` is re-created whenever the query params change.
   useEffect(() => {
-    fetchListings()
-    fetchFavoriteIds().then(setFavorites)
+    fetchListings(true)
   }, [fetchListings])
+
+  // Category chip badges are server counts for the same filter set, so they can
+  // never disagree with the list they filter.
+  useEffect(() => {
+    let cancelled = false
+    const base: ListingsQueryParams = { ...paramsRef.current, category: undefined }
+    fetchCategoryCounts(base).then((counts) => {
+      if (!cancelled) setCategoryCounts(counts)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [queryKey])
+
+  const handleEndReached = useCallback(() => {
+    if (loading || refreshing || loadingMore || !hasMore) return
+    fetchListings(false)
+  }, [loading, refreshing, loadingMore, hasMore, fetchListings])
 
   const onRefresh = async () => {
     if (Platform.OS !== 'web') {
@@ -148,8 +308,10 @@ export default function ListingsScreen() {
     setRefreshing(true)
     const startTime = Date.now()
 
-    await fetchListings()
-    fetchFavoriteIds().then(setFavorites)
+    await Promise.all([
+      fetchListings(),
+      fetchFavoriteIds().catch(() => ({})),
+    ])
 
     const elapsed = Date.now() - startTime
     if (elapsed < 500) {
@@ -166,22 +328,16 @@ export default function ListingsScreen() {
     async (id: string) => {
       const user = getSyncAuthUser()
       if (!user) {
-        router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+        openLoginScreen(router, { redirectTo: '/(tabs)/listings', reason: 'favorite' })
         return
       }
 
-      let wasFavorite = false
-      setFavorites((prev) => {
-        wasFavorite = Boolean(prev[id])
-        return { ...prev, [id]: !wasFavorite }
-      })
-
-      const ok = await persistFavoriteToggle(id, wasFavorite)
-      if (!ok) {
-        setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
+      const res = await toggleFavorite(id)
+      if (res.requiresAuth) {
+        openLoginScreen(router, { redirectTo: '/(tabs)/listings', reason: 'favorite' })
       }
     },
-    [router]
+    [router, toggleFavorite]
   )
 
   const renderItem = useCallback(
@@ -195,27 +351,6 @@ export default function ListingsScreen() {
     [favorites, handleToggleFavorite]
   )
 
-  // Compute category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const item of listings) {
-      if (filters.transactionType !== 'all' && item.type !== filters.transactionType) continue
-      for (const cat of CATEGORY_ITEMS) {
-        if (cat.id === 'all') {
-          counts.all = (counts.all || 0) + 1
-        } else if (matchesCategory(item, cat.id)) {
-          counts[cat.id] = (counts[cat.id] || 0) + 1
-        }
-      }
-    }
-    return counts
-  }, [listings, filters.transactionType])
-
-  // Filtered and sorted listings
-  const displayedListings = useMemo(() => {
-    return filterAndSortListings(listings, filters)
-  }, [listings, filters])
-
   const activeFiltersCount = countActiveFilters(filters)
 
   return (
@@ -224,12 +359,16 @@ export default function ListingsScreen() {
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Katalogu i Pronave</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-          {displayedListings.length} {displayedListings.length === 1 ? 'pronë e listuar' : 'prona të listuara'}
+          {total === null
+            ? 'Duke ngarkuar pronat…'
+            : `${total} ${total === 1 ? 'pronë e disponueshme' : 'prona të disponueshme'}`}
         </Text>
       </View>
 
-      <FlatList
-        data={displayedListings}
+      <Animated.FlatList
+        onScroll={tabBarScrollHandler}
+        scrollEventThrottle={16}
+        data={listings}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         initialNumToRender={5}
@@ -240,6 +379,8 @@ export default function ListingsScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.6}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -359,90 +500,185 @@ export default function ListingsScreen() {
         {/* Shared Modular Filter Bar */}
         <PropertyFilterBar
           transactionType={filters.transactionType}
-          onChangeTransactionType={(t) => setFilters((prev) => ({ ...prev, transactionType: t }))}
+          onChangeTransactionType={(t) => {
+            const nextFilters = { ...filters, transactionType: t }
+            const nextParams = toListingsQueryParams(nextFilters)
+            const nextKey = JSON.stringify(nextParams)
+            const cachedHit = getCachedQueryListings(nextKey)
+            if (cachedHit && cachedHit.rows.length > 0) {
+              setListings(cachedHit.rows)
+              setTotal(cachedHit.total)
+            } else {
+              const allCached = getCachedListings()
+              if (allCached.length > 0) {
+                const optimistic = filterCachedListingsOptimistic(allCached, nextParams)
+                setListings(optimistic)
+                setTotal(optimistic.length)
+              }
+            }
+            setFilters(nextFilters)
+          }}
           selectedCategory={filters.category}
-          onChangeCategory={(c) => setFilters((prev) => ({ ...prev, category: c }))}
+          onChangeCategory={(c) => {
+            const nextFilters = { ...filters, category: c }
+            const nextParams = toListingsQueryParams(nextFilters)
+            const nextKey = JSON.stringify(nextParams)
+            const cachedHit = getCachedQueryListings(nextKey)
+            if (cachedHit && cachedHit.rows.length > 0) {
+              setListings(cachedHit.rows)
+              setTotal(cachedHit.total)
+            } else {
+              const allCached = getCachedListings()
+              if (allCached.length > 0) {
+                const optimistic = filterCachedListingsOptimistic(allCached, nextParams)
+                setListings(optimistic)
+                setTotal(optimistic.length)
+              }
+            }
+            setFilters(nextFilters)
+          }}
           categoryCounts={categoryCounts}
         />
 
-        {/* Quick Sort Pill Strip */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.sortScrollContent}
-          style={styles.sortScroll}
-        >
-          {QUICK_SORT_OPTIONS.map((opt) => {
-            const isSelected = filters.sortBy === opt.id
-            return (
-              <TactilePressable
-                key={opt.id}
-                style={[
-                  styles.sortChip,
-                  {
-                    backgroundColor: isSelected
-                      ? colors.primary
+        {/* Section Header with Integrated Compact Expandable Sort Control */}
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              {filters.category === 'all'
+                ? 'Të gjitha pronat'
+                : CATEGORY_ITEMS.find((c) => c.id === filters.category)?.label || 'Prona'}
+            </Text>
+            <View
+              style={[
+                styles.resultCountBadge,
+                {
+                  backgroundColor:
+                    theme === 'green'
+                      ? 'rgba(212, 175, 55, 0.16)'
                       : theme === 'white'
-                      ? '#FFFFFF'
-                      : colors.surface,
-                    borderColor: isSelected ? colors.primary : colors.border,
+                      ? 'rgba(0, 103, 91, 0.08)'
+                      : 'rgba(255, 255, 255, 0.10)',
+                  borderColor:
+                    theme === 'green'
+                      ? 'rgba(212, 175, 55, 0.30)'
+                      : theme === 'white'
+                      ? 'rgba(0, 103, 91, 0.14)'
+                      : 'rgba(255, 255, 255, 0.14)',
+                },
+              ]}
+            >
+              {/* Exact server total for the active filters — never the window size. */}
+              <Text
+                style={[
+                  styles.resultCountText,
+                  {
+                    color: theme === 'green' ? colors.gold : colors.primary,
                   },
                 ]}
-                onPress={() => {
-                  setFilters((prev) => ({ ...prev, sortBy: opt.id }))
-                }}
-                activeScale={0.95}
-                haptic="selection"
               >
-                <Text
-                  style={[
-                    styles.sortChipText,
-                    {
-                      color: isSelected
-                        ? theme === 'green'
-                          ? '#071C18'
-                          : '#FFFFFF'
-                        : colors.textSecondary,
-                      fontFamily: isSelected ? Fonts.bold : Fonts.medium,
-                    },
-                  ]}
-                >
-                  {opt.label}
-                </Text>
-              </TactilePressable>
-            )
-          })}
-        </ScrollView>
+                {total ?? '…'}
+              </Text>
+            </View>
+          </View>
 
-        {/* Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {filters.category === 'all'
-              ? 'Të gjitha pronat'
-              : CATEGORY_ITEMS.find((c) => c.id === filters.category)?.label || 'Prona'}
-          </Text>
-          {activeFiltersCount > 0 && (
+          <View style={styles.sectionActionsRow}>
+            {activeFiltersCount > 0 && (
+              <TactilePressable
+                onPress={() => {
+                  setFilters({
+                    ...DEFAULT_FILTER_STATE,
+                    transactionType: filters.transactionType,
+                    category: filters.category,
+                  })
+                }}
+                hitSlop={8}
+                activeScale={0.94}
+                haptic="light"
+                style={[
+                  styles.resetPill,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <RotateCcw size={11} color={colors.primary} strokeWidth={2.4} />
+                <Text style={[styles.resetLink, { color: colors.primary }]}>Pastro</Text>
+              </TactilePressable>
+            )}
+
+            {/* Apple/Linear-Grade Expandable Sort Trigger */}
             <TactilePressable
-              onPress={() => {
-                setFilters({
-                  ...DEFAULT_FILTER_STATE,
-                  transactionType: filters.transactionType,
-                  category: filters.category,
-                })
-              }}
-              hitSlop={8}
+              style={[
+                styles.sortSelectorPill,
+                {
+                  backgroundColor: isCustomSort
+                    ? theme === 'green'
+                      ? 'rgba(212, 175, 55, 0.16)'
+                      : 'rgba(0, 103, 91, 0.10)'
+                    : theme === 'white'
+                    ? '#FFFFFF'
+                    : colors.surface,
+                  borderColor: isCustomSort
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.border,
+                },
+              ]}
+              onPress={() => setShowSortSheet(true)}
               activeScale={0.95}
-              haptic="light"
+              haptic="selection"
+              hitSlop={6}
             >
-              <Text style={[styles.resetLink, { color: colors.primary }]}>Pastro filtrat</Text>
+              <ArrowDownUp
+                size={13}
+                color={
+                  isCustomSort
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.textSecondary
+                }
+                strokeWidth={2.2}
+              />
+              <Text
+                style={[
+                  styles.sortSelectorText,
+                  {
+                    color: isCustomSort
+                      ? theme === 'green'
+                        ? colors.gold
+                        : colors.primary
+                      : colors.textPrimary,
+                    fontFamily: isCustomSort ? Fonts.bold : Fonts.semiBold,
+                  },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {currentSortOption.shortLabel}
+              </Text>
+              <ChevronDown
+                size={12}
+                color={
+                  isCustomSort
+                    ? theme === 'green'
+                      ? colors.gold
+                      : colors.primary
+                    : colors.textMuted
+                }
+                strokeWidth={2.2}
+              />
             </TactilePressable>
-          )}
+          </View>
         </View>
 
         {/* Listings Feed */}
         {loading && listings.length === 0 ? (
           <ListingFeedSkeleton count={4} />
-        ) : displayedListings.length === 0 ? (
+        ) : listings.length === 0 ? (
           <View
             style={[
               styles.emptyContainer,
@@ -479,6 +715,13 @@ export default function ListingsScreen() {
           </View>
         ) : null}
         </>}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadMoreFooter}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
       />
 
 
@@ -488,6 +731,16 @@ export default function ListingsScreen() {
         onClose={() => setShowFilterModal(false)}
         filters={filters}
         onApply={(updated) => setFilters(updated)}
+      />
+
+      {/* Native Expandable Sort Bottom Sheet */}
+      <SortBottomSheet
+        isOpen={showSortSheet}
+        onClose={() => setShowSortSheet(false)}
+        currentSort={filters.sortBy}
+        onSelectSort={(newSort) => {
+          setFilters((prev) => ({ ...prev, sortBy: newSort }))
+        }}
       />
     </View>
   )
@@ -593,40 +846,76 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Fonts.bold,
   },
-  sortScroll: {
-    marginTop: 6,
-    marginBottom: 8,
-    marginHorizontal: -16,
-  },
-  sortScrollContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  sortChip: {
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: 12,
-    borderWidth: 0.5,
-  },
-  sortChipText: {
-    fontSize: 12,
-    letterSpacing: -0.2,
-  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 14,
+    marginTop: 14,
+    marginBottom: 12,
+    gap: 8,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexShrink: 1,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.4,
+  },
+  resultCountBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultCountText: {
+    fontSize: 11.5,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.3,
+  },
+  sectionActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  resetPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 0.5,
   },
   resetLink: {
+    fontSize: 12,
+    fontFamily: Fonts.bold,
+  },
+  sortSelectorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 6.5,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    flexShrink: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  sortSelectorText: {
     fontSize: 12.5,
-    fontFamily: Fonts.semiBold,
+    letterSpacing: -0.2,
+    flexShrink: 1,
+    maxWidth: '60%',
   },
   emptyContainer: {
     padding: 32,
@@ -656,5 +945,10 @@ const styles = StyleSheet.create({
   resetButtonText: {
     fontSize: 13,
     fontFamily: Fonts.semiBold,
+  },
+  loadMoreFooter: {
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

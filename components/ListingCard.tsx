@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, BedDouble, Maximize2, Heart, Star, Building2 } from 'lucide-react'
 import type { Listing } from '@/lib/supabase'
+import { cardImageSrc } from '@/lib/image-transform'
 
 export type ListingCardData = Pick<
   Listing,
@@ -50,7 +51,7 @@ const ListingCard = React.memo(function ListingCard({
           {coverImage ? (
             <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.03]">
               <Image
-                src={coverImage}
+                src={cardImageSrc(coverImage)}
                 alt={listing.title}
                 fill
                 priority={priority}

@@ -13,6 +13,7 @@ import { BlurView } from 'expo-blur'
 import { Heart } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { playHeartSound, playUnlikeSound } from '@/lib/sound'
+import { getSyncAuthUser } from '@/lib/auth-cache'
 
 export interface FavoriteButtonProps {
   isFavorite: boolean
@@ -44,7 +45,6 @@ export const FavoriteButton = memo(function FavoriteButton({
   const lastPressRef = useRef<number>(0)
   const isUserInteracting = useRef<boolean>(false)
   const prevFavoriteRef = useRef<boolean>(isFavorite)
-  const isFirstRender = useRef<boolean>(true)
 
   // 1. Instantaneous Touch Anticipation (Press-In Compression)
   const handlePressIn = useCallback(() => {
@@ -79,8 +79,12 @@ export const FavoriteButton = memo(function FavoriteButton({
       if (now - lastPressRef.current < 260) return
       lastPressRef.current = now
 
-      // Guard: Auth or permission check
-      if (canToggle && !canToggle()) {
+      // Guard: Strict guest authorization check — unauthenticated users cannot favorite
+      const user = getSyncAuthUser()
+      if (!user || (canToggle && !canToggle())) {
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+        }
         onToggle()
         return
       }
@@ -159,11 +163,6 @@ export const FavoriteButton = memo(function FavoriteButton({
 
   // 4. Graceful External Prop Synchronization (Cache hydration, external un-saves)
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
     if (prevFavoriteRef.current === isFavorite) return
     prevFavoriteRef.current = isFavorite
 
@@ -174,13 +173,21 @@ export const FavoriteButton = memo(function FavoriteButton({
     }
 
     // External state change: smoothly animate to match prop without sound or haptic side effects
-    Animated.timing(activeProgress, {
-      toValue: isFavorite ? 1 : 0,
-      duration: 180,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start()
-  }, [isFavorite, activeProgress])
+    Animated.parallel([
+      Animated.timing(activeProgress, {
+        toValue: isFavorite ? 1 : 0,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.spring(heartScale, {
+        toValue: 1.0,
+        tension: 300,
+        friction: 14,
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }, [isFavorite, activeProgress, heartScale])
 
   // Design tokens & Theme specs
   const isDark = variant === 'dark'

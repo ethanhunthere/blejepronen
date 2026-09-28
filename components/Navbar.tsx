@@ -227,11 +227,33 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const realtimeChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
   const userIdRef = useRef<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  // --- Accessibility: focus management for the two popovers this component owns.
+  // The mobile sheet is a modal dialog; the user dropdown is a non-modal dialog.
+  const dropdownPanelRef = useRef<HTMLDivElement>(null)
+  const userMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const menuToggleRef = useRef<HTMLButtonElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  /** Element that had focus before a popover opened — restored on close. */
+  const lastFocusedRef = useRef<HTMLElement | null>(null)
+  /**
+   * Only restore focus when the user dismissed the sheet (Escape / toggle).
+   * Route-change closes deliberately leave focus alone, because
+   * `handleNavClick` blurs on purpose and the destination page is taking over.
+   */
+  const restoreFocusRef = useRef(false)
   const supabaseRef = useRef(_supabaseClient)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const isAuthPage = pathname === '/register' || pathname === '/login' || pathname === '/forgot-password'
+
+  /**
+   * Active-route test used for `aria-current="page"`. Compares pathname only:
+   * reading `window.location.search` during render would desync server and
+   * client markup, so query-differentiated links (e.g. `/listings?type=qira`)
+   * are intentionally left unmarked.
+   */
+  const isActivePath = useCallback((href: string) => pathname === href.split('?')[0], [pathname])
 
   // Scroll-aware search handoff: on the homepage the hero's inline SearchBar
   // owns search while it's in view — the navbar trigger fades in only after
@@ -555,6 +577,105 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [dropdownOpen])
 
+  // ---- User dropdown: focus in on open, Escape closes and returns focus ----
+  // The trigger discloses a rich *non-modal* dialog popover (profile card plus
+  // two-line labelled actions), so it uses aria-haspopup="dialog" rather than
+  // "menu": the menuitem contract expects terse items and full roving-tabindex
+  // arrow navigation, which does not fit this content.
+  useEffect(() => {
+    if (!dropdownOpen) return
+
+    // Focus the first real control rather than the container, so keyboard users
+    // get a visible focus ring on something they can actually activate.
+    const panel = dropdownPanelRef.current
+    if (panel) {
+      const first = panel.querySelector<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      ;(first ?? panel).focus({ preventScroll: true })
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setDropdownOpen(false)
+      // Focus was inside the panel that is about to unmount — hand it back to
+      // the disclosure button instead of letting it fall through to <body>.
+      userMenuTriggerRef.current?.focus({ preventScroll: true })
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [dropdownOpen])
+
+  // ---- Mobile sheet: focus in, Tab trap, focus restore ----
+  useEffect(() => {
+    if (!menuOpen) return
+    const sheet = mobileMenuRef.current
+    if (!sheet) return
+
+    lastFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+
+    const FOCUSABLE =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    const isVisible = (el: HTMLElement) => el.getClientRects().length > 0
+
+    // Recomputed on every Tab so links that appear/disappear (auth state,
+    // unread badge) cannot strand focus outside the trap.
+    const getFocusable = (): HTMLElement[] => {
+      const nodes: HTMLElement[] = []
+      // The hamburger lives in the persistent header *outside* the sheet, but it
+      // is the sheet's visible close control, so it must stay in the Tab cycle.
+      if (menuToggleRef.current && isVisible(menuToggleRef.current)) {
+        nodes.push(menuToggleRef.current)
+      }
+      sheet.querySelectorAll<HTMLElement>(FOCUSABLE).forEach((el) => {
+        if (isVisible(el)) nodes.push(el)
+      })
+      return nodes
+    }
+
+    // Focus the dialog container itself so assistive tech announces
+    // "Menyja e navigimit, dialog". Deliberately not the first control: that is
+    // the sr-only close button, which paints itself on focus and would flash a
+    // pill every time the sheet opens.
+    sheet.focus({ preventScroll: true })
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const items = getFocusable()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = document.activeElement as HTMLElement | null
+
+      if (!active || !items.includes(active)) {
+        e.preventDefault()
+        ;(e.shiftKey ? last : first).focus({ preventScroll: true })
+        return
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault()
+        last.focus({ preventScroll: true })
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first.focus({ preventScroll: true })
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [menuOpen])
+
+  // Return focus to whatever opened the sheet, once it has closed.
+  useEffect(() => {
+    if (menuOpen || !restoreFocusRef.current) return
+    restoreFocusRef.current = false
+    const el = lastFocusedRef.current
+    lastFocusedRef.current = null
+    if (el?.isConnected) el.focus({ preventScroll: true })
+  }, [menuOpen])
+
   // Prefetch primary navigation routes for instant transition
   useEffect(() => {
     try {
@@ -612,7 +733,11 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     window.addEventListener('wheel', preventOutsideScroll, { passive: false })
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false)
+      if (e.key === 'Escape') {
+        // User-initiated dismissal: give focus back to the hamburger afterwards.
+        restoreFocusRef.current = true
+        setMenuOpen(false)
+      }
     }
     window.addEventListener('keydown', onKey)
 
@@ -759,7 +884,10 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const displayName = profile.firstName || activeUser?.email?.split('@')[0] || 'Përdorues'
 
   return (
-    <nav className={`${positionClasses} bg-[#00675B] pt-[env(safe-area-inset-top,0px)] ${menuOpen ? 'border-b border-white/10' : 'border-b border-[#004D43] shadow-sm'} transition-colors duration-200 px-4 sm:px-8 lg:px-12 ${className || ''}`}>
+    <nav
+      aria-label="Navigimi kryesor"
+      className={`${positionClasses} bg-[#00675B] pt-[env(safe-area-inset-top,0px)] ${menuOpen ? 'border-b border-white/10' : 'border-b border-[#004D43] shadow-sm'} transition-colors duration-200 px-4 sm:px-8 lg:px-12 ${className || ''}`}
+    >
       <div className="w-full relative z-50">
         {/* Fixed-height row: every child is vertically centered, so top and
             bottom padding are equal by construction at every breakpoint. */}
@@ -824,6 +952,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             <div className="hidden lg:flex items-center gap-2">
               <Link
                 href="/listings"
+                aria-current={pathname === '/listings' ? 'page' : undefined}
                 className={`relative inline-flex items-center h-10 text-[15px] px-3.5 rounded-lg transition-all duration-200 ${
                   pathname === '/listings'
                     ? 'text-white font-semibold after:absolute after:bottom-1 after:left-3.5 after:right-3.5 after:h-[2.5px] after:bg-[#C8B882] after:rounded-full'
@@ -857,11 +986,19 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/mesazhet"
                       className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl text-[#b3d8d4] hover:text-white hover:bg-[#004D43] transition-all duration-200 cursor-pointer"
-                      aria-label="Mesazhet"
+                      aria-current={isActivePath('/mesazhet') ? 'page' : undefined}
+                      aria-label={
+                        unreadCount > 0
+                          ? `Mesazhet, ${unreadCount} ${unreadCount === 1 ? 'i palexuar' : 'të palexuar'}`
+                          : 'Mesazhet'
+                      }
                     >
-                      <MessageCircle className="h-5 w-5" />
+                      <MessageCircle className="h-5 w-5" aria-hidden="true" />
                       {unreadCount > 0 && (
-                        <span className="badge-new absolute top-0.5 right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">
+                        <span
+                          aria-hidden="true"
+                          className="badge-new absolute top-0.5 right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                        >
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                       )}
@@ -871,6 +1008,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <div className="relative flex-shrink-0" ref={dropdownRef}>
                       <button
                         type="button"
+                        ref={userMenuTriggerRef}
                         onClick={() => {
                           const next = !dropdownOpen
                           setDropdownOpen(next)
@@ -883,35 +1021,54 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                             ? 'ring-2 ring-white/70 ring-offset-2 ring-offset-[#00675B] shadow-md scale-105'
                             : 'ring-2 ring-white/30 hover:ring-white/80 hover:scale-105'
                         }`}
-                        aria-label="Menyja e përdoruesit"
+                        aria-label={
+                          unreadCount > 0
+                            ? `Menyja e përdoruesit, ${unreadCount} ${unreadCount === 1 ? 'mesazh i palexuar' : 'mesazhe të palexuara'}`
+                            : 'Menyja e përdoruesit'
+                        }
                         aria-expanded={dropdownOpen}
-                        aria-haspopup="true"
+                        aria-haspopup="dialog"
+                        aria-controls={dropdownOpen ? 'user-menu-panel' : undefined}
                       >
                         <div className="relative w-10 h-10 rounded-full overflow-hidden">
                           <Image
                             src={getAvatarUrl(profile.avatarUrl)}
-                            alt="Foto profili"
+                            alt=""
                             fill
                             sizes="40px"
                             className="object-cover"
                           />
                         </div>
                         {unreadCount > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold border-2 border-[#00675B] rounded-full flex items-center justify-center shadow-xs">
+                          <span
+                            aria-hidden="true"
+                            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold border-2 border-[#00675B] rounded-full flex items-center justify-center shadow-xs"
+                          >
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </span>
                         )}
                       </button>
 
                       {dropdownOpen && (
-                        <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-84 bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,100,89,0.22),0_10px_25px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,100,89,0.08)] border border-gray-100/90 p-2.5 z-50 text-[#101828] animate-in fade-in-0 zoom-in-95 duration-150 ease-out origin-top-right">
-                          {/* User info header card */}
-                          <div
-                            className="p-3.5 rounded-2xl bg-gradient-to-br from-[#00675B]/[0.06] via-[#F2F7F7] to-[#C8B882]/[0.10] border border-[#00675B]/10 cursor-pointer hover:border-[#00675B]/30 hover:shadow-xs transition-all group"
-                            onClick={() => {
-                              closeDropdown()
-                              router.push('/profili')
-                            }}
+                        <div
+                          id="user-menu-panel"
+                          ref={dropdownPanelRef}
+                          role="dialog"
+                          aria-label="Menyja e përdoruesit"
+                          tabIndex={-1}
+                          className="absolute right-0 top-full mt-2.5 w-80 sm:w-84 bg-white rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,100,89,0.22),0_10px_25px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,100,89,0.08)] border border-gray-100/90 p-2.5 z-50 text-[#101828] animate-in fade-in-0 zoom-in-95 duration-150 ease-out origin-top-right focus:outline-none"
+                        >
+                          {/* User info header card — a real link (it navigates to
+                              /profili). Previously a <div onClick>, which was not
+                              focusable and had no keyboard activation. <a> has a
+                              transparent content model, so the nested block
+                              markup inside stays valid HTML. */}
+                          <Link
+                            href="/profili"
+                            prefetch={true}
+                            aria-label={`Shiko profilin e ${displayName}`}
+                            onClick={closeDropdown}
+                            className="block w-full text-left p-3.5 rounded-2xl bg-gradient-to-br from-[#00675B]/[0.06] via-[#F2F7F7] to-[#C8B882]/[0.10] border border-[#00675B]/10 cursor-pointer hover:border-[#00675B]/30 hover:shadow-xs transition-all group"
                           >
                             <div className="flex items-center gap-3">
                               <div className="relative w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-white shadow-sm ring-2 ring-[#00675B]/15 group-hover:ring-[#00675B]/40 transition-all navbar-avatar-display">
@@ -952,7 +1109,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </Link>
 
                           {/* Profile Incomplete Alert */}
                           {profile.incomplete && (
@@ -1131,8 +1288,13 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             {/* Mobile menu button */}
             <button
               type="button"
+              ref={menuToggleRef}
               className="lg:hidden relative inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/35 border border-white/20 text-white shadow-sm transition-all cursor-pointer overflow-hidden"
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => {
+                // Toggling shut is a user dismissal, so focus comes back here.
+                restoreFocusRef.current = menuOpen
+                setMenuOpen(!menuOpen)
+              }}
               aria-label={menuOpen ? 'Mbyll menunë' : 'Hap menunë'}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
@@ -1164,13 +1326,33 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
        * -------------------------------------------------------------- */}
       <div
         id="mobile-menu"
+        ref={mobileMenuRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menyja e navigimit"
+        tabIndex={-1}
         inert={!menuOpen ? true : undefined}
-        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#00675B] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out ${
+        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#00675B] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out focus:outline-none ${
           menuOpen
             ? 'visible opacity-100 pointer-events-auto'
             : 'invisible opacity-0 pointer-events-none'
         }`}
       >
+        {/* In-dialog close control. The visible X lives in the persistent header,
+            i.e. *outside* this aria-modal dialog, so without this a screen-reader
+            user inside the dialog would have no operable way to dismiss it
+            (Escape alone is not discoverable). sr-only until focused, so the
+            visual design of the sheet is unchanged. */}
+        <button
+          type="button"
+          onClick={() => {
+            restoreFocusRef.current = true
+            setMenuOpen(false)
+          }}
+          className="sr-only focus:not-sr-only focus:absolute focus:top-[calc(3.75rem+env(safe-area-inset-top,0px))] focus:left-4 focus:z-50 focus:inline-flex focus:h-11 focus:items-center focus:rounded-xl focus:bg-[#C8B882] focus:px-4 focus:text-sm focus:font-bold focus:text-[#00392F]"
+        >
+          Mbyll menunë
+        </button>
         {/* Full-screen content: Section 1, 2, 3 high up near each other; footer at bottom */}
         <div
           id="mobile-menu-scrollable"
@@ -1184,7 +1366,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
               <div id="section-1-account" suppressHydrationWarning>
                 {/* 1. Mobile Logged-in Card (synchronously displayed if html[data-auth="logged-in"]) */}
                 <div
-                  className={`rounded-3xl bg-gradient-to-br from-white/[0.18] via-white/[0.10] to-white/[0.05] backdrop-blur-2xl p-4 border border-white/25 shadow-2xl text-white ${
+                  className={`rounded-3xl bg-gradient-to-br from-white/[0.18] via-white/[0.10] to-white/[0.05] p-4 border border-white/25 shadow-2xl text-white ${
                     activeUser ? 'block' : activeUser === null ? 'hidden' : 'hidden mobile-auth-logged-in'
                   }`}
                 >
@@ -1220,6 +1402,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/profili"
                       prefetch={true}
+                      aria-current={isActivePath('/profili') ? 'page' : undefined}
                       onClick={() => handleNavClick('/profili')}
                       className="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95 shadow-xs border border-white/20 cursor-pointer"
                     >
@@ -1233,6 +1416,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/postimet-e-mia"
                       prefetch={true}
+                      aria-current={isActivePath('/postimet-e-mia') ? 'page' : undefined}
                       onClick={() => handleNavClick('/postimet-e-mia')}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
@@ -1243,23 +1427,33 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/mesazhet"
                       prefetch={true}
+                      aria-current={isActivePath('/mesazhet') ? 'page' : undefined}
                       onClick={() => handleNavClick('/mesazhet')}
                       className="relative flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
                       <div className="relative">
-                        <MessageCircle className="h-4 w-4 text-white/90 shrink-0" />
+                        <MessageCircle className="h-4 w-4 text-white/90 shrink-0" aria-hidden="true" />
                         {unreadCount > 0 && (
-                          <span className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#00675B]">
+                          <span
+                            aria-hidden="true"
+                            className="absolute -top-1.5 -right-2.5 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#00675B]"
+                          >
                             {unreadCount > 9 ? '9+' : unreadCount}
                           </span>
                         )}
                       </div>
                       <span className="truncate text-[11px] sm:text-center">Mesazhet</span>
+                      {unreadCount > 0 && (
+                        <span className="sr-only">
+                          {unreadCount} {unreadCount === 1 ? 'i palexuar' : 'të palexuar'}
+                        </span>
+                      )}
                     </Link>
 
                     <Link
                       href="/settings"
                       prefetch={true}
+                      aria-current={isActivePath('/settings') ? 'page' : undefined}
                       onClick={() => handleNavClick('/settings')}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
@@ -1270,6 +1464,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/posto-prona"
                       prefetch={true}
+                      aria-current={isActivePath('/posto-prona') ? 'page' : undefined}
                       onClick={() => handleNavClick('/posto-prona')}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-[#C8B882]/30 hover:bg-[#C8B882]/40 active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-[#C8B882]/40"
                     >
@@ -1366,6 +1561,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/listings"
                       prefetch={true}
+                      aria-current={isActivePath('/listings') ? 'page' : undefined}
                       onClick={() => handleNavClick('/listings')}
                       className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.18] border border-white/15 text-white text-center transition-colors cursor-pointer group"
                     >
@@ -1404,6 +1600,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   <Link
                     href="/listings"
                     prefetch={true}
+                    aria-current={isActivePath('/listings') ? 'page' : undefined}
                     onClick={() => handleNavClick('/listings')}
                     className="text-[11px] font-semibold text-white/70 hover:text-white transition-colors"
                   >
@@ -1449,6 +1646,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <Link
                   href="/kontakti"
                   prefetch={true}
+                  aria-current={isActivePath('/kontakti') ? 'page' : undefined}
                   onClick={() => handleNavClick('/kontakti')}
                   className="hover:text-white transition-colors"
                 >
@@ -1458,6 +1656,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <Link
                   href="/kushtet"
                   prefetch={true}
+                  aria-current={isActivePath('/kushtet') ? 'page' : undefined}
                   onClick={() => handleNavClick('/kushtet')}
                   className="hover:text-white transition-colors"
                 >
@@ -1467,6 +1666,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <Link
                   href="/privatesia"
                   prefetch={true}
+                  aria-current={isActivePath('/privatesia') ? 'page' : undefined}
                   onClick={() => handleNavClick('/privatesia')}
                   className="hover:text-white transition-colors"
                 >

@@ -1,5 +1,19 @@
 import { supabase } from './supabase'
 import { KOSOVO_LOCATIONS } from './kosovo-locations'
+import { fetchListingsPage, sanitizeSearchText } from './listings-query'
+
+/**
+ * Multi-entity search for the mobile app.
+ *
+ * Listing matching is delegated to `lib/listings-query.ts` (the mobile mirror of
+ * the canonical web query module) so search and catalog can never disagree on
+ * sanitization, filters or sort — and so the listing tab count is the honest
+ * server total rather than the size of the fetched window.
+ *
+ * People matching uses the `profiles_public` view (the same source the web
+ * explorer queries): it exposes no phone/email/account_type, which keeps private
+ * columns out of search results and immune to `profiles` schema drift.
+ */
 
 export type OmniEntityType = 'listing' | 'agency' | 'agent' | 'location'
 
@@ -11,21 +25,25 @@ export interface OmniResultItem {
   badge?: string
   imageUrl?: string | null
   price?: number | null
-  city?: string
   score: number
   payload?: any
   targetUrl: string
 }
 
+export interface OmniSearchCounts {
+  /** Exact server-side totals for the current query, not window sizes. */
+  listings: number
+  agencies: number
+  agents: number
+  locations: number
+}
+
 export interface OmniSearchResponse {
   query: string
+  /** Sum of the exact per-entity totals. */
   total: number
-  counts: {
-    listings: number
-    agencies: number
-    agents: number
-    locations: number
-  }
+  counts: OmniSearchCounts
+  /** Relevance-ranked slices of each entity set (windowed, see `counts` for totals). */
   results: {
     listings: OmniResultItem[]
     agencies: OmniResultItem[]
@@ -33,7 +51,6 @@ export interface OmniSearchResponse {
     locations: OmniResultItem[]
   }
   flat: OmniResultItem[]
-  trending: string[]
 }
 
 export const TRENDING_SEARCHES = [
@@ -44,13 +61,36 @@ export const TRENDING_SEARCHES = [
   'Dardania',
   'Prizren',
   'Penthouse',
-  'Truall / Tokë',
+  'Toka',
 ]
+
+/** How many rows of each remote entity are rendered per search. */
+const LISTINGS_WINDOW = 25
+const PEOPLE_WINDOW = 25
 
 // High-speed in-memory query cache for instantaneous (0ms) keystroke retrieval
 const searchCache = new Map<string, { timestamp: number; data: OmniSearchResponse }>()
 const CACHE_TTL_MS = 90_000 // 90 seconds
 const MAX_CACHE_ENTRIES = 120
+
+/**
+ * Name stems that mark a `profiles_public` row as a company/agency account.
+ * The same list drives both the SQL `or=(…)` count and the client-side
+ * partition, so the tab badge and the rendered rows can never disagree.
+ * Both diacritic spellings are listed because `ilike` is diacritic-sensitive.
+ */
+const CORPORATE_NAME_TOKENS = [
+  'agjenci',
+  'agjensia',
+  'kompani',
+  'shpk',
+  'real estate',
+  'patundshm',
+  'ndërtim',
+  'ndertim',
+  'group',
+  'invest',
+]
 
 export function normalizeSearchString(str: string): string {
   if (!str) return ''
@@ -61,6 +101,34 @@ export function normalizeSearchString(str: string): string {
     .replace(/[ëË]/g, 'e')
     .replace(/[çÇ]/g, 'c')
     .trim()
+}
+
+/**
+ * PostgREST filter-string safe form of a raw query.
+ * Characters such as `, ( ) . % " \` are structural inside an `.or()` /
+ * `.ilike.%…%` condition, so they are stripped and whitespace is collapsed.
+ * Only letters, digits, spaces, `+` and `-` survive.
+ */
+function sanitizeFilterToken(raw: string): string {
+  if (!raw) return ''
+  return raw
+    .replace(/[^A-Za-z0-9\u00C0-\u024F\s+-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** `or=(…)` expression matching corporate accounts by name. */
+function corporateNameExpression(): string {
+  return CORPORATE_NAME_TOKENS.map(
+    (token) => `first_name.ilike.%${token}%,last_name.ilike.%${token}%`
+  ).join(',')
+}
+
+/** Client-side twin of `corporateNameExpression` — keep the two in sync. */
+function isCorporateName(firstName: string, lastName: string): boolean {
+  const first = (firstName || '').toLowerCase()
+  const last = (lastName || '').toLowerCase()
+  return CORPORATE_NAME_TOKENS.some((token) => first.includes(token) || last.includes(token))
 }
 
 /**
@@ -85,7 +153,6 @@ export function searchLocations(query: string, limit = 6): OmniResultItem[] {
         subtitle: 'Qytet në Kosovë',
         badge: 'Qytet',
         score: isExact ? 100 : startsWith ? 88 : 65,
-        city,
         payload: { city, isCity: true },
         targetUrl: `/listings?city=${encodeURIComponent(city)}`,
       })
@@ -103,7 +170,6 @@ export function searchLocations(query: string, limit = 6): OmniResultItem[] {
           subtitle: `Lagje në ${city}`,
           badge: city,
           score: isExact ? 96 : startsWith ? 82 : 58,
-          city,
           payload: { city, neighborhood: hood, isCity: false },
           targetUrl: `/listings?city=${encodeURIComponent(city)}&neighborhood=${encodeURIComponent(hood)}`,
         })
@@ -114,97 +180,76 @@ export function searchLocations(query: string, limit = 6): OmniResultItem[] {
   return matches.sort((a, b) => b.score - a.score).slice(0, limit)
 }
 
-/**
- * Multi-Entity Search Pipeline
- * Actively queries listings, profiles, and companies database tables in parallel with unified aggregation.
- * Surfaces matching people, individual sellers, and agency/company accounts alongside property listings.
- */
-export async function executeMobileOmniSearch(
-  query: string,
-  filterType?: string
-): Promise<OmniSearchResponse> {
-  const cleanQ = query.trim()
-  if (!cleanQ) {
-    return {
-      query: '',
-      total: 0,
-      counts: { listings: 0, agencies: 0, agents: 0, locations: 0 },
-      results: { listings: [], agencies: [], agents: [], locations: [] },
-      flat: [],
-      trending: TRENDING_SEARCHES,
-    }
+function emptyResponse(query: string, locations: OmniResultItem[] = []): OmniSearchResponse {
+  return {
+    query,
+    total: locations.length,
+    counts: { listings: 0, agencies: 0, agents: 0, locations: locations.length },
+    results: { listings: [], agencies: [], agents: [], locations },
+    flat: locations,
   }
+}
+
+/**
+ * Federated search across listings (via the shared query layer) and public
+ * people profiles, plus the synchronous local location index.
+ */
+export async function executeMobileOmniSearch(query: string): Promise<OmniSearchResponse> {
+  const cleanQ = query.trim()
+  if (!cleanQ) return emptyResponse('')
 
   const normQ = normalizeSearchString(cleanQ)
-  const cacheKey = `${normQ}_${filterType || 'all'}`
+  const cacheKey = normQ
 
-  // 1. Instant Cache Hit (0.00ms)
+  // 1. Instant cache hit (0.00ms)
   const cached = searchCache.get(cacheKey)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data
   }
 
-  // 2. Synchronous Instant Locations Matching
+  // 2. Synchronous instant location matching (fully enumerated → honest count)
   const locations = searchLocations(cleanQ, 6)
 
-  // 3. Build dynamic phone search filters if query contains numbers
-  const digitsOnly = cleanQ.replace(/[^0-9]/g, '')
-  const phoneFilters: string[] = []
-  if (digitsOnly.length >= 2) {
-    phoneFilters.push(`phone.ilike.%${digitsOnly}%`)
-    // If phone starts with 0 (e.g. 044 -> 44)
-    if (digitsOnly.startsWith('0')) {
-      phoneFilters.push(`phone.ilike.%${digitsOnly.slice(1)}%`)
-    }
-  }
+  // Only a filter-string safe query may reach PostgREST. An empty `ilike.%%`
+  // would match every row, so structural-only input falls back to local results.
+  const safeQ = sanitizeFilterToken(cleanQ)
+  if (!safeQ) return emptyResponse(cleanQ, locations)
 
-  // Check if query is looking for companies
-  const isCorporateSearch = /agjenci|kompani|patundshm|real\s*estate|shpk|invest|group/i.test(normQ)
-
-  // Build profiles OR conditions strictly with valid columns
-  const profileConditions: string[] = [
-    `first_name.ilike.%${cleanQ}%`,
-    `last_name.ilike.%${cleanQ}%`,
-    ...phoneFilters,
-  ]
-  if (isCorporateSearch) {
-    profileConditions.push('last_name.ilike.%Kompani%')
-    profileConditions.push('first_name.ilike.%Agjenci%')
-    profileConditions.push('first_name.ilike.%Kompani%')
-  }
-
-  // 4. Parallel Federated Queries across Listings, Profiles, and Companies
   try {
-    const [listingsRes, profilesRes, companiesRes] = await Promise.all([
-      // A. Query listings table
-      supabase
-        .from('listings')
-        .select('id, title, price, city, neighborhood, type, images, area_m2, rooms, apartment_type, user_id')
-        .eq('is_active', true)
-        .or(`title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,neighborhood.ilike.%${cleanQ}%,description.ilike.%${cleanQ}%`)
-        .limit(25),
+    const [listingsPage, peopleRes, corporateRes] = await Promise.all([
+      // A. Listings — shared query layer: card columns only, is_active, exact count.
+      fetchListingsPage({ search: sanitizeSearchText(cleanQ), limit: LISTINGS_WINDOW, sort: 'newest' }),
 
-      // B. Query profiles table (using strictly verified schema columns)
+      // B. Public people profiles (no phone / email / account_type columns).
       supabase
-        .from('profiles')
-        .select('id, first_name, last_name, phone, avatar_url, email_verified, created_at')
-        .or(profileConditions.join(','))
-        .limit(25),
+        .from('profiles_public')
+        .select('id, first_name, last_name, avatar_url, email_verified, created_at', {
+          count: 'exact',
+        })
+        .or(`first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%`)
+        .limit(PEOPLE_WINDOW),
 
-      // C. Query companies table (gracefully handle if table or view exists)
+      // C. Count-only probe for the corporate subset, so the "Agjenci" tab badge
+      //    is a server total instead of a count of the fetched window.
       supabase
-        .from('companies')
-        .select('*')
-        .or(`name.ilike.%${cleanQ}%,title.ilike.%${cleanQ}%,city.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`)
-        .limit(20),
+        .from('profiles_public')
+        .select('id', { count: 'exact', head: true })
+        .or(
+          `and(or(first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%),or(${corporateNameExpression()}))`
+        ),
     ])
 
-    const rawListings = listingsRes.data || []
-    const rawProfiles = profilesRes.data || []
-    const rawCompanies = (!companiesRes.error && Array.isArray(companiesRes.data)) ? companiesRes.data : []
+    const rawPeople = (!peopleRes.error && peopleRes.data ? peopleRes.data : []) as {
+      id: string
+      first_name: string | null
+      last_name: string | null
+      avatar_url: string | null
+      email_verified: boolean | null
+    }[]
+    const peopleTotal = peopleRes.error ? rawPeople.length : peopleRes.count ?? rawPeople.length
 
-    // ─── 5. Parse & Score Listings ───
-    const listings: OmniResultItem[] = rawListings.map((item: any) => {
+    // ─── 3. Score listings ───
+    const listings: OmniResultItem[] = listingsPage.rows.map((item: any) => {
       const normTitle = normalizeSearchString(item.title || '')
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
@@ -225,35 +270,27 @@ export async function executeMobileOmniSearch(
         badge: item.type === 'shitje' ? 'Në shitje' : 'Me qira',
         imageUrl: item.images?.[0] || null,
         price: Number(item.price) || 0,
-        city: item.city,
         score,
         targetUrl: `/listings/${item.id}`,
       }
     })
 
-    // ─── 6. Parse & Partition Profiles into Agencies & Individual Users ───
+    // ─── 4. Partition people into agencies & private owners ───
     const agencies: OmniResultItem[] = []
     const agents: OmniResultItem[] = []
 
-    for (const p of rawProfiles) {
-      const isCompany =
-        p.last_name === 'Kompani' ||
-        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.first_name || '') ||
-        /agjenci|kompani|shpk|real\s*estate|patundshm|ndertim|group|invest/i.test(p.last_name || '') ||
-        Boolean((p as any).is_company) ||
-        (p as any).account_type === 'company'
+    for (const p of rawPeople) {
+      const isCompany = isCorporateName(p.first_name || '', p.last_name || '')
 
       const normFirst = normalizeSearchString(p.first_name || '')
       const normLast = normalizeSearchString(p.last_name || '')
       const normFull = `${normFirst} ${normLast}`.trim()
-      const normPhone = normalizeSearchString(p.phone || '')
 
       let score = 55 // High baseline so matched people/companies surface prominently
       if (normFull === normQ || normFirst === normQ) score += 50
       else if (normFull.startsWith(normQ) || normFirst.startsWith(normQ)) score += 40
       else if (normFull.includes(normQ) || normFirst.includes(normQ)) score += 25
       if (normLast && (normLast === normQ || normLast.startsWith(normQ))) score += 30
-      if (normPhone && (normPhone.includes(normQ) || (digitsOnly && normPhone.includes(digitsOnly)))) score += 45
       if (p.email_verified) score += 10
       if (isCompany) score += 8
 
@@ -267,19 +304,12 @@ export async function executeMobileOmniSearch(
         title: displayName,
         subtitle: isCompany
           ? 'Agjenci e Licencuar e Patundshmërive'
-          : (p.phone ? `Pronar Privat • ${p.phone}` : 'Pronar Privat • Llogari e Verifikuar'),
+          : 'Pronar Privat • Llogari e Verifikuar',
         badge: isCompany ? 'Agjenci' : 'Pronar',
         imageUrl: p.avatar_url || null,
         price: null,
-        city: undefined,
         score,
-        payload: {
-          phone: p.phone,
-          email_verified: p.email_verified,
-          id: p.id,
-          isCompany,
-          account_type: isCompany ? 'company' : 'individual',
-        },
+        payload: { id: p.id, isCompany, email_verified: Boolean(p.email_verified) },
         targetUrl: `/profili/${p.id}`,
       }
 
@@ -287,59 +317,31 @@ export async function executeMobileOmniSearch(
       else agents.push(item)
     }
 
-    // ─── 7. Parse Companies Table (if present) ───
-    for (const c of rawCompanies) {
-      const compName = (c.name || c.title || c.company_name || 'Agjenci Imobiliare').trim()
-      const normComp = normalizeSearchString(compName)
-      let score = 65
-      if (normComp === normQ || normComp.startsWith(normQ)) score += 40
-      else if (normComp.includes(normQ)) score += 25
+    // ─── 5. Honest counts ───
+    // Listings come with an exact server total. People are split with an exact
+    // corporate-subset count so neither tab badge depends on the fetched window.
+    const listingsTotal = listingsPage.error ? listings.length : Math.max(listingsPage.total, listings.length)
+    const agenciesTotal = corporateRes.error || corporateRes.count === null
+      ? agencies.length
+      : Math.max(corporateRes.count ?? 0, agencies.length)
+    const agentsTotal = Math.max(peopleTotal - agenciesTotal, agents.length)
 
-      const item: OmniResultItem = {
-        id: c.id,
-        entityType: 'agency',
-        title: compName,
-        subtitle: c.city ? `Agjenci Imobiliare në ${c.city}` : 'Agjenci e Licencuar e Patundshmërive',
-        badge: 'Agjenci',
-        imageUrl: c.logo_url || c.avatar_url || null,
-        price: null,
-        city: c.city || undefined,
-        score,
-        payload: {
-          phone: c.phone,
-          email_verified: true,
-          id: c.id,
-          isCompany: true,
-          account_type: 'company',
-        },
-        targetUrl: `/profili/${c.id}`,
-      }
-      agencies.push(item)
-    }
-
-    // ─── 8. Unified Flat Ranking ───
-    // Sort all entities by relevance score to guarantee high-matching people and companies appear at the top
+    // ─── 6. Unified flat ranking ───
     const flat = [...locations, ...agencies, ...agents, ...listings].sort(
       (a, b) => b.score - a.score
     )
 
     const response: OmniSearchResponse = {
       query: cleanQ,
-      total: flat.length,
+      total: listingsTotal + agenciesTotal + agentsTotal + locations.length,
       counts: {
-        listings: listings.length,
-        agencies: agencies.length,
-        agents: agents.length,
+        listings: listingsTotal,
+        agencies: agenciesTotal,
+        agents: agentsTotal,
         locations: locations.length,
       },
-      results: {
-        listings,
-        agencies,
-        agents,
-        locations,
-      },
+      results: { listings, agencies, agents, locations },
       flat,
-      trending: TRENDING_SEARCHES,
     }
 
     // Write to memory cache with bounds
@@ -352,13 +354,6 @@ export async function executeMobileOmniSearch(
     return response
   } catch (err) {
     console.warn('Mobile search query exception:', err)
-    return {
-      query: cleanQ,
-      total: locations.length,
-      counts: { listings: 0, agencies: 0, agents: 0, locations: locations.length },
-      results: { listings: [], agencies: [], agents: [], locations },
-      flat: locations,
-      trending: TRENDING_SEARCHES,
-    }
+    return emptyResponse(cleanQ, locations)
   }
 }

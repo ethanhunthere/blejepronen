@@ -1,17 +1,58 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabase'
+import { getSyncAuthUser, subscribeAuthCache } from './auth-cache'
 
 /**
- * Ultra-low latency Favorites System:
- * 1. In-memory hot cache: instant 0ms resolution for render loops & FlatLists
- * 2. AsyncStorage cold cache: instant hydration on cold start without waiting for Supabase
- * 3. SWR (Stale-While-Revalidate): background fetch updates cache silently
- * 4. Zero-delay optimistic writes: local state flips immediately; rollback on network failure
+ * Enterprise-grade Reactive Favorites Store:
+ * 1. Synchronous In-Memory Map (0ms read time for FlatLists & cards)
+ * 2. Cross-Screen Reactive Subscription Bus (Single frame update across Home, Listings, Detail, Profile)
+ * 3. Guest Authorization Guard (Strict rejection for unauthenticated users, preventing orphaned local state)
+ * 4. Deterministic Bidirectional Heart & Unheart Lifecycle (Atomic UPSERT on like, DELETE on unlike)
+ * 5. SWR Background Hydration & Rollback on Network Failure
  */
 
 const FAVORITES_CACHE_KEY = '@blejepronen_favs_map_v2'
 let inMemoryFavorites: Record<string, boolean> | null = null
 let isRevalidating = false
+const subscribers = new Set<(favs: Record<string, boolean>) => void>()
+
+// Automatically synchronize favorites lifecycle with user authentication state
+subscribeAuthCache((state) => {
+  if (!state.user) {
+    inMemoryFavorites = {}
+    notifySubscribers()
+  } else {
+    // When a user logs in or switches, refresh favorites
+    fetchFavoriteIds().catch(() => {})
+  }
+})
+
+function notifySubscribers() {
+  const snapshot = { ...(inMemoryFavorites || {}) }
+  subscribers.forEach((fn) => {
+    try {
+      fn(snapshot)
+    } catch (err) {
+      console.warn('Favorite subscriber notice:', err)
+    }
+  })
+}
+
+export function subscribeFavorites(callback: (favs: Record<string, boolean>) => void): () => void {
+  subscribers.add(callback)
+  return () => {
+    subscribers.delete(callback)
+  }
+}
+
+export function getFavoritesMap(): Record<string, boolean> {
+  return inMemoryFavorites ? { ...inMemoryFavorites } : {}
+}
+
+export function isListingFavorite(listingId: string): boolean {
+  return Boolean(inMemoryFavorites?.[listingId])
+}
 
 async function backgroundRevalidateFavorites(userId: string) {
   if (isRevalidating) return
@@ -28,6 +69,7 @@ async function backgroundRevalidateFavorites(userId: string) {
         freshMap[row.listing_id] = true
       }
       inMemoryFavorites = freshMap
+      notifySubscribers()
       AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(freshMap)).catch(() => {})
     }
   } catch (err) {
@@ -39,15 +81,21 @@ async function backgroundRevalidateFavorites(userId: string) {
 
 export function clearFavoritesCache() {
   inMemoryFavorites = {}
+  notifySubscribers()
   AsyncStorage.removeItem(FAVORITES_CACHE_KEY).catch(() => {})
 }
 
 export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
   // 1. Instant 0ms in-memory cache return
   if (inMemoryFavorites !== null) {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) backgroundRevalidateFavorites(user.id)
-    }).catch(() => {})
+    const syncUser = getSyncAuthUser()
+    if (syncUser) {
+      backgroundRevalidateFavorites(syncUser.id)
+    } else {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) backgroundRevalidateFavorites(user.id)
+      }).catch(() => {})
+    }
     return inMemoryFavorites
   }
 
@@ -56,20 +104,25 @@ export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
     const local = await AsyncStorage.getItem(FAVORITES_CACHE_KEY)
     if (local) {
       inMemoryFavorites = JSON.parse(local)
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) backgroundRevalidateFavorites(user.id)
-      }).catch(() => {})
+      notifySubscribers()
+      const syncUser = getSyncAuthUser()
+      if (syncUser) {
+        backgroundRevalidateFavorites(syncUser.id)
+      } else {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) backgroundRevalidateFavorites(user.id)
+        }).catch(() => {})
+      }
       return inMemoryFavorites!
     }
   } catch {}
 
   // 3. First-run network fetch
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = getSyncAuthUser() || (await supabase.auth.getUser()).data.user
     if (!user) {
       inMemoryFavorites = {}
+      notifySubscribers()
       return {}
     }
 
@@ -85,37 +138,104 @@ export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
       map[row.listing_id] = true
     }
     inMemoryFavorites = map
+    notifySubscribers()
     AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(map)).catch(() => {})
     return map
   } catch (e) {
     inMemoryFavorites = inMemoryFavorites || {}
+    notifySubscribers()
     return inMemoryFavorites
   }
 }
 
 /**
- * Persist a favorite toggle with zero-latency optimistic write-through.
+ * Deterministic toggle for any listing:
+ * - Rejects unauthenticated guest interactions without mutating state
+ * - Reads live status directly from the in-memory store (immune to closure bugs)
+ * - Fires instantaneous optimistic UI update across all subscribers
+ * - Synchronizes with Supabase using explicit UPSERT (like) or DELETE (unlike)
+ * - Automatically rolls back upon network or database failure
+ */
+export async function toggleFavorite(listingId: string): Promise<{
+  success: boolean
+  isFavorite: boolean
+  requiresAuth?: boolean
+}> {
+  // 1. GUEST GUARD: Reject without mutating state
+  const user = getSyncAuthUser()
+  if (!user) {
+    return { success: false, isFavorite: false, requiresAuth: true }
+  }
+
+  if (!inMemoryFavorites) inMemoryFavorites = {}
+
+  // Current state before toggle
+  const currentlyFavorited = Boolean(inMemoryFavorites[listingId])
+  const nextFavorited = !currentlyFavorited
+
+  // 2. Instant Optimistic In-Memory & Cache Update
+  if (nextFavorited) {
+    inMemoryFavorites[listingId] = true
+  } else {
+    delete inMemoryFavorites[listingId]
+  }
+  notifySubscribers()
+  AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+
+  // 3. Network Synchronization
+  try {
+    if (nextFavorited) {
+      const { error } = await supabase.from('favorites').upsert(
+        { user_id: user.id, listing_id: listingId },
+        { onConflict: 'user_id,listing_id' }
+      )
+      if (error) throw error
+    } else {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('listing_id', listingId)
+      if (error) throw error
+    }
+
+    return { success: true, isFavorite: nextFavorited }
+  } catch (err) {
+    console.warn('Favorite toggle network error, rolling back:', err)
+    // Rollback
+    if (currentlyFavorited) {
+      inMemoryFavorites[listingId] = true
+    } else {
+      delete inMemoryFavorites[listingId]
+    }
+    notifySubscribers()
+    AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+    return { success: false, isFavorite: currentlyFavorited }
+  }
+}
+
+/**
+ * Backward-compatible helper with deterministic state resolution.
  */
 export async function persistFavoriteToggle(
   listingId: string,
   wasFavorite: boolean
 ): Promise<boolean> {
-  // 1. Instant local-first mutation
+  const user = getSyncAuthUser()
+  if (!user) return false
+
   if (!inMemoryFavorites) inMemoryFavorites = {}
-  if (wasFavorite) {
-    delete inMemoryFavorites[listingId]
-  } else {
+  const nextFavorited = !wasFavorite
+
+  if (nextFavorited) {
     inMemoryFavorites[listingId] = true
+  } else {
+    delete inMemoryFavorites[listingId]
   }
+  notifySubscribers()
   AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
 
-  // 2. Background network synchronization
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return false
-
     if (wasFavorite) {
       const { error } = await supabase
         .from('favorites')
@@ -133,14 +253,90 @@ export async function persistFavoriteToggle(
     return true
   } catch (e) {
     console.warn('Favorite sync rollback:', e)
-    // Rollback local state on network failure
     if (wasFavorite) {
       inMemoryFavorites[listingId] = true
     } else {
       delete inMemoryFavorites[listingId]
     }
+    notifySubscribers()
     AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
     return false
+  }
+}
+
+/**
+ * React hook for seamless real-time favorites synchronization across all screens.
+ */
+export function useFavorites() {
+  const [favorites, setFavorites] = useState<Record<string, boolean>>(() => getFavoritesMap())
+
+  useEffect(() => {
+    setFavorites(getFavoritesMap())
+
+    fetchFavoriteIds().then((favs) => {
+      setFavorites(favs)
+    }).catch(() => {})
+
+    const unsubscribe = subscribeFavorites((updatedFavs) => {
+      setFavorites(updatedFavs)
+    })
+
+    return unsubscribe
+  }, [])
+
+  const handleToggle = useCallback((listingId: string) => {
+    return toggleFavorite(listingId)
+  }, [])
+
+  const checkIsFavorite = useCallback(
+    (listingId: string) => Boolean(favorites[listingId]),
+    [favorites]
+  )
+
+  return {
+    favorites,
+    isFavorite: checkIsFavorite,
+    toggleFavorite: handleToggle,
+    removeFavorite,
+    reload: fetchFavoriteIds,
+  }
+}
+
+/**
+ * Deterministically remove a listing from favorites with optimistic broadcast & rollback.
+ */
+export async function removeFavorite(listingId: string): Promise<{
+  success: boolean
+  requiresAuth?: boolean
+}> {
+  const user = getSyncAuthUser()
+  if (!user) {
+    return { success: false, requiresAuth: true }
+  }
+
+  if (!inMemoryFavorites) inMemoryFavorites = {}
+  const wasFavorited = Boolean(inMemoryFavorites[listingId])
+  delete inMemoryFavorites[listingId]
+  notifySubscribers()
+  AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+
+  try {
+    const { error } = await supabase
+      .from('favorites')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('listing_id', listingId)
+    if (error) throw error
+
+    return { success: true }
+  } catch (err) {
+    console.warn('Remove favorite network error, rolling back:', err)
+    if (wasFavorited) {
+      inMemoryFavorites[listingId] = true
+      notifySubscribers()
+      AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+    }
+    return { success: false }
   }
 }
 
@@ -149,15 +345,14 @@ export async function persistFavoriteToggle(
  */
 export async function fetchFavoriteListings(): Promise<any[]> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return []
+    const user = getSyncAuthUser()
+    const currentUserId = user?.id || (await supabase.auth.getUser()).data.user?.id
+    if (!currentUserId) return []
 
     const { data, error } = await supabase
       .from('favorites')
       .select('listings(id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,updated_at,condition,floor,apartment_type,features)')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -165,9 +360,21 @@ export async function fetchFavoriteListings(): Promise<any[]> {
       return []
     }
 
-    return ((data || []) as any[])
+    const items = ((data || []) as any[])
       .map((row) => row.listings)
       .filter(Boolean)
+
+    // Synchronize in-memory favorites cache
+    if (!inMemoryFavorites) inMemoryFavorites = {}
+    items.forEach((item: any) => {
+      if (item?.id) {
+        inMemoryFavorites![item.id] = true
+      }
+    })
+    notifySubscribers()
+    AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+
+    return items
   } catch (e) {
     console.warn('Saved listings fetch exception:', e)
     return []

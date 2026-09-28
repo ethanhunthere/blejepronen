@@ -12,11 +12,14 @@ import {
   ScrollView,
   Modal,
   Alert,
+  StatusBar as NativeStatusBar,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import { Image } from 'expo-image'
 import { getSyncAuthUser } from '@/lib/auth-cache'
+import { openLoginScreen } from '@/lib/navigation'
 import {
   ArrowLeft,
   Phone,
@@ -33,25 +36,30 @@ import {
   Calendar,
   X,
   MessageCircle,
+  ChevronUp,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { createSafeChannel } from '@/lib/realtime'
+import {
+  CHAT_PAGE_SIZE,
+  createReadReceiptFlusher,
+  fetchLatestMessages,
+  fetchOlderMessages,
+  type ChatMessage,
+} from '@/lib/chat'
+import { markConversationReadLocally, noteOutgoingMessage } from '@/lib/conversations'
+import { setOpenConversation } from '@/lib/notifications'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
+import { DraggableBottomSheet } from '@/components/motion'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
 
-interface MessageItem {
-  id: string
-  conversation_id: string
-  sender_id: string
-  content: string
-  created_at: string
-  is_read: boolean
-}
+/** A single row of the thread — see lib/chat.ts for the paging contract. */
+type MessageItem = ChatMessage
 
 interface OtherUser {
   id: string
@@ -85,22 +93,68 @@ export default function ChatConversationScreen() {
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
 
+  // Dynamic native status bar contrast & background sync with zero flicker
+  const statusBarStyle = theme === 'white' ? 'dark' : 'light'
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === 'android') {
+        NativeStatusBar.setBackgroundColor(colors.surface, false)
+        NativeStatusBar.setBarStyle(theme === 'white' ? 'dark-content' : 'light-content', false)
+      }
+      return () => {
+        if (Platform.OS === 'android') {
+          NativeStatusBar.setBackgroundColor(colors.background, false)
+          NativeStatusBar.setBarStyle(theme === 'white' ? 'dark-content' : 'light-content', false)
+        }
+      }
+    }, [colors.surface, colors.background, theme])
+  )
+
   const syncUser = getSyncAuthUser()
   const [currentUserId, setCurrentUserId] = useState<string | null>(() => syncUser?.id || null)
   const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
   const [listing, setListing] = useState<ListingPreview | null>(null)
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [inputText, setInputText] = useState(initialText || '')
+
+  // Re-pushing the route with initialText (e.g. from a listing quick-query) must
+  // prefill an already-mounted conversation, not only the first mount.
+  useEffect(() => {
+    if (initialText) setInputText(initialText)
+  }, [initialText])
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showAttachmentTray, setShowAttachmentTray] = useState(false)
+
+  // ── History paging (audit §4.1) ────────────────────────────────────
+  // Only the newest CHAT_PAGE_SIZE messages are ever in memory; older windows
+  // are walked backwards on demand from the top of the list.
+  const [hasMoreHistory, setHasMoreHistory] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  /** `created_at` of the oldest loaded row — the keyset cursor. */
+  const cursorRef = useRef<string | null>(null)
+  /** Ids already rendered, so the `.lte` cursor probe cannot duplicate rows. */
+  const knownIdsRef = useRef<Set<string>>(new Set())
+  const loadingOlderRef = useRef(false)
 
   // Contact Action Sheet State
   const [contactSheetVisible, setContactSheetVisible] = useState(false)
 
   const flatListRef = useRef<FlatList>(null)
   const isMountedRef = useRef(true)
+  const nearBottomRef = useRef(true)
+  /**
+   * Mirror of currentUserId for the realtime effect, so that effect can depend
+   * on `id` alone. Depending on currentUserId rebuilt the channel (leave+join)
+   * every time the auth user resolved, which is exactly the listener churn
+   * audit §4.4 calls out.
+   */
+  const currentUserIdRef = useRef<string | null>(currentUserId)
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId
+  }, [currentUserId])
 
   useEffect(() => {
     isMountedRef.current = true
@@ -108,6 +162,36 @@ export default function ChatConversationScreen() {
       isMountedRef.current = false
     }
   }, [])
+
+  /**
+   * One batched read-receipt writer per conversation. Every "there are unread
+   * inbound messages here" signal — the initial open and each realtime INSERT —
+   * funnels through it and becomes a single coalesced bulk UPDATE.
+   */
+  const readFlusherRef = useRef<ReturnType<typeof createReadReceiptFlusher> | null>(null)
+  useEffect(() => {
+    if (!id) return
+    const flusher = createReadReceiptFlusher(id, () => currentUserIdRef.current)
+    readFlusherRef.current = flusher
+    return () => {
+      // Persist anything still pending, then release. Losing the final batch
+      // would leave a stale unread badge on the list.
+      flusher.flush()
+      if (readFlusherRef.current === flusher) readFlusherRef.current = null
+    }
+  }, [id])
+
+  /**
+   * Foreground push suppression (audit §4.6): while this thread is the visible
+   * conversation, a banner for its own incoming messages is pure noise — the row
+   * is already appending live over realtime. Cleared on unmount so pushes for
+   * this thread resume the moment the user leaves.
+   */
+  useEffect(() => {
+    if (!id) return
+    setOpenConversation(id)
+    return () => setOpenConversation(null)
+  }, [id])
 
   const loadConversationData = useCallback(async () => {
     if (!id) return
@@ -121,10 +205,13 @@ export default function ChatConversationScreen() {
 
       if (!user) {
         setLoading(false)
+        openLoginScreen(router, { redirectTo: `/messages/${id}` })
         return
       }
 
-      setCurrentUserId(user.id)
+      // Stable identity: avoids tearing down/rebuilding the realtime channel
+      // once per conversation open when the id was already synced.
+      setCurrentUserId((prev) => (prev === user.id ? prev : user.id))
 
       // 1. Fetch conversation details
       const { data: convData, error: convErr } = await supabase
@@ -177,27 +264,23 @@ export default function ChatConversationScreen() {
         }
       }
 
-      // 2. Fetch messages
-      const { data: msgData, error: msgErr } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', id)
-        .order('created_at', { ascending: true })
+      // 2. Fetch ONLY the newest window of history (audit §4.1). This used to be
+      //    `select('*').order('created_at')` with no limit — a full download of
+      //    the thread on every open, growing without bound with its length.
+      const page = await fetchLatestMessages(id, CHAT_PAGE_SIZE)
 
       if (!isMountedRef.current) return
 
-      if (msgErr) {
-        console.warn('Fetch messages error:', msgErr.message)
-      } else if (msgData) {
-        setMessages(msgData)
-      }
+      knownIdsRef.current = new Set(page.messages.map((m) => m.id))
+      cursorRef.current = page.cursor
+      setHasMoreHistory(page.hasMore)
+      setMessages(page.messages)
 
-      // 3. Mark unread messages as read
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('conversation_id', id)
-        .neq('sender_id', user.id)
+      // 3. Clear unread through the batched flusher: ONE coalesced bulk update
+      //    per burst, never one write per message (audit §4.3). The badge is
+      //    zeroed locally first so the list/tab react without waiting on it.
+      markConversationReadLocally(id)
+      readFlusherRef.current?.markSeen()
     } catch (err: any) {
       console.warn('Error loading conversation:', err?.message || err)
     } finally {
@@ -211,8 +294,14 @@ export default function ChatConversationScreen() {
     loadConversationData()
 
     if (!id) return
+
     let channel: ReturnType<typeof createSafeChannel> | null = null
     try {
+      // ONE channel for this screen carrying every filter it needs (audit §4.4),
+      // instead of one channel per concern:
+      //   • INSERT → append the new row live
+      //   • UPDATE → read receipts, so our own ✓ flips to ✓✓ with no refetch
+      // Both are scoped to this conversation server-side.
       channel = createSafeChannel(`chat_${id}`)
         .on(
           'postgres_changes',
@@ -224,25 +313,49 @@ export default function ChatConversationScreen() {
           },
           (payload) => {
             const newMsg = payload.new as MessageItem
+            if (!newMsg?.id) return
+
+            knownIdsRef.current.add(newMsg.id)
             setMessages((prev) => {
               if (prev.some((m) => m.id === newMsg.id)) return prev
               return [...prev, newMsg]
             })
 
-            if (Platform.OS !== 'web') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-            }
+            // Our own insert echoes back — nothing to acknowledge.
+            if (newMsg.sender_id === currentUserIdRef.current) return
 
-            if (currentUserId && newMsg.sender_id !== currentUserId) {
-              supabase
-                .from('messages')
-                .update({ is_read: true })
-                .eq('id', newMsg.id)
-                .then(
-                  () => {},
-                  (e: unknown) => console.warn('Mark read notice:', e)
-                )
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
             }
+            // Coalesced: a 20-message burst produces ONE bulk `is_read` write
+            // 250ms after the last event, not 20 individual updates.
+            markConversationReadLocally(id)
+            readFlusherRef.current?.markSeen()
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${id}`,
+          },
+          (payload) => {
+            const updated = payload.new as Partial<MessageItem> | undefined
+            if (!updated?.id) return
+            const isRead = !!updated.is_read
+            setMessages((prev) => {
+              // Returning `prev` unchanged is what stops our own bulk read
+              // receipt from re-rendering the list once per row.
+              let changed = false
+              const next = prev.map((m) => {
+                if (m.id !== updated.id || m.is_read === isRead) return m
+                changed = true
+                return { ...m, is_read: isRead }
+              })
+              return changed ? next : prev
+            })
           }
         )
         .subscribe()
@@ -251,15 +364,49 @@ export default function ChatConversationScreen() {
     }
 
     return () => {
+      // Deterministic teardown — no listener survives navigation away.
       if (channel) supabase.removeChannel(channel)
+      channel = null
     }
-  }, [id, currentUserId, loadConversationData])
+    // Depends on `id` only: currentUserId is read through a ref so resolving the
+    // auth user no longer tears down and rebuilds the channel.
+  }, [id, loadConversationData])
 
-  const handleSendMessage = async (textToSend?: string) => {
-    const content = (textToSend || inputText).trim()
-    if (!content || !id || !currentUserId || sending) return
+  /** Walk one 30-row window backwards from the top of the thread. */
+  const loadOlderMessages = useCallback(async () => {
+    if (!id || loadingOlderRef.current || !hasMoreHistory || !cursorRef.current) return
+    loadingOlderRef.current = true
+    setLoadingOlder(true)
+    try {
+      const page = await fetchOlderMessages(
+        id,
+        cursorRef.current,
+        knownIdsRef.current,
+        CHAT_PAGE_SIZE
+      )
+      if (!isMountedRef.current) return
 
-    setInputText('')
+      if (page.messages.length > 0) {
+        for (const m of page.messages) knownIdsRef.current.add(m.id)
+        cursorRef.current = page.cursor
+        setMessages((prev) => [...page.messages, ...prev])
+      } else if (page.cursor && page.cursor !== cursorRef.current) {
+        // Whole window was rows we already had — advance the cursor so the next
+        // tap continues the walk instead of stalling.
+        cursorRef.current = page.cursor
+      }
+      setHasMoreHistory(page.hasMore && page.messages.length > 0)
+    } catch (err: any) {
+      console.warn('Load older messages notice:', err?.message || err)
+    } finally {
+      loadingOlderRef.current = false
+      if (isMountedRef.current) setLoadingOlder(false)
+    }
+  }, [id, hasMoreHistory])
+
+  const sendContent = async (content: string) => {
+    if (!id || !currentUserId) return
+
     setSending(true)
     playTapSound()
     if (Platform.OS !== 'web') {
@@ -276,6 +423,8 @@ export default function ChatConversationScreen() {
       is_read: false,
     }
 
+    nearBottomRef.current = true
+    knownIdsRef.current.add(optimisticId)
     setMessages((prev) => [...prev, optimisticMsg])
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true })
@@ -295,11 +444,18 @@ export default function ChatConversationScreen() {
 
       if (error) {
         console.warn('Error sending message:', error.message)
+        knownIdsRef.current.delete(optimisticId)
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
       } else if (data) {
+        knownIdsRef.current.delete(optimisticId)
+        knownIdsRef.current.add((data as MessageItem).id)
         setMessages((prev) =>
           prev.map((m) => (m.id === optimisticId ? (data as MessageItem) : m))
         )
+        // Update the conversation list optimistically so its preview and order
+        // reflect the reply immediately; the store's own coalesced reload
+        // converges on the server truth a moment later.
+        noteOutgoingMessage(id, content, currentUserId)
         supabase
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
@@ -311,6 +467,42 @@ export default function ChatConversationScreen() {
       }
     } catch (err: any) {
       console.warn('Send exception:', err?.message || err)
+      knownIdsRef.current.delete(optimisticId)
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleSendMessage = async (textToSend?: string) => {
+    const content = (textToSend || inputText).trim()
+    if (!content || !id || !currentUserId || sending) return
+
+    setInputText('')
+    await sendContent(content)
+  }
+
+  // Uploads a local photo into the sender's own folder of the public listings
+  // bucket and sends its public URL, so the recipient renders a reachable image
+  // instead of the sender's private file:// path.
+  const uploadAndSendPhoto = async (uri: string) => {
+    if (!id || !currentUserId || sending) return
+    setSending(true)
+    try {
+      const path = `${currentUserId}/messages/${id}/${Date.now()}.jpg`
+      const blob = await fetch(uri).then((r) => r.blob())
+      const { error } = await supabase.storage
+        .from('listings')
+        .upload(path, blob, { contentType: 'image/jpeg' })
+      if (error) {
+        Alert.alert('Vërejtje', 'Ngarkimi i fotos dështoi: ' + error.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('listings').getPublicUrl(path)
+      await sendContent(`[Foto: ${urlData.publicUrl}]`)
+    } catch (e: any) {
+      console.warn('Photo upload notice:', e?.message || e)
+      Alert.alert('Vërejtje', 'Ngarkimi i fotos dështoi. Provoni përsëri.')
     } finally {
       setSending(false)
     }
@@ -334,7 +526,7 @@ export default function ChatConversationScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const photoUri = result.assets[0].uri
-        await handleSendMessage(`[Foto: ${photoUri}]`)
+        await uploadAndSendPhoto(photoUri)
       }
     } catch (e: any) {
       console.warn('Image picker notice:', e?.message || e)
@@ -358,7 +550,7 @@ export default function ChatConversationScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const photoUri = result.assets[0].uri
-        await handleSendMessage(`[Foto: ${photoUri}]`)
+        await uploadAndSendPhoto(photoUri)
       }
     } catch (e: any) {
       console.warn('Camera capture notice:', e?.message || e)
@@ -482,102 +674,143 @@ export default function ChatConversationScreen() {
       : 'rgba(255, 255, 255, 0.10)'
 
   return (
-    <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      {/* 1. Clean Apple iMessage Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
-        <Pressable
-          style={styles.backBtn}
-          onPress={() => {
-            safeBack(router, '/(tabs)/messages')
-          }}
-          hitSlop={10}
-        >
-          <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
-        </Pressable>
+    <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
+      <StatusBar style={statusBarStyle} animated={false} />
+      {Platform.OS === 'android' && (
+        <NativeStatusBar
+          backgroundColor={colors.surface}
+          barStyle={theme === 'white' ? 'dark-content' : 'light-content'}
+          animated={false}
+        />
+      )}
 
-        <View style={styles.headerProfile}>
-          <Image
-            source={getAvatarSource(otherUser?.avatar_url)}
-            style={styles.headerAvatar}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            priority="high"
-            transition={0}
-          />
+      {/* 1. Unified Edge-to-Edge Safe Area & Header */}
+      <View
+        style={[
+          styles.headerWrapper,
+          {
+            backgroundColor: colors.surface,
+            paddingTop: insets.top,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <Pressable
+            style={[
+              styles.headerIconBtn,
+              {
+                backgroundColor: colors.surfaceSubtle,
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={() => {
+              playTapSound()
+              safeBack(router, '/(tabs)/messages')
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Kthehu prapa"
+          >
+            <ArrowLeft size={19} color={colors.textPrimary} strokeWidth={2.2} />
+          </Pressable>
 
-          <View style={styles.headerInfo}>
-            <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
-              {otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
-            </Text>
-            <View style={styles.verifiedRow}>
-              {otherUser?.is_agency ? (
-                <Building2 size={12} color={colors.primary} strokeWidth={2.4} />
-              ) : (
-                <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
-              )}
-              <Text style={[styles.verifiedText, { color: colors.primary }]}>
-                {otherUser?.is_agency ? 'Agjenci e Verifikuar' : 'Profil i Verifikuar'}
+          <View style={styles.headerProfile}>
+            <Image
+              source={getAvatarSource(otherUser?.avatar_url)}
+              style={styles.headerAvatar}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              transition={0}
+            />
+
+            <View style={styles.headerInfo}>
+              <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
+                {otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
               </Text>
+              <View style={styles.verifiedRow}>
+                {otherUser?.is_agency ? (
+                  <Building2 size={12} color={colors.primary} strokeWidth={2.4} />
+                ) : (
+                  <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
+                )}
+                <Text style={[styles.verifiedText, { color: colors.primary }]}>
+                  {otherUser?.is_agency ? 'Agjenci e Verifikuar' : 'Profil i Verifikuar'}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Real Contact Action Button in Header */}
-        <Pressable
-          style={[styles.headerIconBtn, { backgroundColor: colors.surfaceSubtle }]}
-          onPress={() => {
-            playTapSound()
-            if (Platform.OS !== 'web') Haptics.selectionAsync()
-            setContactSheetVisible(true)
-          }}
-          hitSlop={8}
-        >
-          <Phone size={17} color={colors.primary} strokeWidth={2.2} />
-        </Pressable>
+          {/* Real Contact Action Button in Header */}
+          <Pressable
+            style={[
+              styles.headerIconBtn,
+              {
+                backgroundColor: colors.surfaceSubtle,
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={() => {
+              playTapSound()
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              setContactSheetVisible(true)
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Kontakto në telefon"
+          >
+            <Phone size={17} color={colors.primary} strokeWidth={2.2} />
+          </Pressable>
+        </View>
       </View>
 
       {/* 2. Listing Quick Banner */}
       {listing && (
-        <Pressable
+        <View
           style={[
-            styles.listingBanner,
+            styles.listingBannerWrapper,
             { backgroundColor: colors.surface, borderBottomColor: colors.border },
           ]}
-          onPress={() => {
-            if (Platform.OS !== 'web') Haptics.selectionAsync()
-            router.push(`/listings/${listing.id}` as any)
-          }}
         >
-          <Image
-            source={{
-              uri:
-                listing.images?.[0] ||
-                'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80',
+          <Pressable
+            style={styles.listingBannerContent}
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync()
+              router.push(`/listings/${listing.id}` as any)
             }}
-            style={styles.listingThumb}
-            contentFit="cover"
-          />
-          <View style={styles.listingDetails}>
-            <Text style={[styles.listingTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-              {listing.title}
-            </Text>
-            <View style={styles.listingSubRow}>
-              <Text
-                style={[
-                  styles.listingPrice,
-                  { color: theme === 'green' ? colors.gold : colors.primary },
-                ]}
-              >
-                {formatPrice(listing.price)}
+          >
+            <Image
+              source={{
+                uri:
+                  listing.images?.[0] ||
+                  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80',
+              }}
+              style={styles.listingThumb}
+              contentFit="cover"
+            />
+            <View style={styles.listingDetails}>
+              <Text style={[styles.listingTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                {listing.title}
               </Text>
-              <Text style={[styles.listingCity, { color: colors.textMuted }]}>• {listing.city}</Text>
+              <View style={styles.listingSubRow}>
+                <Text
+                  style={[
+                    styles.listingPrice,
+                    { color: theme === 'green' ? colors.gold : colors.primary },
+                  ]}
+                >
+                  {formatPrice(listing.price)}
+                </Text>
+                <Text style={[styles.listingCity, { color: colors.textMuted }]}>• {listing.city}</Text>
+              </View>
             </View>
-          </View>
-          <View style={[styles.listingViewPill, { backgroundColor: colors.primaryLight }]}>
-            <Text style={[styles.listingViewPillText, { color: colors.primary }]}>Shiko</Text>
-            <ExternalLink size={12} color={colors.primary} />
-          </View>
-        </Pressable>
+            <View style={[styles.listingViewPill, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.listingViewPillText, { color: colors.primary }]}>Shiko</Text>
+              <ExternalLink size={12} color={colors.primary} />
+            </View>
+          </Pressable>
+        </View>
       )}
 
       {/* 3. Messages List Area */}
@@ -601,7 +834,15 @@ export default function ChatConversationScreen() {
             renderItem={renderMessageBubble}
             contentContainerStyle={styles.messagesList}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            onScroll={(e) => {
+              const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent
+              nearBottomRef.current =
+                contentOffset.y + layoutMeasurement.height >= contentSize.height - 80
+            }}
+            scrollEventThrottle={200}
+            onContentSizeChange={() => {
+              if (nearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false })
+            }}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View style={styles.emptyMessages}>
@@ -726,70 +967,53 @@ export default function ChatConversationScreen() {
       </KeyboardAvoidingView>
 
       {/* Attachment Sheet Modal */}
-      <Modal
+      <DraggableBottomSheet
         visible={showAttachmentTray}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAttachmentTray(false)}
+        onClose={() => setShowAttachmentTray(false)}
+        sheetStyle={{ borderColor: specularBorder }}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowAttachmentTray(false)}
-        >
-          <View
-            style={[
-              styles.attachmentSheet,
-              {
-                backgroundColor: colors.surface,
-                borderColor: specularBorder,
-                paddingBottom: Math.max(insets.bottom, 20),
-              },
-            ]}
+        <View style={styles.sheetHeader}>
+          <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
+            Dërgo Shtesë në Bisedë
+          </Text>
+          <Pressable
+            onPress={() => setShowAttachmentTray(false)}
+            style={styles.closeSheetBtn}
           >
-            <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
-                Dërgo Shtesë në Bisedë
-              </Text>
-              <Pressable
-                onPress={() => setShowAttachmentTray(false)}
-                style={styles.closeSheetBtn}
-              >
-                <X size={18} color={colors.textMuted} />
-              </Pressable>
+            <X size={18} color={colors.textMuted} />
+          </Pressable>
+        </View>
+
+        <View style={styles.sheetGrid}>
+          <Pressable style={styles.sheetOption} onPress={handleTakePhoto}>
+            <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
+              <Camera size={22} color="#3B82F6" strokeWidth={2.2} />
             </View>
+            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Kamerë</Text>
+          </Pressable>
 
-            <View style={styles.sheetGrid}>
-              <Pressable style={styles.sheetOption} onPress={handleTakePhoto}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                  <Camera size={22} color="#3B82F6" strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Kamerë</Text>
-              </Pressable>
-
-              <Pressable style={styles.sheetOption} onPress={handlePickImage}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-                  <ImageIcon size={22} color="#10B981" strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Galeri</Text>
-              </Pressable>
-
-              <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.12)' }]}>
-                  <DollarSign size={22} color="#EAB308" strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Ofertë</Text>
-              </Pressable>
-
-              <Pressable style={styles.sheetOption} onPress={handleSendTourRequest}>
-                <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
-                  <Calendar size={22} color="#A855F7" strokeWidth={2.2} />
-                </View>
-                <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Vizitë</Text>
-              </Pressable>
+          <Pressable style={styles.sheetOption} onPress={handlePickImage}>
+            <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+              <ImageIcon size={22} color="#10B981" strokeWidth={2.2} />
             </View>
-          </View>
-        </Pressable>
-      </Modal>
+            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Galeri</Text>
+          </Pressable>
+
+          <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt}>
+            <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.12)' }]}>
+              <DollarSign size={22} color="#EAB308" strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Ofertë</Text>
+          </Pressable>
+
+          <Pressable style={styles.sheetOption} onPress={handleSendTourRequest}>
+            <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
+              <Calendar size={22} color="#A855F7" strokeWidth={2.2} />
+            </View>
+            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Vizitë</Text>
+          </Pressable>
+        </View>
+      </DraggableBottomSheet>
 
       {/* Apple iOS 18 Contact Action Sheet */}
       <CallModal
@@ -807,22 +1031,23 @@ export default function ChatConversationScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screenContainer: {
     flex: 1,
   },
-  header: {
+  headerWrapper: {
+    width: '100%',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 10,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: 1,
     gap: 12,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-  },
-  backBtn: {
-    padding: 4,
   },
   headerProfile: {
     flex: 1,
@@ -853,18 +1078,22 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
   },
   headerIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  listingBanner: {
+  listingBannerWrapper: {
+    width: '100%',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  listingBannerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
     gap: 12,
     maxWidth: 680,
     width: '100%',

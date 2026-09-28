@@ -13,6 +13,8 @@ import {
   Linking,
   KeyboardAvoidingView,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
@@ -55,6 +57,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
 import { useBanner } from '@/context/BannerContext'
+import { DraggableBottomSheet } from '@/components/motion'
 import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import {
   BLEJE_AVATARS,
@@ -81,12 +84,16 @@ import {
   performAtomicLogout,
 } from '@/lib/auth-cache'
 import { createSafeChannel } from '@/lib/realtime'
+import { openLoginScreen, openRegisterScreen } from '@/lib/navigation'
+import { useLogout } from '@/context/LogoutContext'
 
 export default function ProfileScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { colors, theme, setTheme } = useTheme()
+  const tabBarScrollHandler = useTabBarCollapseOnScroll()
   const { showBanner } = useBanner()
+  const { requestLogout, executeLogout } = useLogout()
 
   const syncUser = getSyncAuthUser()
   const syncProfile = getSyncProfile()
@@ -316,15 +323,22 @@ export default function ProfileScreen() {
     }
   }, [setAuthAndProfile, fetchUserStats, resetViewportToTop])
 
-  // Auto-refresh profile and stats when screen gains focus
+  // Auto-refresh profile and stats when screen gains focus. Deferred past the
+  // navigation transition: focus returns at pop-START, and running session
+  // checks + stats fetches (setState on this heavy screen) mid-slide hitches
+  // the exit animation. Cancelled if focus is lost before the timer fires.
   useFocusEffect(
     useCallback(() => {
       if (isLogoutInProgress()) return
-      checkSession()
-      const syncU = getSyncAuthUser()
-      if (syncU?.id) {
-        fetchUserStats(syncU.id)
-      }
+      const timer = setTimeout(() => {
+        if (isLogoutInProgress()) return
+        checkSession()
+        const syncU = getSyncAuthUser()
+        if (syncU?.id) {
+          fetchUserStats(syncU.id)
+        }
+      }, 360)
+      return () => clearTimeout(timer)
     }, [checkSession, fetchUserStats])
   )
 
@@ -778,38 +792,18 @@ export default function ProfileScreen() {
     }
   }
 
-  const handleLogout = async () => {
-    Alert.alert('Çkyçja nga llogaria', 'A jeni të sigurt që dëshironi të çkyçeni?', [
-      { text: 'Anulo', style: 'cancel' },
-      {
-        text: 'Çkyçu',
-        style: 'destructive',
-        onPress: async () => {
-          if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-          }
-          // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
-          resetViewportToTop(false)
-          // 2. Synchronously nullify local state, stats, and query caches
-          prevUserRef.current = null
-          setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
-          setAuthState(null)
-          clearFavoritesCache()
-          // 3. Run atomic logout (locks auth listeners, purges caches, and signs out in a single pass)
-          await performAtomicLogout()
-          // 4. Final verification pass
-          resetViewportToTop(false)
-          showBanner({
-            type: 'logout',
-            title: 'Mirupafshim!',
-            message: 'U çkyçët me sukses nga llogaria.',
-          })
-        },
+  const handleLogout = () => {
+    requestLogout({
+      onBeforeTeardown: () => {
+        resetViewportToTop(false)
+        prevUserRef.current = null
+        setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
+        setAuthState(null)
       },
-    ])
+    })
   }
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = () => {
     Alert.alert(
       'Fshi Llogarinë Përfundimisht',
       'Kujdes: Ky veprim është i përhershëm dhe i pakthyeshëm. Të gjitha shpalljet, mesazhet dhe të dhënat tuaja do të fshihen plotësisht nga Bleje Pronën.\n\nA dëshironi të vazhdoni?',
@@ -818,46 +812,53 @@ export default function ProfileScreen() {
         {
           text: 'Fshi Përfundimisht',
           style: 'destructive',
-          onPress: async () => {
-            setDeleting(true)
-            if (Platform.OS !== 'web') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-            }
-            try {
-              const {
-                data: { session },
-              } = await supabase.auth.getSession()
+          onPress: () => {
+            // Second, explicit confirmation: destructive and irreversible
+            Alert.alert(
+              'Konfirmimi i Fundit',
+              'Ky është hapi i fundit: shtypni "Fshi" vetëm nëse jeni absolutisht të sigurt që dëshironi ta zhdukni llogarinë përgjithmonë.',
+              [
+                { text: 'Anulo', style: 'cancel' },
+                {
+                  text: 'Fshi',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setDeleting(true)
+                    try {
+                      await executeLogout({
+                        isDelete: true,
+                        title: 'Duke fshirë llogarinë...',
+                        subtitle: 'Po fshijmë të gjitha të dhënat dhe shpalljet tuaja',
+                        successTitle: 'Llogaria u Fshi',
+                        successMessage: 'Të gjitha të dhënat dhe shpalljet tuaja u fshinë përfundimisht.',
+                        onBeforeTeardown: async () => {
+                          const {
+                            data: { session },
+                          } = await supabase.auth.getSession()
 
-              if (session?.access_token) {
-                const res = await apiDeleteAccount(session.access_token)
-                if (!res.success) {
-                  Alert.alert(
-                    'Gabim',
-                    res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
-                  )
-                  setDeleting(false)
-                  return
-                }
-              }
-
-              // 1. Immediately reset viewport to top (y: 0) to prevent anchoring at the bottom
-              resetViewportToTop(false)
-              prevUserRef.current = null
-              setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
-              setAuthState(null)
-              clearFavoritesCache()
-              await performAtomicLogout()
-              resetViewportToTop(false)
-              showBanner({
-                type: 'delete',
-                title: 'Llogaria u Fshi',
-                message: 'Të gjitha të dhënat dhe shpalljet tuaja u fshinë përfundimisht.',
-              })
-            } catch (err: any) {
-              Alert.alert('Gabim', err?.message || 'Ndodhi një problem gjatë fshirjes së llogarisë.')
-            } finally {
-              setDeleting(false)
-            }
+                          if (session?.access_token) {
+                            const res = await apiDeleteAccount(session.access_token)
+                            if (!res.success) {
+                              throw new Error(
+                                res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
+                              )
+                            }
+                          }
+                          resetViewportToTop(false)
+                          prevUserRef.current = null
+                          setStats({ listingsCount: 0, savedCount: 0, messagesCount: 0 })
+                          setAuthState(null)
+                        },
+                      })
+                    } catch (err: any) {
+                      Alert.alert('Gabim', err?.message || 'Ndodhi një problem gjatë fshirjes së llogarisë.')
+                    } finally {
+                      setDeleting(false)
+                    }
+                  },
+                },
+              ]
+            )
           },
         },
       ]
@@ -900,17 +901,19 @@ export default function ProfileScreen() {
     )
   }
 
-  const openAuthModal = (initialTab: 'login' | 'register') => {
-    if (Platform.OS !== 'web') Haptics.selectionAsync()
-    router.push({ pathname: '/modal', params: { initialTab } })
-  }
+  const openLogin = useCallback((redirectTo?: string) => {
+    openLoginScreen(router, { redirectTo: redirectTo || '/(tabs)/profile' })
+  }, [router])
 
-  const handleThemeSelect = (selectedTheme: ThemeMode) => {
+  const openRegister = useCallback((redirectTo?: string) => {
+    openRegisterScreen(router, { redirectTo: redirectTo || '/(tabs)/profile' })
+  }, [router])
+
+  const handleThemeSelect = useCallback((selectedTheme: ThemeMode) => {
     if (theme === selectedTheme) return
     playThemeSound()
-    if (Platform.OS !== 'web') Haptics.selectionAsync()
     setTheme(selectedTheme)
-  }
+  }, [theme, setTheme])
 
   // Account categorization
   const isCompany =
@@ -1058,7 +1061,8 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={tabBarScrollHandler}
         ref={mainScrollViewRef}
         style={styles.container}
         contentContainerStyle={[
@@ -1067,6 +1071,9 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
+        bounces={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
         onContentSizeChange={(_w, _h) => {
           if (shouldResetScrollRef.current) {
             mainScrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: false })
@@ -1276,7 +1283,11 @@ export default function ProfileScreen() {
                     color={theme === 'green' ? colors.gold : colors.primary}
                     strokeWidth={2.2}
                   />
-                  <Text style={[styles.heroEditBtnText, { color: colors.textPrimary }]}>
+                  <Text
+                    style={[styles.heroEditBtnText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     Ndrysho Profilin & të Dhënat
                   </Text>
                 </View>
@@ -1339,10 +1350,14 @@ export default function ProfileScreen() {
             <View style={styles.guestButtonsRow}>
               <Pressable
                 style={[styles.guestPrimaryBtn, { backgroundColor: colors.primary }]}
-                onPress={() => openAuthModal('login')}
+                onPress={() => openLogin('/(tabs)/profile')}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.4} />
-                <Text style={[styles.guestPrimaryBtnText, { color: primaryBtnText }]}>
+                <Text
+                  style={[styles.guestPrimaryBtnText, { color: primaryBtnText }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   Kyçu
                 </Text>
               </Pressable>
@@ -1355,10 +1370,14 @@ export default function ProfileScreen() {
                     borderColor: colors.border,
                   },
                 ]}
-                onPress={() => openAuthModal('register')}
+                onPress={() => openRegister('/(tabs)/profile')}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.guestSecondaryBtnText, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.guestSecondaryBtnText, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   Regjistrohu
                 </Text>
               </Pressable>
@@ -1689,7 +1708,7 @@ export default function ProfileScreen() {
               style={styles.menuRow}
               onPress={() => {
                 if (!currentUser) {
-                  openAuthModal('login')
+                  openLogin('/shpalljet-e-mia')
                 } else {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
                   requestShpalljetFilter('all')
@@ -1733,7 +1752,7 @@ export default function ProfileScreen() {
               style={styles.menuRow}
               onPress={() => {
                 if (!currentUser) {
-                  openAuthModal('login')
+                  openLogin('/(tabs)/post')
                 } else {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
                   router.push('/(tabs)/post' as any)
@@ -1791,7 +1810,7 @@ export default function ProfileScreen() {
               style={styles.menuRow}
               onPress={() => {
                 if (!currentUser) {
-                  openAuthModal('login')
+                  openLogin('/shpalljet-e-mia')
                 } else {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
                   requestShpalljetFilter('saved')
@@ -1937,7 +1956,7 @@ export default function ProfileScreen() {
               style={styles.menuRow}
               onPress={() => {
                 if (!currentUser) {
-                  openAuthModal('login')
+                  openLogin('/settings')
                 } else {
                   if (Platform.OS !== 'web') Haptics.selectionAsync()
                   router.push('/settings' as any)
@@ -2211,40 +2230,18 @@ export default function ProfileScreen() {
             Bleje Pronën Mobile v1.0.0 • Prishtinë, Kosovë
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* ─── QUICK AVATAR SELECTOR MODAL SHEET ─── */}
-      <Modal
+      <DraggableBottomSheet
         visible={avatarModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
+        onClose={() => {
           if (!updatingAvatar) setAvatarModalVisible(false)
         }}
+        maxHeight="90%"
+        sheetStyle={{ paddingHorizontal: 0, paddingBottom: 20 + bottomInset }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <Pressable
-            style={styles.modalDismissArea}
-            onPress={() => {
-              if (!updatingAvatar) setAvatarModalVisible(false)
-            }}
-          />
-          <View
-            style={[
-              styles.avatarSheet,
-              {
-                backgroundColor: colors.surface,
-                borderColor: specularBorder,
-                paddingBottom: 20 + bottomInset,
-              },
-            ]}
-          >
-            <View style={[styles.sheetGrip, { backgroundColor: colors.border }]} />
-
-            <View style={styles.sheetHeaderRow}>
+        <View style={[styles.sheetHeaderRow, { paddingHorizontal: 20 }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
                   Fotoja e Profilit
@@ -2496,38 +2493,16 @@ export default function ProfileScreen() {
                 <ChevronRight size={16} color={colors.textMuted} />
               </Pressable>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      </DraggableBottomSheet>
 
       {/* ─── VERIFICATION OTP MODAL SHEET ─── */}
-      <Modal
+      <DraggableBottomSheet
         visible={verifyModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setVerifyModalVisible(false)}
+        onClose={() => setVerifyModalVisible(false)}
+        maxHeight="90%"
+        sheetStyle={{ paddingHorizontal: 0, paddingBottom: 20 + bottomInset }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <Pressable
-            style={styles.modalDismissArea}
-            onPress={() => setVerifyModalVisible(false)}
-          />
-          <View
-            style={[
-              styles.verifySheet,
-              {
-                backgroundColor: colors.surface,
-                borderColor: specularBorder,
-                paddingBottom: 20 + bottomInset,
-              },
-            ]}
-          >
-            <View style={[styles.sheetGrip, { backgroundColor: colors.border }]} />
-
-            <View style={styles.sheetHeaderRow}>
+        <View style={[styles.sheetHeaderRow, { paddingHorizontal: 20 }]}>
               <View
                 style={[
                   styles.verifyIconBox,
@@ -2690,9 +2665,7 @@ export default function ProfileScreen() {
                 </Pressable>
               </View>
             </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      </DraggableBottomSheet>
     </View>
   )
 }
@@ -2863,11 +2836,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 1,
   },
   heroEditBtnText: {
     fontSize: 13,
     fontFamily: Fonts.bold,
     letterSpacing: -0.1,
+    flexShrink: 1,
   },
   heroAvatarQuickBtn: {
     width: 44,
@@ -2931,7 +2906,7 @@ const styles = StyleSheet.create({
   },
   guestPrimaryBtn: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2944,7 +2919,7 @@ const styles = StyleSheet.create({
   },
   guestSecondaryBtn: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Dimensions,
+  Keyboard,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router'
 import {
   getSyncAuthUser,
   getSyncProfile,
@@ -45,20 +46,9 @@ import { DEFAULT_AVATAR, subscribeAvatarChange } from '@/lib/avatars'
 import { apiSaveProfileSettings, ProfileSettingsPayload } from '@/lib/api'
 import { safeBack } from '@/lib/navigation'
 
-const MAJOR_CITIES = [
-  'Prishtinë',
-  'Prizren',
-  'Pejë',
-  'Ferizaj',
-  'Gjilan',
-  'Gjakovë',
-  'Mitrovicë',
-  'Fushë Kosovë',
-  'Podujevë',
-  'Vushtrri',
-  'Tiranë',
-  'Durrës',
-]
+import { ALL_CITIES } from '@/lib/kosovo-locations'
+
+const CITIES = ALL_CITIES
 
 const DUMMY_SAMPLES = new Set([
   'alban',
@@ -178,6 +168,25 @@ export default function CompletoProfilinScreen() {
   // Errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const navigation = useNavigation()
+
+  // Dismiss the keyboard at pop-start so the KeyboardAvoidingView padding
+  // release never reflows the exiting screen mid-transition.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      Keyboard.dismiss()
+    })
+    return unsubscribe
+  }, [navigation])
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -185,8 +194,9 @@ export default function CompletoProfilinScreen() {
           data: { session },
         } = await supabase.auth.getSession()
 
+        if (!isMountedRef.current) return
         if (!session?.user) {
-          router.replace('/modal')
+          router.replace('/login')
           return
         }
 
@@ -204,6 +214,8 @@ export default function CompletoProfilinScreen() {
           .select('*')
           .eq('id', user.id)
           .maybeSingle()
+
+        if (!isMountedRef.current) return
 
         if (profile?.avatar_url) {
           setSelectedAvatar(profile.avatar_url)
@@ -338,7 +350,7 @@ export default function CompletoProfilinScreen() {
           title: 'Sesioni ka Skaduar',
           message: 'Ju lutemi kyçuni përsëri për të ruajtur ndryshimet.',
         })
-        router.replace('/modal')
+        router.replace('/login')
         return
       }
 
@@ -405,7 +417,12 @@ export default function CompletoProfilinScreen() {
             id: activeUser.id,
             ...updatedProfileRow,
             email: activeUser.email || undefined,
-            email_verified: true,
+            email_verified: Boolean(
+              activeUser.email_confirmed_at ||
+              activeUser.confirmed_at ||
+              activeUser.app_metadata?.provider === 'google' ||
+              syncProfile?.email_verified
+            ),
           },
           { onConflict: 'id' }
         )
@@ -801,7 +818,7 @@ export default function CompletoProfilinScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.cityChipsRow}
                 >
-                  {MAJOR_CITIES.map((city) => {
+                  {CITIES.map((city) => {
                     const isSelected = individualCity === city
                     return (
                       <Pressable
@@ -1001,7 +1018,7 @@ export default function CompletoProfilinScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.cityChipsRow}
                 >
-                  {MAJOR_CITIES.map((city) => {
+                  {CITIES.map((city) => {
                     const isSelected = companyCity === city
                     return (
                       <Pressable

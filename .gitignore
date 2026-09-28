@@ -24,6 +24,13 @@
 .DS_Store
 *.pem
 
+# Android build artifacts / sideloaded Expo Go — never commit these
+# (Expo-Go.apk alone was ~200MB). Enforced by .github/workflows/ci.yml.
+*.apk
+
+# Expo tooling state (root + mobile)
+.expo/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

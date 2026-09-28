@@ -1,4 +1,4 @@
-import { createPublicSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
+import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -43,7 +43,6 @@ import ContactSellerCard from '@/components/ContactSellerCard'
 import MobileContactBar from '@/components/MobileContactBar'
 import ListingHeaderActions from '@/components/ListingHeaderActions'
 import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
-import { normalizePhoneNumber } from '@/lib/phone'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import MortgageCalculator from '@/components/MortgageCalculator'
@@ -142,7 +141,7 @@ interface ListingWithProfile extends Listing {
 // ---- Data fetchers ----
 
 const getListing = cache(async (id: string) => {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = createPublicSupabaseClient()
   return supabase
     .from('listings')
     .select(
@@ -155,26 +154,23 @@ const getListing = cache(async (id: string) => {
 
 const getSellerData = cache(async (userId: string) => {
   try {
-    const supabase = await createAdminSupabaseClient()
-    const [{ data: userData }, { count: fCount }] = await Promise.all([
-      supabase.auth.admin.getUserById(userId).catch(() => ({ data: { user: null } })),
+    const supabase = createPublicSupabaseClient()
+    const [{ data: profileData }, { count: fCount }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
     ])
-    const meta = userData?.user?.user_metadata || {}
+    const prof = (profileData as Record<string, unknown>) || {}
     const socials: SocialLinks = {
-      instagram: meta.instagram || null,
-      facebook: meta.facebook || null,
-      whatsapp: meta.whatsapp || null,
-      tiktok: meta.tiktok || null,
+      instagram: (prof.instagram as string) || null,
+      facebook: (prof.facebook as string) || null,
+      whatsapp: (prof.whatsapp as string) || null,
+      tiktok: (prof.tiktok as string) || null,
     }
-    let followersCount = typeof fCount === 'number' ? fCount : 0
-    if (followersCount === 0 && Array.isArray(meta.followers)) {
-      followersCount = meta.followers.length
-    }
+    const followersCount = typeof fCount === 'number' ? fCount : 0
     return {
       socials,
-      isCompany: meta.account_type === 'company' || Boolean(meta.company_name),
-      companyDescription: meta.company_description || null,
+      isCompany: prof.account_type === 'company' || Boolean(prof.company_name),
+      companyDescription: (prof.bio as string) || (prof.company_description as string) || null,
       followersCount,
     }
   } catch (err) {
@@ -353,8 +349,9 @@ export default async function ListingDetailPage({
   )
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}`
 
-  const lat = (listing as any)?.latitude ?? null
-  const lng = (listing as any)?.longitude ?? null
+  const rawRecord = listing as unknown as Record<string, unknown>
+  const lat = typeof rawRecord.latitude === 'number' ? rawRecord.latitude : null
+  const lng = typeof rawRecord.longitude === 'number' ? rawRecord.longitude : null
   const pricePerSqmValue =
     listing.area_m2 > 0 && listing.type === 'shitje'
       ? Math.round(listing.price / listing.area_m2)
@@ -371,7 +368,7 @@ export default async function ListingDetailPage({
         url: `${siteUrl}/listings/${listing.id}`,
         image: listing.images?.[0] || '',
         datePosted: listing.created_at,
-        dateModified: (listing as any).updated_at || listing.created_at,
+        dateModified: typeof rawRecord.updated_at === 'string' ? rawRecord.updated_at : listing.created_at,
         offers: {
           '@type': 'Offer',
           price: listing.price,

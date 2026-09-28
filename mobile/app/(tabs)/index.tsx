@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -26,8 +28,8 @@ import {
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
-import { supabase, Listing } from '@/lib/supabase'
-import { fetchFavoriteIds, persistFavoriteToggle } from '@/lib/favorites'
+import type { Listing } from '@/lib/supabase'
+import { useFavorites, fetchFavoriteIds } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { Logo } from '@/components/Logo'
@@ -37,19 +39,28 @@ import {
   PropertyFilterState,
   DEFAULT_FILTER_STATE,
   countActiveFilters,
-  filterAndSortListings,
-  matchesCategory,
+  toListingsQueryParams,
   CATEGORY_ITEMS,
 } from '@/lib/property-filters'
+import {
+  fetchCategoryCounts,
+  fetchListingsPage,
+  isCanonicalFeedQuery,
+  type ListingsQueryParams,
+} from '@/lib/listings-query'
 import {
   getCachedListings,
   hasCachedListings,
   setCachedListings,
   subscribeCachedListings,
+  getCachedQueryListings,
+  setCachedQueryListings,
+  filterCachedListingsOptimistic,
 } from '@/lib/listings-cache'
 import { getSyncAuthUser } from '@/lib/auth-cache'
 import { TactilePressable } from '@/components/motion'
 import { FavoriteButton } from '@/components/FavoriteButton'
+import { openLoginScreen } from '@/lib/navigation'
 
 const KOSOVO_METROS = [
   { id: '', label: 'Të gjitha' },
@@ -63,6 +74,12 @@ const KOSOVO_METROS = [
   { id: 'Gjakovë', label: 'Gjakovë' },
 ]
 
+// The home feed is a counted preview of the catalog: one window of rows plus
+// honest server totals for every counter. The paginated full list lives in the
+// Katalogu tab.
+const HOME_WINDOW = 80
+const FEATURED_WINDOW = 12
+
 const TopBarHeader = React.memo(function TopBarHeader() {
   return (
     <View style={styles.header}>
@@ -72,6 +89,14 @@ const TopBarHeader = React.memo(function TopBarHeader() {
     </View>
   )
 })
+
+// Mirrors ListingCard so a missing price never renders as "NaN €" / "0 €".
+const formatPrice = (val?: number | null) => {
+  if (val === undefined || val === null || isNaN(val) || val <= 0) {
+    return 'Me marrëveshje'
+  }
+  return new Intl.NumberFormat('de-DE').format(val) + ' €'
+}
 
 const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
   item,
@@ -156,7 +181,7 @@ const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
             style={StyleSheet.absoluteFill}
           />
           <Text style={styles.featuredPriceText}>
-            {new Intl.NumberFormat('de-DE').format(item.price)} €
+            {formatPrice(item.price)}
             {item.type === 'qira' ? (
               <Text style={styles.featuredPricePeriod}>/muaj</Text>
             ) : null}
@@ -204,6 +229,7 @@ const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
 export default function HomeScreen() {
   const router = useRouter()
   const { colors, theme } = useTheme()
+  const tabBarScrollHandler = useTabBarCollapseOnScroll()
   const insets = useSafeAreaInsets()
 
   const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_FILTER_STATE)
@@ -211,61 +237,140 @@ export default function HomeScreen() {
   const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
   const [loading, setLoading] = useState(() => !hasCachedListings())
   const [refreshing, setRefreshing] = useState(false)
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+  // Honest server totals — `null` until the first counted response lands, so no
+  // counter ever renders the size of the fetched window.
+  const [total, setTotal] = useState<number | null>(null)
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
+  const [featuredTotal, setFeaturedTotal] = useState<number | null>(null)
+  const { favorites, toggleFavorite } = useFavorites()
+
+  // Monotonic request id: only the newest response may touch state, so rapid
+  // Shitje ↔ Qira toggles can never let a slower older payload win.
+  const reqIdRef = useRef(0)
+  const featuredReqIdRef = useRef(0)
+
+  // Filtering and sorting live in the Supabase query: this param object is the
+  // single source of truth for what the home preview shows.
+  const queryParams = useMemo<ListingsQueryParams>(
+    () => toListingsQueryParams(filters),
+    [filters]
+  )
+  const queryKey = useMemo(() => JSON.stringify(queryParams), [queryParams])
+  const paramsRef = useRef(queryParams)
+  paramsRef.current = queryParams
 
   // Instant sync with shared cache updates
   useEffect(() => {
-    const cached = getCachedListings()
-    if (cached.length > 0 && listings.length === 0) {
-      setListings(cached)
-      setLoading(false)
-    }
-
     const unsubscribe = subscribeCachedListings((fresh) => {
-      if (filters.transactionType === 'all') {
-        setListings(fresh)
-        setLoading(false)
-      }
+      // The shared cache mirrors the canonical newest-first feed only, so it may
+      // never overwrite a filtered or searched home preview.
+      if (!isCanonicalFeedQuery(paramsRef.current)) return
+      setListings((prev) => (prev.length === 0 ? fresh : prev))
+      setLoading(false)
     })
 
     return unsubscribe
-  }, [filters.transactionType])
+  }, [])
 
   const fetchListings = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('listings')
-        .select(
-          'id,title,description,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features'
-        )
-        .order('created_at', { ascending: false })
-        .limit(80)
+    const rid = ++reqIdRef.current
+    const request = paramsRef.current
+    const canonical = isCanonicalFeedQuery(request)
+    const currentKey = queryKey
 
-      if (filters.transactionType !== 'all') {
-        query = query.eq('type', filters.transactionType)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.warn('Listing fetch notice:', error.message)
-      } else if (data) {
-        setListings(data as unknown as Listing[])
-        if (filters.transactionType === 'all') {
-          setCachedListings(data as unknown as Listing[])
+    // Instant query cache check for immediate frame-0 paint
+    const cachedHit = getCachedQueryListings(currentKey)
+    if (cachedHit && cachedHit.rows.length > 0) {
+      setListings(cachedHit.rows)
+      setTotal(cachedHit.total)
+      setLoading(false)
+    } else if (!canonical) {
+      // Optimistic filter over loaded feed while server query is in-flight
+      const allCached = getCachedListings()
+      if (allCached.length > 0) {
+        const optimistic = filterCachedListingsOptimistic(allCached, request)
+        if (optimistic.length > 0) {
+          setListings(optimistic)
+          setTotal(optimistic.length)
         }
       }
-    } catch (err: any) {
-      console.warn('Listing catch notice:', err?.message || err)
-    } finally {
-      setLoading(false)
     }
-  }, [filters.transactionType])
+
+    try {
+      // Card columns only, is_active enforced, exact count — one query shape
+      // shared with the web catalog (see lib/listings-query.ts).
+      const { rows, total: serverTotal, error } = await fetchListingsPage({
+        ...request,
+        from: 0,
+        limit: HOME_WINDOW,
+      })
+
+      // A newer request already superseded this one — drop the stale payload.
+      if (rid !== reqIdRef.current) return
+
+      if (error) {
+        console.warn('Listing fetch notice:', error)
+      }
+
+      setListings(rows)
+      setTotal(serverTotal)
+      setCachedQueryListings(currentKey, { rows, total: serverTotal })
+      // Only the canonical window may seed the shared offline cache.
+      if (canonical) setCachedListings(rows)
+    } catch (err: any) {
+      if (rid === reqIdRef.current) {
+        console.warn('Listing catch notice:', err?.message || err)
+      }
+    } finally {
+      if (rid === reqIdRef.current) {
+        setLoading(false)
+      }
+    }
+  }, [queryKey])
+
+  // Featured rail: its own counted query, so the badge shows every featured
+  // property on the server rather than only the ones inside the home window.
+  const fetchFeatured = useCallback(async () => {
+    const rid = ++featuredReqIdRef.current
+    try {
+      const { rows, total: serverTotal } = await fetchListingsPage({
+        featured: true,
+        type: paramsRef.current.type,
+        sort: 'newest',
+        from: 0,
+        limit: FEATURED_WINDOW,
+      })
+      if (rid !== featuredReqIdRef.current) return
+      setFeaturedListings(rows)
+      setFeaturedTotal(serverTotal)
+    } catch (err: any) {
+      if (rid === featuredReqIdRef.current) {
+        console.warn('Featured fetch notice:', err?.message || err)
+      }
+    }
+  }, [queryParams.type])
 
   useEffect(() => {
     fetchListings()
-    fetchFavoriteIds().then(setFavorites)
   }, [fetchListings])
+
+  useEffect(() => {
+    fetchFeatured()
+  }, [fetchFeatured])
+
+  // Category chip badges are server counts for the same filter set, so they can
+  // never disagree with the list they filter.
+  useEffect(() => {
+    let cancelled = false
+    const base: ListingsQueryParams = { ...paramsRef.current, category: undefined }
+    fetchCategoryCounts(base).then((counts) => {
+      if (!cancelled) setCategoryCounts(counts)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [queryKey])
 
   const onRefresh = async () => {
     if (Platform.OS !== 'web') {
@@ -274,8 +379,11 @@ export default function HomeScreen() {
     setRefreshing(true)
     const startTime = Date.now()
 
-    await fetchListings()
-    fetchFavoriteIds().then(setFavorites)
+    await Promise.all([
+      fetchListings(),
+      fetchFeatured(),
+      fetchFavoriteIds().catch(() => ({})),
+    ])
 
     const elapsed = Date.now() - startTime
     if (elapsed < 500) {
@@ -292,22 +400,16 @@ export default function HomeScreen() {
     async (id: string) => {
       const user = getSyncAuthUser()
       if (!user) {
-        router.push({ pathname: '/modal', params: { initialTab: 'login', reason: 'favorite' } })
+        openLoginScreen(router, { redirectTo: '/(tabs)', reason: 'favorite' })
         return
       }
 
-      let wasFavorite = false
-      setFavorites((prev) => {
-        wasFavorite = Boolean(prev[id])
-        return { ...prev, [id]: !wasFavorite }
-      })
-
-      const ok = await persistFavoriteToggle(id, wasFavorite)
-      if (!ok) {
-        setFavorites((prev) => ({ ...prev, [id]: wasFavorite }))
+      const res = await toggleFavorite(id)
+      if (res.requiresAuth) {
+        openLoginScreen(router, { redirectTo: '/(tabs)', reason: 'favorite' })
       }
     },
-    [router]
+    [router, toggleFavorite]
   )
 
   const renderItem = useCallback(
@@ -321,32 +423,6 @@ export default function HomeScreen() {
     [favorites, handleToggleFavorite]
   )
 
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const item of listings) {
-      if (filters.transactionType !== 'all' && item.type !== filters.transactionType) continue
-      for (const cat of CATEGORY_ITEMS) {
-        if (cat.id === 'all') {
-          counts.all = (counts.all || 0) + 1
-        } else if (matchesCategory(item, cat.id)) {
-          counts[cat.id] = (counts[cat.id] || 0) + 1
-        }
-      }
-    }
-    return counts
-  }, [listings, filters.transactionType])
-
-  // Filtered listings
-  const filteredListings = useMemo(() => {
-    return filterAndSortListings(listings, filters)
-  }, [listings, filters])
-
-  // Featured luxury listings
-  const featuredListings = useMemo(() => {
-    return listings.filter((l) => l.is_featured)
-  }, [listings])
-
   const activeFiltersCount = countActiveFilters(filters)
 
   return (
@@ -354,8 +430,10 @@ export default function HomeScreen() {
       {/* Top Bar Header with Official Logo */}
       <TopBarHeader />
 
-      <FlatList
-        data={filteredListings}
+      <Animated.FlatList
+        onScroll={tabBarScrollHandler}
+        scrollEventThrottle={16}
+        data={listings}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         initialNumToRender={5}
@@ -505,10 +583,23 @@ export default function HomeScreen() {
                       },
                     ]}
                     onPress={() => {
-                      setFilters((prev) => ({
-                        ...prev,
-                        city: prev.city === city.id ? '' : city.id,
-                      }))
+                      const nextCity = filters.city === city.id ? '' : city.id
+                      const nextFilters = { ...filters, city: nextCity }
+                      const nextParams = toListingsQueryParams(nextFilters)
+                      const nextKey = JSON.stringify(nextParams)
+                      const cachedHit = getCachedQueryListings(nextKey)
+                      if (cachedHit && cachedHit.rows.length > 0) {
+                        setListings(cachedHit.rows)
+                        setTotal(cachedHit.total)
+                      } else {
+                        const allCached = getCachedListings()
+                        if (allCached.length > 0) {
+                          const optimistic = filterCachedListingsOptimistic(allCached, nextParams)
+                          setListings(optimistic)
+                          setTotal(optimistic.length)
+                        }
+                      }
+                      setFilters(nextFilters)
                     }}
                     activeScale={0.94}
                     haptic="selection"
@@ -536,11 +627,43 @@ export default function HomeScreen() {
             {/* 3. Transaction Toggle & Category Selector */}
             <PropertyFilterBar
               transactionType={filters.transactionType}
-              onChangeTransactionType={(t) =>
-                setFilters((prev) => ({ ...prev, transactionType: t }))
-              }
+              onChangeTransactionType={(t) => {
+                const nextFilters = { ...filters, transactionType: t }
+                const nextParams = toListingsQueryParams(nextFilters)
+                const nextKey = JSON.stringify(nextParams)
+                const cachedHit = getCachedQueryListings(nextKey)
+                if (cachedHit && cachedHit.rows.length > 0) {
+                  setListings(cachedHit.rows)
+                  setTotal(cachedHit.total)
+                } else {
+                  const allCached = getCachedListings()
+                  if (allCached.length > 0) {
+                    const optimistic = filterCachedListingsOptimistic(allCached, nextParams)
+                    setListings(optimistic)
+                    setTotal(optimistic.length)
+                  }
+                }
+                setFilters(nextFilters)
+              }}
               selectedCategory={filters.category}
-              onChangeCategory={(c) => setFilters((prev) => ({ ...prev, category: c }))}
+              onChangeCategory={(c) => {
+                const nextFilters = { ...filters, category: c }
+                const nextParams = toListingsQueryParams(nextFilters)
+                const nextKey = JSON.stringify(nextParams)
+                const cachedHit = getCachedQueryListings(nextKey)
+                if (cachedHit && cachedHit.rows.length > 0) {
+                  setListings(cachedHit.rows)
+                  setTotal(cachedHit.total)
+                } else {
+                  const allCached = getCachedListings()
+                  if (allCached.length > 0) {
+                    const optimistic = filterCachedListingsOptimistic(allCached, nextParams)
+                    setListings(optimistic)
+                    setTotal(optimistic.length)
+                  }
+                }
+                setFilters(nextFilters)
+              }}
               categoryCounts={categoryCounts}
             />
 
@@ -568,22 +691,20 @@ export default function HomeScreen() {
                         { backgroundColor: colors.surfaceSubtle },
                       ]}
                     >
+                      {/* Exact count of featured properties on the server, not the rail window. */}
                       <Text
                         style={[
                           styles.featuredCounterText,
                           { color: theme === 'green' ? colors.gold : colors.primary },
                         ]}
                       >
-                        {featuredListings.length}
+                        {featuredTotal ?? featuredListings.length}
                       </Text>
                     </View>
                   </View>
                   <Pressable
                     onPress={() => {
-                      router.push({
-                        pathname: '/(tabs)/listings' as any,
-                        params: { isFeatured: 'true' },
-                      })
+                      router.push({ pathname: '/(tabs)/listings' as any })
                     }}
                     hitSlop={8}
                   >
@@ -634,13 +755,14 @@ export default function HomeScreen() {
                     { backgroundColor: colors.chipActiveBg },
                   ]}
                 >
+                  {/* Exact server total for the active filters — never the window size. */}
                   <Text
                     style={[
                       styles.activeCategoryBadgeText,
                       { color: colors.chipTextActive },
                     ]}
                   >
-                    {filteredListings.length}
+                    {total ?? '…'}
                   </Text>
                 </View>
               </View>
@@ -668,7 +790,7 @@ export default function HomeScreen() {
             {/* Empty State */}
             {loading && listings.length === 0 ? (
               <ListingFeedSkeleton count={3} />
-            ) : filteredListings.length === 0 ? (
+            ) : listings.length === 0 ? (
               <View
                 style={[
                   styles.emptyContainer,

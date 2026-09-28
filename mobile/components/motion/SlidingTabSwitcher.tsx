@@ -36,6 +36,7 @@ export interface SlidingTabSwitcherProps<T extends string> {
   inactiveIconColor?: string
   style?: StyleProp<ViewStyle>
   height?: number
+  animated?: boolean
 }
 
 const SPRING_CONFIG = {
@@ -57,6 +58,7 @@ export function SlidingTabSwitcher<T extends string>({
   inactiveIconColor,
   style,
   height = 44,
+  animated = true,
 }: SlidingTabSwitcherProps<T>) {
   const [containerWidth, setContainerWidth] = useState(0)
 
@@ -69,12 +71,12 @@ export function SlidingTabSwitcher<T extends string>({
   const pillWidth = containerWidth > 0 ? (containerWidth - padding * 2) / numTabs : 0
 
   const updatePosition = useCallback(
-    (index: number, animated = true) => {
+    (index: number, shouldAnimate = true) => {
       if (index < 0 || containerWidth <= 0) return
       const pillW = (containerWidth - padding * 2) / numTabs
       const targetX = padding + index * pillW
 
-      if (!isInitialized.value || !animated) {
+      if (!isInitialized.value || !shouldAnimate) {
         translateX.value = targetX
         isInitialized.value = true
       } else {
@@ -86,9 +88,9 @@ export function SlidingTabSwitcher<T extends string>({
 
   useEffect(() => {
     if (containerWidth > 0 && activeIndex >= 0) {
-      updatePosition(activeIndex, isInitialized.value)
+      updatePosition(activeIndex, animated ? isInitialized.value : false)
     }
-  }, [activeIndex, containerWidth, updatePosition, isInitialized])
+  }, [activeIndex, containerWidth, updatePosition, isInitialized, animated])
 
   const handleContainerLayout = (event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width
@@ -229,5 +231,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
 })

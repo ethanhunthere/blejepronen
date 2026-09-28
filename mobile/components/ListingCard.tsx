@@ -8,12 +8,16 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
 import { FavoriteButton } from '@/components/FavoriteButton'
+import { cardImageSource } from '@/lib/image-transform'
 
 interface ListingCardProps {
   listing: Listing
   isFavorite?: boolean
   onToggleFavorite?: (id: string) => void
 }
+
+// Bundled placeholder: renders instantly and works offline, unlike a remote fallback.
+const FALLBACK_IMAGE = require('@/assets/images/logo-icon.png')
 
 const formatPrice = (val?: number | null) => {
   if (val === undefined || val === null || isNaN(val) || val <= 0) {
@@ -30,10 +34,10 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
     onToggleFavorite?.(listing.id)
   }, [listing.id, onToggleFavorite])
 
-  const mainImage =
+  const mainImageSource =
     listing.images && listing.images.length > 0
-      ? listing.images[0]
-      : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+      ? { uri: (cardImageSource(listing.images[0]) as string) }
+      : FALLBACK_IMAGE
 
   const isSale = listing.type === 'shitje'
   const isRent = listing.type === 'qira'
@@ -59,7 +63,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
       {/* 1. Cinematic Hero Image Container with hardware-accelerated memory-disk cache */}
       <View style={[styles.imageContainer, { backgroundColor: colors.surfaceSubtle }]}>
         <Image
-          source={{ uri: mainImage }}
+          source={mainImageSource}
           style={[styles.image, { backgroundColor: colors.surfaceSubtle }]}
           contentFit="cover"
           transition={150}
@@ -337,6 +341,10 @@ export const ListingCard = React.memo(
       prev.listing.price === next.listing.price &&
       prev.listing.title === next.listing.title &&
       prev.listing.is_featured === next.listing.is_featured &&
+      (prev.listing.images ?? []).join('|') === (next.listing.images ?? []).join('|') &&
+      prev.listing.area_m2 === next.listing.area_m2 &&
+      prev.listing.rooms === next.listing.rooms &&
+      prev.listing.floor === next.listing.floor &&
       prev.onToggleFavorite === next.onToggleFavorite
     )
   }

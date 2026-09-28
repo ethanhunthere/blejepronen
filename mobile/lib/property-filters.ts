@@ -11,21 +11,18 @@ import {
   Maximize2,
   Minimize2,
 } from 'lucide-react-native'
-import { Listing } from './supabase'
-import { KOSOVO_LOCATIONS } from './kosovo-locations'
+import type { ListingsQueryParams, ListingsSort } from './listings-query'
 
-export const ALL_CITIES = Object.keys(KOSOVO_LOCATIONS)
-export const POPULAR_CITIES = [
-  'Prishtinë',
-  'Prizren',
-  'Pejë',
-  'Gjakovë',
-  'Gjilan',
-  'Ferizaj',
-  'Mitrovicë',
-  'Fushë Kosovë',
-  'Vushtrri',
-]
+/**
+ * Filter/sort UI vocabulary for the mobile catalog.
+ *
+ * This module owns *presentation state* only. Every value it holds is converted
+ * to the shared `ListingsQueryParams` shape by `toListingsQueryParams` and then
+ * applied to the Supabase query by `applyListingsFilters`
+ * (see `lib/listings-query.ts`, a mirror of the canonical web module). There is
+ * deliberately no client-side filtering or sorting of listing results here —
+ * mobile and web must not be able to drift.
+ */
 
 export const CATEGORY_ITEMS = [
   { id: 'all', label: 'Të gjitha', icon: LayoutGrid },
@@ -37,12 +34,13 @@ export const CATEGORY_ITEMS = [
   { id: 'garazh', label: 'Garazha', icon: Warehouse },
 ]
 
+/** Room chips are "N+" — the query applies `rooms >= N`, matching the web. */
 export const ROOM_OPTIONS = [
   { id: 'all', label: 'Të gjitha' },
-  { id: '1', label: '1' },
-  { id: '2', label: '2' },
-  { id: '3', label: '3' },
-  { id: '4', label: '4' },
+  { id: '1', label: '1+' },
+  { id: '2', label: '2+' },
+  { id: '3', label: '3+' },
+  { id: '4', label: '4+' },
   { id: '5+', label: '5+' },
 ]
 
@@ -142,7 +140,12 @@ export const SORT_OPTIONS = [
   },
 ] as const
 
-export type SortType = (typeof SORT_OPTIONS)[number]['id']
+/** Same union as the web `ListingsSort` — the sort sheet drives query params. */
+export type SortType = ListingsSort
+
+// Compile-time guard: the sheet may only offer sorts the server understands.
+const _sortOptionIds: readonly SortType[] = SORT_OPTIONS.map((o) => o.id)
+void _sortOptionIds
 
 export interface PropertyFilterState {
   transactionType: 'all' | 'shitje' | 'qira'
@@ -178,6 +181,11 @@ export const DEFAULT_FILTER_STATE: PropertyFilterState = {
   searchQuery: '',
 }
 
+/**
+ * Number of *modal* filters in play. Category chips and the search field are
+ * intentionally excluded: the modal's reset keeps them, so counting them would
+ * leave a badge that "Pastro" can never clear.
+ */
 export function countActiveFilters(filters: PropertyFilterState): number {
   let count = 0
   if (filters.city) count++
@@ -189,218 +197,37 @@ export function countActiveFilters(filters: PropertyFilterState): number {
   if (filters.condition !== 'all') count++
   if (filters.features.length > 0) count += filters.features.length
   if (filters.sortBy !== 'newest') count++
+  if (filters.searchQuery.trim()) count++
   return count
 }
 
-export function matchesCategory(item: Listing, catId: string): boolean {
-  if (!catId || catId === 'all') return true
-  const apt = (item.apartment_type || '').toLowerCase()
-  const title = (item.title || '').toLowerCase()
-  const desc = (item.description || '').toLowerCase()
-
-  switch (catId) {
-    case 'banese':
-      return (
-        apt.includes('banes') ||
-        apt.includes('apart') ||
-        apt.includes('1+1') ||
-        apt.includes('2+1') ||
-        apt.includes('3+1') ||
-        apt.includes('4+1') ||
-        apt.includes('garson') ||
-        apt.includes('studio') ||
-        apt.includes('duplex') ||
-        apt.includes('penthouse') ||
-        title.includes('banes') ||
-        title.includes('apartament') ||
-        title.includes('1+1') ||
-        title.includes('2+1') ||
-        title.includes('3+1') ||
-        title.includes('4+1') ||
-        title.includes('garson') ||
-        title.includes('studio') ||
-        title.includes('duplex') ||
-        title.includes('penthouse') ||
-        desc.includes('banes') ||
-        desc.includes('apartament')
-      )
-    case 'shtepi':
-      return (
-        apt.includes('shtëpi') ||
-        apt.includes('shtepi') ||
-        title.includes('shtëpi') ||
-        title.includes('shtepi') ||
-        desc.includes('shtëpi') ||
-        desc.includes('shtepi')
-      )
-    case 'vile':
-      return apt.includes('vil') || title.includes('vil') || desc.includes('vil')
-    case 'toke':
-      return (
-        apt.includes('tok') ||
-        apt.includes('truall') ||
-        title.includes('tok') ||
-        title.includes('truall') ||
-        desc.includes('tokë') ||
-        desc.includes('toke') ||
-        desc.includes('truall')
-      )
-    case 'lokal':
-      return (
-        apt.includes('lokal') ||
-        apt.includes('zyr') ||
-        apt.includes('biznes') ||
-        apt.includes('depo') ||
-        apt.includes('magazin') ||
-        apt.includes('afarist') ||
-        title.includes('lokal') ||
-        title.includes('zyr') ||
-        title.includes('biznes') ||
-        title.includes('depo') ||
-        title.includes('magazin') ||
-        title.includes('afarist') ||
-        desc.includes('lokal') ||
-        desc.includes('zyr')
-      )
-    case 'garazh':
-      return (
-        apt.includes('garazh') ||
-        apt.includes('park') ||
-        title.includes('garazh') ||
-        title.includes('park') ||
-        desc.includes('garazh') ||
-        desc.includes('parkim')
-      )
-    default:
-      return true
-  }
+function optional(value: string): string | undefined {
+  const trimmed = (value || '').trim()
+  return trimmed ? trimmed : undefined
 }
 
-export function matchesListingFilters(item: Listing, filters: PropertyFilterState): boolean {
-  // 1. Transaction Type
-  if (filters.transactionType !== 'all' && item.type !== filters.transactionType) {
-    return false
-  }
+/**
+ * Presentation state → the shared query param shape used by web and mobile.
+ * `'all'` sentinels collapse to `undefined` so `applyListingsFilters` skips them,
+ * and `'5+'` rooms collapse to `'5'` because the server filter is `rooms >= N`.
+ */
+export function toListingsQueryParams(filters: PropertyFilterState): ListingsQueryParams {
+  const rooms = filters.rooms === 'all' ? undefined : filters.rooms.replace(/[^0-9]/g, '')
 
-  // 2. Category
-  if (!matchesCategory(item, filters.category)) {
-    return false
+  return {
+    search: optional(filters.searchQuery),
+    city: optional(filters.city),
+    neighborhood: optional(filters.neighborhood),
+    type: filters.transactionType === 'all' ? '' : filters.transactionType,
+    minPrice: optional(filters.minPrice),
+    maxPrice: optional(filters.maxPrice),
+    rooms: rooms || undefined,
+    minArea: optional(filters.minArea),
+    maxArea: optional(filters.maxArea),
+    condition: filters.condition === 'all' ? undefined : optional(filters.condition),
+    floor: filters.floor === 'all' ? undefined : optional(filters.floor),
+    features: filters.features.length > 0 ? filters.features : undefined,
+    category: filters.category === 'all' ? undefined : filters.category,
+    sort: filters.sortBy,
   }
-
-  // 3. City
-  if (filters.city && (item.city || '').toLowerCase() !== filters.city.toLowerCase()) {
-    return false
-  }
-
-  // 4. Neighborhood
-  if (
-    filters.neighborhood &&
-    !(item.neighborhood || '').toLowerCase().includes(filters.neighborhood.toLowerCase())
-  ) {
-    return false
-  }
-
-  // 5. Price range
-  const price = Number(item.price) || 0
-  if (filters.minPrice) {
-    const min = parseFloat(filters.minPrice)
-    if (!isNaN(min) && price < min) return false
-  }
-  if (filters.maxPrice) {
-    const max = parseFloat(filters.maxPrice)
-    if (!isNaN(max) && price > max) return false
-  }
-
-  // 6. Area range
-  const area = Number(item.area_m2) || 0
-  if (filters.minArea) {
-    const minA = parseFloat(filters.minArea)
-    if (!isNaN(minA) && area < minA) return false
-  }
-  if (filters.maxArea) {
-    const maxA = parseFloat(filters.maxArea)
-    if (!isNaN(maxA) && area > maxA) return false
-  }
-
-  // 7. Rooms
-  if (filters.rooms !== 'all') {
-    const itemRooms = (item.rooms || '').toString().trim()
-    if (filters.rooms === '5+') {
-      const numRooms = parseInt(itemRooms, 10)
-      if (isNaN(numRooms) || numRooms < 5) return false
-    } else {
-      if (itemRooms !== filters.rooms) return false
-    }
-  }
-
-  // 8. Floor
-  if (filters.floor !== 'all') {
-    const itemFloor = (item.floor || '').toString().toLowerCase()
-    const targetFloor = filters.floor.toLowerCase()
-    if (filters.floor === '7+') {
-      const numFloor = parseInt(itemFloor, 10)
-      if (isNaN(numFloor) || numFloor < 7) return false
-    } else {
-      if (!itemFloor.includes(targetFloor)) return false
-    }
-  }
-
-  // 9. Condition
-  if (filters.condition !== 'all') {
-    const itemCondition = (item.condition || '').toLowerCase()
-    if (!itemCondition.includes(filters.condition.toLowerCase())) return false
-  }
-
-  // 10. Features
-  if (filters.features.length > 0) {
-    const itemFeatures = Array.isArray(item.features)
-      ? item.features.map((f: string) => f.toLowerCase())
-      : []
-    const allMatch = filters.features.every((f) =>
-      itemFeatures.some((feat: string) => feat.includes(f.toLowerCase()))
-    )
-    if (!allMatch) return false
-  }
-
-  // 11. Search Query
-  if (filters.searchQuery.trim()) {
-    const q = filters.searchQuery.toLowerCase()
-    const titleMatch = (item.title || '').toLowerCase().includes(q)
-    const cityMatch = (item.city || '').toLowerCase().includes(q)
-    const hoodMatch = (item.neighborhood || '').toLowerCase().includes(q)
-    const descMatch = (item.description || '').toLowerCase().includes(q)
-    const addrMatch = (item.address || '').toLowerCase().includes(q)
-    if (!titleMatch && !cityMatch && !hoodMatch && !descMatch && !addrMatch) {
-      return false
-    }
-  }
-
-  return true
-}
-
-export function sortListings(items: Listing[], sortBy: SortType): Listing[] {
-  const cloned = [...items]
-  switch (sortBy) {
-    case 'price_desc':
-      return cloned.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0))
-    case 'price_asc':
-      return cloned.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))
-    case 'area_desc':
-      return cloned.sort((a, b) => (Number(b.area_m2) || 0) - (Number(a.area_m2) || 0))
-    case 'area_asc':
-      return cloned.sort((a, b) => (Number(a.area_m2) || 0) - (Number(b.area_m2) || 0))
-    case 'newest':
-    default:
-      return cloned.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-  }
-}
-
-export function filterAndSortListings(
-  listings: Listing[],
-  filters: PropertyFilterState
-): Listing[] {
-  const filtered = listings.filter((item) => matchesListingFilters(item, filters))
-  return sortListings(filtered, filters.sortBy)
 }

@@ -16,10 +16,12 @@ import {
   AlbertSans_900Black,
 } from '@expo-google-fonts/albert-sans'
 import 'react-native-reanimated'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ThemeProvider, useTheme } from '@/constants/theme'
 import { StatusBar } from 'expo-status-bar'
 
 import { BannerProvider } from '@/context/BannerContext'
+import { LogoutProvider } from '@/context/LogoutContext'
 import { supabase } from '@/lib/supabase'
 // Deferred: react-native-webrtc + the call UI are heavy; evaluating them at
 // module scope costs startup latency for a feature most sessions never use.
@@ -34,12 +36,19 @@ import { prewarmBrandAssets } from '@/assets/brand/logo-data'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { isLogoutInProgress } from '@/lib/auth-cache'
 import { SplashHandover } from '@/components/motion'
+import { BiometricGate } from '@/components/BiometricGate'
+import { initPushNotifications } from '@/lib/notifications'
 
-export { ErrorBoundary } from 'expo-router'
+export { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 }
+
+import { enableScreens, enableFreeze } from 'react-native-screens'
+
+enableScreens(true)
+enableFreeze(true)
 
 SplashScreen.preventAutoHideAsync().catch(() => {})
 
@@ -61,7 +70,9 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ThemeProvider>
         <BannerProvider>
-          <RootLayoutNav fontsLoaded={fontsLoaded} />
+          <LogoutProvider>
+            <RootLayoutNav fontsLoaded={fontsLoaded} />
+          </LogoutProvider>
         </BannerProvider>
       </ThemeProvider>
     </ErrorBoundary>
@@ -73,10 +84,13 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const [isCacheHydrated, setIsCacheHydrated] = useState(false)
   const [hasHiddenSplash, setHasHiddenSplash] = useState(false)
 
-  // Synchronize native root window background color immediately
+  // Synchronize native root window background color asynchronously without blocking UI paint
   useEffect(() => {
     if (colors?.background && Platform.OS !== 'web') {
-      SystemUI.setBackgroundColorAsync(colors.background).catch(() => {})
+      const raf = requestAnimationFrame(() => {
+        SystemUI.setBackgroundColorAsync(colors.background).catch(() => {})
+      })
+      return () => cancelAnimationFrame(raf)
     }
   }, [colors?.background])
 
@@ -89,6 +103,11 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     ]).finally(() => {
       setIsCacheHydrated(true)
     })
+  }, [])
+
+  // Push Notifications Rail Initialization (retention, unread alerts, missed calls)
+  useEffect(() => {
+    initPushNotifications()
   }, [])
 
   const isAppReady = fontsLoaded && isThemeLoaded && isCacheHydrated
@@ -139,12 +158,13 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   }
 
   return (
-    <View
+    <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: colors.background }}
       onLayout={onLayoutRootView}
     >
       <NavigationThemeProvider value={navTheme}>
         <StatusBar style={theme === 'white' ? 'dark' : 'light'} />
+        <BiometricGate />
         <CallGate />
         <Stack
           screenOptions={{
@@ -153,21 +173,39 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
             animation: 'slide_from_right',
           }}
         >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
-          <Stack.Screen name="search" options={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: colors.background } }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade', animationDuration: 320, contentStyle: { backgroundColor: colors.background } }} />
+          <Stack.Screen name="search" options={{ headerShown: false, animation: 'fade', animationMatchesGesture: true, contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="listings/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="messages/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="profili/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="profile/[id]" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
-          <Stack.Screen name="completo-profilin" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
+          <Stack.Screen name="completo-profilin" options={{ headerShown: false, animation: 'slide_from_right', gestureEnabled: true, contentStyle: { backgroundColor: colors.background } }} />
           <Stack.Screen name="shpalljet-e-mia" options={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: colors.background } }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: colors.background } }} />
+          <Stack.Screen
+            name="login"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+              gestureEnabled: true,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          />
+          <Stack.Screen
+            name="register"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+              gestureEnabled: true,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          />
+          <Stack.Screen name="modal" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
           <Stack.Screen name="+not-found" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
         </Stack>
       </NavigationThemeProvider>
       <SplashHandover isReady={hasHiddenSplash} />
-    </View>
+    </GestureHandlerRootView>
   )
 }
 
