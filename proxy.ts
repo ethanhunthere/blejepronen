@@ -51,6 +51,12 @@ export async function proxy(request: NextRequest) {
     supabaseResponse.cookies.set('blejepronen_logging_out', '', { path: '/', maxAge: 0 })
   }
 
+  // Edge-cache the server-rendered catalog; never cache responses that carry
+  // session cookies, so a refreshed token can't be shared between visitors.
+  if (request.nextUrl.pathname === '/listings' && !supabaseResponse.headers.get('set-cookie')) {
+    supabaseResponse.headers.set('cache-control', 'public, s-maxage=300, stale-while-revalidate=600')
+  }
+
   return supabaseResponse
 }
 

@@ -89,7 +89,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ color: '#C8B882', fontSize: 56, fontWeight: 800, letterSpacing: -1 }}>{price}</div>
           {listing?.area_m2 && listing?.price ? (
             <div style={{ color: '#9FC7BE', fontSize: 26, fontWeight: 600 }}>
-              {fmt(Math.round(listing.price / listing.area_m2))} €/m²
+              {`${fmt(Math.round(listing.price / listing.area_m2))} €/m²`}
             </div>
           ) : null}
         </div>

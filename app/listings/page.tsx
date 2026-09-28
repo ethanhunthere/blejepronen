@@ -1,12 +1,9 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { Loader2 } from 'lucide-react'
 
 import { ListingsExplorer } from '@/components/ListingsExplorer'
 import { fetchListingsServer, type ListingsQueryParams, type ListingsSort } from '@/lib/listings-query'
-
-export const dynamic = 'force-dynamic'
 
 const SITE_URL = 'https://blejepronen.com'
 
@@ -81,13 +78,6 @@ export default async function ListingsPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const params = toQueryParams(sp)
   const { rows, total } = await fetchListingsServer(params)
-
-  try {
-    const h = await headers()
-    h.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-  } catch {
-    // headers() unavailable in some static contexts — non-fatal
-  }
 
   const initialParams: Record<string, string> = {}
   for (const [k, v] of Object.entries(sp)) {
