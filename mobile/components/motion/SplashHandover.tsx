@@ -52,7 +52,7 @@ const RELEASE_START = 0.28
 const RELEASE_END = 0.78
 const LOGO_FADE_START = 0.34
 const VEIL_START = 0.32
-const WINDUP_SCALE = 0.028
+const WINDUP_SCALE = 0.034
 const RELEASE_SCALE = 0.188
 
 export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
@@ -61,11 +61,11 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
   const completedRef = useRef(false)
 
   const progress = useSharedValue(0)
-  const reduceMotionSV = useSharedValue(0)
+  const motionProfileSV = useSharedValue(0)
 
   const logoScaleSV = useDerivedValue(() => {
     const p = progress.value
-    if (reduceMotionSV.value === 1) {
+    if (motionProfileSV.value === 1) {
       return 1 - segment(p, 0.5, 1) * 0.03
     }
     if (p < WINDUP_END) {
@@ -78,20 +78,18 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
 
   const logoOpacitySV = useDerivedValue(() => {
     const p = progress.value
-    if (reduceMotionSV.value === 1) {
+    if (motionProfileSV.value === 1) {
       return 1 - segment(p, 0.45, 1)
     }
     return 1 - easeOutExpo(segment(p, LOGO_FADE_START, RELEASE_END))
   })
 
   const veilOpacitySV = useDerivedValue(() => {
-    const p = progress.value
-    return 1 - easeOutCubic(segment(p, VEIL_START, 1))
+    return 1 - easeOutCubic(segment(progress.value, VEIL_START, 1))
   })
 
   const veilScaleSV = useDerivedValue(() => {
-    const p = progress.value
-    return 1 + easeOutCubic(segment(p, VEIL_START, 1)) * 0.03
+    return 1 + easeOutCubic(segment(progress.value, VEIL_START, 1)) * 0.03
   })
 
   const handleFinish = useCallback(() => {
@@ -102,30 +100,18 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
   }, [onComplete])
 
   useEffect(() => {
-    let alive = true
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then((enabled) => {
-        if (alive && enabled) reduceMotionSV.value = 1
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [reduceMotionSV])
-
-  useEffect(() => {
     if (!isReady || startedRef.current) return
     let cancelled = false
     let begun = false
 
-    const begin = () => {
+    const begin = (reduced: boolean) => {
       if (cancelled || begun) return
       begun = true
       startedRef.current = true
-      const duration = reduceMotionSV.value === 1 ? REDUCED_MS : TOTAL_MS
+      motionProfileSV.value = reduced ? 1 : 0
       progress.value = withTiming(
         1,
-        { duration, easing: Easing.linear },
+        { duration: reduced ? REDUCED_MS : TOTAL_MS, easing: Easing.linear },
         (finished) => {
           'worklet'
           if (finished) runOnJS(handleFinish)()
@@ -133,24 +119,23 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
       )
     }
 
-    const timeout = setTimeout(begin, 80)
+    const timeout = setTimeout(() => begin(false), 90)
     AccessibilityInfo.isReduceMotionEnabled()
       .then((enabled) => {
         if (cancelled) return
-        if (enabled) reduceMotionSV.value = 1
         clearTimeout(timeout)
-        begin()
+        begin(!!enabled)
       })
       .catch(() => {
         clearTimeout(timeout)
-        begin()
+        begin(false)
       })
 
     return () => {
       cancelled = true
       clearTimeout(timeout)
     }
-  }, [isReady, progress, reduceMotionSV, handleFinish])
+  }, [isReady, progress, motionProfileSV, handleFinish])
 
   useEffect(() => {
     if (!isReady) return

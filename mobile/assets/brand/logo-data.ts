@@ -12,6 +12,7 @@ export const LOGO_GOLD_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA
 export const LOGO_TEAL_REQUIRE = require('@/assets/images/logo-teal.png')
 export const LOGO_WHITE_REQUIRE = require('@/assets/images/logo-white.png')
 export const LOGO_GOLD_REQUIRE = require('@/assets/images/logo-gold.png')
+export const SPLASH_LOGO_REQUIRE = require('@/assets/images/splash-logo.png')
 
 /**
  * Pre-warms the native GPU image memory cache and Asset cache
@@ -23,7 +24,12 @@ export async function prewarmBrandAssets(): Promise<void> {
       Image.prefetch(LOGO_TEAL_DATA_URI),
       Image.prefetch(LOGO_WHITE_DATA_URI),
       Image.prefetch(LOGO_GOLD_DATA_URI),
-      Asset.loadAsync([LOGO_TEAL_REQUIRE, LOGO_WHITE_REQUIRE, LOGO_GOLD_REQUIRE]),
+      Asset.loadAsync([
+        LOGO_TEAL_REQUIRE,
+        LOGO_WHITE_REQUIRE,
+        LOGO_GOLD_REQUIRE,
+        SPLASH_LOGO_REQUIRE,
+      ]),
     ])
   } catch (err) {
     // Non-fatal, data URIs are still fully present in JS memory

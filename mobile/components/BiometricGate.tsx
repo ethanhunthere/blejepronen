@@ -22,7 +22,12 @@ import {
   BiometricCapability,
 } from '@/lib/biometrics'
 
-export function BiometricGate() {
+interface BiometricGateProps {
+  active?: boolean
+  onColdStartResolved?: () => void
+}
+
+export function BiometricGate({ active = true, onColdStartResolved }: BiometricGateProps) {
   const { colors, theme } = useTheme()
   const [isLocked, setIsLocked] = useState(false)
   const [capability, setCapability] = useState<BiometricCapability | null>(null)
@@ -32,6 +37,8 @@ export function BiometricGate() {
   const lastBackgroundTime = useRef<number>(0)
   const isMounted = useRef(true)
   const hasAttemptedColdStart = useRef(false)
+  const onColdStartResolvedRef = useRef(onColdStartResolved)
+  onColdStartResolvedRef.current = onColdStartResolved
 
   const triggerAuth = useCallback(async () => {
     if (Platform.OS === 'web') {
@@ -52,48 +59,57 @@ export function BiometricGate() {
     }
   }, [])
 
-  // Cold Start verification
+  // Cold Start verification — deferred until launch choreography completes
   useEffect(() => {
+    if (!active) return
     isMounted.current = true
+    hasAttemptedColdStart.current = false
 
     async function checkColdStart() {
-      if (Platform.OS === 'web') return
-
-      const [enabled, deviceCap] = await Promise.all([
-        isBiometricLockEnabled(),
-        getDeviceBiometricCapability(),
-      ])
-
-      if (!isMounted.current) return
-      setCapability(deviceCap)
-
-      // If phone hardware is not supported or not enrolled, do not lock
-      if (!deviceCap.supported || !deviceCap.enrolled) {
-        setIsLocked(false)
-        return
-      }
-
-      if (enabled && !isSessionUnlockedState()) {
-        setIsLocked(true)
-
-        if (!hasAttemptedColdStart.current) {
-          hasAttemptedColdStart.current = true
-          // Wait briefly for first paint
-          setTimeout(() => {
-            if (isMounted.current) {
-              triggerAuth()
-            }
-          }, 300)
+      try {
+        if (Platform.OS === 'web') {
+          setIsLocked(false)
+          onColdStartResolvedRef.current?.()
+          return
         }
-      } else {
+
+        const [enabled, deviceCap] = await Promise.all([
+          isBiometricLockEnabled(),
+          getDeviceBiometricCapability(),
+        ])
+
+        if (!isMounted.current) return
+        setCapability(deviceCap)
+
+        if (!deviceCap.supported || !deviceCap.enrolled) {
+          setIsLocked(false)
+          onColdStartResolvedRef.current?.()
+          return
+        }
+
+        if (enabled && !isSessionUnlockedState()) {
+          setIsLocked(true)
+          onColdStartResolvedRef.current?.()
+          if (!hasAttemptedColdStart.current) {
+            hasAttemptedColdStart.current = true
+            setTimeout(() => {
+              if (isMounted.current) {
+                triggerAuth()
+              }
+            }, 300)
+          }
+        } else {
+          setIsLocked(false)
+          onColdStartResolvedRef.current?.()
+        }
+      } catch {
         setIsLocked(false)
+        onColdStartResolvedRef.current?.()
       }
     }
 
-    checkColdStart()
+    void checkColdStart()
 
-    // AppState listener: ONLY lock on true 'background' -> 'active' transition
-    // NEVER on 'inactive' -> 'active' (which fires whenever system biometric modal closes)
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
       const prevState = appState.current
 
@@ -101,7 +117,6 @@ export function BiometricGate() {
         lastBackgroundTime.current = Date.now()
       } else if (prevState === 'background' && nextState === 'active') {
         const timeInBackground = Date.now() - lastBackgroundTime.current
-        // Only lock if user actually left the app for more than 2.5 seconds
         if (timeInBackground > 2500) {
           const [enabled, devCap] = await Promise.all([
             isBiometricLockEnabled(),
@@ -127,7 +142,7 @@ export function BiometricGate() {
       isMounted.current = false
       subscription.remove()
     }
-  }, [triggerAuth])
+  }, [active, triggerAuth])
 
   // Emergency safety unlock. Requires a fresh biometric pass BEFORE disabling
   // the lock — otherwise the "emergency" path is a permanent, frictionless
@@ -244,7 +259,7 @@ export function BiometricGate() {
 
 const styles = StyleSheet.create({
   overlay: {
-    zIndex: 99999,
+    zIndex: 1000000,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
