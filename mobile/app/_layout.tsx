@@ -89,8 +89,8 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const [splashAnimDone, setSplashAnimDone] = useState(false)
   const hideStartedRef = useRef(false)
 
-  const BRAND_HOLD_MS = 450
-  const SPLASH_FAILSAFE_MS = 2800
+  const BRAND_HOLD_MS = 380
+  const SPLASH_FAILSAFE_MS = 2400
 
   // Synchronize native root window background color asynchronously without blocking UI paint
   useEffect(() => {

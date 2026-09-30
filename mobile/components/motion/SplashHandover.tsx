@@ -16,9 +16,9 @@ interface SplashHandoverProps {
 
 const EMERALD = '#00675B'
 const LOGO_SIZE = 250
-const TOTAL_MS = 1100
-const REDUCED_MS = 360
-const FAILSAFE_MS = 2600
+const TOTAL_MS = 700
+const REDUCED_MS = 280
+const FAILSAFE_MS = 2400
 
 const clamp01 = (t: number): number => {
   'worklet'
@@ -30,20 +30,29 @@ const segment = (p: number, start: number, end: number): number => {
   return clamp01((p - start) / (end - start))
 }
 
+const easeInQuart = (t: number): number => {
+  'worklet'
+  return t * t * t * t
+}
+
 const easeOutExpo = (t: number): number => {
   'worklet'
   return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)
 }
 
-const easeInOutCubic = (t: number): number => {
+const easeOutCubic = (t: number): number => {
   'worklet'
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+  return 1 - Math.pow(1 - t, 3)
 }
 
-const breathPulse = (t: number): number => {
-  'worklet'
-  return Math.sin(t * Math.PI)
-}
+const WINDUP_START = 0.17
+const WINDUP_END = 0.28
+const RELEASE_START = 0.28
+const RELEASE_END = 0.78
+const LOGO_FADE_START = 0.34
+const VEIL_START = 0.32
+const WINDUP_SCALE = 0.028
+const RELEASE_SCALE = 0.188
 
 export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
   const [isFinished, setIsFinished] = useState(false)
@@ -54,45 +63,34 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
   const reduceMotionSV = useSharedValue(0)
 
   const logoScaleSV = useDerivedValue(() => {
+    const p = progress.value
     if (reduceMotionSV.value === 1) {
-      return 1 + easeOutExpo(segment(progress.value, 0.45, 1)) * 0.04
+      return 1 - segment(p, 0.5, 1) * 0.03
     }
-    const breath = breathPulse(segment(progress.value, 0.07, 0.38)) * 0.048
-    const ignite = easeOutExpo(segment(progress.value, 0.38, 0.72)) * 0.32
-    return 1 + breath + ignite
+    if (p < WINDUP_END) {
+      return 1 - easeInQuart(segment(p, WINDUP_START, WINDUP_END)) * WINDUP_SCALE
+    }
+    return (
+      1 - WINDUP_SCALE + easeOutExpo(segment(p, RELEASE_START, RELEASE_END)) * RELEASE_SCALE
+    )
   })
 
   const logoOpacitySV = useDerivedValue(() => {
+    const p = progress.value
     if (reduceMotionSV.value === 1) {
-      return 1 - segment(progress.value, 0.45, 1)
+      return 1 - segment(p, 0.45, 1)
     }
-    return 1 - easeOutExpo(segment(progress.value, 0.43, 0.72))
-  })
-
-  const bloomScaleSV = useDerivedValue(() => {
-    if (reduceMotionSV.value === 1) {
-      return 1 + easeOutExpo(segment(progress.value, 0.2, 1)) * 0.6
-    }
-    const breath = breathPulse(segment(progress.value, 0.07, 0.38)) * 0.14
-    const ignite = easeOutExpo(segment(progress.value, 0.38, 0.88)) * 2.85
-    return 1 + breath + ignite
-  })
-
-  const bloomOpacitySV = useDerivedValue(() => {
-    if (reduceMotionSV.value === 1) {
-      return (1 - segment(progress.value, 0.35, 0.9)) * 0.35
-    }
-    const enter = easeOutExpo(segment(progress.value, 0.07, 0.32))
-    const exit = 1 - easeOutExpo(segment(progress.value, 0.48, 0.9))
-    return Math.min(enter, exit)
+    return 1 - easeOutExpo(segment(p, LOGO_FADE_START, RELEASE_END))
   })
 
   const veilOpacitySV = useDerivedValue(() => {
-    return 1 - easeInOutCubic(segment(progress.value, 0.65, 1))
+    const p = progress.value
+    return 1 - easeOutCubic(segment(p, VEIL_START, 1))
   })
 
   const veilScaleSV = useDerivedValue(() => {
-    return 1 + easeOutExpo(segment(progress.value, 0.65, 1)) * 0.045
+    const p = progress.value
+    return 1 + easeOutCubic(segment(p, VEIL_START, 1)) * 0.03
   })
 
   const handleFinish = useCallback(() => {
@@ -134,7 +132,7 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
       )
     }
 
-    const timeout = setTimeout(begin, 90)
+    const timeout = setTimeout(begin, 80)
     AccessibilityInfo.isReduceMotionEnabled()
       .then((enabled) => {
         if (cancelled) return
@@ -164,11 +162,6 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
     transform: [{ scale: logoScaleSV.value }],
   }))
 
-  const bloomStyle = useAnimatedStyle(() => ({
-    opacity: bloomOpacitySV.value,
-    transform: [{ scale: bloomScaleSV.value }],
-  }))
-
   const veilStyle = useAnimatedStyle(() => ({
     opacity: veilOpacitySV.value,
     transform: [{ scale: veilScaleSV.value }],
@@ -184,11 +177,6 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
       style={[styles.root, veilStyle]}
     >
       <View style={styles.stage} pointerEvents="none">
-        <Animated.View style={[styles.bloom, bloomStyle]}>
-          <View style={[styles.bloomLayer, styles.bloomOuter]} />
-          <View style={[styles.bloomLayer, styles.bloomMid]} />
-          <View style={[styles.bloomLayer, styles.bloomCore]} />
-        </Animated.View>
         <Animated.View style={[styles.logoBox, logoStyle]}>
           <Image
             source={require('@/assets/images/splash-logo.png')}
@@ -223,33 +211,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  bloom: {
-    position: 'absolute',
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bloomLayer: {
-    position: 'absolute',
-    borderRadius: 9999,
-    backgroundColor: '#FFFFFF',
-  },
-  bloomCore: {
-    width: LOGO_SIZE * 1.05,
-    height: LOGO_SIZE * 1.05,
-    opacity: 0.14,
-  },
-  bloomMid: {
-    width: LOGO_SIZE * 1.7,
-    height: LOGO_SIZE * 1.7,
-    opacity: 0.07,
-  },
-  bloomOuter: {
-    width: LOGO_SIZE * 2.5,
-    height: LOGO_SIZE * 2.5,
-    opacity: 0.035,
   },
   logoBox: {
     width: LOGO_SIZE,
