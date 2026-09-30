@@ -63,10 +63,38 @@ function notifySubscribers() {
 }
 
 /** Persist the snapshot to the durable layer. Never throws, never awaited by
- *  a render path — a failed write only costs the next cold start its seed. */
+ *  a render path — a failed write only costs the next cold start its seed.
+ *  PII-minimized: only the fields screens actually need are stored; the full
+ *  `user` object (with access/refresh tokens inside `session`) is NOT written
+ *  to AsyncStorage — tokens live exclusively in SecureStore via the supabase
+ *  client's storage adapter. */
 function persistSnapshot(): void {
   const { user, profile } = readSnapshot()
-  AsyncStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ user, profile })).catch(() => {})
+  const safeUser = user
+    ? {
+        id: user.id,
+        email: user.email ?? null,
+        user_metadata: user.user_metadata ?? null,
+        aud: user.aud ?? null,
+        created_at: user.created_at ?? null,
+      }
+    : null
+  const safeProfile = profile
+    ? {
+        id: profile.id,
+        first_name: profile.first_name ?? null,
+        last_name: profile.last_name ?? null,
+        email: profile.email ?? null,
+        phone: profile.phone ?? null,
+        email_verified: profile.email_verified ?? null,
+        avatar_url: profile.avatar_url ?? null,
+        account_type: profile.account_type ?? null,
+        company_name: profile.company_name ?? null,
+      }
+    : null
+  AsyncStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ user: safeUser, profile: safeProfile })).catch(
+    () => {}
+  )
 }
 
 /**

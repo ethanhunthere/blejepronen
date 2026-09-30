@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react'
 import { Alert, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import * as Haptics from 'expo-haptics'
@@ -193,8 +193,13 @@ export function LogoutProvider({ children }: { children: React.ReactNode }) {
     [executeLogout]
   )
 
+  const contextValue = useMemo(
+    () => ({ isLoggingOut, requestLogout, executeLogout }),
+    [isLoggingOut, requestLogout, executeLogout]
+  )
+
   return (
-    <LogoutContext.Provider value={{ isLoggingOut, requestLogout, executeLogout }}>
+    <LogoutContext.Provider value={contextValue}>
       {children}
       <LogoutProgressOverlay
         visible={isLoggingOut}

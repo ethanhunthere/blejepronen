@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from './supabase'
 import { createSafeChannel } from './realtime'
-import { isLogoutInProgress } from './auth-cache'
+import { isLogoutInProgress, subscribeAuthEvents } from './auth-cache'
 
 /**
  * Bleje Pronën — conversation list store (single source of truth).
@@ -141,7 +141,7 @@ const listeners = new Set<SnapshotListener>()
 
 let channel: AnyChannel | null = null
 let refCount = 0
-let authSubscription: { unsubscribe: () => void } | null = null
+let authSubscription: (() => void) | null = null
 
 let pendingParts: Required<ReloadParts> | null = null
 let pendingTimer: ReturnType<typeof setTimeout> | null = null
@@ -221,9 +221,10 @@ function totalOf(map: Record<string, number>): number {
 
 // ─── Queries ─────────────────────────────────────────────────────────
 /**
- * Conversations WITHOUT any messages embed. `listings` and `profiles` joins
- * select only columns that exist in supabase/schema.sql — never the drifted
- * profile fields (email / account_type / company_name / whatsapp).
+ * Conversations WITHOUT any messages embed. Counterpart identity is resolved
+ * through the `profiles_public` view (RLS-safe for other users) rather than
+ * the private `profiles` table, which RLS-nulls for anyone but the owner.
+ * Phone remains private and is read only when RLS permits it.
  */
 async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
   const { data, error } = await supabase
@@ -234,9 +235,7 @@ async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
       buyer_id,
       seller_id,
       updated_at,
-      listings(id, title, images),
-      buyer:buyer_id(id, first_name, last_name, phone, avatar_url),
-      seller:seller_id(id, first_name, last_name, phone, avatar_url)
+      listings(id, title, images)
     `)
     .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .order('updated_at', { ascending: false })
@@ -249,15 +248,43 @@ async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
   }
   if (!data) return []
 
+  // Batch-fetch counterpart rows from the public view (safe under RLS).
+  const counterpartIds = new Set<string>()
+  for (const c of data as any[]) {
+    if (c.buyer_id && c.buyer_id !== userId) counterpartIds.add(c.buyer_id)
+    if (c.seller_id && c.seller_id !== userId) counterpartIds.add(c.seller_id)
+  }
+
+  const publicById = new Map<string, any>()
+  const privateById = new Map<string, any>()
+  const ids = Array.from(counterpartIds)
+
+  if (ids.length > 0) {
+    const [pubRes, privRes] = await Promise.all([
+      supabase
+        .from('profiles_public')
+        .select('id, first_name, last_name, avatar_url, email_verified')
+        .in('id', ids),
+      supabase.from('profiles').select('id, phone').in('id', ids),
+    ])
+    if (pubRes.data) for (const p of pubRes.data as any[]) publicById.set(p.id, p)
+    if (privRes.data) for (const p of privRes.data as any[]) privateById.set(p.id, p)
+  }
+
   return (data as any[]).map((c) => {
     const isBuyer = userId === c.buyer_id
-    const counterpart: any = isBuyer ? c.seller : c.buyer
-    const name = counterpart
-      ? `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim() ||
-        (isBuyer ? 'Shitësi' : 'Blerësi')
-      : isBuyer
-      ? 'Shitësi'
-      : 'Blerësi'
+    const counterpartId = (isBuyer ? c.seller_id : c.buyer_id) as string | undefined
+    const pub = counterpartId ? publicById.get(counterpartId) : undefined
+    const priv = counterpartId ? privateById.get(counterpartId) : undefined
+
+    const name =
+      (pub &&
+        `${pub.first_name || ''} ${pub.last_name || ''}`.trim()) ||
+      (isBuyer ? 'Shitësi' : 'Blerësi')
+
+    const emailVerified = Boolean(pub?.email_verified)
+    // Name-token agency detection is only trustworthy on a verified account.
+    const isAgency = emailVerified && AGENCY_RE.test(name)
 
     return {
       id: c.id,
@@ -265,11 +292,11 @@ async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
       updated_at: c.updated_at,
       listing_title: c.listings?.title || 'Pronë në Bleje Pronën',
       listing_image: c.listings?.images?.[0] || '',
-      counterpart_id: counterpart?.id,
+      counterpart_id: counterpartId,
       counterpart_name: name,
-      counterpart_avatar: counterpart?.avatar_url || '',
-      counterpart_phone: counterpart?.phone || '',
-      is_agency: AGENCY_RE.test(name),
+      counterpart_avatar: pub?.avatar_url || '',
+      counterpart_phone: priv?.phone || '',
+      is_agency: isAgency,
     } satisfies MetaRow
   })
 }
@@ -589,9 +616,9 @@ function stopChannel(): void {
   }
   if (authSubscription) {
     try {
-      authSubscription.unsubscribe()
-    } catch {
-      // Non-fatal
+      authSubscription()
+    } catch (err) {
+      console.warn('Conversations auth unsubscribe notice:', err)
     }
     authSubscription = null
   }
@@ -692,10 +719,12 @@ export function subscribeConversations(fn: SnapshotListener): () => void {
   if (refCount === 1) {
     startChannel()
     try {
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-        void adoptUser(isLogoutInProgress() ? null : (session?.user?.id ?? null))
+      // Single consolidated auth bus — never open a second raw onAuthStateChange.
+      authSubscription = subscribeAuthEvents((event) => {
+        void adoptUser(
+          event.isLoggingOut ? null : (event.session?.user?.id ?? null)
+        )
       })
-      authSubscription = data?.subscription ?? null
     } catch (err) {
       console.warn('Conversations store auth notice:', err)
     }

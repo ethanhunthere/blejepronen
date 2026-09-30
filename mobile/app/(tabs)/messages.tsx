@@ -90,6 +90,7 @@ export default function MessagesScreen() {
     listingTitle?: string | null
     userId?: string | null
     conversationId?: string | null
+    emailVerified?: boolean
   }>({
     visible: false,
     name: '',
@@ -181,6 +182,7 @@ export default function MessagesScreen() {
       listingTitle: item.listing_title,
       userId: item.counterpart_id ?? null,
       conversationId: item.id,
+      emailVerified: item.is_agency ? true : undefined,
     })
   }
 
@@ -744,6 +746,7 @@ export default function MessagesScreen() {
         listingTitle={contactSheet.listingTitle}
         counterpartUserId={contactSheet.userId}
         conversationId={contactSheet.conversationId}
+        counterpartEmailVerified={contactSheet.emailVerified}
       />
     </View>
   )

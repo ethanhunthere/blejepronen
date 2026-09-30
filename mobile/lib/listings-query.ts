@@ -230,7 +230,14 @@ export async function countListings(p: ListingsQueryParams = {}): Promise<number
  * Server-side counts for every category chip, holding all other filters fixed.
  * Categories whose count request fails are omitted (chip renders without a
  * badge) rather than being back-filled from the loaded window.
+ *
+ * Results are TTL-cached + keyed by the shared filter shape, so a filter chip
+ * re-render does not fan out N head-count queries on every keystroke.
  */
+const CATEGORY_COUNTS_TTL_MS = 90_000
+const categoryCountsCache = new Map<string, { counts: Record<string, number>; at: number }>()
+const CATEGORY_COUNTS_MAX = 30
+
 export async function fetchCategoryCounts(
   base: ListingsQueryParams = {}
 ): Promise<Record<string, number>> {
@@ -240,6 +247,32 @@ export async function fetchCategoryCounts(
     page: undefined,
     limit: undefined,
     from: undefined,
+  }
+
+  const cacheKey = JSON.stringify({
+    search: shared.search ?? '',
+    city: shared.city ?? '',
+    neighborhood: shared.neighborhood ?? '',
+    type: shared.type ?? '',
+    minPrice: shared.minPrice ?? '',
+    maxPrice: shared.maxPrice ?? '',
+    rooms: shared.rooms ?? '',
+    minArea: shared.minArea ?? '',
+    maxArea: shared.maxArea ?? '',
+    condition: shared.condition ?? '',
+    apartment_type: shared.apartment_type ?? '',
+    floor: shared.floor ?? '',
+    features: shared.features ?? [],
+    agentId: shared.agentId ?? '',
+    sort: shared.sort ?? '',
+  })
+
+  const hit = categoryCountsCache.get(cacheKey)
+  if (hit && Date.now() - hit.at < CATEGORY_COUNTS_TTL_MS) {
+    // LRU-touch
+    categoryCountsCache.delete(cacheKey)
+    categoryCountsCache.set(cacheKey, hit)
+    return hit.counts
   }
 
   const ids = ['all', ...FILTERABLE_CATEGORY_IDS]
@@ -254,6 +287,12 @@ export async function fetchCategoryCounts(
   for (const [id, total] of entries) {
     if (total !== null) counts[id] = total
   }
+
+  if (categoryCountsCache.size >= CATEGORY_COUNTS_MAX && !categoryCountsCache.has(cacheKey)) {
+    const oldestKey = categoryCountsCache.keys().next().value
+    if (oldestKey) categoryCountsCache.delete(oldestKey)
+  }
+  categoryCountsCache.set(cacheKey, { counts, at: Date.now() })
   return counts
 }
 

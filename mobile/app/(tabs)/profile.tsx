@@ -56,6 +56,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { subscribeAuthEvents } from '@/lib/auth-cache'
 import { useBanner } from '@/context/BannerContext'
 import { DraggableBottomSheet } from '@/components/motion'
 import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
@@ -345,17 +346,22 @@ export default function ProfileScreen() {
   useEffect(() => {
     checkSession()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Single consolidated auth bus — never open a raw onAuthStateChange here.
+    // Handlers are NOT replayed on subscribe; `checkSession()` seeds on mount.
+    const unsubscribeAuth = subscribeAuthEvents((event) => {
       if (isLogoutInProgress()) {
         setAuthState(null)
         return
       }
-      const u = session?.user || null
+      const u = event.session?.user || null
       if (u) {
-        const profile = await fetchProfile(u)
-        if (isLogoutInProgress()) return
-        setAuthAndProfile(u, profile)
-        fetchUserStats(u.id)
+        // Fire-and-forget: AuthEventHandler must not await (auth-lock contract).
+        void (async () => {
+          const profile = await fetchProfile(u)
+          if (isLogoutInProgress()) return
+          setAuthAndProfile(u, profile)
+          fetchUserStats(u.id)
+        })()
       } else {
         setAuthState((prev) => {
           if (prev?.user) {
@@ -367,7 +373,7 @@ export default function ProfileScreen() {
     })
 
     return () => {
-      authListener?.subscription?.unsubscribe()
+      unsubscribeAuth()
       if (resendTimerRef.current) clearInterval(resendTimerRef.current)
     }
   }, [checkSession, fetchUserStats, resetViewportToTop])

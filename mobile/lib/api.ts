@@ -29,7 +29,9 @@ async function resilientFetch(url: string, init?: RequestInit): Promise<Response
   throw new Error('Lidhja me serverin dështoi. Kontrollo internetin dhe provo përsëri.')
 }
 
-export const API_BASE_URL = 'https://blejepronen.com'
+// Env-first with hardcoded fallback (same pattern as lib/supabase.ts).
+export const API_BASE_URL =
+  (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) || 'https://blejepronen.com'
 
 export interface SignupParams {
   email: string
@@ -43,6 +45,7 @@ export interface SignupParams {
 export interface VerifyOtpParams {
   email: string
   code: string
+  /** @deprecated Never sent. Kept for call-site compatibility only. */
   password?: string
 }
 
@@ -100,6 +103,9 @@ export async function apiSignUp(params: SignupParams): Promise<ApiResponse> {
 /**
  * Verify the 6-digit email OTP verification code.
  * Upon success, Supabase confirms email_confirm = true.
+ * NOTE: password is intentionally NOT sent — the server treats it as optional
+ * (see web app/api/verify-otp/route.ts) and mobile completes the session via
+ * signInWithPassword after a successful verify.
  */
 export async function apiVerifyOtp(params: VerifyOtpParams): Promise<ApiResponse> {
   try {
@@ -111,7 +117,6 @@ export async function apiVerifyOtp(params: VerifyOtpParams): Promise<ApiResponse
       body: JSON.stringify({
         email: params.email.trim().toLowerCase(),
         code: params.code.trim(),
-        password: params.password,
       }),
     })
 
@@ -315,4 +320,3 @@ export async function apiSaveProfileSettings(
     }
   }
 }
-

@@ -129,18 +129,27 @@ export function BiometricGate() {
     }
   }, [triggerAuth])
 
-  // Emergency safety unlock so user is never trapped
+  // Emergency safety unlock. Requires a fresh biometric pass BEFORE disabling
+  // the lock — otherwise the "emergency" path is a permanent, frictionless
+  // bypass that anyone with the unlocked phone can use.
   const handleEmergencyDisable = () => {
     const biometryName = capability?.displayName || 'Biometrike'
     Alert.alert(
       `Çaktivizo Kyçjen (${biometryName})`,
-      `A dëshironi ta çaktivizoni kyçjen me ${biometryName} dhe të hyni në aplikacion?`,
+      `Për siguri, verifikoni me ${biometryName} para se të çaktivizoni kyçjen. A dëshironi ta bëni?`,
       [
         { text: 'Anulo', style: 'cancel' },
         {
-          text: 'Çaktivizo',
+          text: 'Vazhdo',
           style: 'destructive',
           onPress: async () => {
+            setIsAuthenticating(true)
+            const result = await authenticateWithBiometrics(
+              `Verifikoni me ${biometryName} për të çaktivizuar kyçjen`
+            )
+            if (!isMounted.current) return
+            setIsAuthenticating(false)
+            if (!result.success) return
             await setBiometricLockEnabled(false)
             setSessionUnlocked(true)
             setIsLocked(false)
@@ -173,8 +182,11 @@ export function BiometricGate() {
         styles.overlay,
         { backgroundColor: colors.background },
       ]}
+      // The overlay blocks all pointer events to the screens underneath while
+      // locked — otherwise a stack behind the gate stays tappable.
+      pointerEvents="auto"
     >
-      <View style={styles.contentWrap}>
+      <View style={styles.contentWrap} pointerEvents="auto">
         <View
           style={[
             styles.iconCircle,

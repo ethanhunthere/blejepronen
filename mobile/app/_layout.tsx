@@ -35,7 +35,8 @@ import { waitForListingsCacheHydration } from '@/lib/listings-cache'
 import { waitForAuthCacheHydration } from '@/lib/auth-cache'
 import { prewarmBrandAssets } from '@/assets/brand/logo-data'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { isLogoutInProgress } from '@/lib/auth-cache'
+import { RouteErrorBoundary } from '@/components/RouteErrorBoundary'
+import { isLogoutInProgress, subscribeAuthEvents } from '@/lib/auth-cache'
 import { SplashHandover } from '@/components/motion'
 import { BiometricGate } from '@/components/BiometricGate'
 import { initPushNotifications } from '@/lib/notifications'
@@ -168,6 +169,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
         <BiometricGate />
         <CallGate />
         <Stack
+          unstable_screenErrorBoundary={RouteErrorBoundary as any}
           screenOptions={{
             contentStyle: { backgroundColor: colors.background },
             headerShown: false,
@@ -239,10 +241,12 @@ function CallGate() {
     }
     void wire()
 
-    const { data } = supabase.auth.onAuthStateChange(() => void wire())
+    // Single consolidated auth bus — never open a second raw onAuthStateChange
+    // subscription from a layout effect.
+    const unsubscribeAuth = subscribeAuthEvents(() => void wire())
     return () => {
       mounted = false
-      data?.subscription?.unsubscribe()
+      unsubscribeAuth()
       import('@/lib/calling')
         .then(({ callEngine }) => callEngine.listenForIncoming(null))
         .catch(() => {})

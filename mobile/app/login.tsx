@@ -165,7 +165,16 @@ export default function LoginScreen() {
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
       const authCode = queryParams.get('code') || hashParams.get('code')
 
-      if (!accessToken && !authCode) {
+      if (!authCode && (accessToken || refreshToken)) {
+        // Implicit-flow tokens in the redirect URL — refuse. PKCE is required.
+        oauthHandledRef.current = false
+        setOauthLoading(null)
+        throw new Error(
+          `${providerTitle} u kthye me tokenë të pasigurt në URL. Ju lutemi provoni përsëri.`
+        )
+      }
+
+      if (!authCode) {
         oauthHandledRef.current = false
         throw new Error(
           oauthError ||
@@ -173,16 +182,8 @@ export default function LoginScreen() {
         )
       }
 
-      if (accessToken && refreshToken) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-        if (sessionError) throw sessionError
-      } else if (authCode) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
-        if (exchangeError) throw exchangeError
-      }
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
+      if (exchangeError) throw exchangeError
 
       const {
         data: { user },

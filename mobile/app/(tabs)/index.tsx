@@ -111,9 +111,10 @@ const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
 }) {
   const { colors, theme } = useTheme()
   const isSale = item.type === 'shitje'
-  const mainImage =
-    item.images?.[0] ||
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+  // Local brand placeholder — never hot-link Unsplash (privacy + third-party
+  // dependency + offline failure). When the listing has no image the card
+  // still paints a branded surface instead of an external URL.
+  const mainImage = item.images?.[0] || null
 
   const pricePerM2 =
     isSale && item.price && item.area_m2 && item.area_m2 > 0
@@ -135,14 +136,34 @@ const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
       haptic="selection"
     >
       <View style={[styles.featuredImgWrapper, { backgroundColor: colors.surfaceSubtle }]}>
-        <Image
-          source={{ uri: mainImage }}
-          style={styles.featuredImg}
-          contentFit="cover"
-          transition={150}
-          priority="high"
-          cachePolicy="memory-disk"
-        />
+        {mainImage ? (
+          <Image
+            source={{ uri: mainImage }}
+            style={styles.featuredImg}
+            contentFit="cover"
+            transition={150}
+            priority="high"
+            cachePolicy="memory-disk"
+          />
+        ) : (
+          <View
+            style={[
+              styles.featuredImg,
+              {
+                backgroundColor:
+                  theme === 'green'
+                    ? 'rgba(212, 175, 55, 0.12)'
+                    : theme === 'black'
+                    ? 'rgba(255,255,255,0.04)'
+                    : 'rgba(0,103,91,0.08)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+          >
+            <Building2 size={36} color={colors.textMuted} strokeWidth={1.5} />
+          </View>
+        )}
 
         {/* Top Floating Badges */}
         <View style={styles.featuredTopBadges}>

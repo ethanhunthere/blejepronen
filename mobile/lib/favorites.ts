@@ -15,6 +15,9 @@ import { getSyncAuthUser, subscribeAuthCache } from './auth-cache'
 const FAVORITES_CACHE_KEY = '@blejepronen_favs_map_v2'
 let inMemoryFavorites: Record<string, boolean> | null = null
 let isRevalidating = false
+/** Monotonic generation token: a revalidate that started before a local
+ *  toggle must not overwrite the optimistic state with a stale server map. */
+let revalidateGeneration = 0
 const subscribers = new Set<(favs: Record<string, boolean>) => void>()
 
 // Automatically synchronize favorites lifecycle with user authentication state
@@ -57,11 +60,16 @@ export function isListingFavorite(listingId: string): boolean {
 async function backgroundRevalidateFavorites(userId: string) {
   if (isRevalidating) return
   isRevalidating = true
+  const generation = ++revalidateGeneration
   try {
     const { data, error } = await supabase
       .from('favorites')
       .select('listing_id')
       .eq('user_id', userId)
+
+    // A newer revalidate or a local toggle started while this request was in
+    // flight — discard the stale server map rather than clobber optimistic UI.
+    if (generation !== revalidateGeneration) return
 
     if (!error && data) {
       const freshMap: Record<string, boolean> = {}
@@ -75,7 +83,9 @@ async function backgroundRevalidateFavorites(userId: string) {
   } catch (err) {
     // Silent background catch
   } finally {
-    isRevalidating = false
+    if (generation === revalidateGeneration) {
+      isRevalidating = false
+    }
   }
 }
 
@@ -173,6 +183,10 @@ export async function toggleFavorite(listingId: string): Promise<{
   const currentlyFavorited = Boolean(inMemoryFavorites[listingId])
   const nextFavorited = !currentlyFavorited
 
+  // Invalidate any in-flight revalidate so it cannot overwrite this toggle.
+  revalidateGeneration++
+  isRevalidating = false
+
   // 2. Instant Optimistic In-Memory & Cache Update
   if (nextFavorited) {
     inMemoryFavorites[listingId] = true
@@ -219,13 +233,22 @@ export async function toggleFavorite(listingId: string): Promise<{
  */
 export async function persistFavoriteToggle(
   listingId: string,
-  wasFavorite: boolean
+  wasFavorite?: boolean
 ): Promise<boolean> {
   const user = getSyncAuthUser()
   if (!user) return false
 
   if (!inMemoryFavorites) inMemoryFavorites = {}
-  const nextFavorited = !wasFavorite
+
+  // Prefer the LIVE in-memory state over the caller's stale `wasFavorite`
+  // snapshot — a concurrent toggle or a revalidate in flight must not be
+  // reversed by a late-arriving optimistic write.
+  const currentlyFavorited = Boolean(inMemoryFavorites[listingId])
+  const nextFavorited = !currentlyFavorited
+
+  // Invalidate any in-flight revalidate so it cannot overwrite this toggle.
+  revalidateGeneration++
+  isRevalidating = false
 
   if (nextFavorited) {
     inMemoryFavorites[listingId] = true
@@ -236,7 +259,7 @@ export async function persistFavoriteToggle(
   AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
 
   try {
-    if (wasFavorite) {
+    if (currentlyFavorited) {
       const { error } = await supabase
         .from('favorites')
         .delete()
@@ -253,7 +276,7 @@ export async function persistFavoriteToggle(
     return true
   } catch (e) {
     console.warn('Favorite sync rollback:', e)
-    if (wasFavorite) {
+    if (currentlyFavorited) {
       inMemoryFavorites[listingId] = true
     } else {
       delete inMemoryFavorites[listingId]
@@ -364,15 +387,15 @@ export async function fetchFavoriteListings(): Promise<any[]> {
       .map((row) => row.listings)
       .filter(Boolean)
 
-    // Synchronize in-memory favorites cache
-    if (!inMemoryFavorites) inMemoryFavorites = {}
+    // Replace the in-memory map with the authoritative server set — never
+    // merge (a merge would keep deleted favorites stuck as `true` forever).
+    const freshMap: Record<string, boolean> = {}
     items.forEach((item: any) => {
-      if (item?.id) {
-        inMemoryFavorites![item.id] = true
-      }
+      if (item?.id) freshMap[item.id] = true
     })
+    inMemoryFavorites = freshMap
     notifySubscribers()
-    AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(inMemoryFavorites)).catch(() => {})
+    AsyncStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(freshMap)).catch(() => {})
 
     return items
   } catch (e) {

@@ -145,6 +145,7 @@ export function subscribeCachedListings(fn: (listings: Listing[]) => void) {
 
 // ─── L1/L2 Full Listing Detail Cache ──────────────────────────────────────────
 const detailCache = new Map<string, Listing>()
+const DETAIL_CACHE_MAX = 80
 
 export function getCachedListingDetail(id: string): Listing | null {
   if (!id) return null
@@ -153,6 +154,11 @@ export function getCachedListingDetail(id: string): Listing | null {
 
 export function setCachedListingDetail(listing: Listing) {
   if (!listing?.id) return
+  // Bound the cache: evict oldest insertion when full.
+  if (detailCache.size >= DETAIL_CACHE_MAX && !detailCache.has(listing.id)) {
+    const oldestKey = detailCache.keys().next().value
+    if (oldestKey) detailCache.delete(oldestKey)
+  }
   detailCache.set(listing.id, listing)
   updateCachedListing(listing)
 }
@@ -160,6 +166,7 @@ export function setCachedListingDetail(listing: Listing) {
 // ─── Instant In-Memory Query Cache ───────────────────────────────────────────
 const queryCache = new Map<string, { rows: Listing[]; total: number; timestamp: number }>()
 const QUERY_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const QUERY_CACHE_MAX = 40
 
 export function getCachedQueryListings(key: string): { rows: Listing[]; total: number } | null {
   if (!key) return null
@@ -174,6 +181,11 @@ export function getCachedQueryListings(key: string): { rows: Listing[]; total: n
 
 export function setCachedQueryListings(key: string, result: { rows: Listing[]; total: number }) {
   if (!key || !result?.rows) return
+  // Bound the cache: evict oldest insertion when full.
+  if (queryCache.size >= QUERY_CACHE_MAX && !queryCache.has(key)) {
+    const oldestKey = queryCache.keys().next().value
+    if (oldestKey) queryCache.delete(oldestKey)
+  }
   queryCache.set(key, { ...result, timestamp: Date.now() })
 }
 

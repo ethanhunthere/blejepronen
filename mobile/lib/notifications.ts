@@ -2,6 +2,7 @@ import { Platform } from 'react-native'
 import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { router } from 'expo-router'
 import { supabase } from './supabase'
+import { subscribeAuthEvents } from './auth-cache'
 import { uploadPushToken } from './push-token'
 
 /**
@@ -351,16 +352,19 @@ export function initPushNotifications(): () => void {
 
   // Token registration now, on sign-in, and whenever the session refreshes.
   void ensurePushToken()
-  let authSub: { unsubscribe(): void } | null = null
   try {
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) return
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+    // Single consolidated auth bus — never open a second raw onAuthStateChange.
+    const unsubscribeAuth = subscribeAuthEvents((event) => {
+      if (!event.session?.user) return
+      if (
+        event.event === 'SIGNED_IN' ||
+        event.event === 'TOKEN_REFRESHED' ||
+        event.event === 'USER_UPDATED'
+      ) {
         void ensurePushToken()
       }
     })
-    authSub = data?.subscription ?? null
-    removals.push(() => authSub?.unsubscribe())
+    removals.push(() => unsubscribeAuth())
   } catch (err) {
     console.warn('Push auth listener notice:', err)
   }

@@ -201,9 +201,13 @@ export async function executeMobileOmniSearch(query: string): Promise<OmniSearch
   const normQ = normalizeSearchString(cleanQ)
   const cacheKey = normQ
 
-  // 1. Instant cache hit (0.00ms)
+  // 1. Instant cache hit (0.00ms) — also LRU-touch so hot queries survive eviction.
   const cached = searchCache.get(cacheKey)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    // Re-insert at the tail (Map preserves insertion order) so this key is
+    // the first candidate evicted only after colder entries.
+    searchCache.delete(cacheKey)
+    searchCache.set(cacheKey, cached)
     return cached.data
   }
 

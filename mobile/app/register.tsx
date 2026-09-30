@@ -219,7 +219,16 @@ export default function RegisterScreen() {
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
       const authCode = queryParams.get('code') || hashParams.get('code')
 
-      if (!accessToken && !authCode) {
+      if (!authCode && (accessToken || refreshToken)) {
+        // Implicit-flow tokens in the redirect URL — refuse. PKCE is required.
+        oauthHandledRef.current = false
+        setOauthLoading(null)
+        throw new Error(
+          `${providerTitle} u kthye me tokenë të pasigurt në URL. Ju lutemi provoni përsëri.`
+        )
+      }
+
+      if (!authCode) {
         oauthHandledRef.current = false
         throw new Error(
           oauthError ||
@@ -227,16 +236,8 @@ export default function RegisterScreen() {
         )
       }
 
-      if (accessToken && refreshToken) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-        if (sessionError) throw sessionError
-      } else if (authCode) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
-        if (exchangeError) throw exchangeError
-      }
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
+      if (exchangeError) throw exchangeError
 
       const {
         data: { user },
@@ -481,10 +482,11 @@ export default function RegisterScreen() {
     }
 
     try {
+      // Server treats password as optional; mobile completes the session via
+      // signInWithPassword below. Do not send the password over OTP verify.
       const res = await apiVerifyOtp({
         email: email.trim().toLowerCase(),
         code,
-        password,
       })
 
       if (!res.success) {
@@ -496,12 +498,31 @@ export default function RegisterScreen() {
         return
       }
 
+      // Session completion: surface failures instead of swallowing them.
       try {
-        await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
           password,
         })
-      } catch {}
+        if (signInError) {
+          console.warn('Post-OTP signInWithPassword failed:', signInError.message)
+          setErrors({
+            otp: 'Email-i u konfirmua, por kyçja dështoi. Ju lutemi kyçuni manualisht.',
+          })
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+          }
+          setVerifying(false)
+          return
+        }
+      } catch (signInErr) {
+        console.warn('Post-OTP signInWithPassword exception:', signInErr)
+        setErrors({
+          otp: 'Email-i u konfirmua, por kyçja dështoi. Ju lutemi kyçuni manualisht.',
+        })
+        setVerifying(false)
+        return
+      }
 
       showBanner({
         type: 'success',

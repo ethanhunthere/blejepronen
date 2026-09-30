@@ -16,8 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 import { Compass, Building2, Plus, MessageSquare, User } from 'lucide-react-native'
 import { useTheme, Fonts, type ThemeMode } from '@/constants/theme'
-import { supabase } from '@/lib/supabase'
-import { createSafeChannel } from '@/lib/realtime'
 import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
@@ -27,7 +25,12 @@ import Reanimated, {
 } from 'react-native-reanimated'
 import { tabBarCollapse, expandTabBar } from '@/lib/tab-bar-scroll'
 
-import { isLogoutInProgress } from '@/lib/auth-cache'
+import { isLogoutInProgress, subscribeAuthEvents } from '@/lib/auth-cache'
+import {
+  getConversationsSnapshot,
+  subscribeConversations,
+} from '@/lib/conversations'
+import { RouteErrorBoundary, RouteErrorGuard } from '@/components/RouteErrorBoundary'
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -624,81 +627,29 @@ export default function TabLayout() {
   useEffect(() => {
     let isMounted = true
 
-    async function checkUnread() {
-      if (isLogoutInProgress()) {
-        if (isMounted) setUnreadCount(0)
-        return
-      }
-
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!user || isLogoutInProgress()) {
-          if (isMounted) setUnreadCount(0)
-          return
-        }
-
-        const { data: convos } = await supabase
-          .from('conversations')
-          .select('id')
-          .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-
-        if (!isMounted || isLogoutInProgress()) return
-
-        if (convos && convos.length > 0) {
-          const cIds = convos.map((c) => c.id)
-          const { count } = await supabase
-            .from('messages')
-            .select('id', { count: 'exact', head: true })
-            .in('conversation_id', cIds)
-            .eq('is_read', false)
-            .neq('sender_id', user.id)
-
-          if (isMounted && !isLogoutInProgress()) {
-            setUnreadCount(count || 0)
-          }
-        } else {
-          if (isMounted) setUnreadCount(0)
-        }
-      } catch {
-        // Silent catch for network jitter
-      }
-    }
-
-    checkUnread()
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      checkUnread()
+    // Unread badge comes from the conversations store — the single source of
+    // truth for unread counts. The store owns the multiplexed realtime channel
+    // and coalesces bursts; the tab bar just reads `totalUnread`.
+    const storeUnsubscribe = subscribeConversations(() => {
+      if (!isMounted) return
+      const snapshot = getConversationsSnapshot()
+      setUnreadCount(isLogoutInProgress() ? 0 : snapshot.totalUnread)
     })
 
-    let channel: ReturnType<typeof createSafeChannel> | null = null
-    try {
-      channel = createSafeChannel('tab_unread_messages')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'messages' },
-          () => {
-            checkUnread()
-          }
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'conversations' },
-          () => {
-            checkUnread()
-          }
-        )
-        .subscribe()
-    } catch (err) {
-      console.warn('Unread badge realtime notice:', err)
-    }
+    // Seed once on mount (handlers are not replayed on subscribe).
+    const snapshot = getConversationsSnapshot()
+    setUnreadCount(isLogoutInProgress() ? 0 : snapshot.totalUnread)
+
+    const unsubscribeAuth = subscribeAuthEvents(() => {
+      if (!isMounted) return
+      const snap = getConversationsSnapshot()
+      setUnreadCount(isLogoutInProgress() ? 0 : snap.totalUnread)
+    })
 
     return () => {
       isMounted = false
-      authListener?.subscription?.unsubscribe()
-      if (channel) supabase.removeChannel(channel)
+      unsubscribeAuth()
+      storeUnsubscribe()
     }
   }, [])
 
@@ -754,8 +705,10 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <RouteErrorGuard label="tab-bar">
       <Tabs
         detachInactiveScreens={false}
+        unstable_screenErrorBoundary={RouteErrorBoundary as any}
         tabBar={(props) => <IOSTabBar {...props} unreadCount={unreadCount} />}
         screenOptions={{
           headerShown: false,
@@ -827,6 +780,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      </RouteErrorGuard>
     </View>
   )
 }

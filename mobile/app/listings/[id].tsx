@@ -23,6 +23,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import {
   ArrowLeft,
+  ChevronLeft,
   MapPin,
   Maximize2,
   BedDouble,
@@ -50,6 +51,8 @@ import {
   Shield,
   Eye,
   UserCheck,
+  SlidersHorizontal,
+  Calculator,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -139,36 +142,68 @@ export default function ListingDetailScreen() {
   const [fullscreenVisible, setFullscreenVisible] = useState(false)
   const [fullscreenIdx, setFullscreenIdx] = useState(0)
   const [descExpanded, setDescExpanded] = useState(false)
-  const [loanYears, setLoanYears] = useState<10 | 15 | 20 | 25>(20)
-  const [loanDownPct, setLoanDownPct] = useState<10 | 15 | 20 | 30>(20)
-  const [loanRate, setLoanRate] = useState<3.9 | 4.5 | 5.0 | 5.5>(4.5)
+  const [loanYears, setLoanYears] = useState<number>(20)
+  const [loanDownPct, setLoanDownPct] = useState<number>(20)
+  const [loanRate, setLoanRate] = useState<number>(4.5)
   const [loanMethod, setLoanMethod] = useState<'annuity' | 'linear'>('annuity')
+  const [customDownPctStr, setCustomDownPctStr] = useState('')
+  const [customYearsStr, setCustomYearsStr] = useState('')
+  const [customRateStr, setCustomRateStr] = useState('')
   const [incomeStr, setIncomeStr] = useState('')
-  const [loanExpanded, setLoanExpanded] = useState(false)
+  const [customDtiLimitStr, setCustomDtiLimitStr] = useState('40')
+  const [customAdminFeePctStr, setCustomAdminFeePctStr] = useState('0.5')
+  const [customExtraMonthlyStr, setCustomExtraMonthlyStr] = useState('')
+  const [advancedLoanOpen, setAdvancedLoanOpen] = useState(false)
   const [similarListings, setSimilarListings] = useState<Listing[]>([])
 
-  // Dynamic Scroll Tracking for Apple-grade sticky header crossfade
+  // Dynamic Scroll Tracking for Apple & Airbnb-grade sticky header crossfade
   const scrollY = useRef(new Animated.Value(0)).current
+  const [isHeaderSticky, setIsHeaderSticky] = useState(false)
 
   const heroHeight = Math.min(420, Math.round(windowWidth * 0.94))
 
-  // Header background interpolation
+  // Track sticky state for high-end dynamic contrast shifts
+  useEffect(() => {
+    const threshold = heroHeight - 80
+    const listenerId = scrollY.addListener(({ value }) => {
+      const sticky = value >= threshold
+      setIsHeaderSticky((prev) => (prev !== sticky ? sticky : prev))
+    })
+    return () => {
+      scrollY.removeListener(listenerId)
+    }
+  }, [heroHeight, scrollY])
+
+  // Crystalline header backdrop wash crossfade
   const headerBgOpacity = scrollY.interpolate({
-    inputRange: [heroHeight - 140, heroHeight - 60],
+    inputRange: [heroHeight - 130, heroHeight - 50],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   })
 
-  // Header title & compact price interpolation
+  // Button transitions: floating optical lens -> sticky sculptured disc
+  const floatingBtnOpacity = scrollY.interpolate({
+    inputRange: [heroHeight - 130, heroHeight - 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  })
+
+  const stickyBtnOpacity = scrollY.interpolate({
+    inputRange: [heroHeight - 130, heroHeight - 50],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  })
+
+  // Header editorial title & price crossfade and translation
   const headerContentOpacity = scrollY.interpolate({
-    inputRange: [heroHeight - 90, heroHeight - 40],
+    inputRange: [heroHeight - 95, heroHeight - 35],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   })
 
   const headerContentTranslateY = scrollY.interpolate({
-    inputRange: [heroHeight - 90, heroHeight - 40],
-    outputRange: [10, 0],
+    inputRange: [heroHeight - 95, heroHeight - 35],
+    outputRange: [6, 0],
     extrapolate: 'clamp',
   })
 
@@ -532,31 +567,66 @@ export default function ListingDetailScreen() {
 
   const fmtInt = (val: number) => new Intl.NumberFormat('de-DE').format(val)
 
-  // Mortgage affordability engine, calibrated to Kosovar retail market reality:
-  // down payments 10–30%, residential spreads 3.8–5.5%, tenors 10–25 years,
-  // both standard repayment schedules (annuity & declining/linear).
+  // Mortgage affordability engine, calibrated for standard Kosovar retail lending
+  // and completely flexible for custom user inputs: tenors 1–40 years, down payments 0–95%,
+  // custom rates 0.1–30%, and repayment schedules (annuity & linear).
   const loanEstimate = useMemo(() => {
     if (!listing?.price || listing.price <= 0 || listing.type !== 'shitje') return null
-    const downPaymentAmount = Math.round((listing.price * loanDownPct) / 100)
-    const loanAmount = listing.price - downPaymentAmount
-    if (loanAmount <= 0) return null
-    const rm = loanRate / 100 / 12
-    const n = loanYears * 12
+
+    const safeDownPct = Math.min(95, Math.max(0, Number(loanDownPct) || 0))
+    const safeYears = Math.min(40, Math.max(1, Number(loanYears) || 1))
+    const safeRate = Math.min(30, Math.max(0.1, Number(loanRate) || 0.1))
+
+    const downPaymentAmount = Math.round((listing.price * safeDownPct) / 100)
+    const loanAmount = Math.max(0, listing.price - downPaymentAmount)
+    const n = Math.max(1, safeYears * 12)
+    const rm = safeRate / 100 / 12
+
+    const parsedAdminFeePct = Math.min(10, Math.max(0, parseFloat(customAdminFeePctStr.replace(',', '.')) || 0))
+    const adminFee = Math.round((loanAmount * parsedAdminFeePct) / 100)
+
+    const extraMonthly = Math.max(0, parseFloat(customExtraMonthlyStr.replace(/[^\d.]/g, '')) || 0)
+    const parsedDtiLimit = Math.min(90, Math.max(10, parseFloat(customDtiLimitStr.replace(',', '.')) || 40))
+
+    if (loanAmount <= 0) {
+      return {
+        monthlyPayment: 0,
+        firstPayment: 0,
+        lastPayment: 0,
+        effectivePayment: 0,
+        extraMonthly: 0,
+        downPaymentAmount,
+        loanAmount: 0,
+        totalInterest: 0,
+        annuityInterest: 0,
+        balanceAfter5: 0,
+        adminFee: 0,
+        adminFeePct: parsedAdminFeePct,
+        totalCost: downPaymentAmount,
+        totalPayments: n,
+        dti: null,
+        dtiLimit: parsedDtiLimit,
+        incomeNum: 0,
+        maxAffordablePayment: null,
+        disposableIncome: null,
+      }
+    }
 
     let monthlyPayment: number
     let firstPayment: number
     let lastPayment: number
     let totalInterest: number
     let balanceAfter5: number | null
+
     if (loanMethod === 'annuity') {
-      monthlyPayment =
-        (loanAmount * (rm * Math.pow(1 + rm, n))) / (Math.pow(1 + rm, n) - 1)
+      const factor = Math.pow(1 + rm, n)
+      monthlyPayment = factor === 1 ? loanAmount / n : (loanAmount * (rm * factor)) / (factor - 1)
       firstPayment = monthlyPayment
       lastPayment = monthlyPayment
       totalInterest = monthlyPayment * n - loanAmount
       const k = Math.min(60, n)
-      balanceAfter5 =
-        k >= n ? 0 : (loanAmount * (Math.pow(1 + rm, n) - Math.pow(1 + rm, k))) / (Math.pow(1 + rm, n) - 1)
+      const factorK = Math.pow(1 + rm, k)
+      balanceAfter5 = k >= n ? 0 : (loanAmount * (factor - factorK)) / (factor - 1)
     } else {
       const principalPart = loanAmount / n
       firstPayment = principalPart + loanAmount * rm
@@ -568,31 +638,51 @@ export default function ListingDetailScreen() {
     }
 
     // Annuity total interest for the declining-method savings comparison
+    const annuityFactor = Math.pow(1 + rm, n)
     const annuityInterest =
       loanMethod === 'linear'
-        ? ((loanAmount * (rm * Math.pow(1 + rm, n))) / (Math.pow(1 + rm, n) - 1)) * n - loanAmount
+        ? (annuityFactor === 1 ? 0 : ((loanAmount * (rm * annuityFactor)) / (annuityFactor - 1)) * n - loanAmount)
         : null
 
-    const adminFee = Math.round(loanAmount * 0.005)
     const incomeNum = parseFloat(incomeStr.replace(/[^\d.]/g, '')) || 0
-    const dti = incomeNum > 0 ? firstPayment / incomeNum : null
+    const effectivePayment = Math.round(firstPayment + extraMonthly)
+    const dti = incomeNum > 0 ? effectivePayment / incomeNum : null
+    const maxAffordablePayment = incomeNum > 0 ? Math.round(incomeNum * (parsedDtiLimit / 100)) : null
+    const disposableIncome = incomeNum > 0 ? Math.max(0, Math.round(incomeNum - effectivePayment)) : null
 
     return {
       monthlyPayment: Math.round(monthlyPayment),
       firstPayment: Math.round(firstPayment),
       lastPayment: Math.round(lastPayment),
+      effectivePayment,
+      extraMonthly: Math.round(extraMonthly),
       downPaymentAmount,
       loanAmount,
-      totalInterest: Math.round(totalInterest),
-      annuityInterest: annuityInterest != null ? Math.round(annuityInterest) : null,
-      balanceAfter5: balanceAfter5 != null ? Math.round(balanceAfter5) : null,
+      totalInterest: Math.round(Math.max(0, totalInterest)),
+      annuityInterest: annuityInterest != null ? Math.round(Math.max(0, annuityInterest)) : null,
+      balanceAfter5: balanceAfter5 != null ? Math.round(Math.max(0, balanceAfter5)) : null,
       adminFee,
-      totalCost: Math.round(loanAmount + totalInterest + adminFee),
+      adminFeePct: parsedAdminFeePct,
+      totalCost: Math.round(loanAmount + Math.max(0, totalInterest) + adminFee),
       totalPayments: n,
       dti,
+      dtiLimit: parsedDtiLimit,
       incomeNum,
+      maxAffordablePayment,
+      disposableIncome,
     }
-  }, [listing?.price, listing?.type, loanYears, loanDownPct, loanRate, loanMethod, incomeStr])
+  }, [
+    listing?.price,
+    listing?.type,
+    loanYears,
+    loanDownPct,
+    loanRate,
+    loanMethod,
+    incomeStr,
+    customDtiLimitStr,
+    customAdminFeePctStr,
+    customExtraMonthlyStr,
+  ])
 
   if (loading) {
     return (
@@ -648,18 +738,17 @@ export default function ListingDetailScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 1. APPLE-TIER DYNAMIC TOP NAVIGATION BAR (CROSS-FADING)      */}
+      {/* 1. APPLE & AIRBNB DYNAMIC TOP NAVIGATION BAR (DUAL-LAYER LUXURY) */}
       {/* ───────────────────────────────────────────────────────────── */}
       <View style={[styles.floatingNavSafeArea, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Solid / Frosted Background that fades in seamlessly on scroll */}
+        {/* Solid / Frosted Crystalline Background that fades in seamlessly on scroll */}
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
+            styles.floatingNavBackground,
             {
               opacity: headerBgOpacity,
-              backgroundColor: colors.background,
-              borderBottomWidth: StyleSheet.hairlineWidth,
-              borderBottomColor: colors.border,
+              borderBottomColor: specularBorder,
             },
           ]}
           pointerEvents="none"
@@ -669,29 +758,78 @@ export default function ListingDetailScreen() {
             tint={colors.blurTint}
             style={StyleSheet.absoluteFill}
           />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor:
+                  theme === 'white'
+                    ? 'rgba(255, 255, 255, 0.82)'
+                    : theme === 'green'
+                    ? 'rgba(7, 28, 24, 0.88)'
+                    : 'rgba(12, 17, 16, 0.84)',
+              },
+            ]}
+          />
         </Animated.View>
 
-        <View style={styles.floatingNavRow}>
-          {/* Back Button */}
+        {/* Navigation Action Buttons & Truly Responsive Editorial Identity Row */}
+        <View style={styles.floatingNavRow} pointerEvents="box-none">
+          {/* Back Button with Dual-Layer Adaptive State */}
           <TactilePressable
-            style={styles.navCircleBtn}
+            style={styles.navActionBtnWrap}
             onPress={() => safeBack(router, '/(tabs)/listings')}
-            hitSlop={8}
+            hitSlop={10}
             activeScale={0.92}
             haptic="light"
+            accessibilityRole="button"
+            accessibilityLabel="Kthehu mbrapa"
           >
-            <BlurView
-              intensity={Platform.OS === 'ios' ? 75 : 100}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
-            <ArrowLeft size={19} color="#FFFFFF" strokeWidth={2.4} />
+            {/* Layer A: Floating Optical Glass Lens (Over photo) */}
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.navCircleFloatingLens,
+                { opacity: floatingBtnOpacity },
+              ]}
+              pointerEvents="none"
+            >
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 75 : 100}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.navOpticalCenter}>
+                <ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.4} style={{ marginLeft: -1 }} />
+              </View>
+            </Animated.View>
+
+            {/* Layer B: Sticky Refined Disc (Adapts to current color palette) */}
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.navCircleStickyDisc,
+                {
+                  opacity: stickyBtnOpacity,
+                  backgroundColor:
+                    theme === 'white'
+                      ? 'rgba(255, 255, 255, 0.90)'
+                      : colors.surfaceSubtle,
+                  borderColor: specularBorder,
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <View style={styles.navOpticalCenter}>
+                <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.4} style={{ marginLeft: -1 }} />
+              </View>
+            </Animated.View>
           </TactilePressable>
 
-          {/* Sticky Header Center Title & Price (Fades in when hero scrolls out) */}
+          {/* Truly Responsive Editorial Identity Block (Centered in available viewport space) */}
           <Animated.View
             style={[
-              styles.navCenterContent,
+              styles.navCenterFlex,
               {
                 opacity: headerContentOpacity,
                 transform: [{ translateY: headerContentTranslateY }],
@@ -699,39 +837,86 @@ export default function ListingDetailScreen() {
             ]}
             pointerEvents="none"
           >
-            <Text style={[styles.navStickyTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+            <Text
+              style={[styles.navStickyTitle, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {listing.title}
             </Text>
-            <Text style={[styles.navStickyPrice, { color: brandHighlight }]}>
-              {formatPrice(listing.price)}
-              {listing.type === 'qira' && ' /muaj'}
+            <Text style={styles.navStickySubLine} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={[styles.navStickyPrice, { color: brandHighlight }]}>
+                {formatPrice(listing.price)}{listing.type === 'qira' ? ' /muaj' : ''}
+              </Text>
+              {Boolean(listing.city || listing.neighborhood) && (
+                <Text style={[styles.navStickyLocation, { color: colors.textMuted }]}>
+                  {' • ' + (listing.city || listing.neighborhood)}
+                </Text>
+              )}
             </Text>
           </Animated.View>
 
-          {/* Right Action Icons: Share & Favorite */}
+          {/* Right Action Cluster: Share & Favorite */}
           <View style={styles.navRightGroup}>
+            {/* Share Button with Dual-Layer Adaptive State */}
             <TactilePressable
-              style={styles.navCircleBtn}
+              style={styles.navActionBtnWrap}
               onPress={handleShare}
-              hitSlop={8}
+              hitSlop={10}
               activeScale={0.92}
               haptic="light"
+              accessibilityRole="button"
+              accessibilityLabel="Shpërndaj pronën"
             >
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 75 : 100}
-                tint="dark"
-                style={StyleSheet.absoluteFill}
-              />
-              <Share2 size={17} color="#FFFFFF" strokeWidth={2.2} />
+              {/* Layer A: Floating Optical Glass Lens */}
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  styles.navCircleFloatingLens,
+                  { opacity: floatingBtnOpacity },
+                ]}
+                pointerEvents="none"
+              >
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 75 : 100}
+                  tint="dark"
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.navOpticalCenter}>
+                  <Share2 size={17} color="#FFFFFF" strokeWidth={2.2} />
+                </View>
+              </Animated.View>
+
+              {/* Layer B: Sticky Refined Disc */}
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  styles.navCircleStickyDisc,
+                  {
+                    opacity: stickyBtnOpacity,
+                    backgroundColor:
+                      theme === 'white'
+                        ? 'rgba(255, 255, 255, 0.90)'
+                        : colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+                pointerEvents="none"
+              >
+                <View style={styles.navOpticalCenter}>
+                  <Share2 size={17} color={colors.textPrimary} strokeWidth={2.2} />
+                </View>
+              </Animated.View>
             </TactilePressable>
 
+            {/* Favorite Button (Adapts variant to sticky state seamlessly) */}
             <FavoriteButton
               isFavorite={isFavorite}
               onToggle={handleFavoriteToggle}
               canToggle={() => !!getSyncAuthUser()}
-              size={40}
+              size={42}
               iconSize={19}
-              variant="dark"
+              variant={!isHeaderSticky || theme !== 'white' ? 'dark' : 'light'}
             />
           </View>
         </View>
@@ -786,10 +971,11 @@ export default function ListingDetailScreen() {
             )}
           />
 
-          {/* Top Edge Vignette Gradient (for navigation contrast) */}
+          {/* Film-grade Top Edge Vignette Gradient (for flawless icon & status bar contrast) */}
           <LinearGradient
-            colors={['rgba(0, 0, 0, 0.55)', 'rgba(0, 0, 0, 0)']}
-            style={styles.topVignette}
+            colors={['rgba(0, 0, 0, 0.65)', 'rgba(0, 0, 0, 0.35)', 'rgba(0, 0, 0, 0.12)', 'rgba(0, 0, 0, 0)']}
+            locations={[0, 0.35, 0.70, 1.0]}
+            style={[styles.topVignette, { height: Math.max(130, insets.top + 72) }]}
             pointerEvents="none"
           />
 
@@ -1075,231 +1261,712 @@ export default function ListingDetailScreen() {
                 { backgroundColor: colors.surface, borderColor: specularBorder },
               ]}
             >
-              {/* Resting state: one confident metric + disclosure affordance */}
-              <TactilePressable
-                activeScale={0.985}
-                haptic="selection"
-                style={styles.loanHeadRow}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.selectionAsync()
-                  setLoanExpanded((v) => !v)
-                }}
-              >
+              {/* 1. Header with Badge & Title */}
+              <View style={styles.loanCardHeader}>
+                <View
+                  style={[
+                    styles.loanCardIconBox,
+                    { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                  ]}
+                >
+                  <Calculator size={18} color={brandHighlight} strokeWidth={2.2} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.loanOverline, { color: colors.textMuted }]}>
                     VLERËSIMI I KREDISË BANKARE
                   </Text>
-                  <View style={styles.loanHeadlineRow}>
-                    <Text style={[styles.loanBigValue, { color: colors.textPrimary }]}>
-                      {fmtInt(loanEstimate.monthlyPayment)} €
+                  <Text style={[styles.loanHeaderSubTitle, { color: colors.textSecondary }]} numberOfLines={1}>
+                    Financim bankar deri në 90% të vlerës
+                  </Text>
+                </View>
+              </View>
+
+              {/* 2. Hero Monthly Payment Presentation (Immediate, Confident, Zero Friction) */}
+              <View
+                style={[
+                  styles.loanHeroBox,
+                  { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                ]}
+              >
+                <Text style={[styles.loanHeroLabel, { color: colors.textMuted }]}>
+                  Kësti mujor i parashikuar
+                </Text>
+                <View style={styles.loanHeadlineRow}>
+                  <Text style={[styles.loanBigValue, { color: brandHighlight }]}>
+                    {fmtInt(loanEstimate.monthlyPayment)} €
+                  </Text>
+                  <Text style={[styles.loanPerMonth, { color: colors.textMuted }]}>/ muaj</Text>
+                </View>
+                <Text style={[styles.loanHeadSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {loanDownPct}% pjesëmarrje • {loanYears} vjet • {loanRate.toFixed(1).replace('.', ',')}% interes
+                </Text>
+              </View>
+
+              {/* 3. Core Frictionless Knobs: Down Payment (Pjesëmarrja) */}
+              <View style={styles.loanSectionGroup}>
+                <View style={styles.loanSectionTitleRow}>
+                  <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                    Pjesëmarrja fillestare
+                  </Text>
+                  <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                    {fmtInt(loanEstimate.downPaymentAmount)} € ({loanDownPct}%)
+                  </Text>
+                </View>
+
+                {/* 4 Responsive Equal-Width Preset Chips */}
+                <View style={styles.loanChipRow}>
+                  {([10, 15, 20, 30] as const).map((pct) => {
+                    const selected = loanDownPct === pct
+                    return (
+                      <TactilePressable
+                        key={pct}
+                        activeScale={0.94}
+                        haptic="selection"
+                        style={[
+                          styles.loanChip,
+                          {
+                            backgroundColor: selected
+                              ? theme === 'green'
+                                ? colors.gold
+                                : colors.primary
+                              : colors.surfaceSubtle,
+                            borderColor: selected ? 'transparent' : specularBorder,
+                          },
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== 'web') Haptics.selectionAsync()
+                          setLoanDownPct(pct)
+                          setCustomDownPctStr(String(pct))
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.loanChipText,
+                            {
+                              color: selected
+                                ? theme === 'green'
+                                  ? '#071C18'
+                                  : '#FFFFFF'
+                                : colors.textSecondary,
+                              fontFamily: selected ? Fonts.bold : Fonts.medium,
+                            },
+                          ]}
+                        >
+                          {pct}%
+                        </Text>
+                      </TactilePressable>
+                    )
+                  })}
+                </View>
+
+                {/* Custom Down Payment Input Row */}
+                <View
+                  style={[
+                    styles.loanCustomInputRow,
+                    { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                  ]}
+                >
+                  <View style={styles.loanCustomInputLabelCol}>
+                    <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                      Përqindje e personalizuar
                     </Text>
-                    <Text style={[styles.loanPerMonth, { color: colors.textMuted }]}>/ muaj</Text>
+                    <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                      Shuma: {fmtInt(loanEstimate.downPaymentAmount)} €
+                    </Text>
                   </View>
-                  <Text
-                    style={[styles.loanHeadSub, { color: colors.textSecondary }]}
-                    numberOfLines={1}
+                  <View
+                    style={[
+                      styles.loanMiniInputBox,
+                      { backgroundColor: colors.surface, borderColor: specularBorder },
+                    ]}
                   >
-                    {loanDownPct}% pjesëmarrje • {loanYears} vjet •{' '}
-                    {loanRate.toFixed(1).replace('.', ',')}% •{' '}
-                    {loanMethod === 'annuity' ? 'anuitet' : 'këste zbritëse'}
+                    <TextInput
+                      style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                      placeholder="20"
+                      placeholderTextColor={colors.textLight}
+                      value={customDownPctStr || (loanDownPct ? String(loanDownPct) : '')}
+                      onChangeText={(val) => {
+                        const clean = val.replace(/[^\d]/g, '').slice(0, 2)
+                        setCustomDownPctStr(clean)
+                        const num = parseInt(clean, 10)
+                        if (!isNaN(num)) {
+                          setLoanDownPct(Math.min(95, Math.max(0, num)))
+                        } else if (clean === '') {
+                          setLoanDownPct(0)
+                        }
+                      }}
+                      keyboardType="number-pad"
+                      returnKeyType="done"
+                    />
+                    <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Quick Metrics Bar: Loan vs Down Payment vs Tenure */}
+              <View style={[styles.loanQuickStatsRow, { borderColor: specularBorder }]}>
+                <View style={styles.loanQuickStatCol}>
+                  <Text style={[styles.loanQuickStatLabel, { color: colors.textMuted }]}>Kredia</Text>
+                  <Text style={[styles.loanQuickStatVal, { color: colors.textPrimary }]}>
+                    {fmtInt(loanEstimate.loanAmount)} €
+                  </Text>
+                </View>
+                <View style={[styles.loanQuickStatDivider, { backgroundColor: specularBorder }]} />
+                <View style={styles.loanQuickStatCol}>
+                  <Text style={[styles.loanQuickStatLabel, { color: colors.textMuted }]}>Pjesëmarrja</Text>
+                  <Text style={[styles.loanQuickStatVal, { color: colors.textPrimary }]}>
+                    {fmtInt(loanEstimate.downPaymentAmount)} €
+                  </Text>
+                </View>
+                <View style={[styles.loanQuickStatDivider, { backgroundColor: specularBorder }]} />
+                <View style={styles.loanQuickStatCol}>
+                  <Text style={[styles.loanQuickStatLabel, { color: colors.textMuted }]}>Afati</Text>
+                  <Text style={[styles.loanQuickStatVal, { color: colors.textPrimary }]}>
+                    {loanYears} vjet
+                  </Text>
+                </View>
+              </View>
+
+              {/* 4. Progressive Disclosure Mechanism ("Opsione të avancuara" / "Llogaritje e detajuar") */}
+              <TactilePressable
+                activeScale={0.98}
+                haptic="selection"
+                style={[
+                  styles.loanAdvancedToggle,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setAdvancedLoanOpen((v) => !v)
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Opsione të avancuara dhe llogaritje e detajuar e kredisë"
+              >
+                <View style={styles.loanAdvancedToggleLeft}>
+                  <SlidersHorizontal size={15} color={brandHighlight} strokeWidth={2.2} />
+                  <Text style={[styles.loanAdvancedToggleText, { color: colors.textPrimary }]}>
+                    {advancedLoanOpen ? 'Mbyll llogaritjen e detajuar' : 'Opsione të avancuara & llogaritje e detajuar'}
                   </Text>
                 </View>
                 <ChevronDown
-                  size={18}
+                  size={16}
                   color={colors.textMuted}
                   strokeWidth={2.2}
-                  style={{ transform: [{ rotate: loanExpanded ? '180deg' : '0deg' }] }}
+                  style={{ transform: [{ rotate: advancedLoanOpen ? '180deg' : '0deg' }] }}
                 />
               </TactilePressable>
 
-              {loanExpanded && (
+              {/* 5. Expanded Deeper Financial Variables */}
+              {advancedLoanOpen && (
                 <View style={styles.loanExpandedBody}>
-                  {/* Repayment schedule method — the two standard bank models */}
-                  <View
-                    style={[
-                      styles.loanSegmentRow,
-                      { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
-                    ]}
-                  >
-                    {(['annuity', 'linear'] as const).map((m) => {
-                      const selected = loanMethod === m
-                      return (
-                        <TactilePressable
-                          key={m}
-                          activeScale={0.97}
-                          haptic="selection"
-                          style={[
-                            styles.loanSegmentBtn,
-                            selected && { backgroundColor: colors.surface, borderColor: specularBorder },
-                          ]}
-                          onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setLoanMethod(m)
-                          }}
-                        >
-                          <Text
+                  {/* Tenure Adjustments (Afati i kredisë) */}
+                  <View style={styles.loanSectionGroup}>
+                    <View style={styles.loanSectionTitleRow}>
+                      <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                        Afati i kredisë
+                      </Text>
+                      <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                        {loanYears} vjet ({loanEstimate.totalPayments} këste)
+                      </Text>
+                    </View>
+                    <View style={styles.loanChipRow}>
+                      {([10, 15, 20, 25] as const).map((yr) => {
+                        const selected = loanYears === yr
+                        return (
+                          <TactilePressable
+                            key={yr}
+                            activeScale={0.94}
+                            haptic="selection"
                             style={[
-                              styles.loanSegmentBtnText,
+                              styles.loanChip,
                               {
-                                color: selected ? colors.textPrimary : colors.textMuted,
-                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                                backgroundColor: selected
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.surfaceSubtle,
+                                borderColor: selected ? 'transparent' : specularBorder,
                               },
                             ]}
-                            numberOfLines={1}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync()
+                              setLoanYears(yr)
+                              setCustomYearsStr(String(yr))
+                            }}
                           >
-                            {m === 'annuity' ? 'Këste të barabarta' : 'Këste zbritëse'}
-                          </Text>
-                        </TactilePressable>
-                      )
-                    })}
+                            <Text
+                              style={[
+                                styles.loanChipText,
+                                {
+                                  color: selected
+                                    ? theme === 'green'
+                                      ? '#071C18'
+                                      : '#FFFFFF'
+                                    : colors.textSecondary,
+                                  fontFamily: selected ? Fonts.bold : Fonts.medium,
+                                },
+                              ]}
+                            >
+                              {yr} vjet
+                            </Text>
+                          </TactilePressable>
+                        )
+                      })}
+                    </View>
+
+                    {/* Custom Years Input Row */}
+                    <View
+                      style={[
+                        styles.loanCustomInputRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                          Afat i personalizuar
+                        </Text>
+                        <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                          Zgjidhni nga 1 deri në 40 vite financimi
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.loanMiniInputBox,
+                          { backgroundColor: colors.surface, borderColor: specularBorder },
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                          placeholder="20"
+                          placeholderTextColor={colors.textLight}
+                          value={customYearsStr || (loanYears ? String(loanYears) : '')}
+                          onChangeText={(val) => {
+                            const clean = val.replace(/[^\d]/g, '').slice(0, 2)
+                            setCustomYearsStr(clean)
+                            const num = parseInt(clean, 10)
+                            if (!isNaN(num)) {
+                              setLoanYears(Math.min(40, Math.max(1, num)))
+                            } else if (clean === '') {
+                              setLoanYears(1)
+                            }
+                          }}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>vjet</Text>
+                      </View>
+                    </View>
                   </View>
 
-                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
-                    Pjesëmarrja fillestare
-                  </Text>
-                  <View style={styles.loanChipRow}>
-                    {([10, 15, 20, 30] as const).map((pct) => {
-                      const selected = loanDownPct === pct
-                      return (
-                        <TactilePressable
-                          key={pct}
-                          activeScale={0.94}
-                          haptic="selection"
+                  {/* Custom Interest Rates (Norma vjetore e interesit) */}
+                  <View style={styles.loanSectionGroup}>
+                    <View style={styles.loanSectionTitleRow}>
+                      <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                        Norma vjetore e interesit
+                      </Text>
+                      <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                        {loanRate.toFixed(1).replace('.', ',')}% vjetore
+                      </Text>
+                    </View>
+                    <View style={styles.loanChipRow}>
+                      {([3.9, 4.5, 5.0, 5.5] as const).map((rt) => {
+                        const selected = Math.abs(loanRate - rt) < 0.05
+                        return (
+                          <TactilePressable
+                            key={rt}
+                            activeScale={0.94}
+                            haptic="selection"
+                            style={[
+                              styles.loanChip,
+                              {
+                                backgroundColor: selected
+                                  ? theme === 'green'
+                                    ? colors.gold
+                                    : colors.primary
+                                  : colors.surfaceSubtle,
+                                borderColor: selected ? 'transparent' : specularBorder,
+                              },
+                            ]}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync()
+                              setLoanRate(rt)
+                              setCustomRateStr(rt.toFixed(1))
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.loanChipText,
+                                {
+                                  color: selected
+                                    ? theme === 'green'
+                                      ? '#071C18'
+                                      : '#FFFFFF'
+                                    : colors.textSecondary,
+                                  fontFamily: selected ? Fonts.bold : Fonts.medium,
+                                },
+                              ]}
+                            >
+                              {rt.toFixed(1).replace('.', ',')}%
+                            </Text>
+                          </TactilePressable>
+                        )
+                      })}
+                    </View>
+
+                    {/* Custom Rate Input Row */}
+                    <View
+                      style={[
+                        styles.loanCustomInputRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                          Normë e personalizuar
+                        </Text>
+                        <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                          Norma efektive e ofruar nga banka juaj
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.loanMiniInputBox,
+                          { backgroundColor: colors.surface, borderColor: specularBorder },
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                          placeholder="4.5"
+                          placeholderTextColor={colors.textLight}
+                          value={customRateStr || (loanRate ? String(loanRate) : '')}
+                          onChangeText={(val) => {
+                            const clean = val.replace(',', '.').replace(/[^\d.]/g, '').slice(0, 4)
+                            setCustomRateStr(clean)
+                            const num = parseFloat(clean)
+                            if (!isNaN(num) && num > 0) {
+                              setLoanRate(Math.min(30, Math.max(0.1, num)))
+                            }
+                          }}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Repayment schedule method — Annuity vs Declining */}
+                  <View style={styles.loanSectionGroup}>
+                    <View style={styles.loanSectionTitleRow}>
+                      <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                        Modeli i shlyerjes
+                      </Text>
+                      <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                        {loanMethod === 'annuity' ? 'Këste konstante' : 'Këste progresive në rënie'}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.loanSegmentRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      {(['annuity', 'linear'] as const).map((m) => {
+                        const selected = loanMethod === m
+                        return (
+                          <TactilePressable
+                            key={m}
+                            activeScale={0.97}
+                            haptic="selection"
+                            style={[
+                              styles.loanSegmentBtn,
+                              selected && { backgroundColor: colors.surface, borderColor: specularBorder },
+                            ]}
+                            onPress={() => {
+                              if (Platform.OS !== 'web') Haptics.selectionAsync()
+                              setLoanMethod(m)
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.loanSegmentBtnText,
+                                {
+                                  color: selected ? colors.textPrimary : colors.textMuted,
+                                  fontFamily: selected ? Fonts.bold : Fonts.medium,
+                                },
+                              ]}
+                              numberOfLines={1}
+                              adjustsFontSizeToFit
+                            >
+                              {m === 'annuity' ? 'Këste fikse (Anuitet)' : 'Këste zbritëse (Lineare)'}
+                            </Text>
+                          </TactilePressable>
+                        )
+                      })}
+                    </View>
+
+                    {/* Model Explainer Insight Card */}
+                    <View
+                      style={[
+                        styles.loanMethodExplainer,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      {loanMethod === 'annuity' ? (
+                        <Text style={[styles.loanMethodExplainerText, { color: colors.textSecondary }]}>
+                          💡 <Text style={{ fontFamily: Fonts.semiBold, color: colors.textPrimary }}>Anuitet:</Text> Paguani të njëjtën shumë të barabartë prej <Text style={{ fontFamily: Fonts.bold, color: brandHighlight }}>{fmtInt(loanEstimate.monthlyPayment)} €</Text> çdo muaj. Ideale për planifikim fiks pa të papritura.
+                        </Text>
+                      ) : (
+                        <Text style={[styles.loanMethodExplainerText, { color: colors.textSecondary }]}>
+                          💡 <Text style={{ fontFamily: Fonts.semiBold, color: colors.textPrimary }}>Zbritëse:</Text> Kësti fillon me <Text style={{ fontFamily: Fonts.bold, color: brandHighlight }}>{fmtInt(loanEstimate.firstPayment)} €</Text> dhe ulet deri në <Text style={{ fontFamily: Fonts.bold, color: brandHighlight }}>{fmtInt(loanEstimate.lastPayment)} €</Text>. Kurseni <Text style={{ fontFamily: Fonts.bold, color: theme === 'green' ? colors.gold : colors.primary }}>{fmtInt(Math.max(0, (loanEstimate.annuityInterest || 0) - loanEstimate.totalInterest))} €</Text> në interes total!
+                        </Text>
+                      )}
+                    </View>
+
+                    {/* Custom Extra Principal Prepayment */}
+                    <View
+                      style={[
+                        styles.loanCustomInputRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                          Pagesë shtesë mujore (opsionale)
+                        </Text>
+                        <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                          Përshpejton shlyerjen e kryegjëses
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.loanMiniInputBox,
+                          { backgroundColor: colors.surface, borderColor: specularBorder },
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                          placeholder="0"
+                          placeholderTextColor={colors.textLight}
+                          value={customExtraMonthlyStr}
+                          onChangeText={(val) => {
+                            const clean = val.replace(/[^\d]/g, '').slice(0, 5)
+                            setCustomExtraMonthlyStr(clean)
+                          }}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>€</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Monthly Salary & Affordability Check (Të ardhurat mujore & Kufiri DTI) */}
+                  <View style={styles.loanSectionGroup}>
+                    <View style={styles.loanSectionTitleRow}>
+                      <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                        Përballueshmëria & Kufiri Bankar
+                      </Text>
+                      <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                        Kufiri standard ≈ 40%
+                      </Text>
+                    </View>
+
+                    {/* Net Monthly Income Input */}
+                    <View
+                      style={[
+                        styles.loanIncomeRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanIncomeLabel, { color: colors.textPrimary }]}>
+                          Të ardhurat neto mujore
+                        </Text>
+                        <Text style={[styles.loanIncomeSub, { color: colors.textMuted }]}>
+                          Paga mujore neto e familjes
+                        </Text>
+                      </View>
+                      <View style={[styles.loanIncomeInputWrapper, { backgroundColor: colors.surface, borderColor: specularBorder }]}>
+                        <TextInput
+                          style={[styles.loanIncomeInput, { color: colors.textPrimary }]}
+                          placeholder="800"
+                          placeholderTextColor={colors.textLight}
+                          value={incomeStr}
+                          onChangeText={(v) => setIncomeStr(v.replace(/[^\d]/g, '').slice(0, 6))}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanIncomeSuffix, { color: colors.textMuted }]}>€</Text>
+                      </View>
+                    </View>
+
+                    {/* Custom Affordability DTI Limit Row */}
+                    <View
+                      style={[
+                        styles.loanCustomInputRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                          Kufiri i përballueshmërisë (DTI)
+                        </Text>
+                        <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                          Përqindja maksimale e pagës për kredi
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.loanMiniInputBox,
+                          { backgroundColor: colors.surface, borderColor: specularBorder },
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                          placeholder="40"
+                          placeholderTextColor={colors.textLight}
+                          value={customDtiLimitStr}
+                          onChangeText={(v) => {
+                            const clean = v.replace(/[^\d]/g, '').slice(0, 2)
+                            setCustomDtiLimitStr(clean)
+                          }}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
+                      </View>
+                    </View>
+
+                    {/* Live DTI & Affordability Feedback */}
+                    {loanEstimate.dti != null && (
+                      <View style={{ marginTop: 8 }}>
+                        <View
                           style={[
-                            styles.loanChip,
+                            styles.loanDtiBadge,
                             {
-                              backgroundColor: selected
-                                ? theme === 'green'
-                                  ? colors.gold
-                                  : colors.primary
-                                : colors.surfaceSubtle,
-                              borderColor: selected ? 'transparent' : specularBorder,
+                              backgroundColor:
+                                loanEstimate.dti <= loanEstimate.dtiLimit / 100
+                                  ? 'rgba(16, 185, 129, 0.1)'
+                                  : 'rgba(245, 158, 11, 0.12)',
+                              borderColor:
+                                loanEstimate.dti <= loanEstimate.dtiLimit / 100
+                                  ? 'rgba(16, 185, 129, 0.25)'
+                                  : 'rgba(245, 158, 11, 0.3)',
                             },
                           ]}
-                          onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setLoanDownPct(pct)
-                          }}
                         >
+                          {loanEstimate.dti <= loanEstimate.dtiLimit / 100 ? (
+                            <CheckCircle2 size={16} color="#10B981" strokeWidth={2.2} />
+                          ) : (
+                            <Shield size={16} color="#F59E0B" strokeWidth={2.2} />
+                          )}
                           <Text
                             style={[
-                              styles.loanChipText,
+                              styles.loanDtiText,
                               {
-                                color: selected
-                                  ? theme === 'green'
-                                    ? '#071C18'
-                                    : '#FFFFFF'
-                                  : colors.textSecondary,
-                                fontFamily: selected ? Fonts.bold : Fonts.medium,
+                                color:
+                                  loanEstimate.dti <= loanEstimate.dtiLimit / 100
+                                    ? theme === 'green'
+                                      ? '#34D399'
+                                      : '#059669'
+                                    : '#D97706',
                               },
                             ]}
                           >
-                            {pct}%
+                            {loanEstimate.dti <= loanEstimate.dtiLimit / 100
+                              ? `Kësti merr ${(loanEstimate.dti * 100).toFixed(0)}% të pagës • Brenda limitit të sigurt (${loanEstimate.dtiLimit}%)`
+                              : `Kësti merr ${(loanEstimate.dti * 100).toFixed(0)}% të pagës • Tejkalon limitin prej ${loanEstimate.dtiLimit}%`}
                           </Text>
-                        </TactilePressable>
-                      )
-                    })}
+                        </View>
+
+                        {/* Affordability Metrics Row */}
+                        <View style={[styles.loanAffordMetricsRow, { borderColor: specularBorder }]}>
+                          <View style={styles.loanAffordMetricCol}>
+                            <Text style={[styles.loanAffordMetricLabel, { color: colors.textMuted }]}>
+                              Kësti maks. i lejuar
+                            </Text>
+                            <Text style={[styles.loanAffordMetricVal, { color: colors.textPrimary }]}>
+                              {fmtInt(loanEstimate.maxAffordablePayment || 0)} €
+                            </Text>
+                          </View>
+                          <View style={[styles.loanAffordMetricDivider, { backgroundColor: specularBorder }]} />
+                          <View style={styles.loanAffordMetricCol}>
+                            <Text style={[styles.loanAffordMetricLabel, { color: colors.textMuted }]}>
+                              Të mbetura pas këstit
+                            </Text>
+                            <Text style={[styles.loanAffordMetricVal, { color: brandHighlight }]}>
+                              {fmtInt(loanEstimate.disposableIncome || 0)} €
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
                   </View>
 
-                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
-                    Afati i kredisë
-                  </Text>
-                  <View style={styles.loanChipRow}>
-                    {([10, 15, 20, 25] as const).map((yr) => {
-                      const selected = loanYears === yr
-                      return (
-                        <TactilePressable
-                          key={yr}
-                          activeScale={0.94}
-                          haptic="selection"
-                          style={[
-                            styles.loanChip,
-                            {
-                              backgroundColor: selected
-                                ? theme === 'green'
-                                  ? colors.gold
-                                  : colors.primary
-                                : colors.surfaceSubtle,
-                              borderColor: selected ? 'transparent' : specularBorder,
-                            },
-                          ]}
-                          onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setLoanYears(yr)
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.loanChipText,
-                              {
-                                color: selected
-                                  ? theme === 'green'
-                                    ? '#071C18'
-                                    : '#FFFFFF'
-                                  : colors.textSecondary,
-                                fontFamily: selected ? Fonts.bold : Fonts.medium,
-                              },
-                            ]}
-                          >
-                            {yr} vjet
-                          </Text>
-                        </TactilePressable>
-                      )
-                    })}
-                  </View>
-
-                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
-                    Norma vjetore e interesit
-                  </Text>
-                  <View style={styles.loanChipRow}>
-                    {([3.9, 4.5, 5.0, 5.5] as const).map((rt) => {
-                      const selected = loanRate === rt
-                      return (
-                        <TactilePressable
-                          key={rt}
-                          activeScale={0.94}
-                          haptic="selection"
-                          style={[
-                            styles.loanChip,
-                            {
-                              backgroundColor: selected
-                                ? theme === 'green'
-                                  ? colors.gold
-                                  : colors.primary
-                                : colors.surfaceSubtle,
-                              borderColor: selected ? 'transparent' : specularBorder,
-                            },
-                          ]}
-                          onPress={() => {
-                            if (Platform.OS !== 'web') Haptics.selectionAsync()
-                            setLoanRate(rt)
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.loanChipText,
-                              {
-                                color: selected
-                                  ? theme === 'green'
-                                    ? '#071C18'
-                                    : '#FFFFFF'
-                                  : colors.textSecondary,
-                                fontFamily: selected ? Fonts.bold : Fonts.medium,
-                              },
-                            ]}
-                          >
-                            {rt.toFixed(1).replace('.', ',')}%
-                          </Text>
-                        </TactilePressable>
-                      )
-                    })}
-                  </View>
-
-                  {/* Amortization breakdown — hairline ledger, no nested cards */}
+                  {/* Amortization breakdown ledger & custom closing fees */}
                   <View style={[styles.loanBreakBox, { borderColor: specularBorder }]}>
+                    <View style={styles.loanSectionTitleRow}>
+                      <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
+                        Pasqyra e plotë financiare
+                      </Text>
+                      <Text style={[styles.loanGroupSubInfo, { color: colors.textMuted }]}>
+                        Detajet e plota të kredisë
+                      </Text>
+                    </View>
+
+                    {/* Custom Admin Fee Input Row */}
+                    <View
+                      style={[
+                        styles.loanCustomInputRow,
+                        { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder, marginBottom: 10 },
+                      ]}
+                    >
+                      <View style={styles.loanCustomInputLabelCol}>
+                        <Text style={[styles.loanCustomInputLabel, { color: colors.textPrimary }]}>
+                          Tarifa administrative e bankës
+                        </Text>
+                        <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
+                          Shuma e tarifës: {fmtInt(loanEstimate.adminFee)} €
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.loanMiniInputBox,
+                          { backgroundColor: colors.surface, borderColor: specularBorder },
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.loanMiniInput, { color: colors.textPrimary }]}
+                          placeholder="0.5"
+                          placeholderTextColor={colors.textLight}
+                          value={customAdminFeePctStr}
+                          onChangeText={(val) => {
+                            const clean = val.replace(',', '.').replace(/[^\d.]/g, '').slice(0, 4)
+                            setCustomAdminFeePctStr(clean)
+                          }}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                        />
+                        <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
+                      </View>
+                    </View>
+
+                    {/* Ledger Rows */}
                     <View style={styles.loanBreakRow}>
                       <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
-                        Pjesëmarrja fillestare
+                        Vlera e plotë e pronës
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {formatPrice(listing.price)}
+                      </Text>
+                    </View>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Pjesëmarrja fillestare ({loanDownPct}%)
                       </Text>
                       <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
                         {fmtInt(loanEstimate.downPaymentAmount)} €
@@ -1307,7 +1974,7 @@ export default function ListingDetailScreen() {
                     </View>
                     <View style={styles.loanBreakRow}>
                       <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
-                        Shuma e kredisë
+                        Shuma e kredisë (Kryegjëja)
                       </Text>
                       <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
                         {fmtInt(loanEstimate.loanAmount)} €
@@ -1315,7 +1982,41 @@ export default function ListingDetailScreen() {
                     </View>
                     <View style={styles.loanBreakRow}>
                       <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
-                        Interesi total ({loanEstimate.totalPayments} këste)
+                        Kohëzgjatja totale
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {loanYears} vjet ({loanEstimate.totalPayments} këste)
+                      </Text>
+                    </View>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Norma vjetore e interesit
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {loanRate.toFixed(1).replace('.', ',')}%
+                      </Text>
+                    </View>
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Modeli i zgjedhur
+                      </Text>
+                      <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
+                        {loanMethod === 'annuity' ? 'Këste fikse (Anuitet)' : 'Këste zbritëse'}
+                      </Text>
+                    </View>
+                    {loanEstimate.extraMonthly > 0 && (
+                      <View style={styles.loanBreakRow}>
+                        <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                          Pagesë e parakohshme mujore
+                        </Text>
+                        <Text style={[styles.loanBreakValue, { color: brandHighlight }]}>
+                          + {fmtInt(loanEstimate.extraMonthly)} €/muaj
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.loanBreakRow}>
+                      <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
+                        Interesi total gjatë afatit
                       </Text>
                       <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
                         {fmtInt(loanEstimate.totalInterest)} €
@@ -1358,7 +2059,7 @@ export default function ListingDetailScreen() {
                     )}
                     <View style={styles.loanBreakRow}>
                       <Text style={[styles.loanBreakLabel, { color: colors.textMuted }]}>
-                        Tarifa administrative (njëherësh)
+                        Tarifa administrative ({loanEstimate.adminFeePct}%)
                       </Text>
                       <Text style={[styles.loanBreakValue, { color: colors.textPrimary }]}>
                         {fmtInt(loanEstimate.adminFee)} €
@@ -1371,7 +2072,7 @@ export default function ListingDetailScreen() {
                           { color: colors.textPrimary, fontFamily: Fonts.bold },
                         ]}
                       >
-                        Kostoja totale e kredisë
+                        Kostoja totale e kthimit
                       </Text>
                       <Text
                         style={[
@@ -1384,16 +2085,16 @@ export default function ListingDetailScreen() {
                     </View>
                   </View>
 
-                  {/* Cost structure: principal vs interest vs fees, to scale */}
+                  {/* Cost structure bar: principal vs interest vs fees */}
                   <View style={styles.loanCostBar}>
                     <View
                       style={{
-                        flex: loanEstimate.loanAmount,
+                        flex: Math.max(1, loanEstimate.loanAmount),
                         backgroundColor: theme === 'green' ? colors.gold : colors.primary,
                       }}
                     />
-                    <View style={{ flex: loanEstimate.totalInterest, backgroundColor: colors.textMuted }} />
-                    <View style={{ flex: loanEstimate.adminFee, backgroundColor: colors.border }} />
+                    <View style={{ flex: Math.max(1, loanEstimate.totalInterest), backgroundColor: colors.textMuted }} />
+                    <View style={{ flex: Math.max(1, loanEstimate.adminFee), backgroundColor: colors.border }} />
                   </View>
                   <View style={styles.loanCostLegendRow}>
                     <View style={styles.loanLegendItem}>
@@ -1421,52 +2122,8 @@ export default function ListingDetailScreen() {
                     </View>
                   </View>
 
-                  {/* Optional affordability check — DTI against prudent bank norm */}
-                  <Text style={[styles.loanGroupLabel, { color: colors.textMuted }]}>
-                    Përballueshmëria (opsionale)
-                  </Text>
-                  <View
-                    style={[
-                      styles.loanIncomeRow,
-                      { backgroundColor: colors.surfaceSubtle, borderColor: specularBorder },
-                    ]}
-                  >
-                    <Text style={[styles.loanIncomeLabel, { color: colors.textMuted }]}>
-                      Të ardhurat neto mujore
-                    </Text>
-                    <TextInput
-                      style={[styles.loanIncomeInput, { color: colors.textPrimary }]}
-                      placeholder="psh. 800"
-                      placeholderTextColor={colors.textLight}
-                      value={incomeStr}
-                      onChangeText={(v) => setIncomeStr(v.replace(/[^\d]/g, '').slice(0, 6))}
-                      keyboardType="number-pad"
-                      returnKeyType="done"
-                    />
-                    <Text style={[styles.loanIncomeSuffix, { color: colors.textMuted }]}>€</Text>
-                  </View>
-                  {loanEstimate.dti != null && (
-                    <Text
-                      style={[
-                        styles.loanDtiText,
-                        {
-                          color:
-                            loanEstimate.dti <= 0.4
-                              ? colors.textSecondary
-                              : theme === 'green'
-                              ? colors.gold
-                              : '#B45309',
-                        },
-                      ]}
-                    >
-                      Kësti i parë = {(loanEstimate.dti * 100).toFixed(0)}% e të ardhurave • kufiri
-                      prudent i bankave ≈ 40%
-                    </Text>
-                  )}
-
                   <Text style={[styles.mortgageDisclaimer, { color: colors.textMuted }]}>
-                    Vlerësim orientues i kushteve të tregut kosovar (norma 3,8–5,5%). Nuk është
-                    ofertë e detyrueshme — kushtet finale i përcakton banka juaj.
+                    Vlerësim orientues sipas praktikave të zakonshme të bankave në Kosovë (3,8–5,5%). Kushtet finale miratohen nga banka juaj.
                   </Text>
                 </View>
               )}
@@ -1656,92 +2313,92 @@ export default function ListingDetailScreen() {
             </View>
           ) : (
             <View style={styles.buyerActionGrid}>
-              {/* Left Column: Price Anchor with Subtitle */}
-              <View style={styles.bottomPriceCol}>
-                <Text style={[styles.bottomPriceValue, { color: brandHighlight }]}>
-                  {formatPrice(listing.price)}
+              {/* 1. Direct Phone / Voice Call Action */}
+              <TactilePressable
+                activeScale={0.93}
+                haptic="medium"
+                style={[
+                  styles.actionCallBtn,
+                  {
+                    backgroundColor: colors.surfaceSubtle,
+                    borderColor: specularBorder,
+                  },
+                ]}
+                onPress={handleCall}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel="Telefono shitësin"
+              >
+                <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
+                <Text
+                  style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  Telefono
                 </Text>
-                <Text style={[styles.bottomPriceSub, { color: colors.textMuted }]}>
-                  {listing.type === 'shitje' && listing.area_m2
-                    ? `≈ ${new Intl.NumberFormat('de-DE').format(Math.round(listing.price / listing.area_m2))} €/m²`
-                    : listing.type === 'qira'
-                    ? 'Kësti mujor'
-                    : 'Çmimi i plotë'}
+              </TactilePressable>
+
+              {/* 2. WhatsApp Direct Action */}
+              <TactilePressable
+                activeScale={0.93}
+                haptic="medium"
+                style={styles.actionWhatsAppBtn}
+                onPress={() => handleWhatsApp()}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel="Bisedo në WhatsApp"
+              >
+                <MessageCircle
+                  size={17}
+                  color="#FFFFFF"
+                  strokeWidth={2.4}
+                />
+                <Text
+                  style={styles.actionWhatsAppBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  WhatsApp
                 </Text>
-              </View>
+              </TactilePressable>
 
-              {/* Right Column: High-Conversion Tactile Actions */}
-              <View style={styles.bottomActionsCol}>
-                {/* 1. Direct Cellular / Voice Call Button */}
-                <TactilePressable
-                  activeScale={0.92}
-                  haptic="medium"
-                  style={[
-                    styles.roundCallIconBtn,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor: specularBorder,
-                    },
-                  ]}
-                  onPress={handleCall}
-                  hitSlop={6}
-                  accessibilityLabel="Telefono shitësin"
-                >
-                  <Phone size={18} color={colors.textPrimary} strokeWidth={2.2} />
-                </TactilePressable>
-
-                {/* 2. WhatsApp Direct Button — solid, stable, and synchronous brand green from frame 0 */}
-                <TactilePressable
-                  activeScale={0.94}
-                  haptic="medium"
-                  style={styles.whatsAppActionPill}
-                  onPress={() => handleWhatsApp()}
-                  hitSlop={6}
-                  accessibilityLabel="Bisedo në WhatsApp"
-                >
-                  <MessageCircle
-                    size={17}
-                    color="#FFFFFF"
-                    strokeWidth={2.4}
-                  />
-                  <Text style={styles.whatsAppActionPillText}>
-                    WhatsApp
-                  </Text>
-                </TactilePressable>
-
-                {/* 3. In-App Direct Chat Primary CTA */}
-                <TactilePressable
-                  activeScale={0.94}
-                  haptic="medium"
-                  style={[
-                    styles.primaryChatCta,
-                    { backgroundColor: brandHighlight },
-                  ]}
-                  onPress={() => handleChat()}
-                  disabled={startingChat}
-                  hitSlop={6}
-                >
-                  {startingChat ? (
-                    <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
-                  ) : (
-                    <>
-                      <MessageSquare
-                        size={17}
-                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                        strokeWidth={2.4}
-                      />
-                      <Text
-                        style={[
-                          styles.primaryChatCtaText,
-                          { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                        ]}
-                      >
-                        Bisedo
-                      </Text>
-                    </>
-                  )}
-                </TactilePressable>
-              </View>
+              {/* 3. In-App Direct Chat Primary Action ("Bisedo") */}
+              <TactilePressable
+                activeScale={0.93}
+                haptic="medium"
+                style={[
+                  styles.actionChatBtn,
+                  { backgroundColor: brandHighlight },
+                ]}
+                onPress={() => handleChat()}
+                disabled={startingChat}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel="Bisedo në aplikacion"
+              >
+                {startingChat ? (
+                  <ActivityIndicator size="small" color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
+                ) : (
+                  <>
+                    <MessageSquare
+                      size={17}
+                      color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                      strokeWidth={2.4}
+                    />
+                    <Text
+                      style={[
+                        styles.actionChatBtnText,
+                        { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      Bisedo
+                    </Text>
+                  </>
+                )}
+              </TactilePressable>
             </View>
           )}
         </View>
@@ -1772,6 +2429,9 @@ export default function ListingDetailScreen() {
         listingTitle={listing?.title}
         counterpartUserId={listing?.user_id ?? null}
         isSignedIn={Boolean(currentUser)}
+        counterpartEmailVerified={
+          typeof seller?.email_verified === 'boolean' ? seller.email_verified : undefined
+        }
       />
     </View>
   )
@@ -1802,7 +2462,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // 1. Dynamic Floating & Sticky Top Navigation Bar
+  // 1. Dynamic Floating & Sticky Top Navigation Bar (Apple & Airbnb-tier)
   floatingNavSafeArea: {
     position: 'absolute',
     top: 0,
@@ -1810,44 +2470,92 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 30,
   },
+  floatingNavBackground: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
   floatingNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    height: 52,
+    height: 54,
   },
-  navCenterContent: {
+  navCenterFlex: {
     flex: 1,
-    alignItems: 'center',
+    height: 54,
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    overflow: 'hidden',
   },
   navStickyTitle: {
     fontSize: 13.5,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
+    letterSpacing: -0.25,
+    textAlign: 'center',
+    maxWidth: '100%',
+  },
+  navStickySubLine: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    maxWidth: '100%',
+    marginTop: 1.5,
   },
   navStickyPrice: {
-    fontSize: 12,
-    fontFamily: Fonts.extraBold,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
   },
-  navCircleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  navStickyLocation: {
+    fontFamily: Fonts.medium,
+  },
+  navActionBtnWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderCurve: 'continuous',
+    position: 'relative',
+  },
+  navCircleFloatingLens: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(0, 0, 0, 0.55)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.28)',
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.28)' : 'rgba(0, 0, 0, 0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.26)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  navCircleStickyDisc: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  navOpticalCenter: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
 
   // 2. Cinematic Hero Gallery
@@ -2148,16 +2856,44 @@ const styles = StyleSheet.create({
   },
 
   // 8. Mortgage & Affordability Engine
-  loanHeadRow: {
+  loanCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginBottom: 14,
+  },
+  loanCardIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loanOverline: {
-    fontSize: 10.5,
-    letterSpacing: 1.1,
+    fontSize: 11,
+    letterSpacing: 0.8,
     fontFamily: Fonts.bold,
-    marginBottom: 6,
+  },
+  loanHeaderSubTitle: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+  loanHeroBox: {
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  loanHeroLabel: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.2,
+    marginBottom: 4,
   },
   loanHeadlineRow: {
     flexDirection: 'row',
@@ -2165,38 +2901,49 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   loanBigValue: {
-    fontSize: 30,
-    fontFamily: Fonts.bold,
+    fontSize: 32,
+    fontFamily: Fonts.black,
     letterSpacing: -0.8,
     fontVariant: ['tabular-nums'],
   },
   loanPerMonth: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: Fonts.medium,
   },
   loanHeadSub: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontFamily: Fonts.medium,
-    marginTop: 4,
-  },
-  loanExpandedBody: {
     marginTop: 6,
   },
+  loanSectionGroup: {
+    marginTop: 14,
+  },
+  loanSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   loanGroupLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
     letterSpacing: 0.2,
     fontFamily: Fonts.semiBold,
-    marginTop: 16,
-    marginBottom: 8,
+  },
+  loanGroupSubInfo: {
+    fontSize: 12,
+    fontFamily: Fonts.medium,
+    fontVariant: ['tabular-nums'],
   },
   loanChipRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    gap: 6,
+    width: '100%',
   },
   loanChip: {
-    paddingHorizontal: 14,
+    flex: 1,
     paddingVertical: 9,
+    paddingHorizontal: 2,
     borderRadius: 12,
     borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
@@ -2204,8 +2951,233 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loanChipText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontVariant: ['tabular-nums'],
+    textAlign: 'center',
+  },
+  loanCustomInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginTop: 8,
+    gap: 8,
+  },
+  loanCustomInputLabelCol: {
+    flex: 1,
+    paddingRight: 6,
+  },
+  loanCustomInputLabel: {
+    fontSize: 12,
+    fontFamily: Fonts.semiBold,
+  },
+  loanCustomInputSub: {
+    fontSize: 10.5,
+    fontFamily: Fonts.regular,
+    marginTop: 1,
+  },
+  loanMiniInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 9,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    gap: 3,
+    minWidth: 64,
+  },
+  loanMiniInput: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    paddingVertical: 0,
+    minWidth: 34,
+  },
+  loanInputUnit: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+  },
+  loanQuickStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    marginTop: 16,
+    marginBottom: 14,
+  },
+  loanQuickStatCol: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  loanQuickStatLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+  },
+  loanQuickStatVal: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
+  },
+  loanQuickStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 24,
+  },
+  loanAdvancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 2,
+  },
+  loanAdvancedToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  loanAdvancedToggleText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.semiBold,
+  },
+  loanExpandedBody: {
+    marginTop: 8,
+  },
+  loanSegmentRow: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 3,
+    gap: 3,
+    marginTop: 6,
+  },
+  loanSegmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 9,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loanSegmentBtnText: {
+    fontSize: 12,
+    letterSpacing: -0.1,
+  },
+  loanMethodExplainer: {
+    borderRadius: 10,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    marginTop: 8,
+  },
+  loanMethodExplainerText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+    lineHeight: 16,
+  },
+  loanIncomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 6,
+    gap: 8,
+  },
+  loanIncomeLabel: {
+    fontSize: 12.5,
+    fontFamily: Fonts.semiBold,
+  },
+  loanIncomeSub: {
+    fontSize: 11,
+    fontFamily: Fonts.regular,
+    marginTop: 1,
+  },
+  loanIncomeInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
+    minWidth: 80,
+  },
+  loanIncomeInput: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    paddingVertical: 0,
+    minWidth: 44,
+  },
+  loanIncomeSuffix: {
+    fontSize: 13,
+    fontFamily: Fonts.medium,
+  },
+  loanDtiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 10,
+    borderCurve: 'continuous',
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  loanDtiText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    lineHeight: 16,
+    flex: 1,
+  },
+  loanAffordMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+    marginTop: 10,
+  },
+  loanAffordMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  loanAffordMetricLabel: {
+    fontSize: 10.5,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
+  },
+  loanAffordMetricVal: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    fontVariant: ['tabular-nums'],
+  },
+  loanAffordMetricDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
   },
   loanBreakBox: {
     marginTop: 18,
@@ -2227,29 +3199,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.bold,
     fontVariant: ['tabular-nums'],
-  },
-  loanSegmentRow: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 3,
-    gap: 3,
-    marginTop: 16,
-  },
-  loanSegmentBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loanSegmentBtnText: {
-    fontSize: 12.5,
-    letterSpacing: -0.1,
   },
   loanCostBar: {
     flexDirection: 'row',
@@ -2280,44 +3229,11 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontVariant: ['tabular-nums'],
   },
-  loanIncomeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  loanIncomeLabel: {
-    flex: 1,
-    fontSize: 12.5,
-    fontFamily: Fonts.medium,
-  },
-  loanIncomeInput: {
-    width: 84,
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'right',
-    paddingVertical: 0,
-  },
-  loanIncomeSuffix: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
-  },
-  loanDtiText: {
-    fontSize: 11.5,
-    fontFamily: Fonts.medium,
-    lineHeight: 16,
-    marginTop: -4,
-  },
   mortgageDisclaimer: {
     fontSize: 10.5,
     fontFamily: Fonts.regular,
     lineHeight: 14,
-    marginTop: 12,
+    marginTop: 14,
   },
 
   // 9. Host & Agency Identity Card
@@ -2442,7 +3358,7 @@ const styles = StyleSheet.create({
   },
   bottomBarContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
@@ -2451,75 +3367,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
-  },
-  bottomPriceCol: {
-    justifyContent: 'center',
-    gap: 1,
-    minWidth: 100,
-  },
-  bottomPriceValue: {
-    fontSize: 19,
-    fontFamily: Fonts.black,
-    letterSpacing: -0.4,
-  },
-  bottomPriceSub: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-  },
-  bottomActionsCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
-    flex: 1,
-    justifyContent: 'flex-end',
+    width: '100%',
   },
-  roundCallIconBtn: {
-    width: 44,
-    height: 44,
+  actionCallBtn: {
+    flex: 1,
+    height: 48,
     borderRadius: 14,
     borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  whatsAppActionPill: {
-    backgroundColor: '#25D366',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 13,
-    paddingVertical: 12,
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
+  },
+  actionCallBtnText: {
+    fontSize: 13,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
+  },
+  actionWhatsAppBtn: {
+    flex: 1,
+    height: 48,
+    backgroundColor: '#25D366',
     borderRadius: 14,
     borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
     shadowColor: '#25D366',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.22,
     shadowRadius: 5,
     elevation: 3,
   },
-  whatsAppActionPillText: {
+  actionWhatsAppBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
   },
-  primaryChatCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  actionChatBtn: {
+    flex: 1,
+    height: 48,
     borderRadius: 14,
     borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 5,
     elevation: 3,
   },
-  primaryChatCtaText: {
-    fontSize: 13.5,
+  actionChatBtnText: {
+    fontSize: 13,
     fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
   },
   ownerBarContent: {
     flexDirection: 'row',

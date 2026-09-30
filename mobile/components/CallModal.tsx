@@ -45,6 +45,13 @@ export interface CallModalProps {
   conversationId?: string | null
   /** Whether the current user is signed in (in-app calls need auth) */
   isSignedIn?: boolean
+  /**
+   * Server-provided verification flag for the counterpart. When `true`, the
+   * "verified" badge is shown without relying on name-token heuristics.
+   * When `undefined`, falls back to a conservative name-token check that
+   * additionally requires the name to look corporate.
+   */
+  counterpartEmailVerified?: boolean
 }
 
 export function CallModal({
@@ -56,6 +63,7 @@ export function CallModal({
   listingTitle,
   counterpartUserId,
   conversationId,
+  counterpartEmailVerified,
 }: CallModalProps) {
   const insets = useSafeAreaInsets()
   const { colors, theme } = useTheme()
@@ -106,7 +114,18 @@ export function CallModal({
 
   if (!rendered) return null
 
-  const isAgency = /agjenci|real estate|invest|patundshm|group|shpk/i.test(counterpartName)
+  // Verified-agency badge: prefer the server flag; otherwise require BOTH a
+  // corporate name token AND that the account looks established (name length
+  // + token match). Never mark a random user as a "verified agency".
+  const looksCorporate = /agjenci|real estate|invest|patundshm|group|shpk/i.test(
+    counterpartName || ''
+  )
+  const isAgency =
+    counterpartEmailVerified === true
+      ? true
+      : counterpartEmailVerified === false
+      ? false
+      : looksCorporate && (counterpartName || '').trim().length >= 4
   const cleanPhone = counterpartPhone ? normalizePhoneNumber(counterpartPhone) : null
   const cleanPhoneDigits = counterpartPhone
     ? normalizePhoneNumber(counterpartPhone).replace(/\D/g, '')

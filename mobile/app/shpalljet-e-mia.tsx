@@ -1034,10 +1034,8 @@ export default function ShpalljetEMiaScreen() {
 
   const renderListingItem = useCallback(
     ({ item }: { item: Listing }) => {
-      const mainImage =
-        item.images && item.images.length > 0
-          ? item.images[0]
-          : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'
+      // Local brand placeholder — never hot-link Unsplash.
+      const mainImage = item.images && item.images.length > 0 ? item.images[0] : null
 
       if (mainTab === 'saved') {
         return (
@@ -1052,12 +1050,32 @@ export default function ShpalljetEMiaScreen() {
               style={[styles.cardCover, { height: coverHeight }]}
               onPress={() => router.push(`/listings/${item.id}` as any)}
             >
-              <Image
-                source={{ uri: mainImage }}
-                style={styles.coverImage}
-                contentFit="cover"
-                transition={200}
-              />
+              {mainImage ? (
+                <Image
+                  source={{ uri: mainImage }}
+                  style={styles.coverImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.coverImage,
+                    {
+                      backgroundColor:
+                        theme === 'green'
+                          ? 'rgba(212, 175, 55, 0.12)'
+                          : theme === 'black'
+                          ? 'rgba(255,255,255,0.04)'
+                          : 'rgba(0,103,91,0.08)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                  ]}
+                >
+                  <Building2 size={36} color={colors.textMuted} strokeWidth={1.5} />
+                </View>
+              )}
 
               <View style={styles.coverBadgesRow}>
                 <View
@@ -1186,12 +1204,33 @@ export default function ShpalljetEMiaScreen() {
             style={[styles.cardCover, { height: coverHeight }]}
             onPress={() => router.push(`/listings/${item.id}` as any)}
           >
-            <Image
-              source={{ uri: mainImage }}
-              style={[styles.coverImage, !active && { opacity: 0.58 }]}
-              contentFit="cover"
-              transition={200}
-            />
+            {mainImage ? (
+              <Image
+                source={{ uri: mainImage }}
+                style={[styles.coverImage, !active && { opacity: 0.58 }]}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.coverImage,
+                  !active && { opacity: 0.58 },
+                  {
+                    backgroundColor:
+                      theme === 'green'
+                        ? 'rgba(212, 175, 55, 0.12)'
+                        : theme === 'black'
+                        ? 'rgba(255,255,255,0.04)'
+                        : 'rgba(0,103,91,0.08)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <Building2 size={36} color={colors.textMuted} strokeWidth={1.5} />
+              </View>
+            )}
 
             {/* Off-market stamp. A sold / rented listing keeps its full record and
                 photo history — it is only *marked* as closed, never deleted. */}

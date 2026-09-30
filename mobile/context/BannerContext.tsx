@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react'
+import React, { createContext, useContext, useState, useRef, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -353,8 +353,13 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         : 'rgba(255, 255, 255, 0.16)'
       : 'rgba(255, 255, 255, 0.90)'
 
+  const contextValue = useMemo(
+    () => ({ showBanner, hideBanner }),
+    [showBanner, hideBanner]
+  )
+
   return (
-    <BannerContext.Provider value={{ showBanner, hideBanner }}>
+    <BannerContext.Provider value={contextValue}>
       {children}
 
       <View

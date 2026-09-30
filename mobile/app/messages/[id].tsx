@@ -68,6 +68,7 @@ interface OtherUser {
   phone?: string | null
   avatar_url?: string | null
   is_agency?: boolean
+  email_verified?: boolean
 }
 
 interface ListingPreview {
@@ -221,9 +222,7 @@ export default function ChatConversationScreen() {
           listing_id,
           buyer_id,
           seller_id,
-          listings ( id, title, price, city, type, images ),
-          buyer:buyer_id ( id, first_name, last_name, phone, avatar_url ),
-          seller:seller_id ( id, first_name, last_name, phone, avatar_url )
+          listings ( id, title, price, city, type, images )
         `)
         .eq('id', id)
         .single()
@@ -237,10 +236,43 @@ export default function ChatConversationScreen() {
 
       if (convData && isMountedRef.current) {
         const isBuyer = user.id === convData.buyer_id
-        const counterpart: any = isBuyer ? convData.seller : convData.buyer
+        const counterpartId: string | undefined = isBuyer
+          ? convData.seller_id
+          : convData.buyer_id
+
+        let counterpart: any = null
+        if (counterpartId) {
+          // Identity from profiles_public (RLS-safe for other users); phone
+          // from profiles (RLS may null it for other users — correct privacy).
+          const [pubRes, privRes] = await Promise.all([
+            supabase
+              .from('profiles_public')
+              .select('id, first_name, last_name, avatar_url, email_verified')
+              .eq('id', counterpartId)
+              .maybeSingle(),
+            supabase.from('profiles').select('id, phone').eq('id', counterpartId).maybeSingle(),
+          ])
+          if (!isMountedRef.current) return
+          const pub = pubRes.data
+          const priv = privRes.data
+          if (pub) {
+            counterpart = {
+              id: pub.id,
+              first_name: pub.first_name,
+              last_name: pub.last_name,
+              avatar_url: pub.avatar_url,
+              email_verified: pub.email_verified,
+              phone: priv?.phone ?? null,
+            }
+          }
+        }
+
         if (counterpart) {
           const fullName = `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim()
-          const isAgency = /agjenci|real estate|invest|patundshm|group|shpk/i.test(fullName)
+          const emailVerified = Boolean(counterpart.email_verified)
+          // Name-token agency detection only on verified accounts.
+          const isAgency =
+            emailVerified && /agjenci|real estate|invest|patundshm|group|shpk/i.test(fullName)
           setOtherUser({
             id: counterpart.id,
             first_name: counterpart.first_name || (isBuyer ? 'Shitësi' : 'Blerësi'),
@@ -248,6 +280,7 @@ export default function ChatConversationScreen() {
             phone: counterpart.phone,
             avatar_url: counterpart.avatar_url,
             is_agency: isAgency,
+            email_verified: emailVerified,
           })
         }
 
@@ -781,11 +814,11 @@ export default function ChatConversationScreen() {
             }}
           >
             <Image
-              source={{
-                uri:
-                  listing.images?.[0] ||
-                  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80',
-              }}
+              source={
+                listing.images?.[0]
+                  ? { uri: listing.images[0] }
+                  : require('@/assets/images/logo-icon.png')
+              }
               style={styles.listingThumb}
               contentFit="cover"
             />
@@ -1025,6 +1058,9 @@ export default function ChatConversationScreen() {
         listingTitle={listing?.title}
         counterpartUserId={otherUser?.id ?? null}
         conversationId={id}
+        counterpartEmailVerified={
+          typeof otherUser?.email_verified === 'boolean' ? otherUser.email_verified : undefined
+        }
       />
     </View>
   )

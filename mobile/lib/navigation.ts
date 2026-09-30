@@ -65,18 +65,41 @@ export function openRegisterScreen(router: Router, options?: AuthNavigationOptio
 }
 
 /**
+ * Only in-app absolute paths are legal post-auth targets.
+ * Rejects absolute URLs (`https:`, `http:`, `javascript:`), protocol-relative
+ * paths (`//evil.com`), and anything that does not start with `/`.
+ */
+function isSafeInternalRedirect(target: string): boolean {
+  if (!target) return false
+  // Any scheme (http:, https:, javascript:, file:, etc.) — reject.
+  if (/^[a-zA-Z][a-zA-Z0-9+.\-]*:/.test(target)) return false
+  // Protocol-relative or absolute-URL-looking — reject.
+  if (target.startsWith('//')) return false
+  if (target.startsWith('\\')) return false
+  // Must be an in-app absolute path.
+  if (!target.startsWith('/')) return false
+  return true
+}
+
+/**
  * Deterministically resolves post-authentication transitions.
- * Eliminates screen freezes and deadlocks across all authentication providers.
- * If user came from an existing screen on the stack and no divergent route was requested,
- * pops cleanly back to origin with native 60fps stack animation.
- * If an explicit target was requested (or if the stack cannot go back), atomically
- * replaces the auth screen with the destination.
+ *
+ * 1. An explicit internal path (including `/(tabs)/…`) is replaced onto the
+ *    stack — tab targets are legal destinations, not an error.
+ * 2. Unsafe targets (external URLs, schemes) are discarded; we fall through.
+ * 3. If the user pushed the auth screen from an existing view, pop cleanly.
+ * 4. Fallback: replace with the (already sanitized) target or root tabs.
  */
 export function resolveAuthSuccess(router: Router, redirectTo?: string | null): void {
-  const target = redirectTo && redirectTo.trim().length > 0 ? redirectTo.trim() : null
+  const raw = redirectTo && redirectTo.trim().length > 0 ? redirectTo.trim() : null
+  const target = raw && isSafeInternalRedirect(raw) ? raw : null
 
-  // 1. If explicit non-tabs target specified, navigate directly to target
-  if (target && !target.startsWith('/(tabs)')) {
+  if (raw && !target) {
+    console.warn('Post-auth redirectTo rejected (unsafe):', raw)
+  }
+
+  // 1. Explicit internal destination — tabs and non-tabs alike.
+  if (target) {
     try {
       router.replace(target as any)
       return

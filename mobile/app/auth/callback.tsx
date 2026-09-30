@@ -8,14 +8,19 @@ import { safeBack } from '@/lib/navigation'
 
 /**
  * Native OAuth callback route (blejepronen://auth/callback).
- * The OS hands the provider redirect back into the app here — warm intents
- * and cold launches alike — so the session completes natively without any
- * browser detour. iOS auth-session results are handled by the auth screens
- * themselves; this route owns the deep-link path.
+ *
+ * PKCE only: the provider redirect must carry a `code`. Tokens in the URL
+ * (`access_token` / `refresh_token`) are REJECTED — accepting them would
+ * re-open the implicit-flow hole this route exists to close.
  */
 export default function AuthCallbackRoute() {
   const router = useRouter()
-  const params = useLocalSearchParams<{ code?: string; access_token?: string; refresh_token?: string; error?: string }>()
+  const params = useLocalSearchParams<{
+    code?: string
+    access_token?: string
+    refresh_token?: string
+    error?: string
+  }>()
   const handledRef = useRef(false)
 
   useEffect(() => {
@@ -30,12 +35,10 @@ export default function AuthCallbackRoute() {
         if (params.code) {
           const { error } = await supabase.auth.exchangeCodeForSession(params.code)
           if (error) throw error
-        } else if (params.access_token && params.refresh_token) {
-          const { error } = await supabase.auth.setSession({
-            access_token: params.access_token,
-            refresh_token: params.refresh_token,
-          })
-          if (error) throw error
+        } else if (params.access_token || params.refresh_token) {
+          // Implicit-flow tokens in the deep-link URL — refuse. PKCE is required.
+          console.warn('AuthCallback: rejected URL-borne tokens (PKCE required)')
+          throw new Error('pkce_required')
         } else {
           throw new Error(params.error || 'missing_credentials')
         }
