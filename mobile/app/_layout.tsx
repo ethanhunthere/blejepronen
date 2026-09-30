@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
-import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react'
+import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import {
   Stack,
   ThemeProvider as NavigationThemeProvider,
@@ -84,7 +84,13 @@ export default function RootLayout() {
 function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { colors, theme, isThemeLoaded } = useTheme()
   const [isCacheHydrated, setIsCacheHydrated] = useState(false)
+  const [hasLaidOut, setHasLaidOut] = useState(false)
   const [hasHiddenSplash, setHasHiddenSplash] = useState(false)
+  const [splashAnimDone, setSplashAnimDone] = useState(false)
+  const hideStartedRef = useRef(false)
+
+  const BRAND_HOLD_MS = 450
+  const SPLASH_FAILSAFE_MS = 2800
 
   // Synchronize native root window background color asynchronously without blocking UI paint
   useEffect(() => {
@@ -114,28 +120,29 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   const isAppReady = fontsLoaded && isThemeLoaded && isCacheHydrated
 
-  // Fallback safety timeout: guarantee splash never hangs even under cold storage stalls
+  // Native→JS handoff: hold the brand beat, drop native splash, THEN release the JS choreography.
+  useEffect(() => {
+    if (!isAppReady || !hasLaidOut || hideStartedRef.current) return
+    hideStartedRef.current = true
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync()
+        .catch(() => {})
+        .finally(() => setHasHiddenSplash(true))
+    }, BRAND_HOLD_MS)
+    return () => clearTimeout(timer)
+  }, [isAppReady, hasLaidOut])
+
+  // Guaranteed exit: never trap the user behind the brand layer.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!hasHiddenSplash) {
-        setHasHiddenSplash(true)
-        SplashScreen.hideAsync().catch(() => {})
-      }
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [hasHiddenSplash])
-
-  // Native Layout Gated Dismissal: Drops splash ONLY when root view has drawn its first frame
-  const onLayoutRootView = useCallback(async () => {
-    if (isAppReady && !hasHiddenSplash) {
+      SplashScreen.hideAsync().catch(() => {})
       setHasHiddenSplash(true)
-      try {
-        await SplashScreen.hideAsync()
-      } catch {
-        // Non-fatal if already dismissed
-      }
-    }
-  }, [isAppReady, hasHiddenSplash])
+      setSplashAnimDone(true)
+    }, SPLASH_FAILSAFE_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const onLayoutRootView = useCallback(() => setHasLaidOut(true), [])
 
   const navTheme = useMemo(() => {
     const isDark = theme !== 'white'
@@ -165,7 +172,10 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
       onLayout={onLayoutRootView}
     >
       <NavigationThemeProvider value={navTheme}>
-        <StatusBar style={theme === 'white' ? 'dark' : 'light'} />
+        <StatusBar
+          style={theme === 'white' ? 'dark' : 'light'}
+          hidden={!splashAnimDone}
+        />
         <BiometricGate />
         <CallGate />
         <Stack
@@ -207,7 +217,10 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="+not-found" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
         </Stack>
       </NavigationThemeProvider>
-      <SplashHandover isReady={hasHiddenSplash} />
+      <SplashHandover
+        isReady={hasHiddenSplash}
+        onComplete={() => setSplashAnimDone(true)}
+      />
     </GestureHandlerRootView>
   )
 }

@@ -1,130 +1,257 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { StyleSheet, View, Image } from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { AccessibilityInfo, Image, Platform, StyleSheet, View } from 'react-native'
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
   runOnJS,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated'
 
 interface SplashHandoverProps {
-  /**
-   * Set to true once fonts, cache, and theme are loaded, and the first native frame has drawn.
-   */
   isReady: boolean
-  /**
-   * Optional callback fired once the handover transition finishes and the overlay unmounts.
-   */
   onComplete?: () => void
 }
 
-const SPLASH_BG = '#00675B'
-const LOGO_SIZE = 180
+const EMERALD = '#00675B'
+const LOGO_SIZE = 250
+const TOTAL_MS = 1100
+const REDUCED_MS = 360
+const FAILSAFE_MS = 2600
+
+const clamp01 = (t: number): number => {
+  'worklet'
+  return t < 0 ? 0 : t > 1 ? 1 : t
+}
+
+const segment = (p: number, start: number, end: number): number => {
+  'worklet'
+  return clamp01((p - start) / (end - start))
+}
+
+const easeOutExpo = (t: number): number => {
+  'worklet'
+  return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)
+}
+
+const easeInOutCubic = (t: number): number => {
+  'worklet'
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+const breathPulse = (t: number): number => {
+  'worklet'
+  return Math.sin(t * Math.PI)
+}
 
 export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
   const [isFinished, setIsFinished] = useState(false)
+  const startedRef = useRef(false)
+  const completedRef = useRef(false)
 
-  // GPU-accelerated driver values (transform & opacity only)
-  const containerOpacity = useSharedValue(1)
-  const logoScale = useSharedValue(1)
-  const logoOpacity = useSharedValue(1)
+  const progress = useSharedValue(0)
+  const reduceMotionSV = useSharedValue(0)
+
+  const logoScaleSV = useDerivedValue(() => {
+    if (reduceMotionSV.value === 1) {
+      return 1 + easeOutExpo(segment(progress.value, 0.45, 1)) * 0.04
+    }
+    const breath = breathPulse(segment(progress.value, 0.07, 0.38)) * 0.048
+    const ignite = easeOutExpo(segment(progress.value, 0.38, 0.72)) * 0.32
+    return 1 + breath + ignite
+  })
+
+  const logoOpacitySV = useDerivedValue(() => {
+    if (reduceMotionSV.value === 1) {
+      return 1 - segment(progress.value, 0.45, 1)
+    }
+    return 1 - easeOutExpo(segment(progress.value, 0.43, 0.72))
+  })
+
+  const bloomScaleSV = useDerivedValue(() => {
+    if (reduceMotionSV.value === 1) {
+      return 1 + easeOutExpo(segment(progress.value, 0.2, 1)) * 0.6
+    }
+    const breath = breathPulse(segment(progress.value, 0.07, 0.38)) * 0.14
+    const ignite = easeOutExpo(segment(progress.value, 0.38, 0.88)) * 2.85
+    return 1 + breath + ignite
+  })
+
+  const bloomOpacitySV = useDerivedValue(() => {
+    if (reduceMotionSV.value === 1) {
+      return (1 - segment(progress.value, 0.35, 0.9)) * 0.35
+    }
+    const enter = easeOutExpo(segment(progress.value, 0.07, 0.32))
+    const exit = 1 - easeOutExpo(segment(progress.value, 0.48, 0.9))
+    return Math.min(enter, exit)
+  })
+
+  const veilOpacitySV = useDerivedValue(() => {
+    return 1 - easeInOutCubic(segment(progress.value, 0.65, 1))
+  })
+
+  const veilScaleSV = useDerivedValue(() => {
+    return 1 + easeOutExpo(segment(progress.value, 0.65, 1)) * 0.045
+  })
 
   const handleFinish = useCallback(() => {
+    if (completedRef.current) return
+    completedRef.current = true
     setIsFinished(true)
     onComplete?.()
   }, [onComplete])
 
   useEffect(() => {
-    let unmounted = false
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null
-
-    if (isReady && !isFinished) {
-      // 1. Subtle bloom and scale up of the brand logo
-      logoScale.value = withTiming(1.14, {
-        duration: 440,
-        easing: Easing.bezier(0.16, 1, 0.3, 1), // Apple / Linear fluid curve
+    let alive = true
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (alive && enabled) reduceMotionSV.value = 1
       })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [reduceMotionSV])
 
-      // 2. Soft fade of the logo
-      logoOpacity.value = withTiming(0, {
-        duration: 360,
-        easing: Easing.bezier(0.33, 1, 0.68, 1),
-      })
+  useEffect(() => {
+    if (!isReady || startedRef.current) return
+    let cancelled = false
+    let begun = false
 
-      // 3. Smooth dissolve of the emerald background revealing interactive interface
-      containerOpacity.value = withTiming(
-        0,
-        {
-          duration: 460,
-          easing: Easing.bezier(0.16, 1, 0.3, 1),
-        },
+    const begin = () => {
+      if (cancelled || begun) return
+      begun = true
+      startedRef.current = true
+      const duration = reduceMotionSV.value === 1 ? REDUCED_MS : TOTAL_MS
+      progress.value = withTiming(
+        1,
+        { duration, easing: Easing.linear },
         (finished) => {
           'worklet'
-          if (finished) {
-            runOnJS(handleFinish)()
-          }
+          if (finished) runOnJS(handleFinish)()
         }
       )
-
-      // Guaranteed garbage collection fail-safe: cleans up overlay unconditionally
-      fallbackTimer = setTimeout(() => {
-        if (!unmounted) {
-          handleFinish()
-        }
-      }, 550)
     }
+
+    const timeout = setTimeout(begin, 90)
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (cancelled) return
+        if (enabled) reduceMotionSV.value = 1
+        clearTimeout(timeout)
+        begin()
+      })
+      .catch(() => {
+        clearTimeout(timeout)
+        begin()
+      })
 
     return () => {
-      unmounted = true
-      if (fallbackTimer) {
-        clearTimeout(fallbackTimer)
-      }
+      cancelled = true
+      clearTimeout(timeout)
     }
-  }, [isReady, isFinished, logoScale, logoOpacity, containerOpacity, handleFinish])
+  }, [isReady, progress, reduceMotionSV, handleFinish])
 
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    opacity: containerOpacity.value,
+  useEffect(() => {
+    if (!isReady) return
+    const failsafe = setTimeout(handleFinish, FAILSAFE_MS)
+    return () => clearTimeout(failsafe)
+  }, [isReady, handleFinish])
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacitySV.value,
+    transform: [{ scale: logoScaleSV.value }],
   }))
 
-  const animatedLogoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
+  const bloomStyle = useAnimatedStyle(() => ({
+    opacity: bloomOpacitySV.value,
+    transform: [{ scale: bloomScaleSV.value }],
   }))
 
-  // Once completed, unmount completely from memory
-  if (isFinished) {
-    return null
-  }
+  const veilStyle = useAnimatedStyle(() => ({
+    opacity: veilOpacitySV.value,
+    transform: [{ scale: veilScaleSV.value }],
+  }))
+
+  if (isFinished) return null
 
   return (
     <Animated.View
-      style={[styles.container, animatedContainerStyle]}
       pointerEvents={isReady ? 'none' : 'auto'}
-      accessibilityElementsHidden={true}
+      accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
+      style={[styles.root, veilStyle]}
     >
-      <Animated.View style={[styles.logoWrapper, animatedLogoStyle]}>
-        <Image
-          source={require('@/assets/images/splash-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-      </Animated.View>
+      <View style={styles.stage} pointerEvents="none">
+        <Animated.View style={[styles.bloom, bloomStyle]}>
+          <View style={[styles.bloomLayer, styles.bloomOuter]} />
+          <View style={[styles.bloomLayer, styles.bloomMid]} />
+          <View style={[styles.bloomLayer, styles.bloomCore]} />
+        </Animated.View>
+        <Animated.View style={[styles.logoBox, logoStyle]}>
+          <Image
+            source={require('@/assets/images/splash-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+            fadeDuration={0}
+            accessible={false}
+          />
+        </Animated.View>
+      </View>
     </Animated.View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: SPLASH_BG,
+  root: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: EMERALD,
+    zIndex: 999999,
+    overflow: 'hidden',
+    ...(Platform.OS === 'web' ? { position: 'fixed' as const } : null),
+  },
+  stage: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 999999,
   },
-  logoWrapper: {
+  bloom: {
+    position: 'absolute',
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bloomLayer: {
+    position: 'absolute',
+    borderRadius: 9999,
+    backgroundColor: '#FFFFFF',
+  },
+  bloomCore: {
+    width: LOGO_SIZE * 1.05,
+    height: LOGO_SIZE * 1.05,
+    opacity: 0.14,
+  },
+  bloomMid: {
+    width: LOGO_SIZE * 1.7,
+    height: LOGO_SIZE * 1.7,
+    opacity: 0.07,
+  },
+  bloomOuter: {
+    width: LOGO_SIZE * 2.5,
+    height: LOGO_SIZE * 2.5,
+    opacity: 0.035,
+  },
+  logoBox: {
     width: LOGO_SIZE,
     height: LOGO_SIZE,
     alignItems: 'center',
