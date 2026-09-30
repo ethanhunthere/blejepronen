@@ -8,16 +8,43 @@
     "scheme": "blejepronen",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#00675B",
+    "splash": {
+      "image": "./assets/images/splash-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#00675B"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.blejepronen.app",
       "backgroundColor": "#00675B",
+      "splash": {
+        "image": "./assets/images/splash-logo.png",
+        "imageWidth": 250,
+        "resizeMode": "contain",
+        "backgroundColor": "#00675B",
+        "tabletBackgroundColor": "#00675B",
+        "dark": {
+          "image": "./assets/images/splash-logo.png",
+          "backgroundColor": "#00675B",
+          "tabletBackgroundColor": "#00675B"
+        }
+      },
       "infoPlist": {
         "NSFaceIDUsageDescription": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj."
       }
     },
     "android": {
       "backgroundColor": "#00675B",
+      "splash": {
+        "image": "./assets/images/splash-logo.png",
+        "imageWidth": 250,
+        "resizeMode": "contain",
+        "backgroundColor": "#00675B",
+        "dark": {
+          "image": "./assets/images/splash-logo.png",
+          "backgroundColor": "#00675B"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#00675B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -54,6 +81,26 @@
             "image": "./assets/images/splash-logo.png",
             "imageWidth": 250,
             "backgroundColor": "#00675B"
+          },
+          "android": {
+            "image": "./assets/images/splash-logo.png",
+            "imageWidth": 250,
+            "resizeMode": "contain",
+            "backgroundColor": "#00675B",
+            "dark": {
+              "image": "./assets/images/splash-logo.png",
+              "backgroundColor": "#00675B"
+            }
+          },
+          "ios": {
+            "image": "./assets/images/splash-logo.png",
+            "imageWidth": 250,
+            "resizeMode": "contain",
+            "backgroundColor": "#00675B",
+            "dark": {
+              "image": "./assets/images/splash-logo.png",
+              "backgroundColor": "#00675B"
+            }
           }
         }
       ],
@@ -67,7 +114,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Bleje Pron\u00ebn p\u00ebrdor galerin\u00eb tuaj p\u00ebr t\u00eb shtuar fotot e banes\u00ebs dhe foton e profilit.",
-          "cameraPermission": "Bleje Pron\u00ebn p\u00ebrdor kamer\u00ebn p\u00ebr t\u00eb fotografuar banes\u00ebn q\u00eb po postoni."
+          "cameraPermission": "Bleje Pron\u00ebn p\u00ebrdor kamer\u00ebn p\u00ebr t\u00eb fotografuar banes\u00ebsn q\u00eb po postoni."
         }
       ],
       [

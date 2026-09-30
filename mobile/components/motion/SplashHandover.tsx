@@ -8,17 +8,18 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
+import { BrandColors } from '@/constants/Colors'
 
 interface SplashHandoverProps {
   isReady: boolean
   onComplete?: () => void
 }
 
-const EMERALD = '#00675B'
+const EMERALD = BrandColors.primary
 const LOGO_SIZE = 250
 const TOTAL_MS = 700
 const REDUCED_MS = 280
-const FAILSAFE_MS = 2400
+const FAILSAFE_MS = 2200
 
 const clamp01 = (t: number): number => {
   'worklet'

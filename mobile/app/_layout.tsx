@@ -1,3 +1,4 @@
+import '@/lib/splash-guard'
 import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
@@ -19,6 +20,7 @@ import {
   AlbertSans_900Black,
 } from '@expo-google-fonts/albert-sans'
 import { ThemeProvider, useTheme } from '@/constants/theme'
+import { BrandColors } from '@/constants/Colors'
 import { StatusBar } from 'expo-status-bar'
 
 import { BannerProvider } from '@/context/BannerContext'
@@ -89,18 +91,21 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const [splashAnimDone, setSplashAnimDone] = useState(false)
   const hideStartedRef = useRef(false)
 
-  const BRAND_HOLD_MS = 380
-  const SPLASH_FAILSAFE_MS = 2400
+  const BRAND_HOLD_MS = 280
+  const SPLASH_FAILSAFE_MS = 2000
 
-  // Synchronize native root window background color asynchronously without blocking UI paint
+  // Pin the Android window to emerald at boot so native splash → JS overlay
+  // never exposes a theme-colored frame.
   useEffect(() => {
-    if (colors?.background && Platform.OS !== 'web') {
-      const raf = requestAnimationFrame(() => {
-        SystemUI.setBackgroundColorAsync(colors.background).catch(() => {})
-      })
-      return () => cancelAnimationFrame(raf)
-    }
-  }, [colors?.background])
+    if (Platform.OS === 'web') return
+    SystemUI.setBackgroundColorAsync(BrandColors.primary).catch(() => {})
+  }, [])
+
+  // After the launch choreography, hand the window back to the active theme.
+  useEffect(() => {
+    if (!splashAnimDone || Platform.OS === 'web' || !colors?.background) return
+    SystemUI.setBackgroundColorAsync(colors.background).catch(() => {})
+  }, [splashAnimDone, colors?.background])
 
   // Concurrent Frame-0 Cache & Asset Pre-hydration
   useEffect(() => {
@@ -168,7 +173,10 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   return (
     <GestureHandlerRootView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{
+        flex: 1,
+        backgroundColor: splashAnimDone ? colors.background : BrandColors.primary,
+      }}
       onLayout={onLayoutRootView}
     >
       <NavigationThemeProvider value={navTheme}>
