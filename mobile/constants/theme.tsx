@@ -634,6 +634,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true
+    // A hung AsyncStorage read must never keep the launch wedged pre-splash.
+    const forceTimer = setTimeout(() => {
+      if (isMounted) setIsThemeLoaded(true)
+    }, 2000)
     async function loadSavedTheme() {
       try {
         const saved = await AsyncStorage.getItem(THEME_STORAGE_KEY)
@@ -651,6 +655,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     loadSavedTheme()
     return () => {
       isMounted = false
+      clearTimeout(forceTimer)
     }
   }, [])
 

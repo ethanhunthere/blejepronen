@@ -37,8 +37,16 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
   const lastBackgroundTime = useRef<number>(0)
   const isMounted = useRef(true)
   const hasAttemptedColdStart = useRef(false)
+  const [relockTick, setRelockTick] = useState(0)
   const onColdStartResolvedRef = useRef(onColdStartResolved)
   onColdStartResolvedRef.current = onColdStartResolved
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   const triggerAuth = useCallback(async () => {
     if (Platform.OS === 'web') {
@@ -59,26 +67,28 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     }
   }, [])
 
-  // Cold Start verification — deferred until launch choreography completes
+  // Cold Start verification — runs at mount, under the opaque splash veil, so
+  // the lock state is known before the handoff finishes. SecureStore reads are
+  // raced with a timeout: fail-open rather than hang the launch behind F3.
   useEffect(() => {
-    if (!active) return
-    isMounted.current = true
-    hasAttemptedColdStart.current = false
+    let cancelled = false
 
     async function checkColdStart() {
       try {
         if (Platform.OS === 'web') {
-          setIsLocked(false)
+          if (!cancelled) setIsLocked(false)
           onColdStartResolvedRef.current?.()
           return
         }
 
-        const [enabled, deviceCap] = await Promise.all([
-          isBiometricLockEnabled(),
-          getDeviceBiometricCapability(),
+        const [enabled, deviceCap] = await Promise.race([
+          Promise.all([isBiometricLockEnabled(), getDeviceBiometricCapability()]),
+          new Promise<[boolean, BiometricCapability]>((resolve) =>
+            setTimeout(() => resolve([false, { supported: false, enrolled: false } as BiometricCapability]), 1500),
+          ),
         ])
 
-        if (!isMounted.current) return
+        if (!isMounted.current || cancelled) return
         setCapability(deviceCap)
 
         if (!deviceCap.supported || !deviceCap.enrolled) {
@@ -90,26 +100,35 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
         if (enabled && !isSessionUnlockedState()) {
           setIsLocked(true)
           onColdStartResolvedRef.current?.()
-          if (!hasAttemptedColdStart.current) {
-            hasAttemptedColdStart.current = true
-            setTimeout(() => {
-              if (isMounted.current) {
-                triggerAuth()
-              }
-            }, 300)
-          }
         } else {
           setIsLocked(false)
           onColdStartResolvedRef.current?.()
         }
       } catch {
-        setIsLocked(false)
+        if (!cancelled) setIsLocked(false)
         onColdStartResolvedRef.current?.()
       }
     }
 
     void checkColdStart()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
+  // Auth attempt is derived state: fires only once the veil is gone
+  // (active) and a lock is requested — cold start or any later relock.
+  useEffect(() => {
+    if (!active || !isLocked) return
+    if (hasAttemptedColdStart.current) return
+    hasAttemptedColdStart.current = true
+    const timer = setTimeout(() => {
+      if (isMounted.current) triggerAuth()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [active, isLocked, relockTick, triggerAuth])
+
+  useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
       const prevState = appState.current
 
@@ -125,12 +144,9 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
 
           if (enabled && devCap.supported && devCap.enrolled && isMounted.current) {
             setSessionUnlocked(false)
+            hasAttemptedColdStart.current = false
             setIsLocked(true)
-            setTimeout(() => {
-              if (isMounted.current) {
-                triggerAuth()
-              }
-            }, 250)
+            setRelockTick((tick) => tick + 1)
           }
         }
       }
@@ -139,10 +155,9 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     })
 
     return () => {
-      isMounted.current = false
       subscription.remove()
     }
-  }, [active, triggerAuth])
+  }, [])
 
   // Emergency safety unlock. Requires a fresh biometric pass BEFORE disabling
   // the lock — otherwise the "emergency" path is a permanent, frictionless
@@ -174,7 +189,9 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     )
   }
 
-  if (!isLocked) return null
+  // Lock UI mounts in the same commit the veil unmounts (active flips) —
+  // no frame of app visible before the gate covers it.
+  if (!(active && isLocked)) return null
 
   const isDark = theme !== 'white'
   const brandHighlight = theme === 'green' ? colors.gold : colors.primary

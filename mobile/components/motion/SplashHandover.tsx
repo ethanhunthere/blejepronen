@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { AccessibilityInfo, Image, Platform, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
@@ -13,6 +13,7 @@ import { BrandColors } from '@/constants/Colors'
 interface SplashHandoverProps {
   isReady: boolean
   onComplete?: () => void
+  onSettle?: () => void
 }
 
 const EMERALD = BrandColors.primary
@@ -55,10 +56,18 @@ const VEIL_START = 0.32
 const WINDUP_SCALE = 0.034
 const RELEASE_SCALE = 0.188
 
-export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
-  const [isFinished, setIsFinished] = useState(false)
+export function SplashHandover({ isReady, onComplete, onSettle }: SplashHandoverProps) {
   const startedRef = useRef(false)
   const completedRef = useRef(false)
+  const settledRef = useRef(false)
+  const onCompleteRef = useRef(onComplete)
+  const onSettleRef = useRef(onSettle)
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+    onSettleRef.current = onSettle
+  })
 
   const progress = useSharedValue(0)
   const motionProfileSV = useSharedValue(0)
@@ -92,12 +101,22 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
     return 1 + easeOutCubic(segment(progress.value, VEIL_START, 1)) * 0.03
   })
 
+  const handleSettle = useCallback(() => {
+    if (settledRef.current) return
+    settledRef.current = true
+    onSettleRef.current?.()
+  }, [])
+
   const handleFinish = useCallback(() => {
+    if (settleTimerRef.current) {
+      clearTimeout(settleTimerRef.current)
+      settleTimerRef.current = null
+    }
+    handleSettle()
     if (completedRef.current) return
     completedRef.current = true
-    setIsFinished(true)
-    onComplete?.()
-  }, [onComplete])
+    onCompleteRef.current?.()
+  }, [handleSettle])
 
   useEffect(() => {
     if (!isReady || startedRef.current) return
@@ -108,10 +127,18 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
       if (cancelled || begun) return
       begun = true
       startedRef.current = true
+      const duration = reduced ? REDUCED_MS : TOTAL_MS
+      settleTimerRef.current = setTimeout(
+        () => {
+          settleTimerRef.current = null
+          if (!cancelled) runOnJS(handleSettle)()
+        },
+        Math.round(duration * 0.55),
+      )
       motionProfileSV.value = reduced ? 1 : 0
       progress.value = withTiming(
         1,
-        { duration: reduced ? REDUCED_MS : TOTAL_MS, easing: Easing.linear },
+        { duration, easing: Easing.linear },
         (finished) => {
           'worklet'
           if (finished) runOnJS(handleFinish)()
@@ -134,8 +161,12 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
     return () => {
       cancelled = true
       clearTimeout(timeout)
+      if (settleTimerRef.current) {
+        clearTimeout(settleTimerRef.current)
+        settleTimerRef.current = null
+      }
     }
-  }, [isReady, progress, motionProfileSV, handleFinish])
+  }, [isReady, progress, motionProfileSV, handleFinish, handleSettle])
 
   useEffect(() => {
     if (!isReady) return
@@ -153,11 +184,9 @@ export function SplashHandover({ isReady, onComplete }: SplashHandoverProps) {
     transform: [{ scale: veilScaleSV.value }],
   }))
 
-  if (isFinished) return null
-
   return (
     <Animated.View
-      pointerEvents={isReady ? 'none' : 'auto'}
+      pointerEvents="auto"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[styles.root, veilStyle]}

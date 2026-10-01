@@ -54,8 +54,6 @@ import { enableScreens, enableFreeze } from 'react-native-screens'
 enableScreens(true)
 enableFreeze(true)
 
-SplashScreen.preventAutoHideAsync().catch(() => {})
-
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     AlbertSans_400Regular,
@@ -89,11 +87,13 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   const [hasLaidOut, setHasLaidOut] = useState(false)
   const [hasHiddenSplash, setHasHiddenSplash] = useState(false)
   const [splashAnimDone, setSplashAnimDone] = useState(false)
+  const [statusBarSettled, setStatusBarSettled] = useState(false)
   const [gateResolved, setGateResolved] = useState(false)
   const hideStartedRef = useRef(false)
 
   const BRAND_HOLD_MS = 280
   const SPLASH_FAILSAFE_MS = 2000
+  const LAUNCH_FAILSAFE_MS = 4000
   const launchSettled = splashAnimDone && gateResolved
 
   // Pin the Android window to emerald at boot so native splash → JS overlay
@@ -103,11 +103,13 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     SystemUI.setBackgroundColorAsync(BrandColors.primary).catch(() => {})
   }, [])
 
-  // After launch settles (choreography + biometric cold-start), hand window to theme.
+  // Hand window to theme while the JS veil is still fully opaque (at
+  // native-splash hide), so no window-bg pop is ever observable. The dep on
+  // colors.background keeps later theme switches following.
   useEffect(() => {
-    if (!launchSettled || Platform.OS === 'web' || !colors?.background) return
+    if (!hasHiddenSplash || Platform.OS === 'web' || !colors?.background) return
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => {})
-  }, [launchSettled, colors?.background])
+  }, [hasHiddenSplash, colors?.background])
 
   // Concurrent Frame-0 Cache & Asset Pre-hydration
   useEffect(() => {
@@ -141,17 +143,30 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
   }, [isAppReady, hasLaidOut])
 
   // Hard exit — brand canvas is always mounted, so hiding native splash is safe.
+  // Failsafe F1: force the native hide only. Animation + gates still run their
+  // own course under the opaque veil; never flip app-facing state mid-animation.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {})
+      setHasHiddenSplash(true)
+    }, SPLASH_FAILSAFE_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Failsafe F3: ultimate force — assume choreography + gate dead, land the app.
   useEffect(() => {
     const timer = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {})
       setHasHiddenSplash(true)
       setSplashAnimDone(true)
       setGateResolved(true)
-    }, SPLASH_FAILSAFE_MS)
+    }, LAUNCH_FAILSAFE_MS)
     return () => clearTimeout(timer)
   }, [])
 
   const onLayoutRootView = useCallback(() => setHasLaidOut(true), [])
+  const handleSplashComplete = useCallback(() => setSplashAnimDone(true), [])
+  const handleSplashSettle = useCallback(() => setStatusBarSettled(true), [])
 
   const navTheme = useMemo(() => {
     const isDark = theme !== 'white'
@@ -175,21 +190,27 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     <GestureHandlerRootView
       style={{
         flex: 1,
-        backgroundColor: launchSettled ? colors.background : BrandColors.primary,
+        backgroundColor: isAppReady ? colors.background : BrandColors.primary,
       }}
       onLayout={onLayoutRootView}
     >
       {isAppReady ? (
         <NavigationThemeProvider value={navTheme}>
           <StatusBar
-            style={theme === 'white' ? 'dark' : 'light'}
-            hidden={!launchSettled}
+            hidden={false}
+            style={
+              statusBarSettled || splashAnimDone
+                ? theme === 'white'
+                  ? 'dark'
+                  : 'light'
+                : 'light'
+            }
           />
           <BiometricGate
             active={splashAnimDone}
             onColdStartResolved={() => setGateResolved(true)}
           />
-          {splashAnimDone ? <CallGate /> : null}
+          {launchSettled ? <CallGate /> : null}
           <Stack
             unstable_screenErrorBoundary={RouteErrorBoundary as any}
             screenOptions={{
@@ -235,10 +256,13 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
           pointerEvents="none"
         />
       )}
-      <SplashHandover
-        isReady={hasHiddenSplash && isAppReady}
-        onComplete={() => setSplashAnimDone(true)}
-      />
+      {!splashAnimDone && (
+        <SplashHandover
+          isReady={hasHiddenSplash && isAppReady}
+          onComplete={handleSplashComplete}
+          onSettle={handleSplashSettle}
+        />
+      )}
     </GestureHandlerRootView>
   )
 }
