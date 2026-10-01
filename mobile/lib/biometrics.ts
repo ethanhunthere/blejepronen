@@ -30,8 +30,11 @@ export interface BiometricCapability {
 
 let cachedCapability: BiometricCapability | null = null
 
-// Session unlocked memory flag — stays unlocked while user navigates inside foreground app
-let isSessionUnlocked = true
+// Session unlocked memory flag — stays unlocked while user navigates inside
+// foreground app. Starts LOCKED: a fresh process has no verified session, so an
+// enabled lock must engage at cold start (a `true` default silently disabled
+// the entire cold-start gate).
+let isSessionUnlocked = false
 
 export function setSessionUnlocked(unlocked: boolean): void {
   isSessionUnlocked = unlocked
@@ -39,6 +42,40 @@ export function setSessionUnlocked(unlocked: boolean): void {
 
 export function isSessionUnlockedState(): boolean {
   return isSessionUnlocked
+}
+
+/**
+ * What the OS itself currently demands to unlock the device:
+ * - `strong`   — Android Class 3 biometrics enrolled (fingerprint / 3D face)
+ * - `weak`     — Android Class 2 biometrics enrolled (2D camera face unlock)
+ * - `credential` — no biometrics, but a device PIN/pattern/password is set.
+ *                Also what BOTH platforms report while biometrics are in
+ *                system lockout — the OS will demand the credential next.
+ * - `none`     — device has no screen security at all
+ *
+ * Source of truth is `getEnrolledLevelAsync()`, which reads the platform's
+ * own enrollment state (iOS `canEvaluatePolicy`, Android `BiometricManager` +
+ * `KeyguardManager`), not our cached capability.
+ */
+export type DevicePosture = 'strong' | 'weak' | 'credential' | 'none'
+
+export async function getDevicePosture(): Promise<DevicePosture> {
+  if (Platform.OS === 'web') return 'none'
+  try {
+    const level = await LocalAuthentication.getEnrolledLevelAsync()
+    switch (level) {
+      case LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG:
+        return 'strong'
+      case LocalAuthentication.SecurityLevel.BIOMETRIC_WEAK:
+        return 'weak'
+      case LocalAuthentication.SecurityLevel.SECRET:
+        return 'credential'
+      default:
+        return 'none'
+    }
+  } catch {
+    return 'none'
+  }
 }
 
 /**
@@ -227,13 +264,51 @@ export async function setBiometricLockEnabled(
 let isAuthRunning = false
 
 export interface AuthOptions {
+  /**
+   * Overrides the posture-driven policy: `true` forces strictly-biometric
+   * (no credential ever), `false` forces device-credential-allowed. When
+   * omitted, policy is derived from `getDevicePosture()`.
+   */
   disableDeviceFallback?: boolean
   fallbackLabel?: string
 }
 
 /**
- * Prompts native biometric verification using iOS LocalAuthentication or Android BiometricPrompt.
- * Enforces strict biometrics (no passcode fallback) when disableDeviceFallback is true.
+ * Errors the OS uses to say "biometrics cannot verify right now"
+ * (lockout, enrollment gone, sensor unusable, unenrolled-after-probe).
+ * Android maps ERROR_NONE_ENROLRED (11) and friends to `unknown`.
+ */
+const BIOMETRIC_UNAVAILABLE_ERRORS = new Set([
+  'lockout',
+  'not_available',
+  'not_enrolled',
+  'unable_to_process',
+  'unknown',
+])
+
+/**
+ * Native biometric/device-credential verification, posture-driven.
+ *
+ * Policy matrix (device posture -> native policy):
+ * - strong/weak biometric -> strict biometric ONLY:
+ *     iOS `LAPolicyDeviceOwnerAuthenticationWithBiometrics` (passcode button
+ *     hidden via empty fallback title), Android `BIOMETRIC_STRONG` /
+ *     `BIOMETRIC_WEAK` with no `DEVICE_CREDENTIAL`. The passcode/PIN can
+ *     never satisfy this gate while biometrics are available.
+ * - credential -> device credential as the PRIMARY method (biometrics are
+ *     gone from the device): iOS `LAPolicyDeviceOwnerAuthentication`,
+ *     Android `biometric | DEVICE_CREDENTIAL`.
+ * - none -> refused; nothing on the device could verify.
+ *
+ * Retry ladder (the old ladder downgraded to passcode/PIN policy on any
+ * failure — that was the desync bug):
+ * 1. `system_cancel`/`app_cancel` scene races retry with the SAME policy.
+ * 2. `missing_usage_description` fails closed (build misconfiguration) —
+ *    never silently evaluated as passcode.
+ * 3. Only when the OS itself declares biometrics unavailable (lockout,
+ *    stale enrollment, class mismatch) do we re-probe posture and, if the
+ *    device still has any lock, verify with the device credential — exactly
+ *    mirroring what the OS demands next.
  */
 export async function authenticateWithBiometrics(
   promptMessage?: string,
@@ -254,76 +329,81 @@ export async function authenticateWithBiometrics(
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
 
-    // Fresh hardware/enrollment read: a stale cached capability can block a
-    // prompt the device would actually present (e.g. user just enrolled).
-    const capability = await getDeviceBiometricCapability(true)
+    const posture = await getDevicePosture()
 
-    if (!capability.supported) {
-      return {
-        success: false,
-        error: 'Pajisja juaj nuk ka sensor biometrik (Face ID ose Gjurmë Gishti).',
-      }
-    }
-
-    if (!capability.enrolled) {
+    if (posture === 'none') {
       return {
         success: false,
         error:
-          capability.enrollmentGuide ||
-          'Nuk u gjet asnjë biometri e regjistruar në cilësimet e telefonit tuaj.',
+          'Pajisja nuk ka as biometri të regjistruar as kod të ekranit. Aktivizoni sigurinë e pajisjes në cilësimet e saj.',
       }
     }
 
-    const defaultPrompt =
-      Platform.OS === 'ios'
-        ? `Verifikoni me ${capability.displayName}`
-        : `Vendosni gishtin ose skanoni fytyrën për ${capability.displayName}`
+    const biometricPosture = posture === 'strong' || posture === 'weak'
+    const capability = biometricPosture ? await getDeviceBiometricCapability(true) : null
+    const displayName = capability?.displayName || 'identifikuesin e pajisjes'
 
-    // On iOS, empty fallbackLabel hides the passcode button to keep the prompt strictly biometric.
-    // disableDeviceFallback: true attempts LAPolicyDeviceOwnerAuthenticationWithBiometrics.
-    const attempt = (disableFallback: boolean) =>
-      LocalAuthentication.authenticateAsync({
-        promptMessage: promptMessage || defaultPrompt,
-        fallbackLabel: options?.fallbackLabel ?? '',
-        disableDeviceFallback: disableFallback,
-        cancelLabel: 'Anulo',
-      })
+    const defaultPrompt = !biometricPosture
+      ? 'Vendosni kodin e ekranit për të vazhduar'
+      : Platform.OS === 'ios'
+        ? `Verifikoni me ${displayName}`
+        : `Vendosni gishtin ose skanoni fytyrën për ${displayName}`
 
     const isExpoGo =
       (Constants as any)?.executionEnvironment === ExecutionEnvironment.StoreClient ||
       (Constants as any)?.appOwnership === 'expo'
 
-    // 1. Initial attempt:
-    // On iOS in Expo Go, the precompiled host binary lacks project-specific Info.plist keys,
-    // so requesting disableDeviceFallback: true will be immediately rejected by Expo's Swift module
-    // with 'missing_usage_description' before showing Face ID. We bypass this by requesting
-    // deviceOwnerAuthentication with fallbackLabel: '' which natively invokes Face ID without the error.
-    const requestedDisableFallback = options?.disableDeviceFallback ?? true
-    const initialDisableFallback = Platform.OS === 'ios' && isExpoGo ? false : requestedDisableFallback
+    // Strict-biometric unless posture is credential-only, caller overrode it,
+    // or we are inside Expo Go (host binary lacks this project's
+    // NSFaceIDUsageDescription, so strict Face ID is rejected outright there).
+    let biometricOnly = options?.disableDeviceFallback ?? biometricPosture
+    if (Platform.OS === 'ios' && isExpoGo && biometricOnly) {
+      biometricOnly = false
+    }
 
-    let result = await attempt(initialDisableFallback)
+    const attempt = (strict: boolean) =>
+      LocalAuthentication.authenticateAsync({
+        promptMessage: promptMessage || defaultPrompt,
+        cancelLabel: 'Anulo',
+        disableDeviceFallback: strict,
+        fallbackLabel:
+          options?.fallbackLabel ?? (strict ? '' : Platform.OS === 'ios' ? 'Kodi i ekranit' : ''),
+        // Android-only native field; omitted on iOS (record has no such key).
+        ...(Platform.OS === 'android' && biometricPosture
+          ? {
+              biometricsSecurityLevel:
+                posture === 'strong' ? ('strong' as const) : ('weak' as const),
+            }
+          : {}),
+      })
 
-    // 2. Critical Universal Fallback for standalone builds or unconfigured host environments:
-    // If any host environment still rejects with missing_usage_description,
-    // fall back cleanly to deviceOwnerAuthentication with empty fallbackLabel.
-    if (!result.success) {
-      const err = (result as any).error as string | undefined
-      const warn = (result as any).warning as string | undefined
+    let result = await attempt(biometricOnly)
+    const currentError = () => (result as any).error as string | undefined
 
-      if (
-        err === 'missing_usage_description' ||
-        err?.toLowerCase().includes('missing') ||
-        warn?.includes('NSFaceIDUsageDescription')
-      ) {
-        result = await attempt(false)
+    // 1. Transient scene race (foregrounding, double-invoke): retry the SAME
+    // policy. Never downgrade — a race must not turn into a passcode prompt.
+    if (!result.success && (currentError() === 'system_cancel' || currentError() === 'app_cancel')) {
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      result = await attempt(biometricOnly)
+    }
+
+    // 2. Missing Face ID usage description = broken build config. Fail closed
+    // with a precise message; passcode must never silently satisfy the gate.
+    if (!result.success && currentError() === 'missing_usage_description') {
+      return {
+        success: false,
+        error:
+          'NSFaceIDUsageDescription mungon në Info.plist — rindisni ndërtimin e aplikacionit për ta aktivizuar Face ID.',
       }
     }
 
-    // 3. Spurious system/app cancel retry (scene activation race)
-    if (!result.success) {
-      const err = (result as any).error as string | undefined
-      if (err === 'system_cancel' || err === 'app_cancel') {
-        await new Promise((resolve) => setTimeout(resolve, 200))
+    // 3. The OS just declared biometrics unavailable (lockout after N tries,
+    // enrollment removed between probe and prompt, sensor class mismatch).
+    // Mirror the posture: if the device still has any lock, verify with the
+    // device credential — this is what the OS itself demands next.
+    if (biometricOnly && !result.success && BIOMETRIC_UNAVAILABLE_ERRORS.has(currentError() ?? '')) {
+      const postureNow = await getDevicePosture()
+      if (postureNow !== 'none') {
         result = await attempt(false)
       }
     }
@@ -331,38 +411,40 @@ export async function authenticateWithBiometrics(
     if (result.success) {
       isSessionUnlocked = true
       return { success: true }
-    } else {
-      const authError = (result as any).error as string | undefined
-      const isCancelled =
-        authError === 'user_cancel' ||
-        authError === 'app_cancel' ||
-        authError === 'system_cancel'
+    }
 
-      let friendlyError = `Verifikimi me ${capability.displayName} dështoi.`
-      if (authError === 'not_enrolled') {
-        friendlyError = capability.enrollmentGuide || 'Biometria nuk është e regjistruar në telefon.'
-      } else if (authError === 'not_available') {
-        friendlyError = `Sensori për ${capability.displayName} nuk është i disponueshëm në këtë moment.`
-      } else if (authError === 'lockout') {
-        friendlyError = `Sensori i ${capability.displayName} është përkohësisht i bllokuar nga sistemi për shkak të shumë tentimeve. Zhbllokoni telefonin një herë me kodin e ekranit.`
-      } else if (authError === 'authentication_failed') {
-        friendlyError = `${capability.displayName} nuk u njoh. Ju lutemi provoni përsëri.`
-      } else if (
-        authError === 'missing_usage_description' ||
-        authError?.toLowerCase().includes('missing')
-      ) {
-        friendlyError = `Leja për ${capability.displayName} duhet të konfigurohet në cilësimet e pajisjes.`
-      } else if (isCancelled) {
-        friendlyError = 'Verifikimi u anulua.'
-      } else if (authError) {
-        friendlyError = `Verifikimi me ${capability.displayName} dështoi (${authError}).`
-      }
+    const authError = currentError()
+    const isCancelled =
+      authError === 'user_cancel' || authError === 'app_cancel' || authError === 'system_cancel'
 
-      return {
-        success: false,
-        cancelled: isCancelled,
-        error: friendlyError,
-      }
+    const promptName = biometricPosture ? displayName : 'kodin e ekranit'
+    let friendlyError = `Verifikimi me ${promptName} dështoi.`
+    if (authError === 'not_enrolled') {
+      friendlyError = !biometricPosture
+        ? 'Kodi i ekranit u hoq nga pajisja. Vendosni një të ri në cilësimet e saj.'
+        : capability?.enrollmentGuide || 'Biometria nuk është e regjistruar në telefon.'
+    } else if (authError === 'not_available') {
+      friendlyError = !biometricPosture
+        ? 'Verifikimi me kodin e ekranit nuk është i disponueshëm në këtë moment.'
+        : `Sensori për ${displayName} nuk është i disponueshëm në këtë moment.`
+    } else if (authError === 'lockout') {
+      friendlyError = `${displayName} u bllokua nga sistemi pas disa tentimeve. Zhbllokoni pajisjen nga ekrani i saj me kodin e ekranit, pastaj provoni përsëri.`
+    } else if (authError === 'passcode_not_set') {
+      friendlyError = 'Pajisja nuk ka kod të ekranit. Vendosni një në cilësimet e saj.'
+    } else if (authError === 'authentication_failed') {
+      friendlyError = biometricPosture
+        ? `${displayName} nuk u njoh. Ju lutemi provoni përsëri.`
+        : 'Kodi i ekranit nuk është i saktë. Ju lutemi provoni përsëri.'
+    } else if (isCancelled) {
+      friendlyError = 'Verifikimi u anulua.'
+    } else if (authError) {
+      friendlyError = `Verifikimi me ${promptName} dështoi (${authError}).`
+    }
+
+    return {
+      success: false,
+      cancelled: isCancelled,
+      error: friendlyError,
     }
   } catch (err: any) {
     return { success: false, error: err?.message || 'Ndodhi një gabim gjatë verifikimit biometrik.' }

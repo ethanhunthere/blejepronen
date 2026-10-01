@@ -17,9 +17,11 @@ import {
   setBiometricLockEnabled,
   authenticateWithBiometrics,
   getDeviceBiometricCapability,
+  getDevicePosture,
   setSessionUnlocked,
   isSessionUnlockedState,
   BiometricCapability,
+  DevicePosture,
 } from '@/lib/biometrics'
 
 interface BiometricGateProps {
@@ -31,6 +33,10 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
   const { colors, theme } = useTheme()
   const [isLocked, setIsLocked] = useState(false)
   const [capability, setCapability] = useState<BiometricCapability | null>(null)
+  // What THIS lock demands: biometric vs device credential (device posture at
+  // the moment the lock engaged). Drives prompt wording and verification path.
+  const [lockPosture, setLockPosture] = useState<'biometric' | 'credential'>('biometric')
+  const lockPostureRef = useRef<'biometric' | 'credential'>('biometric')
   const [isAuthenticating, setIsAuthenticating] = useState(false)
 
   const appState = useRef<AppStateStatus>(AppState.currentState)
@@ -56,7 +62,11 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     }
 
     setIsAuthenticating(true)
-    const result = await authenticateWithBiometrics()
+    const message =
+      lockPostureRef.current === 'credential'
+        ? 'Vendosni kodin e ekranit për të hapur Bleje Pronën'
+        : undefined
+    const result = await authenticateWithBiometrics(message)
 
     if (!isMounted.current) return
     setIsAuthenticating(false)
@@ -68,8 +78,13 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
   }, [])
 
   // Cold Start verification — runs at mount, under the opaque splash veil, so
-  // the lock state is known before the handoff finishes. SecureStore reads are
-  // raced with a timeout: fail-open rather than hang the launch behind F3.
+  // the lock state is known before the handoff finishes. SecureStore/posture
+  // reads are raced with a timeout: fail-open rather than hang launch behind F3.
+  //
+  // Posture-driven lock decision (mirrors the OS, not our cached capability):
+  // - lock enabled + any device security (biometric OR credential) -> LOCK
+  // - lock enabled + device has no security at all -> no gate (nothing to verify)
+  // - lock disabled -> no gate
   useEffect(() => {
     let cancelled = false
 
@@ -81,29 +96,31 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
           return
         }
 
-        const [enabled, deviceCap] = await Promise.race([
-          Promise.all([isBiometricLockEnabled(), getDeviceBiometricCapability()]),
-          new Promise<[boolean, BiometricCapability]>((resolve) =>
-            setTimeout(() => resolve([false, { supported: false, enrolled: false } as BiometricCapability]), 1500),
+        const [enabled, deviceCap, posture] = await Promise.race([
+          Promise.all([
+            isBiometricLockEnabled(),
+            getDeviceBiometricCapability(),
+            getDevicePosture(),
+          ]),
+          new Promise<[boolean, BiometricCapability | null, DevicePosture]>((resolve) =>
+            setTimeout(() => resolve([false, null, 'none']), 1500),
           ),
         ])
 
         if (!isMounted.current || cancelled) return
-        setCapability(deviceCap)
+        if (deviceCap) setCapability(deviceCap)
 
-        if (!deviceCap.supported || !deviceCap.enrolled) {
-          setIsLocked(false)
-          onColdStartResolvedRef.current?.()
-          return
+        const securePosture = posture === 'strong' || posture === 'weak' || posture === 'credential'
+        const shouldLock = enabled && securePosture && !isSessionUnlockedState()
+
+        const nextLock = shouldLock ? (posture === 'credential' ? 'credential' : 'biometric') : null
+        if (nextLock) {
+          lockPostureRef.current = nextLock
+          setLockPosture(nextLock)
         }
 
-        if (enabled && !isSessionUnlockedState()) {
-          setIsLocked(true)
-          onColdStartResolvedRef.current?.()
-        } else {
-          setIsLocked(false)
-          onColdStartResolvedRef.current?.()
-        }
+        setIsLocked(shouldLock)
+        onColdStartResolvedRef.current?.()
       } catch {
         if (!cancelled) setIsLocked(false)
         onColdStartResolvedRef.current?.()
@@ -137,12 +154,18 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
       } else if (prevState === 'background' && nextState === 'active') {
         const timeInBackground = Date.now() - lastBackgroundTime.current
         if (timeInBackground > 2500) {
-          const [enabled, devCap] = await Promise.all([
+          const [enabled, posture] = await Promise.all([
             isBiometricLockEnabled(),
-            getDeviceBiometricCapability(),
+            getDevicePosture(),
           ])
 
-          if (enabled && devCap.supported && devCap.enrolled && isMounted.current) {
+          if (
+            enabled &&
+            posture !== 'none' &&
+            isMounted.current
+          ) {
+            lockPostureRef.current = posture === 'credential' ? 'credential' : 'biometric'
+            setLockPosture(lockPostureRef.current)
             setSessionUnlocked(false)
             hasAttemptedColdStart.current = false
             setIsLocked(true)
@@ -159,14 +182,17 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     }
   }, [])
 
-  // Emergency safety unlock. Requires a fresh biometric pass BEFORE disabling
-  // the lock — otherwise the "emergency" path is a permanent, frictionless
-  // bypass that anyone with the unlocked phone can use.
+  // Emergency safety unlock. Requires a fresh verification (biometric or
+  // device credential, per current posture) BEFORE disabling the lock —
+  // otherwise the "emergency" path is a permanent, frictionless bypass that
+  // anyone with the unlocked phone can use.
   const handleEmergencyDisable = () => {
-    const biometryName = capability?.displayName || 'Biometrike'
+    const isCredential = lockPosture === 'credential'
+    const displayName = isCredential ? 'Kodi i ekranit' : capability?.displayName || 'Biometrike'
+    const verifyName = isCredential ? 'kodin e ekranit' : capability?.displayName || 'Biometrike'
     Alert.alert(
-      `Çaktivizo Kyçjen (${biometryName})`,
-      `Për siguri, verifikoni me ${biometryName} para se të çaktivizoni kyçjen. A dëshironi ta bëni?`,
+      `Çaktivizo Kyçjen (${displayName})`,
+      `Për siguri, verifikoni me ${verifyName} para se të çaktivizoni kyçjen. A dëshironi ta bëni?`,
       [
         { text: 'Anulo', style: 'cancel' },
         {
@@ -175,7 +201,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
           onPress: async () => {
             setIsAuthenticating(true)
             const result = await authenticateWithBiometrics(
-              `Verifikoni me ${biometryName} për të çaktivizuar kyçjen`
+              `Verifikoni me ${verifyName} për të çaktivizuar kyçjen`
             )
             if (!isMounted.current) return
             setIsAuthenticating(false)
@@ -195,13 +221,16 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
 
   const isDark = theme !== 'white'
   const brandHighlight = theme === 'green' ? colors.gold : colors.primary
+  const isCredentialLock = lockPosture === 'credential'
   const biometryName = capability?.displayName || 'Biometrike'
+  const verifyName = isCredentialLock ? 'kodin e ekranit' : biometryName
+  const iconKind = isCredentialLock ? 'shield' : capability?.iconName
 
   const renderIcon = (size: number, color: string) => {
-    if (capability?.iconName === 'face') {
+    if (iconKind === 'face') {
       return <ScanFace size={size} color={color} strokeWidth={2} />
     }
-    if (capability?.iconName === 'fingerprint') {
+    if (iconKind === 'fingerprint') {
       return <Fingerprint size={size} color={color} strokeWidth={2} />
     }
     return <ShieldCheck size={size} color={color} strokeWidth={2} />
@@ -235,7 +264,9 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
           Bleje Pronën është e kyçur
         </Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          Përdorni {biometryName} për të vërtetuar identitetin tuaj dhe për të vazhduar.
+          {isCredentialLock
+            ? 'Përdorni kodin e ekranit të pajisjes suaj për të vazhduar.'
+            : `Përdorni ${biometryName} për të vërtetuar identitetin tuaj dhe për të vazhduar.`}
         </Text>
 
         <Pressable
@@ -254,7 +285,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
             <>
               {renderIcon(20, '#FFFFFF')}
               <Text style={styles.unlockButtonText}>
-                Zhblloko me {biometryName}
+                Zhblloko me {verifyName}
               </Text>
             </>
           )}
