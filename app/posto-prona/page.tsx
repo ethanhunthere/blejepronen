@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { KOSOVO_LOCATIONS } from '@/lib/kosovo-locations'
 import { Button } from '@/components/ui/button'
@@ -325,6 +325,60 @@ const CATEGORIES: Record<PropertyCategory, CategoryConfig> = {
   },
 }
 
+// Same defaults applied by handleCategorySelect when a category is picked —
+// used as fallback when prefilling the edit form for a row with no
+// `apartment_type`.
+const DEFAULT_SUBTYPE: Record<PropertyCategory, string> = {
+  banese: '2+1',
+  shtepi: 'Shtëpi private',
+  vile: 'Vilë luksoze',
+  toke: 'Truall ndërtimi',
+  lokal: 'Lokal afarist rrugor',
+  garazh: 'Garazhë e mbyllur',
+}
+
+// The listings table has no `category` column — the post form persists the
+// category only through `apartment_type` (= subtype || category.titleShort).
+// These distinctive stems mirror CATEGORY_FILTER_TOKENS in the mobile client
+// and are matched (case-insensitively) to recover the category for edit mode.
+// Order matters: more specific categories first (e.g. "Vilë duplex" must match
+// `vile` before the generic "duplex" stem would match `banese`). Matched only
+// against `apartment_type` — never the free-text title, whose words ("parkim",
+// "lokal"…) would misclassify listings.
+const CATEGORY_TOKEN_MATCHERS: { id: PropertyCategory; tokens: string[] }[] = [
+  { id: 'shtepi', tokens: ['shtëpi', 'shtepi'] },
+  { id: 'vile', tokens: ['vil'] },
+  { id: 'garazh', tokens: ['garazh', 'vendparkim', 'parkim', 'depo'] },
+  { id: 'lokal', tokens: ['lokal', 'zyr', 'biznes', 'afarist', 'hapësirë', 'hapeshire', 'open space', 'showroom', 'dyqan', 'magazin'] },
+  { id: 'toke', tokens: ['truall', 'tokë', 'toke', 'parcel'] },
+  {
+    id: 'banese',
+    tokens: ['banes', 'apart', 'garson', 'studio', '1+1', '2+1', '3+1', '4+1', 'duplex', 'penthouse'],
+  },
+]
+
+/** Recover the property category of an existing listing (no DB column for it). */
+function inferCategory(apartmentType: string | null | undefined): PropertyCategory {
+  const apt = (apartmentType || '').trim().toLowerCase()
+  if (apt) {
+    for (const key of Object.keys(CATEGORIES) as PropertyCategory[]) {
+      const cfg = CATEGORIES[key]
+      if (cfg.titleShort.toLowerCase() === apt || cfg.subtypes.some((s) => s.toLowerCase() === apt)) {
+        return key
+      }
+    }
+    for (const matcher of CATEGORY_TOKEN_MATCHERS) {
+      if (matcher.tokens.some((t) => apt.includes(t))) return matcher.id
+    }
+  }
+
+  return 'banese'
+}
+
+// A gallery preview that is a freshly selected local file (needs upload) vs an
+// already stored remote image URL (kept as-is when saving an edit).
+const isNewFilePreview = (src: string) => src.startsWith('blob:')
+
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_PRICE = 50_000_000
@@ -524,6 +578,22 @@ Përparësitë kryesore:
   return enhanced.trim()
 }
 
+// Reads the `?edit=` query param. Kept in its own tiny component inside a
+// Suspense boundary (same pattern as the login page) because Next requires a
+// boundary around any component calling useSearchParams on a prerendered
+// route — the boundary renders null, so the statically generated HTML of the
+// page stays identical to what it was before edit mode existed.
+function EditSearchParamSync({ onEditId }: { onEditId: (id: string | null) => void }) {
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
+
+  useEffect(() => {
+    onEditId(editId)
+  }, [editId, onEditId])
+
+  return null
+}
+
 export default function PostoPronaPage() {
   const [formData, setFormData] = useState<FormData>({
     category: 'banese',
@@ -558,7 +628,103 @@ export default function PostoPronaPage() {
   const supabase = createClient()
   const isSubmittingRef = useRef(false)
 
+  // Edit mode: `?edit=<listing-id>` (see EditSearchParamSync above).
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editReady, setEditReady] = useState(false)
+  const editFetchStartedRef = useRef(false)
+  // Boolean() so `?edit=` (empty value) falls back to the create form
+  // instead of hanging on the loading state.
+  const isEdit = Boolean(editId)
+  const submitLabel = isEdit ? 'Ruaj ndryshimet' : 'Publiko pronën falas'
+
   const activeCategory = CATEGORIES[formData.category]
+
+  // Load the listing owned by the signed-in user and prefill the form.
+  // No edit param → effect returns immediately, insert path untouched.
+  useEffect(() => {
+    if (!editId || editFetchStartedRef.current) return
+    editFetchStartedRef.current = true
+
+    const load = async () => {
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+          toast.error('Sesioni ka skaduar. Ju lutemi kyçuni përsëri.')
+          router.push('/login')
+          return
+        }
+
+        const { data: row, error } = await supabase
+          .from('listings')
+          .select(
+            'id,user_id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images'
+          )
+          .eq('id', editId)
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Fetch listing for edit error:', JSON.stringify(error))
+          toast.error('Gabim gjatë ngarkimit të pronës për ndryshim.')
+          router.push('/postimet-e-mia')
+          return
+        }
+
+        if (!row) {
+          toast.error('Nuk u gjet asnjë pronë për ndryshim ose nuk jeni pronari i saj.')
+          router.push('/postimet-e-mia')
+          return
+        }
+
+        const category = inferCategory(row.apartment_type)
+        const cat = CATEGORIES[category]
+        const areaNum = Number(row.area_m2) || 0
+
+        setFormData({
+          category,
+          subtype: row.apartment_type || DEFAULT_SUBTYPE[category],
+          title: row.title || '',
+          description: row.description || '',
+          price: row.price != null ? String(row.price) : '',
+          city: row.city || 'Prishtinë',
+          neighborhood: row.neighborhood || '',
+          address: row.address || '',
+          rooms: cat.hasRooms ? String(row.rooms ?? 0) : '0',
+          area_m2: areaNum ? String(areaNum) : '',
+          land_ari:
+            category === 'toke' && areaNum > 0 ? (areaNum / 100).toFixed(1).replace(/\.0$/, '') : '',
+          areaUnit: category === 'toke' ? 'ari' : 'm2',
+          type: row.type === 'qira' ? 'qira' : 'shitje',
+          condition: row.condition || cat.conditions[0]?.value || 'e-re',
+          floor: row.floor ?? '',
+          features: Array.isArray(row.features) ? row.features : [],
+        })
+
+        // Existing remote image URLs live in `previews` alongside the blob:
+        // previews of newly selected files — see removeImage/submit for how
+        // the two kinds are told apart.
+        const rowImages: unknown[] = Array.isArray(row.images) ? row.images : []
+        const existing = Array.from(
+          new Set(rowImages.filter((img): img is string => typeof img === 'string' && img !== ''))
+        )
+        setPreviews(existing)
+        setEditReady(true)
+        // Layout metadata is server-rendered and layout cannot read
+        // searchParams — reflect the edit mode in the document title here.
+        document.title = 'Ndrysho pronën tënde | Bleje Pronën'
+      } catch (err) {
+        console.error('Edit prefill failed:', err)
+        toast.error('Gabim gjatë ngarkimit të pronës për ndryshim.')
+        router.push('/postimet-e-mia')
+      }
+    }
+
+    void load()
+  }, [editId, supabase, router])
 
   // Smart Description Generator / Enhancer
   const handleAutoDescription = () => {
@@ -703,7 +869,10 @@ export default function PostoPronaPage() {
   const handleImageSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
-      if (images.length + files.length > 10) {
+      // previews counts every photo in the gallery (already uploaded URLs in
+      // edit mode + newly selected files) — identical to images.length when
+      // creating a listing, where every preview is a local blob URL.
+      if (previews.length + files.length > 10) {
         setError('Maksimumi 10 foto lejohen.')
         return
       }
@@ -724,14 +893,14 @@ export default function PostoPronaPage() {
       setImages((prev) => [...prev, ...files])
       setPreviews((prev) => [...prev, ...newPreviews])
     },
-    [images]
+    [previews.length]
   )
 
   const handleDropImages = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
     const files = Array.from(e.dataTransfer.files || [])
-    if (images.length + files.length > 10) {
+    if (previews.length + files.length > 10) {
       setError('Maksimumi 10 foto lejohen.')
       return
     }
@@ -751,23 +920,41 @@ export default function PostoPronaPage() {
     }
   }
 
+  // `previews` holds two kinds of entries: `blob:` URLs of files not yet
+  // uploaded and remote URLs of images already stored on the listing. The
+  // `images` File[] stays parallel to the blob entries only, in the same
+  // relative order — this helper maps a gallery index to that file index.
+  const fileIndexOfPreview = (index: number) =>
+    previews.slice(0, index).filter(isNewFilePreview).length
+
   const removeImage = (index: number) => {
-    URL.revokeObjectURL(previews[index])
-    setImages((prev) => prev.filter((_, i) => i !== index))
+    const src = previews[index]
+    const isFile = isNewFilePreview(src)
+    if (isFile) {
+      URL.revokeObjectURL(src)
+      const fileIndex = fileIndexOfPreview(index)
+      setImages((prev) => prev.filter((_, i) => i !== fileIndex))
+    }
     setPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   const makePrimaryImage = (index: number) => {
     if (index === 0) return
-    const newImgs = [...images]
-    const [pickedImg] = newImgs.splice(index, 1)
-    newImgs.unshift(pickedImg)
-
     const newPrevs = [...previews]
     const [pickedPrev] = newPrevs.splice(index, 1)
     newPrevs.unshift(pickedPrev)
 
-    setImages(newImgs)
+    // Keep `images` aligned with the blob previews when a new file moves.
+    if (isNewFilePreview(pickedPrev)) {
+      const fileIndex = fileIndexOfPreview(index)
+      setImages((prev) => {
+        const newImgs = [...prev]
+        const [pickedImg] = newImgs.splice(fileIndex, 1)
+        newImgs.unshift(pickedImg)
+        return newImgs
+      })
+    }
+
     setPreviews(newPrevs)
     toast.info('Fotoja u vendos si kryesore')
   }
@@ -971,38 +1158,60 @@ export default function PostoPronaPage() {
       return
     }
 
-    // Step 4: Insert listing into database
-    const { data: listing, error: insertError } = await supabase
-      .from('listings')
-      .insert({
-        user_id: user.id,
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        price: priceNum,
-        city: formData.city,
-        neighborhood: formData.neighborhood || null,
-        address: formData.address.trim(),
-        rooms: roomsCount,
-        area_m2: areaNum,
-        type: formData.type,
-        condition: formData.condition,
-        floor: finalFloor,
-        apartment_type: finalApartmentType,
-        features: formData.features,
-        images: imageUrls,
-      })
-      .select('id')
-      .single()
+    // Step 4: Insert (create) or update (edit) the listing row
+    const basePayload = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      price: priceNum,
+      city: formData.city,
+      neighborhood: formData.neighborhood || null,
+      address: formData.address.trim(),
+      rooms: roomsCount,
+      area_m2: areaNum,
+      type: formData.type,
+      condition: formData.condition,
+      floor: finalFloor,
+      apartment_type: finalApartmentType,
+      features: formData.features,
+    }
 
-    if (insertError) {
-      console.error('Listing insert error:', JSON.stringify(insertError))
+    // Final image set: kept existing remote URLs + freshly uploaded files.
+    // Blob previews map (in order) to `imageUrls`; remote previews pass
+    // through untouched. On create `previews` is empty of remote URLs, so
+    // `finalImages` is just the uploaded list.
+    let finalImages = imageUrls
+    if (isEdit) {
+      let newFileIndex = 0
+      finalImages = previews.map((preview) =>
+        isNewFilePreview(preview) ? imageUrls[newFileIndex++] ?? preview : preview
+      )
+    }
+
+    const { data: listing, error: saveError } = isEdit
+      ? await supabase
+          .from('listings')
+          .update({ ...basePayload, images: finalImages })
+          .eq('id', editId)
+          .eq('user_id', user.id)
+          .select('id')
+          .single()
+      : await supabase
+          .from('listings')
+          .insert({ user_id: user.id, ...basePayload, images: imageUrls })
+          .select('id')
+          .single()
+
+    if (saveError) {
+      console.error('Listing save error:', JSON.stringify(saveError))
       await rollbackUploads()
-      if (insertError.code === '42501') {
+      if (saveError.code === '42501') {
         setError('Nuk keni leje për të postuar. Kontaktoni mbështetjen.')
-      } else if (insertError.code === '23503') {
+      } else if (saveError.code === '23503') {
         setError('Profili juaj nuk është kompletuar. Vizitoni profilin tuaj së pari.')
+      } else if (isEdit && saveError.code === 'PGRST116') {
+        setError('Nuk u gjet listimi për ndryshim ose nuk keni leje. Kthehuni te postimet tuaja.')
       } else {
-        setError(`Gabim gjatë ruajtjes së listimit (${insertError.code || 'e panjohur'}). Provo përsëri.`)
+        setError(`Gabim gjatë ruajtjes së listimit (${saveError.code || 'e panjohur'}). Provo përsëri.`)
       }
       setUploading(false)
       setUploadProgress(0)
@@ -1011,7 +1220,7 @@ export default function PostoPronaPage() {
     }
 
     // Success!
-    toast.success('Prona u postua me sukses!')
+    toast.success(isEdit ? 'Prona u përditësua me sukses!' : 'Prona u postua me sukses!')
     void fetch('/api/revalidate', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -1025,8 +1234,29 @@ export default function PostoPronaPage() {
     router.push(`/listings/${listing.id}`)
   }
 
+  // Edit mode: the listing is being fetched/prefilled (or a redirect is
+  // pending because it was not found) — never show a blank creation form for
+  // an `?edit=` link.
+  if (isEdit && !editReady) {
+    return (
+      <>
+        <Suspense fallback={null}>
+          <EditSearchParamSync onEditId={setEditId} />
+        </Suspense>
+        <div className="min-h-screen bg-[#F2F7F7] flex flex-col items-center justify-center gap-4 px-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#00675B]" />
+          <p className="text-sm font-semibold text-gray-500">Duke ngarkuar pronën për ndryshim...</p>
+        </div>
+      </>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#F2F7F7] pb-24">
+      {/* ?edit= param reader — Suspense-wrapped, see EditSearchParamSync */}
+      <Suspense fallback={null}>
+        <EditSearchParamSync onEditId={setEditId} />
+      </Suspense>
       {/* Uploading Screen Overlay */}
       {uploading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#101828]/60 backdrop-blur-sm p-4">
@@ -1034,7 +1264,9 @@ export default function PostoPronaPage() {
             <div className="w-16 h-16 rounded-2xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center mx-auto mb-5">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-            <h2 className="text-xl font-bold text-[#101828] mb-2">Duke publikuar pronën tënde...</h2>
+            <h2 className="text-xl font-bold text-[#101828] mb-2">
+              {isEdit ? 'Duke ruajtur ndryshimet e pronës...' : 'Duke publikuar pronën tënde...'}
+            </h2>
             <p className="text-sm text-gray-500 mb-6">Optimizimi dhe ngarkimi i fotove me cilësi të lartë.</p>
             <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
               <div
@@ -1056,7 +1288,7 @@ export default function PostoPronaPage() {
               Posto pa pagesë · 30 Ditë Falas
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#101828] tracking-tight">
-              Posto pronën tënde me standarde globale
+              {isEdit ? 'Ndrysho pronën tënde me standarde globale' : 'Posto pronën tënde me standarde globale'}
             </h1>
             <p className="mt-2 text-sm sm:text-base text-gray-600 leading-relaxed">
               Arrij blerës dhe qiramarrës seriozë në të gjithë Kosovën dhe diasporë. Plotëso detajet e mëposhtme për një prezantim ekselent.
@@ -1106,7 +1338,7 @@ export default function PostoPronaPage() {
                     <span className="w-7 h-7 rounded-xl bg-[#00675B]/10 text-[#00675B] text-sm font-black flex items-center justify-center">
                       1
                     </span>
-                    Çfarë lloj prone po postoni?
+                    {isEdit ? 'Çfarë lloj prone po ndryshoni?' : 'Çfarë lloj prone po postoni?'}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1 ml-9.5">
                     Zgjidhni kategorinë e saktë për të hapur fushat dhe specifikat përkatëse.
@@ -2585,7 +2817,7 @@ export default function PostoPronaPage() {
                       Fotografitë e pronës
                     </h2>
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-                      {images.length}/10 foto
+                      {previews.length}/10 foto
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1 ml-9.5">
@@ -2698,13 +2930,13 @@ export default function PostoPronaPage() {
                     </>
                   ) : (
                     <>
-                      <span>Publiko pronën falas</span>
+                      <span>{submitLabel}</span>
                       <ChevronRight className="w-5 h-5" />
                     </>
                   )}
                 </Button>
                 <p className="text-center text-xs text-gray-500 mt-3">
-                  Duke klikuar &quot;Publiko pronën falas&quot;, ju pranoni{' '}
+                  Duke klikuar &quot;{submitLabel}&quot;, ju pranoni{' '}
                   <Link href="/kushtet" className="text-[#00675B] font-medium hover:underline">
                     Kushtet e Shërbimit
                   </Link>{' '}

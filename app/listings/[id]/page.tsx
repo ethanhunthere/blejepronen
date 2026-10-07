@@ -48,6 +48,11 @@ import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import MortgageCalculator from '@/components/MortgageCalculator'
 import FollowButton from '@/components/FollowButton'
 import { slugify } from '@/lib/seo-slugs'
+import {
+  deriveTrustSignals,
+  shouldShowBadge,
+  trustLabel,
+} from '@/lib/verification'
 
 export const revalidate = 300
 
@@ -172,10 +177,23 @@ const getSellerData = cache(async (userId: string) => {
       isCompany: prof.account_type === 'company' || Boolean(prof.company_name),
       companyDescription: (prof.bio as string) || (prof.company_description as string) || null,
       followersCount,
+      // Server-owned row → canonical trust derivation (single source of truth).
+      trust: deriveTrustSignals({
+        email_verified: typeof prof.email_verified === 'boolean' ? prof.email_verified : null,
+        phone: (prof.phone as string) || null,
+        created_at: (prof.created_at as string) || null,
+        listings_count: typeof prof.listings_count === 'number' ? prof.listings_count : null,
+      }),
     }
   } catch (err) {
     console.error('Failed to get seller data:', err)
-    return { socials: {}, isCompany: false, companyDescription: null, followersCount: 0 }
+    return {
+      socials: {} as SocialLinks,
+      isCompany: false,
+      companyDescription: null,
+      followersCount: 0,
+      trust: deriveTrustSignals(null),
+    }
   }
 })
 
@@ -333,6 +351,8 @@ export default async function ListingDetailPage({
   if (!listing) notFound()
 
   const sellerData = await getSellerData(listing.user_id)
+  const sellerTrust = sellerData.trust
+  const showSellerBadge = shouldShowBadge(sellerTrust)
   const effectiveSocials: SocialLinks = {
     ...sellerData.socials,
     whatsapp: sellerData.socials?.whatsapp || (listing.profiles?.phone ? listing.profiles.phone : null),
@@ -623,15 +643,29 @@ export default async function ListingDetailPage({
                     </div>
                   </div>
 
-                  {/* Verification */}
+                  {/* Verification status — badge only via deriveTrustSignals() */}
                   <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200/60">
-                      <ShieldCheck className="h-4 w-4" />
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                        showSellerBadge
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200/60'
+                          : 'bg-white text-[#00675B] border-slate-200/80'
+                      }`}
+                    >
+                      {showSellerBadge ? (
+                        <ShieldCheck className="h-4 w-4" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Statusi</p>
-                      <p className="text-sm font-semibold text-emerald-700 truncate">
-                        E Verifikuar
+                      <p
+                        className={`text-sm font-semibold truncate ${
+                          showSellerBadge ? 'text-emerald-700' : 'text-slate-900'
+                        }`}
+                      >
+                        {showSellerBadge ? trustLabel(sellerTrust) : 'E Publikuar'}
                       </p>
                     </div>
                   </div>
@@ -716,15 +750,15 @@ export default async function ListingDetailPage({
               )}
 
               {/* Section 7: Mobile Seller Card */}
-              <div className="block lg:hidden p-6 sm:p-8">
+              <div id="seller-info" className="block lg:hidden p-6 sm:p-8 scroll-mt-24">
                 <div className="flex items-center justify-between mb-3.5">
                   <h2 className="text-base font-bold text-slate-900">
                     Informacioni i Shitësit
                   </h2>
-                  {listing.profiles?.email_verified && (
+                  {showSellerBadge && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
                       <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                      I verifikuar
+                      {trustLabel(sellerTrust)}
                     </span>
                   )}
                 </div>
@@ -814,7 +848,7 @@ export default async function ListingDetailPage({
           </div>
 
           {/* ---- Right Column: Sticky Contact Sidebar (Desktop) ---- */}
-          <aside className="hidden lg:block sticky top-20">
+          <aside className="hidden lg:block sticky top-20 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain scroll-mt-24">
             <ContactSellerCard
               price={priceStr}
               pricePerSqm={pricePerSqm}
@@ -823,6 +857,7 @@ export default async function ListingDetailPage({
               listingTitle={listing.title}
               listingCity={listing.city}
               socials={effectiveSocials}
+              trust={sellerTrust}
               seller={{
                 firstName: listing.profiles?.first_name || '',
                 lastName: listing.profiles?.last_name || '',

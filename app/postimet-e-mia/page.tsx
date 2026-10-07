@@ -20,6 +20,9 @@ import {
   AlertTriangle,
   Loader2,
   Plus,
+  Pencil,
+  BadgeCheck,
+  RotateCcw,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -30,39 +33,47 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price)
 
+// Public URL prefix of the `listings` storage bucket (matches the upload flow
+// in /posto-prona, which writes to supabase.storage.from('listings')).
+const LISTINGS_PUBLIC_PREFIX = '/storage/v1/object/public/listings/'
+
+/** Derive storage object paths from a listing's image URLs (external URLs are skipped). */
+function extractListingStoragePaths(images: (string | null)[] | null | undefined): string[] {
+  const paths: string[] = []
+  for (const url of images || []) {
+    if (!url) continue
+    const idx = url.indexOf(LISTINGS_PUBLIC_PREFIX)
+    if (idx === -1) continue
+    const rawPath = url.slice(idx + LISTINGS_PUBLIC_PREFIX.length).split('?')[0]
+    if (!rawPath) continue
+    try {
+      paths.push(decodeURIComponent(rawPath))
+    } catch {
+      paths.push(rawPath)
+    }
+  }
+  return paths
+}
+
+/** Human-readable lifecycle label without depending on the optional `status` column. */
+function listingStatusLabel(listing: Listing): string {
+  if (listing.is_active) return 'Aktiv'
+  if (listing.condition === 'shitur') return listing.type === 'qira' ? 'E dhënë me qira' : 'E shitur'
+  return 'Joaktiv'
+}
+
 interface MyListingCardProps {
   listing: Listing
   now: number
   onDelete: (listing: Listing) => void
+  onToggleStatus: (listing: Listing) => void
+  statusBusy: boolean
 }
 
-function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
-  const cycleImages = (listing.images || []).filter(Boolean).slice(0, 6)
-  const hasMultiple = cycleImages.length > 1
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [hasInteracted, setHasInteracted] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const stopCycle = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-    setActiveIndex(0)
-  }, [])
-
-  const startCycle = useCallback(() => {
-    if (!hasMultiple) return
-    setHasInteracted(true)
-    stopCycle()
-    intervalRef.current = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % cycleImages.length)
-    }, 1100)
-  }, [hasMultiple, cycleImages.length, stopCycle])
-
-  useEffect(() => () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-  }, [])
+function MyListingCard({ listing, now, onDelete, onToggleStatus, statusBusy }: MyListingCardProps) {
+  const images = (listing.images || []).filter(Boolean).slice(0, 1)
+  const statusLabel = listingStatusLabel(listing)
+  const isSoldOrPaused = !listing.is_active
 
   const trial = (() => {
     if (!listing.free_trial_until) return null
@@ -88,66 +99,26 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
   })()
 
   return (
-    <div
-      className="group h-full flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-black/5 shadow-[0_1px_3px_rgba(16,24,40,0.08)] hover:shadow-md transition-all duration-200"
-      onMouseEnter={startCycle}
-      onMouseLeave={stopCycle}
-    >
-      {/* Clickable Image Section */}
+    <div className="group h-full flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-black/5 shadow-[0_1px_3px_rgba(16,24,40,0.08)] hover:shadow-md transition-all duration-200">
+      {/* Clickable Image Section — clean single thumbnail (no hover cycling) */}
       <Link
         href={`/listings/${listing.id}`}
         className="block relative aspect-[4/3] bg-gray-100 flex-shrink-0 overflow-hidden"
       >
-        {cycleImages.length > 0 ? (
+        {images.length > 0 ? (
           <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-[1.03]">
             <Image
-              src={cycleImages[0]}
+              src={images[0]}
               alt={listing.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className={`object-cover transition-opacity duration-700 ease-out ${
-                hasMultiple && activeIndex !== 0 ? 'opacity-0' : 'opacity-100'
-              }`}
+              className="object-cover"
             />
-            {hasMultiple &&
-              hasInteracted &&
-              cycleImages.slice(1).map((img, idx) => {
-                const i = idx + 1
-                return (
-                  <Image
-                    key={img + i}
-                    src={img}
-                    alt={listing.title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className={`object-cover transition-opacity duration-700 ease-out ${
-                      i === activeIndex ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  />
-                )
-              })}
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
             <Building2 className="w-12 h-12 stroke-[1.2]" />
           </div>
-        )}
-
-        {/* Bottom scrim + progress dots */}
-        {hasMultiple && (
-          <>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="pointer-events-none absolute bottom-3 inset-x-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              {cycleImages.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === activeIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
-                  }`}
-                />
-              ))}
-            </div>
-          </>
         )}
 
         {/* Type badge - top left */}
@@ -163,7 +134,9 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md shadow-sm border ${
               listing.is_active
                 ? 'bg-white/95 text-emerald-700 border-emerald-200/80'
-                : 'bg-white/95 text-gray-700 border-gray-200'
+                : statusLabel === 'Joaktiv'
+                  ? 'bg-white/95 text-gray-700 border-gray-200'
+                  : 'bg-white/95 text-rose-700 border-rose-200/80'
             }`}
           >
             <span
@@ -171,7 +144,7 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
                 listing.is_active ? 'bg-emerald-500 ring-2 ring-emerald-500/20' : 'bg-gray-400'
               }`}
             />
-            {listing.is_active ? 'Aktiv' : 'Joaktiv'}
+            {statusLabel}
           </span>
 
           {trial && (
@@ -223,21 +196,55 @@ function MyListingCard({ listing, now, onDelete }: MyListingCardProps) {
       </Link>
 
       {/* Management Actions Footer */}
-      <div className="border-t border-gray-100 bg-gray-50/70 p-3 px-4 flex items-center justify-between gap-2 mt-auto">
-        <Link
-          href={`/listings/${listing.id}`}
-          className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/40 hover:shadow-xs transition-all duration-150"
-        >
-          <Eye className="w-3.5 h-3.5" />
-          Shiko pronën
-        </Link>
+      <div className="border-t border-gray-100 bg-gray-50/70 p-3 px-4 flex flex-col gap-2 mt-auto">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href={`/listings/${listing.id}`}
+            className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/40 hover:shadow-xs transition-all duration-150"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Shiko
+          </Link>
+          <Link
+            href={`/posto-prona?edit=${listing.id}`}
+            className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 px-2 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/40 hover:shadow-xs transition-all duration-150"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Modifiko
+          </Link>
+          <button
+            type="button"
+            onClick={() => onDelete(listing)}
+            className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 border border-rose-200/80 hover:border-rose-300 rounded-xl text-xs font-semibold text-rose-600 transition-all duration-150 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Fshi
+          </button>
+        </div>
+
+        {/* Lifecycle toggle: mark as sold / restore */}
         <button
           type="button"
-          onClick={() => onDelete(listing)}
-          className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-rose-50 border border-rose-200/80 hover:border-rose-300 rounded-xl text-xs font-semibold text-rose-600 transition-all duration-150 cursor-pointer"
+          onClick={() => onToggleStatus(listing)}
+          disabled={statusBusy}
+          className={`w-full min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer disabled:opacity-60 ${
+            isSoldOrPaused
+              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
+              : 'bg-white hover:bg-amber-50 border-amber-200 text-amber-700'
+          }`}
         >
-          <Trash2 className="w-3.5 h-3.5" />
-          Fshi
+          {statusBusy ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : isSoldOrPaused ? (
+            <RotateCcw className="w-3.5 h-3.5" />
+          ) : (
+            <BadgeCheck className="w-3.5 h-3.5" />
+          )}
+          {isSoldOrPaused
+            ? 'Rikthe aktive'
+            : listing.type === 'qira'
+              ? 'Shëno si e dhënë me qira'
+              : 'Shëno si të shitur'}
         </button>
       </div>
     </div>
@@ -359,11 +366,80 @@ export default function PostimetEMiaPage() {
 
   const [listingToDelete, setListingToDelete] = useState<Listing | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
+  // The `status` lifecycle column ships in migration 20260928_003. Probe once
+  // and degrade to `is_active` alone if the live table has not applied it yet
+  // (Postgres 42703) — mirrors the mobile client's fallback.
+  const statusColumnSupportedRef = useRef(true)
+
+  const handleToggleStatus = async (listing: Listing) => {
+    if (!userId || statusBusyId) return
+
+    const nextActive = !listing.is_active
+    const nextStatus = nextActive ? 'active' : listing.type === 'qira' ? 'rented' : 'sold'
+
+    const writeStatus = (withStatusColumn: boolean) => {
+      const payload: { is_active: boolean; status?: string } = { is_active: nextActive }
+      if (withStatusColumn) payload.status = nextStatus
+      return supabase.from('listings').update(payload).eq('id', listing.id).eq('user_id', userId)
+    }
+
+    setStatusBusyId(listing.id)
+    try {
+      let { error } = await writeStatus(statusColumnSupportedRef.current)
+
+      const isMissingStatusColumn =
+        error &&
+        (error.code === '42703' ||
+          /column "?(listings\.)?status"? does not exist|Could not find the 'status' column/i.test(
+            error.message || ''
+          ))
+
+      if (error && statusColumnSupportedRef.current && isMissingStatusColumn) {
+        statusColumnSupportedRef.current = false
+        const retry = await writeStatus(false)
+        error = retry.error
+      }
+
+      if (error) throw error
+
+      setListings((prev) =>
+        prev.map((l) => (l.id === listing.id ? { ...l, is_active: nextActive } as Listing : l))
+      )
+      toast.success(
+        nextActive
+          ? 'Prona u rikthye në listime si aktive.'
+          : listing.type === 'qira'
+            ? 'Prona u shënua si e dhënë me qira.'
+            : 'Prona u shënua si e shitur.'
+      )
+    } catch (err) {
+      console.error('Listing status toggle error:', err)
+      toast.error('Dështoi përditësimi i statusit të pronës.')
+    } finally {
+      setStatusBusyId(null)
+    }
+  }
 
   const handleDeleteListing = async () => {
     if (!userId || !listingToDelete) return
     setIsDeleting(true)
 
+    // 1. Best-effort cleanup of uploaded images in the `listings` bucket so
+    //    deleted rows never leave orphaned storage objects behind.
+    const storagePaths = extractListingStoragePaths(listingToDelete.images)
+    if (storagePaths.length > 0) {
+      try {
+        const { error: removeError } = await supabase.storage.from('listings').remove(storagePaths)
+        if (removeError) {
+          console.error('Listing image storage cleanup error:', JSON.stringify(removeError))
+        }
+      } catch (err) {
+        console.error('Listing image storage cleanup failed:', err)
+      }
+    }
+
+    // 2. Delete the listing row itself.
     const { error } = await supabase
       .from('listings')
       .delete()
@@ -524,6 +600,8 @@ export default function PostimetEMiaPage() {
                   listing={listing}
                   now={now}
                   onDelete={(item) => setListingToDelete(item)}
+                  onToggleStatus={handleToggleStatus}
+                  statusBusy={statusBusyId === listing.id}
                 />
               ))}
             </div>

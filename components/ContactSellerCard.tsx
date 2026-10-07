@@ -20,6 +20,12 @@ import { toast } from 'sonner'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import FollowButton from '@/components/FollowButton'
+import {
+  deriveTrustSignals,
+  shouldShowBadge,
+  trustLabel,
+  type TrustSignals,
+} from '@/lib/verification'
 
 interface SellerInfo {
   firstName: string
@@ -41,6 +47,9 @@ interface ContactSellerCardProps {
   listingTitle?: string
   listingCity?: string
   socials?: SocialLinks | null
+  /** Server-derived trust signals (from deriveTrustSignals). Optional so older
+   *  callers degrade to a weak derivation computed from seller props only. */
+  trust?: TrustSignals
   className?: string
 }
 
@@ -53,6 +62,7 @@ export default function ContactSellerCard({
   listingTitle,
   listingCity,
   socials,
+  trust,
   className,
 }: ContactSellerCardProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -85,6 +95,15 @@ export default function ContactSellerCard({
 
   const isOwnListing = currentUserId === seller.userId
   const isFav = favoriteIds.includes(listingId)
+
+  // Badges may ONLY come from deriveTrustSignals() (lib/verification).
+  const trustSignals =
+    trust ??
+    deriveTrustSignals({
+      email_verified: seller.emailVerified,
+      phone: seller.phone,
+    })
+  const showTrustBadge = shouldShowBadge(trustSignals)
 
   const handleMessage = async () => {
     if (!currentUserId || isOwnListing) return
@@ -132,7 +151,7 @@ export default function ContactSellerCard({
   return (
     <div
       id="contact-card"
-      className={`bg-white border border-slate-200/90 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.06)] rounded-2xl p-6 sticky top-24 transition-all ${className || ''}`}
+      className={`bg-white border border-slate-200/90 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.06)] rounded-2xl p-6 transition-all scroll-mt-24 ${className || ''}`}
     >
       {/* Price Header */}
       <div className="mb-5">
@@ -208,10 +227,13 @@ export default function ContactSellerCard({
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Informacioni i Shitësit
           </span>
-          {seller.emailVerified && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
+          {showTrustBadge && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700"
+              title="Sinjal besimi i derivuar nga lib/verification"
+            >
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-              I verifikuar
+              {trustLabel(trustSignals)}
             </span>
           )}
         </div>
@@ -330,10 +352,10 @@ export default function ContactSellerCard({
       <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
         <div className="flex items-center gap-1.5">
           <Lock className="h-3 w-3 text-emerald-600" />
-          <span>Kontakt direkt me pronarin</span>
+          <span>Komunikim i sigurt</span>
         </div>
         <span className="text-slate-300">•</span>
-        <span>Pa komisione</span>
+        <span>0% Provizion Platforme</span>
       </div>
     </div>
   )

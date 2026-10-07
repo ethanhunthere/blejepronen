@@ -18,7 +18,7 @@ import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import ProfileShareButton from '@/components/ProfileShareButton'
-import FollowButton from '@/components/FollowButton'
+import { ProfileFollowButton } from '@/components/ProfileEditModal'
 import ProfileSocialStats from '@/components/ProfileSocialStats'
 
 export const revalidate = 300
@@ -50,7 +50,11 @@ async function getPublicProfile(id: string) {
     ? (meta.company_name || profile.first_name)
     : `${profile.first_name} ${profile.last_name}`.trim()
 
-  const companyDescription = meta.company_description || ''
+  // Render bio for companies AND individuals — individual agents/owners store
+  // it in individual_bio (with legacy fallbacks to bio).
+  const bio = isCompany
+    ? meta.company_description || meta.bio || ''
+    : meta.individual_bio || meta.bio || ''
   const foundedYear = meta.founded_year ? String(meta.founded_year) : ''
 
   const socials: SocialLinks = {
@@ -83,7 +87,7 @@ async function getPublicProfile(id: string) {
     meta,
     isCompany,
     displayName,
-    companyDescription,
+    bio,
     foundedYear,
     socials,
     followersCount,
@@ -111,7 +115,7 @@ export async function generateMetadata({
   if (!data) return { title: 'Profili | Bleje Pronën' }
   return {
     title: `${data.displayName} — Profili dhe Pronat | Bleje Pronën`,
-    description: data.companyDescription || `Shiko profilin, rrjetet sociale dhe të gjitha pronat e listuara nga ${data.displayName} në Bleje Pronën.`,
+    description: data.bio || `Shiko profilin, rrjetet sociale dhe të gjitha pronat e listuara nga ${data.displayName} në Bleje Pronën.`,
   }
 }
 
@@ -125,7 +129,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
     profile,
     isCompany,
     displayName,
-    companyDescription,
+    bio,
     foundedYear,
     socials,
     followersCount,
@@ -227,7 +231,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
 
             {/* Right: Fast Contact, Follow & Share Actions */}
             <div className="flex flex-wrap items-center gap-2.5 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-100">
-              <FollowButton
+              <ProfileFollowButton
                 targetUserId={profile.id}
                 targetUserName={displayName}
                 initialFollowersCount={followersCount}
@@ -260,15 +264,13 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             </div>
           </div>
 
-          {/* Company Description */}
-          {isCompany && companyDescription && (
+          {/* About — company description OR individual bio */}
+          {bio && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Rreth Kompanisë
+                {isCompany ? 'Rreth Kompanisë' : 'Përshkrim'}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed max-w-3xl">
-                {companyDescription}
-              </p>
+              <p className="text-sm text-gray-700 leading-relaxed max-w-3xl">{bio}</p>
             </div>
           )}
         </div>

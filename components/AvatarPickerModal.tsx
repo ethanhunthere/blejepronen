@@ -14,6 +14,75 @@ interface AvatarPickerModalProps {
   isUploadingCustom?: boolean
 }
 
+const AVATAR_SIZE = 512
+const AVATAR_QUALITY = 0.85
+
+type DecodedImage = ImageBitmap | HTMLImageElement
+
+async function decodeImage(file: File): Promise<DecodedImage> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      return await createImageBitmap(file)
+    } catch {
+      // fall through to the <img> decoder below
+    }
+  }
+  const url = URL.createObjectURL(file)
+  try {
+    const img = document.createElement('img')
+    img.src = url
+    await img.decode()
+    return img
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
+}
+
+/**
+ * Client-side 1:1 center crop + 512×512 WebP (quality 0.85) compression for
+ * avatar uploads. Keeps multi-megabyte camera photos from hitting Supabase
+ * Storage raw. JPEG is used as a fallback when the runtime cannot encode WebP;
+ * the avatars bucket/DB pipeline stores the public URL only, so both formats
+ * are accepted by the upload flow (image/jpeg, image/png, image/webp).
+ */
+export async function prepareAvatarImage(
+  file: File
+): Promise<{ blob: Blob; ext: string; contentType: string }> {
+  const src = await decodeImage(file)
+  try {
+    const sw = src.width
+    const sh = src.height
+    if (!sw || !sh) throw new Error('Fotoja nuk mund të lexohet.')
+
+    const side = Math.min(sw, sh)
+    const sx = (sw - side) / 2
+    const sy = (sh - side) / 2
+
+    const canvas = document.createElement('canvas')
+    canvas.width = AVATAR_SIZE
+    canvas.height = AVATAR_SIZE
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas-i nuk është i disponueshëm.')
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(src, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE)
+
+    const webp = await canvasToBlob(canvas, 'image/webp', AVATAR_QUALITY)
+    if (webp) return { blob: webp, ext: 'webp', contentType: 'image/webp' }
+
+    const jpeg = await canvasToBlob(canvas, 'image/jpeg', AVATAR_QUALITY)
+    if (jpeg) return { blob: jpeg, ext: 'jpg', contentType: 'image/jpeg' }
+
+    throw new Error('Kompresimi i fotos dështoi.')
+  } finally {
+    if ('close' in src && typeof src.close === 'function') src.close()
+  }
+}
+
 export default function AvatarPickerModal({
   isOpen,
   onClose,
@@ -43,7 +112,9 @@ export default function AvatarPickerModal({
       aria-modal="true"
       aria-labelledby="avatar-picker-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={onClose}
+      onClick={() => {
+        if (!isUploadingCustom) onClose()
+      }}
     >
       <div
         className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
@@ -67,8 +138,9 @@ export default function AvatarPickerModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={isUploadingCustom}
             aria-label="Mbyll"
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -88,13 +160,13 @@ export default function AvatarPickerModal({
                   onClick={() => handleSelect(avatar)}
                   disabled={Boolean(savingUrl) || isUploadingCustom}
                   aria-label={avatar.name}
-                  className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center p-1 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#00675B] ${
+                  className={`group relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-200 flex items-center justify-center p-1 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#00675B] ${
                     isSelected
                       ? 'border-[#00675B] ring-2 ring-[#00675B]/30 bg-[#00675B]/5 scale-105 shadow-md'
                       : 'border-gray-200 hover:border-gray-400 hover:scale-105 hover:shadow-sm bg-gray-50'
                   }`}
                 >
-                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                  <div className="relative w-full h-full rounded-full overflow-hidden">
                     <Image
                       src={avatar.url}
                       alt={avatar.name}
@@ -130,14 +202,26 @@ export default function AvatarPickerModal({
         {/* Footer Actions — rendered only if custom file upload is enabled */}
         {onTriggerFileUpload && (
           <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between gap-3">
+            {isUploadingCustom && (
+              <div
+                role="status"
+                className="flex-1 min-w-0 inline-flex items-center gap-2 text-xs font-bold text-[#00675B]"
+              >
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span className="truncate">Po përpunojmë dhe ngarkojmë foton tuaj...</span>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
+                // Keep the modal open: users need progress feedback while the
+                // file is picked, cropped and uploaded.
                 onTriggerFileUpload()
-                onClose()
               }}
               disabled={isUploadingCustom}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors shadow-2xs cursor-pointer disabled:opacity-50 ${
+                isUploadingCustom ? '' : 'w-full sm:w-auto'
+              }`}
             >
               {isUploadingCustom ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#00675B]" />
@@ -149,7 +233,8 @@ export default function AvatarPickerModal({
             <button
               type="button"
               onClick={onClose}
-              className="hidden sm:inline-flex text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
+              disabled={isUploadingCustom}
+              className="hidden sm:inline-flex text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer disabled:opacity-50"
             >
               Mbyll
             </button>

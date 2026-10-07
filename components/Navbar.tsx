@@ -203,6 +203,20 @@ function clearNavbarCache() {
   } catch {}
 }
 
+/**
+ * Clears the transient logout marker (sessionStorage + cookie). Must be called
+ * from a finally/catch path: if navigation after logout is cancelled, a stale
+ * flag makes getCachedUser() return null forever and traps the session in a
+ * logged-out state across refreshes.
+ */
+function clearLogoutFlag() {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.removeItem('blejepronen_logging_out')
+    document.cookie = 'blejepronen_logging_out=; path=/; max-age=0'
+  } catch {}
+}
+
 interface NavbarProps {
   variant?: 'fixed' | 'absolute' | 'static'
   className?: string
@@ -774,33 +788,19 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     setMenuOpen(false)
   }, [pathname])
 
-  const handleNavClick = useCallback((href: string) => {
+  const handleNavClick = useCallback(() => {
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
-    const currentBase = pathname.split('?')[0]
-    const targetBase = href.split('?')[0]
-    if (currentBase === targetBase) {
-      setMenuOpen(false)
-    } else {
-      // Delay closing menu slightly so destination page renders underneath,
-      // preventing any flash of the underlying home page
-      setTimeout(() => {
-        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-        setMenuOpen(false)
-      }, 220)
-    }
-  }, [pathname])
+    // Close immediately: no artificial navigation delay on mobile menu links.
+    // The App Router owns the transition; delaying the close only added latency.
+    setMenuOpen(false)
+  }, [])
 
   // Clear logout flag when arriving at home page
   useEffect(() => {
     if (pathname === '/') {
-      try {
-        sessionStorage.removeItem('blejepronen_logging_out')
-        document.cookie = 'blejepronen_logging_out=; path=/; max-age=0'
-      } catch {}
+      clearLogoutFlag()
     }
   }, [pathname])
 
@@ -816,57 +816,65 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     setIsLoggingOut(true)
 
     try {
-      sessionStorage.setItem('blejepronen_logging_out', '1')
-      document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
-    } catch {}
+      try {
+        sessionStorage.setItem('blejepronen_logging_out', '1')
+        document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
+      } catch {}
 
-    // Synchronously unsubscribe realtime channels to eliminate zombie listeners
-    if (realtimeChannelRef.current) {
-      realtimeChannelRef.current.unsubscribe()
-      realtimeChannelRef.current = null
-    }
-    if (unreadChannelRef.current) {
-      unreadChannelRef.current.unsubscribe()
-      unreadChannelRef.current = null
-    }
-    userIdRef.current = null
+      // Synchronously unsubscribe realtime channels to eliminate zombie listeners
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe()
+        realtimeChannelRef.current = null
+      }
+      if (unreadChannelRef.current) {
+        unreadChannelRef.current.unsubscribe()
+        unreadChannelRef.current = null
+      }
+      userIdRef.current = null
 
-    // 1. Synchronously clear ALL Supabase localStorage keys and navbar cache
-    try {
-      clearNavbarCache()
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-')) {
-          localStorage.removeItem(key)
-        }
-      })
-    } catch {}
+      // 1. Synchronously clear ALL Supabase localStorage keys and navbar cache
+      try {
+        clearNavbarCache()
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-')) {
+            localStorage.removeItem(key)
+          }
+        })
+      } catch {}
 
-    // 2. Call server-side logout to clear cookies with correct domain
-    try {
-      await Promise.race([
-        fetch('/api/logout', { method: 'POST', credentials: 'include', keepalive: true }),
-        new Promise(resolve => setTimeout(resolve, 800))
-      ])
-    } catch (err) {
-      console.error('Server logout API call failed:', err)
-    }
+      // 2. Call server-side logout to clear cookies with correct domain
+      try {
+        await Promise.race([
+          fetch('/api/logout', { method: 'POST', credentials: 'include', keepalive: true }),
+          new Promise(resolve => setTimeout(resolve, 800))
+        ])
+      } catch (err) {
+        console.error('Server logout API call failed:', err)
+      }
 
-    // 3. Sign out locally in Supabase client
-    try {
-      await supabaseRef.current.auth.signOut({ scope: 'local' })
-    } catch (err) {
-      console.error('Client sign out exception:', err)
-    }
+      // 3. Sign out locally in Supabase client
+      try {
+        await supabaseRef.current.auth.signOut({ scope: 'local' })
+      } catch (err) {
+        console.error('Client sign out exception:', err)
+      }
 
-    // 4. Reset user state synchronously
-    setUser(null)
-    setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
-    setUnreadCount(0)
+      // 4. Reset user state synchronously
+      setUser(null)
+      setProfile({ incomplete: false, firstName: '', avatarUrl: '' })
+      setUnreadCount(0)
 
-    // 5. If currently on a protected route, immediately redirect to '/' to prevent bounce loop
-    const protectedPrefixes = ['/profili', '/postimet-e-mia', '/mesazhet', '/settings', '/completo-profilin', '/posto-prona']
-    if (protectedPrefixes.some(prefix => pathname.startsWith(prefix))) {
-      router.replace('/')
+      // 5. If currently on a protected route, immediately redirect to '/' to prevent bounce loop
+      const protectedPrefixes = ['/profili', '/postimet-e-mia', '/mesazhet', '/settings', '/completo-profilin', '/posto-prona']
+      if (protectedPrefixes.some(prefix => pathname.startsWith(prefix))) {
+        router.replace('/')
+      }
+    } finally {
+      // Strict cleanup: never leave the spinner running (network failure or a
+      // thrown step must not lock the navbar) and always release the logout
+      // flag so a cancelled/failed navigation cannot trap the session.
+      setIsLoggingOut(false)
+      clearLogoutFlag()
     }
   }, [pathname, router])
 
@@ -895,10 +903,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
           {/* Permanent static logo: never moves, scales, or animates during menu open/close */}
           <Link
             href="/"
-            onClick={() => {
-              setMenuOpen(false)
-              handleNavClick('/')
-            }}
+            onClick={handleNavClick}
             className="flex items-center flex-shrink-0 lg:mr-6"
             aria-label="Ballina"
           >
@@ -1332,7 +1337,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         aria-label="Menyja e navigimit"
         tabIndex={-1}
         inert={!menuOpen ? true : undefined}
-        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#00675B] flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out focus:outline-none ${
+        className={`lg:hidden fixed inset-0 z-40 w-full h-[100dvh] min-h-[100dvh] bg-[#00675B]/95 backdrop-blur-2xl flex flex-col overflow-hidden overscroll-none touch-none pt-[calc(3.5rem+env(safe-area-inset-top,0px))] transition-opacity duration-200 ease-out focus:outline-none ${
           menuOpen
             ? 'visible opacity-100 pointer-events-auto'
             : 'invisible opacity-0 pointer-events-none'
@@ -1403,7 +1408,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/profili"
                       prefetch={true}
                       aria-current={isActivePath('/profili') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/profili')}
+                      onClick={handleNavClick}
                       className="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95 shadow-xs border border-white/20 cursor-pointer"
                     >
                       <span>Profili</span>
@@ -1417,7 +1422,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/postimet-e-mia"
                       prefetch={true}
                       aria-current={isActivePath('/postimet-e-mia') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/postimet-e-mia')}
+                      onClick={handleNavClick}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
                       <Home className="h-4 w-4 text-white/90 shrink-0" />
@@ -1428,7 +1433,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/mesazhet"
                       prefetch={true}
                       aria-current={isActivePath('/mesazhet') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/mesazhet')}
+                      onClick={handleNavClick}
                       className="relative flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
                       <div className="relative">
@@ -1454,7 +1459,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/settings"
                       prefetch={true}
                       aria-current={isActivePath('/settings') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/settings')}
+                      onClick={handleNavClick}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-white/10"
                     >
                       <Settings className="h-4 w-4 text-white/90 shrink-0" />
@@ -1465,7 +1470,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/posto-prona"
                       prefetch={true}
                       aria-current={isActivePath('/posto-prona') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/posto-prona')}
+                      onClick={handleNavClick}
                       className="flex items-center sm:flex-col justify-start sm:justify-center gap-2.5 sm:gap-1 py-2.5 px-3 rounded-2xl bg-[#C8B882]/30 hover:bg-[#C8B882]/40 active:scale-95 text-xs font-bold text-white transition-all cursor-pointer border border-[#C8B882]/40"
                     >
                       <Plus className="h-4 w-4 text-[#C8B882] shrink-0" />
@@ -1477,7 +1482,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href={profile.isCompany ? '/completo-profilin-company' : '/completo-profilin-fast'}
                       prefetch={true}
-                      onClick={() => handleNavClick(profile.isCompany ? '/completo-profilin-company' : '/completo-profilin-fast')}
+                      onClick={handleNavClick}
                       className="mt-3 flex items-center justify-between p-2.5 rounded-2xl bg-amber-500/25 border border-amber-400/40 text-xs font-medium text-amber-100 hover:bg-amber-500/35 transition-all cursor-pointer"
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -1512,7 +1517,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/register"
                       prefetch={true}
-                      onClick={() => handleNavClick('/register')}
+                      onClick={handleNavClick}
                       className="flex items-center justify-center h-10 sm:h-11 rounded-xl bg-[#00675B] hover:bg-[#004D43] active:bg-[#003d37] text-white text-sm font-bold shadow-md transition-colors cursor-pointer"
                     >
                       Regjistrohu
@@ -1520,7 +1525,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/login"
                       prefetch={true}
-                      onClick={() => handleNavClick('/login')}
+                      onClick={handleNavClick}
                       className="flex items-center justify-center h-10 sm:h-11 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-[#101828] text-sm font-bold transition-colors cursor-pointer"
                     >
                       Hyr
@@ -1535,7 +1540,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                 <Link
                   href={activeUser ? '/posto-prona' : '/register'}
                   prefetch={true}
-                  onClick={() => handleNavClick(activeUser ? '/posto-prona' : '/register')}
+                  onClick={handleNavClick}
                   className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#004D43] hover:bg-[#00453e] active:bg-[#003d37] border border-white/20 text-white shadow-md transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -1562,7 +1567,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       href="/listings"
                       prefetch={true}
                       aria-current={isActivePath('/listings') ? 'page' : undefined}
-                      onClick={() => handleNavClick('/listings')}
+                      onClick={handleNavClick}
                       className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.18] border border-white/15 text-white text-center transition-colors cursor-pointer group"
                     >
                       <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-white/85 mb-1 group-hover:scale-110 transition-transform" />
@@ -1571,7 +1576,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/listings?type=shitje"
                       prefetch={true}
-                      onClick={() => handleNavClick('/listings?type=shitje')}
+                      onClick={handleNavClick}
                       className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.18] border border-white/15 text-white text-center transition-colors cursor-pointer group"
                     >
                       <Home className="h-4 w-4 sm:h-5 sm:w-5 text-white/85 mb-1 group-hover:scale-110 transition-transform" />
@@ -1580,7 +1585,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     <Link
                       href="/listings?type=qira"
                       prefetch={true}
-                      onClick={() => handleNavClick('/listings?type=qira')}
+                      onClick={handleNavClick}
                       className="flex flex-col items-center justify-center py-2 px-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.18] border border-white/15 text-white text-center transition-colors cursor-pointer group"
                     >
                       <Key className="h-4 w-4 sm:h-5 sm:w-5 text-white/85 mb-1 group-hover:scale-110 transition-transform" />
@@ -1601,7 +1606,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                     href="/listings"
                     prefetch={true}
                     aria-current={isActivePath('/listings') ? 'page' : undefined}
-                    onClick={() => handleNavClick('/listings')}
+                    onClick={handleNavClick}
                     className="text-[11px] font-semibold text-white/70 hover:text-white transition-colors"
                   >
                     Të gjitha →
@@ -1614,7 +1619,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                       key={city}
                       href={`/listings?city=${encodeURIComponent(city)}`}
                       prefetch={true}
-                      onClick={() => handleNavClick(`/listings?city=${encodeURIComponent(city)}`)}
+                      onClick={handleNavClick}
                       className="flex items-center justify-center h-8 sm:h-8.5 px-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] border border-white/15 text-xs font-semibold text-white transition-colors text-center truncate cursor-pointer"
                     >
                       {city}
@@ -1647,7 +1652,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   href="/kontakti"
                   prefetch={true}
                   aria-current={isActivePath('/kontakti') ? 'page' : undefined}
-                  onClick={() => handleNavClick('/kontakti')}
+                  onClick={handleNavClick}
                   className="hover:text-white transition-colors"
                 >
                   Kontakti
@@ -1657,7 +1662,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   href="/kushtet"
                   prefetch={true}
                   aria-current={isActivePath('/kushtet') ? 'page' : undefined}
-                  onClick={() => handleNavClick('/kushtet')}
+                  onClick={handleNavClick}
                   className="hover:text-white transition-colors"
                 >
                   Kushtet
@@ -1667,7 +1672,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                   href="/privatesia"
                   prefetch={true}
                   aria-current={isActivePath('/privatesia') ? 'page' : undefined}
-                  onClick={() => handleNavClick('/privatesia')}
+                  onClick={handleNavClick}
                   className="hover:text-white transition-colors"
                 >
                   Privatësia

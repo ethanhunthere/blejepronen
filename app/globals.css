@@ -45,6 +45,7 @@
   --color-brand-dark: var(--brand-dark);
   --color-gold: var(--gold);
   --color-gold-light: var(--gold-light);
+  --color-gold-foreground: var(--gold-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -62,6 +63,13 @@
   --brand-dark: #004D43;
   --gold: #9A7228;
   --gold-light: rgba(154, 114, 40, 0.12);
+  --gold-foreground: #ffffff;
+
+  /* ---- Safe area insets (iOS home indicator / notch) ---- */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 
   /* ---- Semantic design tokens ---- */
   --color-brand: #00675B;
@@ -131,6 +139,7 @@
   --brand-dark: #071C18;
   --gold: #D4AF37;
   --gold-light: rgba(212, 175, 55, 0.22);
+  --gold-foreground: #071C18;
   --background: #071C18;
   --foreground: #FFFFFF;
   --card: #0E332A;
@@ -168,6 +177,7 @@
   --brand-dark: #059669;
   --gold: #D4AF37;
   --gold-light: rgba(212, 175, 55, 0.20);
+  --gold-foreground: #0F172A;
   --background: #000000;
   --foreground: #F9FAFB;
   --card: #0D1311;
@@ -201,7 +211,7 @@
 @layer base {
   html, body {
     background-color: var(--background);
-    max-width: 100vw;
+    max-width: 100%;
     overflow-x: hidden;
   }
   * {
@@ -404,6 +414,51 @@ textarea:focus-visible {
 input:focus-visible, textarea:focus-visible, select:focus-visible {
   box-shadow: 0 0 0 3px rgba(0, 103, 91, 0.12);
   border-color: #00675B;
+}
+
+/* =========================================================
+   Browser autofill / password-manager styling.
+   Unlayered on purpose: beats Tailwind utilities (bg-transparent,
+   dark:bg-input/30) so Chrome/Safari's mint fill never leaks through.
+   Tokens resolve per theme, so `.dark` and `.green` are covered too;
+   the `.dark` selectors are repeated for specificity + transition hack.
+   ========================================================= */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  background-color: var(--brand-light) !important;
+  background-image: none !important;
+  box-shadow: 0 0 0 1000px var(--brand-light) inset !important;
+  border-color: var(--brand);
+  transition: background-color 600000s ease-in-out 0s,
+              box-shadow 600000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark textarea:-webkit-autofill:hover,
+.dark textarea:-webkit-autofill:focus,
+.dark select:-webkit-autofill,
+.dark select:-webkit-autofill:hover,
+.dark select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  background-color: var(--brand-light) !important;
+  background-image: none !important;
+  box-shadow: 0 0 0 1000px var(--brand-light) inset !important;
+  border-color: var(--brand);
+  transition: background-color 600000s ease-in-out 0s,
+              box-shadow 600000s ease-in-out 0s;
 }
 
 /* Link underline animation */

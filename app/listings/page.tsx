@@ -14,6 +14,16 @@ interface PageProps {
 const first = (v: string | string[] | undefined): string =>
   Array.isArray(v) ? (v[0] ?? '') : (v ?? '')
 
+/**
+ * URL pagination is 1-based (…?page=1 is the first page) while Supabase
+ * `.range()` takes a 0-based index — normalize here so page=1 → range(0, 11)
+ * instead of skipping the first 12 listings. Invalid/absent values fall back
+ * to the first page.
+ */
+function pageIndexFrom(sp: Record<string, string | string[] | undefined>): number {
+  return Math.max(0, (Number(first(sp.page)) || 1) - 1)
+}
+
 function toQueryParams(sp: Record<string, string | string[] | undefined>): ListingsQueryParams {
   return {
     search: first(sp.search),
@@ -31,7 +41,7 @@ function toQueryParams(sp: Record<string, string | string[] | undefined>): Listi
     features: first(sp.features) ? first(sp.features).split(',').filter(Boolean) : [],
     agentId: first(sp.agentId),
     sort: (first(sp.sort) as ListingsSort) || 'newest',
-    page: Math.max(0, Number(first(sp.page) || 0) || 0),
+    page: pageIndexFrom(sp),
     limit: 12,
   }
 }
@@ -53,20 +63,28 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     ? `Shfletoni pronat aktive ${typeLabel} në ${city}: banesa, shtëpi, lokale dhe truall me çmime, foto dhe kontakt direkt me pronarin.`
     : 'Katalogu i plotë i pronave aktive në Kosovë — banesa, shtëpi, vila, lokale dhe truall. Filtroni sipas qytetit, çmimit, sipërfaqes dhe veçorive.'
 
+  // Faceted governance: the explorer is a browse surface; indexable facet
+  // landing pages live under /pronat/... — parameterized views canonical
+  // to the base catalog and stay out of the index. Pagination (page-only)
+  // is NOT a facet: each page self-references so crawlers can index
+  // listings beyond page 1.
+  const pageIndex = pageIndexFrom(sp)
+  const canonical =
+    filtered || pageIndex === 0
+      ? `${SITE_URL}/listings`
+      : `${SITE_URL}/listings?page=${pageIndex + 1}`
+
   return {
     title,
     description,
     alternates: {
-      // Faceted governance: the explorer is a browse surface; indexable facet
-      // landing pages live under /pronat/... — parameterized views canonical
-      // to the base catalog and stay out of the index.
-      canonical: `${SITE_URL}/listings`,
+      canonical,
     },
     robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/listings`,
+      url: canonical,
       siteName: 'Bleje Pronën',
       locale: 'sq_AL',
       type: 'website',
@@ -92,7 +110,7 @@ export default async function ListingsPage({ searchParams }: PageProps) {
     numberOfItems: total,
     itemListElement: rows.map((r, i) => ({
       '@type': 'ListItem',
-      position: i + 1,
+      position: (params.page ?? 0) * 12 + i + 1,
       url: `${SITE_URL}/listings/${r.id}`,
       name: r.title,
     })),

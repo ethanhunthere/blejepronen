@@ -96,7 +96,7 @@ export default function MobileContactBar({
             </a>
           ) : (
             <a
-              href="#contact-card"
+              href="#seller-info"
               className="h-10 px-3.5 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
             >
               <span>Detajet</span>

@@ -44,7 +44,7 @@ const ListingCard = React.memo(function ListingCard({
   const coverImage = images[0] || null
 
   return (
-    <Link href={`/listings/${listing.id}`} prefetch={true} className="block group">
+    <article className="relative h-full group">
       <div className="h-full flex flex-col rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.06)] card-hover">
         {/* Cover Image Container */}
         <div className="relative aspect-[4/3] bg-slate-100 flex-shrink-0 overflow-hidden">
@@ -72,8 +72,8 @@ const ListingCard = React.memo(function ListingCard({
             </span>
           </div>
 
-          {/* Save + Featured stack */}
-          <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+          {/* Save + Featured stack (z-20 keeps Favorite above the stretched link overlay) */}
+          <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
             {showFavorite && (
               <button
                 type="button"
@@ -83,7 +83,7 @@ const ListingCard = React.memo(function ListingCard({
                   e.stopPropagation()
                   onToggleFavorite?.(listing.id)
                 }}
-                className="bg-white/90 backdrop-blur-md rounded-full w-9 h-9 flex items-center justify-center shadow-xs border border-black/5 hover:bg-white active:scale-90 transition-all duration-150 cursor-pointer"
+                className="relative z-20 bg-white/90 backdrop-blur-md rounded-full w-11 h-11 flex items-center justify-center shadow-xs border border-black/5 hover:bg-white active:scale-90 transition-all duration-150 cursor-pointer"
               >
                 <Heart
                   className={`h-4 w-4 transition-colors ${
@@ -93,7 +93,7 @@ const ListingCard = React.memo(function ListingCard({
               </button>
             )}
             {listing.is_featured && (
-              <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-900 text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+              <span className="inline-flex items-center gap-1 bg-gold text-gold-foreground text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-xs pointer-events-none">
                 <Star className="h-2.5 w-2.5 fill-current" />
                 E veçuar
               </span>
@@ -103,9 +103,15 @@ const ListingCard = React.memo(function ListingCard({
 
         {/* Content */}
         <div className="flex-1 flex flex-col p-4">
-          <h3 className="font-semibold text-slate-900 text-[15px] leading-snug line-clamp-2 min-h-[42px] group-hover:text-[#00675B] transition-colors">
-            {listing.title}
-          </h3>
+          <Link
+            href={`/listings/${listing.id}`}
+            prefetch={true}
+            className="after:absolute after:inset-0 after:content-[''] after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#00675B]"
+          >
+            <h3 className="font-semibold text-slate-900 text-[15px] leading-snug line-clamp-2 min-h-[42px] group-hover:text-[#00675B] transition-colors">
+              {listing.title}
+            </h3>
+          </Link>
 
           <div className="flex items-center text-slate-500 text-xs truncate mt-1.5">
             <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-slate-400" />
@@ -147,7 +153,7 @@ const ListingCard = React.memo(function ListingCard({
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   )
 })
 

@@ -4,22 +4,40 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Mail, Lock, CheckCircle2, Loader2 } from 'lucide-react'
+import { Mail, Lock, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 import AuthShell from '@/components/AuthShell'
 import AuthPanel from '@/components/AuthPanel'
 import AuthField from '@/components/AuthField'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function VerifiedMessage() {
+function QueryNotices() {
   const searchParams = useSearchParams()
   const isVerified = searchParams.get('verified') === 'true'
-  if (!isVerified) return null
+  const isReset = searchParams.get('reset') === 'success'
+  const isOauthError = searchParams.get('error') === 'oauth_callback_failed'
+
+  if (isOauthError) {
+    return (
+      <div className="mb-3 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs sm:text-[13px] flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+        <span>
+          Hyrja përmes rrjetit social dështoi. Ju mund të provoni përsëri ose të hyni me email dhe fjalëkalim.
+        </span>
+      </div>
+    )
+  }
+
+  if (!isVerified && !isReset) return null
 
   return (
     <div className="mb-3 p-2.5 rounded-xl bg-[#00675B]/10 border border-[#00675B]/20 text-[#00675B] text-xs sm:text-[13px] flex items-center gap-2">
       <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00675B]" />
-      <span>Email-i u verifikua me sukses! Tani mund të hyni në llogari.</span>
+      <span>
+        {isReset
+          ? 'Fjalëkalimi u rivendos me sukses! Tani mund të hyni në llogari me fjalëkalimin e ri.'
+          : 'Email-i u verifikua me sukses! Tani mund të hyni në llogari.'}
+      </span>
     </div>
   )
 }
@@ -38,7 +56,6 @@ const isOAuthCancel = (errText?: string | null) => {
 }
 
 function LoginForm() {
-  const [accountType, setAccountType] = useState<'individual' | 'company'>('individual')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
@@ -59,9 +76,7 @@ function LoginForm() {
   const validate = () => {
     const next: { email?: string; password?: string } = {}
     if (!email.trim()) {
-      next.email = accountType === 'company'
-        ? 'Email-i i kompanisë është i detyrueshëm.'
-        : 'Email-i është i detyrueshëm.'
+      next.email = 'Email-i është i detyrueshëm.'
     } else if (!EMAIL_RE.test(email.trim())) {
       next.email = 'Shkruaj një email të vlefshëm.'
     }
@@ -98,7 +113,7 @@ function LoginForm() {
           } catch {}
 
           const hasCompletedOnboarding = Boolean(user.user_metadata?.onboarding_completed)
-          const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name) || accountType === 'company'
+          const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
 
           if (!hasCompletedOnboarding) {
             const { data: profile } = await supabase
@@ -120,6 +135,7 @@ function LoginForm() {
       }
 
       const msg = signInError.message?.toLowerCase() || ''
+      const code = String((signInError as unknown as { code?: string | number }).code ?? '').toLowerCase()
 
       if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
         setError(
@@ -135,53 +151,27 @@ function LoginForm() {
         return
       }
 
-      // Check if user exists in the system to provide accurate, specific feedback
-      const checkRes = await fetch('/api/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail }),
-      })
-
-      if (checkRes.ok) {
-        const checkData = await checkRes.json()
-
-        if (checkData.exists === false) {
-          setError(
-            <span>
-              Kjo llogari nuk ekziston.{' '}
-              <Link href="/register" className="font-bold underline hover:opacity-90">
-                Regjistrohu falas këtu
-              </Link>
-            </span>
-          )
-          setFieldErrors({ email: 'Kjo llogari nuk është e regjistruar.' })
-          setLoading(false)
-          return
-        }
-
-        if (checkData.exists === true && checkData.emailConfirmed === false) {
-          setError(
-            <span>
-              Llogaria juaj nuk është verifikuar ende.{' '}
-              <Link href="/register" className="font-bold underline hover:opacity-90">
-                Verifiko email-in këtu
-              </Link>
-            </span>
-          )
-          setFieldErrors({ email: 'Email-i nuk është verifikuar ende.' })
-          setLoading(false)
-          return
-        }
-
-        if (checkData.exists === true) {
-          setError('Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.')
-          setFieldErrors({ password: 'Fjalëkalimi është i pasaktë.' })
-          setLoading(false)
-          return
-        }
+      // Supabase auth errors handled directly (no extra network round-trips).
+      if (code === 'invalid_credentials' || msg.includes('invalid login credentials')) {
+        setError('Email ose fjalëkalimi është i pasaktë.')
+        setFieldErrors({ password: 'Email ose fjalëkalimi është i pasaktë.' })
+        setLoading(false)
+        return
       }
 
-      setError('Email ose fjalëkalimi është i pasaktë.')
+      if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('request this after')) {
+        setError('Shumë tentativa hyrjeje. Prisni pak minuta dhe provoni përsëri.')
+        setLoading(false)
+        return
+      }
+
+      if (msg.includes('network') || msg.includes('fetch failed')) {
+        setError('Nuk u lidhëm me serverin. Kontrolloni lidhjen dhe provoni përsëri.')
+        setLoading(false)
+        return
+      }
+
+      setError('Email ose fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.')
       setLoading(false)
     } catch (err) {
       console.error('Login error:', err)
@@ -202,11 +192,9 @@ function LoginForm() {
       }
       const providerTitle = providerNames[provider] || provider
 
-      // Persist persona selection across OAuth boundary
-      try {
-        document.cookie = `blejepronen_persona=${accountType}; path=/; max-age=600; SameSite=Lax`
-        localStorage.setItem('blejepronen_persona', accountType)
-      } catch {}
+      // NOTE: no persona/Individ-Kompani cookie is written here. The persona
+      // switcher lives on the registration page only — writing it from login
+      // used to overwrite company account metadata on the OAuth callback.
 
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
 
@@ -258,19 +246,12 @@ function LoginForm() {
     >
       <AuthPanel
         title="Hyr në llogari"
-        subtitle={
-          accountType === 'company'
-            ? 'Kyçu në profilin e biznesit ose agjencisë'
-            : 'Futu me llogarinë tënde personale'
-        }
+        subtitle="Futu me llogarinë tënde personale"
         googleLabel="Google"
         onGoogle={() => handleOAuth('google')}
         onApple={() => handleOAuth('apple')}
         onFacebook={() => handleOAuth('facebook')}
         oauthLoading={oauthLoading}
-        accountType={accountType}
-        onAccountTypeChange={setAccountType}
-        showAccountTypeSelector={true}
         error={error}
         footer={
           <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
@@ -285,16 +266,16 @@ function LoginForm() {
         }
       >
         <Suspense fallback={null}>
-          <VerifiedMessage />
+          <QueryNotices />
         </Suspense>
 
         <form onSubmit={handleLogin} noValidate className="space-y-2.5 sm:space-y-3">
           <AuthField
             id="email"
-            label={accountType === 'company' ? 'Email Zyrtar i Kompanisë' : 'Email'}
+            label="Email"
             type="email"
-            placeholder={accountType === 'company' ? 'zyra@kompania.com' : 'emri@email.com'}
-            autoComplete="email"
+            placeholder="emri@email.com"
+            autoComplete="username"
             icon={<Mail className="h-4 w-4" />}
             value={email}
             onChange={(v) => {
@@ -339,8 +320,6 @@ function LoginForm() {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Duke hyrë...
               </span>
-            ) : accountType === 'company' ? (
-              'Hyr si Kompani / Biznes'
             ) : (
               'Hyr në llogari'
             )}

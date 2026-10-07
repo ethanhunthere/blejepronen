@@ -115,12 +115,11 @@ export default function RootLayout({
       lang="sq"
       suppressHydrationWarning
       className={`${albertSans.variable} h-full antialiased`}
-      style={{ backgroundColor: "#00675B" }}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.style.backgroundColor='#00675B';document.body&&(document.body.style.backgroundColor='#00675B');(function(){try{var p=window.location.pathname;if(p==='/login'||p==='/register'||p==='/forgot-password'){document.documentElement.setAttribute('data-auth','logged-out');return;}var isAuth=false;var u=localStorage.getItem('blejepronen_cached_user');if(u){isAuth=true;}else{var ck=document.cookie;if(ck.indexOf('sb-')!==-1&&ck.indexOf('-auth-token')!==-1){isAuth=true;}}if(isAuth){document.documentElement.setAttribute('data-auth','logged-in');var profRaw=localStorage.getItem('blejepronen_cached_navbar_profile');if(profRaw){var prof=JSON.parse(profRaw);if(prof.avatarUrl){document.documentElement.style.setProperty('--nav-avatar','url(\"'+prof.avatarUrl+'\")');}if(prof.firstName){document.documentElement.style.setProperty('--nav-initial','\"'+prof.firstName.charAt(0).toUpperCase()+'\"');}}else if(u){var userObj=JSON.parse(u);var meta=userObj.user_metadata;var ini=((meta&&(meta.first_name||meta.full_name))||userObj.email||'?').charAt(0).toUpperCase();if(ini&&ini!=='?'){document.documentElement.style.setProperty('--nav-initial','\"'+ini+'\"');}}}else{document.documentElement.setAttribute('data-auth','logged-out');}}catch(e){}})();`,
+            __html: `(function(){try{var p=window.location.pathname;if(p==='/login'||p==='/register'||p==='/forgot-password'){document.documentElement.setAttribute('data-auth','logged-out');return;}var isAuth=false;var u=localStorage.getItem('blejepronen_cached_user');if(u){isAuth=true;}else{var ck=document.cookie;if(ck.indexOf('sb-')!==-1&&ck.indexOf('-auth-token')!==-1){isAuth=true;}}if(isAuth){document.documentElement.setAttribute('data-auth','logged-in');var profRaw=localStorage.getItem('blejepronen_cached_navbar_profile');if(profRaw){var prof=JSON.parse(profRaw);if(prof.avatarUrl){document.documentElement.style.setProperty('--nav-avatar','url(\"'+prof.avatarUrl+'\")');}if(prof.firstName){document.documentElement.style.setProperty('--nav-initial','\"'+prof.firstName.charAt(0).toUpperCase()+'\"');}}else if(u){var userObj=JSON.parse(u);var meta=userObj.user_metadata;var ini=((meta&&(meta.first_name||meta.full_name))||userObj.email||'?').charAt(0).toUpperCase();if(ini&&ini!=='?'){document.documentElement.style.setProperty('--nav-initial','\"'+ini+'\"');}}}else{document.documentElement.setAttribute('data-auth','logged-out');}}catch(e){}})();`,
           }}
         />
         <meta name="theme-color" content="#00675B" />
@@ -137,7 +136,7 @@ export default function RootLayout({
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </head>
-      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#00675B] text-[#101828] overflow-x-hidden" style={{ backgroundColor: "#00675B" }}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-[#101828] overflow-x-hidden">
         <header className="bg-[#00675B]">
           <Navbar variant="static" />
         </header>

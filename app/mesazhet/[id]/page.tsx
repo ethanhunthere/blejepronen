@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert, MessageCircle } from 'lucide-react'
+import { ArrowLeft, SendHorizonal, WifiOff, ShieldAlert, MessageCircle, Check, CheckCheck } from 'lucide-react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const QUICK_REPLIES = [
@@ -87,12 +87,29 @@ export default function ChatPage() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const supabaseRef = useRef(createClient())
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  // Auto-scroll guard: only follow new messages while the user is already at
+  // (or near) the bottom. Scrolled-up readers of history are never jerked down.
+  const nearBottomRef = useRef(true)
 
   const scrollToBottom = useCallback((smooth = false) => {
     const el = containerRef.current
     if (!el) return
     el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'instant' })
   }, [])
+
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight
+    nearBottomRef.current = distance < 120
+  }, [])
+
+  const scrollIfNearBottom = useCallback(
+    (smooth = true) => {
+      if (nearBottomRef.current) scrollToBottom(smooth)
+    },
+    [scrollToBottom]
+  )
 
   // ---- Load conversation + messages ----
   useEffect(() => {
@@ -215,8 +232,9 @@ export default function ChatPage() {
             if (prev.some(m => m.id === msg.id)) return prev
             return [...prev, msg]
           })
-          // Scroll to bottom on new message
-          setTimeout(() => scrollToBottom(true), 50)
+          // Follow the conversation only when the user is already at the bottom
+          // — never hijack the viewport while they read history.
+          setTimeout(() => scrollIfNearBottom(true), 50)
           if (msg.sender_id !== userId) {
             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(({ error }) => {
               if (error) {
@@ -224,6 +242,17 @@ export default function ChatPage() {
               }
             })
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload: RealtimePostgresChangesPayload<MessageRow>) => {
+          // Read receipts: `is_read` flips on the sender's side in real time,
+          // so the checkmarks change without a refetch.
+          const updated = payload.new as MessageRow
+          if (!updated?.id) return
+          setMessages(prev => prev.map(m => (m.id === updated.id ? { ...m, ...updated } : m)))
         }
       )
       .on('broadcast', { event: 'typing' }, (payload: { payload: { userId: string } }) => {
@@ -244,7 +273,7 @@ export default function ChatPage() {
       channelRef.current = null
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     }
-  }, [conversationId, userId, scrollToBottom])
+  }, [conversationId, userId, scrollToBottom, scrollIfNearBottom])
 
   // ---- Typing broadcast ----
   const broadcastTyping = useCallback(() => {
@@ -302,7 +331,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#F2F7F7]">
+      <div className="h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-4rem)] flex items-center justify-center bg-[#F2F7F7]">
         <div className="relative">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#111827]/20 to-transparent animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -346,13 +375,14 @@ export default function ChatPage() {
   })
 
   return (
-    <div className="h-[calc(100dvh-64px)] flex flex-col bg-[#F2F7F7] overflow-hidden">
+    <div className="h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-4rem)] flex flex-col bg-[#F2F7F7] overflow-hidden">
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
-        {/* Back button */}
+        {/* Back button — mobile only (desktop shows the two-pane layout) */}
         <Link
           href="/mesazhet"
-          className="text-gray-500 hover:text-[#101828] p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
+          aria-label="Kthehu te mesazhet"
+          className="lg:hidden text-gray-500 hover:text-[#101828] p-2 -ml-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -399,7 +429,7 @@ export default function ChatPage() {
       </header>
 
       {/* ---- MESSAGES ---- */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
+      <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 scrollbar-thin">
         <div className="max-w-3xl mx-auto">
           {!connected && (
             <div className="flex items-center justify-center gap-2 text-xs text-gray-300 py-2 animate-pulse">
@@ -493,9 +523,15 @@ export default function ChatPage() {
                       {formatMsgTime(msg.created_at)}
                     </span>
                     {isMine && isLastInGroup && (
-                      <span className={`text-[10px] ${msg.is_read ? 'text-[#6B7280]' : 'text-white/35'}`} title={msg.is_read ? 'E lexuar' : 'E dërguar'}>
-                        {msg.is_read ? '✓✓' : '✓'}
-                      </span>
+                      msg.is_read ? (
+                        <span title="E lexuar">
+                          <CheckCheck className="h-3.5 w-3.5 text-[#C8B882] flex-shrink-0" aria-label="E lexuar" role="img" />
+                        </span>
+                      ) : (
+                        <span title="E dërguar">
+                          <Check className="h-3.5 w-3.5 text-white/70 flex-shrink-0" aria-label="E dërguar" role="img" />
+                        </span>
+                      )
                     )}
                   </div>
                 </div>

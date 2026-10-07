@@ -196,7 +196,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
 
   return (
-    <div className="min-h-[calc(100dvh-4rem)] bg-[#F2F7F7] flex">
+    <div className="min-h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] lg:min-h-[calc(100dvh-4rem)] bg-[#F2F7F7] flex">
       {/* ---- SIDEBAR ---- */}
       <aside
         className={`${

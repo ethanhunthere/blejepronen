@@ -477,10 +477,12 @@ export default function RegisterPage() {
                   <input
                     ref={inputRef}
                     id="otp-code"
+                    name="otp-code"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={6}
+                    autoComplete="one-time-code"
                     autoFocus
                     value={code}
                     onChange={(e) => {

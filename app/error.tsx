@@ -18,7 +18,7 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F2F7F7] flex items-center justify-center px-4 py-16">
+    <div className="min-h-[calc(100dvh-4rem)] bg-[#F2F7F7] flex items-center justify-center px-4 py-16">
       <div className="text-center max-w-lg mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.06)]">
         {/* Luxury Error Badge */}
         <div className="relative mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mb-6 shadow-2xs">

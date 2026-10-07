@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F2F7F7] flex items-center justify-center px-4 py-16">
+    <div className="min-h-[calc(100dvh-4rem)] bg-[#F2F7F7] flex items-center justify-center px-4 py-16">
       <div className="text-center max-w-lg mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.06)]">
         {/* Luxury Badge */}
         <div className="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#00675B]/15 via-emerald-50 to-[#C8B882]/20 flex items-center justify-center border border-[#00675B]/20 shadow-inner mb-6">

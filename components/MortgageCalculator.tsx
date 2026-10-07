@@ -9,6 +9,15 @@ interface MortgageCalculatorProps {
   className?: string
 }
 
+/** Bounds for user-chosen down payment: keeps LTV inside 5%–95% (never >100%). */
+const DOWN_PAYMENT_MIN = 5
+const DOWN_PAYMENT_MAX = 95
+
+const clampDownPayment = (value: number): number => {
+  if (!Number.isFinite(value)) return 20
+  return Math.min(DOWN_PAYMENT_MAX, Math.max(DOWN_PAYMENT_MIN, Math.round(value)))
+}
+
 export default function MortgageCalculator({
   propertyPrice,
   city = 'Kosovë',
@@ -16,6 +25,7 @@ export default function MortgageCalculator({
 }: MortgageCalculatorProps) {
   const [price, setPrice] = useState<number>(propertyPrice || 100000)
   const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20)
+  const [downPaymentInput, setDownPaymentInput] = useState<string>('20')
   const [loanYears, setLoanYears] = useState<number>(20)
   const [interestRate, setInterestRate] = useState<number>(4.5)
 
@@ -23,25 +33,38 @@ export default function MortgageCalculator({
   const DOWN_PAYMENT_PRESETS = [10, 15, 20, 25, 30]
   const LOAN_TERM_PRESETS = [10, 15, 20, 25, 30]
 
+  const applyDownPayment = (value: number) => {
+    const clamped = clampDownPayment(value)
+    setDownPaymentPercent(clamped)
+    setDownPaymentInput(String(clamped))
+  }
+
   // Calculated values
   const { downPaymentAmount, loanPrincipal, monthlyPayment, totalPayment, totalInterest } =
     useMemo(() => {
-      const validPrice = Math.max(0, price || 0)
-      const downAmount = Math.round((validPrice * downPaymentPercent) / 100)
+      const validPrice = Math.max(0, Number.isFinite(price) ? price : 0)
+      // Clamp before any math: LTV stays in [5%, 95%] → never exceeds 100%.
+      const downPercent = clampDownPayment(downPaymentPercent)
+      const downAmount = Math.round((validPrice * downPercent) / 100)
       const principal = Math.max(0, validPrice - downAmount)
 
-      const months = Math.max(1, loanYears * 12)
-      const monthlyRate = interestRate / 100 / 12
+      const safeYears = Number.isFinite(loanYears) && loanYears > 0 ? loanYears : 1
+      const months = Math.max(1, Math.round(safeYears * 12))
+      const safeRate = Number.isFinite(interestRate) ? interestRate : 0
+      const monthlyRate = safeRate / 100 / 12
 
       let monthly = 0
       if (principal <= 0) {
         monthly = 0
       } else if (monthlyRate <= 0) {
+        // 0% interest: no (factor - 1) division → avoid Infinity/NaN.
         monthly = principal / months
       } else {
         const factor = Math.pow(1 + monthlyRate, months)
         monthly = (principal * (monthlyRate * factor)) / (factor - 1)
       }
+
+      if (!Number.isFinite(monthly)) monthly = 0
 
       const total = monthly * months
       const interest = Math.max(0, total - principal)
@@ -54,6 +77,13 @@ export default function MortgageCalculator({
         totalInterest: Math.round(interest),
       }
     }, [price, downPaymentPercent, loanYears, interestRate])
+
+  // Progress-bar shares: one denominator, no forced minimums → segments sum ≤ 100%.
+  const barDenominator = totalPayment + downPaymentAmount
+  const segmentPercent = (value: number): number => {
+    if (!(barDenominator > 0) || !Number.isFinite(value)) return 0
+    return Math.min(100, Math.max(0, (value / barDenominator) * 100))
+  }
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('sq-AL', {
@@ -120,23 +150,17 @@ export default function MortgageCalculator({
         <div className="mt-5 pt-4 border-t border-white/15">
           <div className="h-2.5 w-full bg-white/20 rounded-full overflow-hidden flex gap-0.5">
             <div
-              style={{
-                width: `${Math.min(100, Math.max(5, (downPaymentAmount / (totalPayment + downPaymentAmount || 1)) * 100))}%`,
-              }}
+              style={{ width: `${segmentPercent(downPaymentAmount)}%` }}
               className="h-full bg-[#C8B882] rounded-l-full transition-all duration-300"
               title="Pjesëmarrja Vetjake"
             />
             <div
-              style={{
-                width: `${Math.min(100, Math.max(10, (loanPrincipal / (totalPayment + downPaymentAmount || 1)) * 100))}%`,
-              }}
+              style={{ width: `${segmentPercent(loanPrincipal)}%` }}
               className="h-full bg-emerald-300 transition-all duration-300"
               title="Kredia (Kryegjëja)"
             />
             <div
-              style={{
-                width: `${Math.min(100, Math.max(5, (totalInterest / (totalPayment + downPaymentAmount || 1)) * 100))}%`,
-              }}
+              style={{ width: `${segmentPercent(totalInterest)}%` }}
               className="h-full bg-amber-300 rounded-r-full transition-all duration-300"
               title="Interesi Bankar"
             />
@@ -200,9 +224,29 @@ export default function MortgageCalculator({
               <Percent className="h-3.5 w-3.5 text-[#00675B]" />
               <span>Pjesëmarrja Vetjake</span>
             </label>
-            <span className="text-xs font-bold text-[#00675B]">
-              {downPaymentPercent}% ({formatCurrency(downPaymentAmount)})
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-stretch rounded-lg border border-gray-200 bg-gray-50 overflow-hidden focus-within:border-[#00675B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00675B]/15 transition-all">
+                <input
+                  type="number"
+                  min={DOWN_PAYMENT_MIN}
+                  max={DOWN_PAYMENT_MAX}
+                  step={1}
+                  inputMode="numeric"
+                  value={downPaymentInput}
+                  onChange={(e) => setDownPaymentInput(e.target.value)}
+                  onBlur={() => {
+                    const parsed = parseInt(downPaymentInput, 10)
+                    applyDownPayment(Number.isFinite(parsed) ? parsed : downPaymentPercent)
+                  }}
+                  aria-label="Pjesëmarrja vetjake në përqindje"
+                  className="w-14 h-7 px-1 text-xs font-bold text-center text-[#101828] bg-transparent outline-none"
+                />
+                <span className="self-center pr-2 text-xs font-bold text-[#00675B]">%</span>
+              </div>
+              <span className="text-xs font-bold text-[#00675B]">
+                ({formatCurrency(downPaymentAmount)})
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-5 gap-1.5">
@@ -210,7 +254,7 @@ export default function MortgageCalculator({
               <button
                 key={p}
                 type="button"
-                onClick={() => setDownPaymentPercent(p)}
+                onClick={() => applyDownPayment(p)}
                 className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                   downPaymentPercent === p
                     ? 'bg-[#00675B] text-white border-[#00675B] shadow-2xs'

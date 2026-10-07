@@ -10,8 +10,6 @@ import {
   User,
   Building2,
   Share2,
-  Bell,
-  Shield,
   Lock,
   Camera,
   ImageIcon,
@@ -38,7 +36,7 @@ import {
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import { getAvatarUrl } from '@/lib/avatars'
-import AvatarPickerModal from '@/components/AvatarPickerModal'
+import AvatarPickerModal, { prepareAvatarImage } from '@/components/AvatarPickerModal'
 import LogoutModal from '@/components/LogoutModal'
 import DeleteAccountModal from '@/components/DeleteAccountModal'
 import SocialLinksBar, {
@@ -51,17 +49,21 @@ import { revalidateSellerListings } from '@/app/actions'
 import { toast } from 'sonner'
 import { type SocialLinks, hasAnySocial, normalizeSocialUrl } from '@/lib/socials'
 
-type SettingsTab = 'profile' | 'socials' | 'notifications' | 'privacy' | 'security'
+type SettingsTab = 'profile' | 'socials' | 'security'
+type SaveSection = 'all' | 'profile' | 'socials'
 
 function getPasswordStrength(pwd: string): { score: number; label: string; color: string } {
   if (!pwd) return { score: 0, label: '', color: 'bg-gray-200' }
   let score = 0
-  if (pwd.length >= 6) score += 1
-  if (pwd.length >= 9) score += 1
+  if (pwd.length >= 8) score += 1
+  if (pwd.length >= 12) score += 1
   if (/[0-9]/.test(pwd)) score += 1
-  if (/[^A-Za-z0-9]/.test(pwd) || (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd))) score += 1
+  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score += 1
+  else if (/[^A-Za-z0-9]/.test(pwd)) score += 1
 
   switch (score) {
+    case 0:
+      return { score: 0, label: 'Shumë i dobët', color: 'bg-red-500' }
     case 1:
       return { score: 1, label: 'Shumë i dobët', color: 'bg-red-500' }
     case 2:
@@ -73,6 +75,44 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
       return { score: 4, label: 'Shumë i fortë', color: 'bg-emerald-500' }
   }
 }
+
+/**
+ * Password gate shared by the live meter and the submit handler so the visual
+ * strength never disagrees with what the server accepts: minimum 8 characters
+ * plus a real complexity score (weak 6-character passwords are rejected).
+ */
+function getPasswordValidationError(pwd: string): string | null {
+  if (pwd.length < 8) return 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.'
+  if (getPasswordStrength(pwd).score < 3) {
+    return 'Fjalëkalimi është shumë i dobët: përdorni shkronja të mëdha dhe të vogla, të paktën një numër (dhe mundësisht një simbol).'
+  }
+  return null
+}
+
+// Profile-scoped keys of the /api/profile/save payload. Per-section saves omit
+// empty ones so the API falls back to the stored user_metadata instead of
+// failing its required-name check for unrelated sections.
+const PROFILE_PAYLOAD_KEYS = [
+  'firstName',
+  'lastName',
+  'phone',
+  'bio',
+  'city',
+  'individualFirstName',
+  'individualLastName',
+  'individualPhone',
+  'individualEmail',
+  'individualBio',
+  'companyName',
+  'companyContactPerson',
+  'companyPhone',
+  'companyEmail',
+  'companyDescription',
+  'foundedYear',
+  'nipt',
+  'officeAddress',
+  'website',
+] as const
 
 const DUMMY_SAMPLES = new Set([
   'alban',
@@ -122,6 +162,7 @@ export default function SettingsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
   const [isEmailVerified, setIsEmailVerified] = useState(false)
+  const [isGoogleUser, setIsGoogleUser] = useState(false)
 
   // Account Type
   const [isCompany, setIsCompany] = useState(false)
@@ -160,23 +201,9 @@ export default function SettingsPage() {
   const [youtube, setYoutube] = useState('')
   const [twitter, setTwitter] = useState('')
 
-  // Notification Preferences
-  const [notifications, setNotifications] = useState({
-    messages: true,
-    inquiries: true,
-    followers: true,
-    weeklyReport: false,
-    newsletter: true,
-  })
-
-  // Privacy Settings
-  const [privacy, setPrivacy] = useState({
-    showPhone: true,
-    showSocials: true,
-    showOnline: true,
-    allowDirectMsgs: true,
-    showListingsOnProfile: true,
-  })
+  // Notification / privacy preferences were removed: none of their toggles had
+  // a backing public.profiles column or any consumer in the codebase, so they
+  // were phantom switches persisted only to auth user_metadata.
 
   // Security / Password Change
   const [newPassword, setNewPassword] = useState('')
@@ -250,6 +277,7 @@ export default function SettingsPage() {
 
       // Verified status: email is verified permanently if confirmed or google
       const isGoogle = activeUser.app_metadata?.provider === 'google'
+      setIsGoogleUser(isGoogle)
       const verified =
         Boolean(prof?.email_verified) ||
         Boolean(activeUser.email_confirmed_at) ||
@@ -336,13 +364,6 @@ export default function SettingsPage() {
         if (meta.linkedin) setLinkedin(meta.linkedin)
         if (meta.youtube) setYoutube(meta.youtube)
         if (meta.twitter) setTwitter(meta.twitter)
-
-        if (meta.notifications) {
-          setNotifications((prev) => ({ ...prev, ...meta.notifications }))
-        }
-        if (meta.privacy) {
-          setPrivacy((prev) => ({ ...prev, ...meta.privacy }))
-        }
       }
 
       setLoading(false)
@@ -350,6 +371,14 @@ export default function SettingsPage() {
 
     loadUserData()
   }, [router, supabase])
+
+  // Honor deep links such as /settings?tab=socials used by the profile pages
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab === 'profile' || tab === 'socials' || tab === 'security') {
+      setActiveTab(tab)
+    }
+  }, [])
 
   // Email update handler
   const handleUpdateAccountEmail = async (targetEmail: string) => {
@@ -378,20 +407,24 @@ export default function SettingsPage() {
   }
 
   // Save changes handler
-  const handleSaveSettings = useCallback(async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+  // Per-section save: each section's button validates only its own fields, so
+  // a socials/privacy save is never blocked by unrelated profile-field errors.
+  const handleSaveSettings = useCallback(async (section: SaveSection = 'all') => {
     if (!currentUserId) return
 
-    // Validation
-    if (isCompany) {
-      if (!companyName.trim()) {
-        toast.error('Ju lutemi shkruani emrin e kompanisë.')
-        return
-      }
-    } else {
-      if (!individualFirstName.trim()) {
-        toast.error('Ju lutemi shkruani emrin tuaj.')
-        return
+    // Profile validation runs only for profile-scoped saves
+    const savesProfile = section === 'all' || section === 'profile'
+    if (savesProfile) {
+      if (isCompany) {
+        if (!companyName.trim()) {
+          toast.error('Ju lutemi shkruani emrin e kompanisë.')
+          return
+        }
+      } else {
+        if (!individualFirstName.trim()) {
+          toast.error('Ju lutemi shkruani emrin tuaj.')
+          return
+        }
       }
     }
 
@@ -403,7 +436,7 @@ export default function SettingsPage() {
       const activePhone = isCompany ? (companyPhone.trim() || individualPhone.trim()) : (individualPhone.trim() || companyPhone.trim())
       const activeBio = isCompany ? (companyDescription.trim() || individualBio.trim()) : (individualBio.trim() || companyDescription.trim())
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         firstName: activeFirstName,
         lastName: activeLastName,
         phone: activePhone,
@@ -432,7 +465,7 @@ export default function SettingsPage() {
         officeAddress: officeAddress.trim(),
         website: website.trim(),
 
-        // Socials & settings
+        // Socials
         instagram: socials.instagram?.trim() || '',
         facebook: socials.facebook?.trim() || '',
         whatsapp: socials.whatsapp?.trim() || '',
@@ -440,8 +473,14 @@ export default function SettingsPage() {
         linkedin: linkedin.trim(),
         youtube: youtube.trim(),
         twitter: twitter.trim(),
-        notifications,
-        privacy,
+      }
+
+      // Non-profile sections never push empty profile strings: the API keeps
+      // the stored values for anything omitted from the body.
+      if (!savesProfile) {
+        for (const key of PROFILE_PAYLOAD_KEYS) {
+          if (payload[key] === '') delete payload[key]
+        }
       }
 
       const res = await fetch('/api/profile/save', {
@@ -513,8 +552,6 @@ export default function SettingsPage() {
     linkedin,
     youtube,
     twitter,
-    notifications,
-    privacy,
   ])
 
   // Keyboard shortcut Ctrl+S / Cmd+S listener
@@ -522,18 +559,19 @@ export default function SettingsPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
-        handleSaveSettings()
+        handleSaveSettings(activeTab === 'socials' ? 'socials' : 'profile')
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSaveSettings])
+  }, [handleSaveSettings, activeTab])
 
   // Password update handler
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newPassword || newPassword.length < 6) {
-      toast.error('Fjalëkalimi duhet të ketë të paktën 6 karaktere.')
+    const validationError = getPasswordValidationError(newPassword)
+    if (validationError) {
+      toast.error(validationError)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -593,12 +631,13 @@ export default function SettingsPage() {
         return
       }
 
-      const ext = file.name.split('.').pop() || 'jpg'
+      // 1:1 crop + 512×512 WebP compression before hitting Storage
+      const { blob, ext, contentType } = await prepareAvatarImage(file)
       const path = `${currentUserId}/${Date.now()}-settings.${ext}`
 
       const { error: upErr } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { contentType: file.type, upsert: true })
+        .upload(path, blob, { contentType, upsert: true })
       if (upErr) throw upErr
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
@@ -685,8 +724,6 @@ export default function SettingsPage() {
   }[] = [
     { id: 'profile', label: isCompany ? 'Profili i Kompanisë' : 'Profili & Llogaria', icon: isCompany ? Building2 : User },
     { id: 'socials', label: 'Rrjetet Sociale', icon: Share2 },
-    { id: 'notifications', label: 'Njoftimet', icon: Bell },
-    { id: 'privacy', label: 'Privatësia', icon: Shield },
     { id: 'security', label: 'Siguria', icon: Lock },
   ]
 
@@ -715,7 +752,7 @@ export default function SettingsPage() {
           <div>
             <PageHeader
               title="Cilësimet"
-              subtitle="Menaxhoni profilin, të dhënat e kompanisë, rrjetet sociale, njoftimet dhe sigurinë e llogarisë"
+              subtitle="Menaxhoni profilin, të dhënat e kompanisë, rrjetet sociale dhe sigurinë e llogarisë"
             />
           </div>
 
@@ -731,7 +768,7 @@ export default function SettingsPage() {
             )}
             <button
               type="button"
-              onClick={() => handleSaveSettings()}
+              onClick={() => handleSaveSettings('all')}
               disabled={saving}
               className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-75"
             >
@@ -1442,7 +1479,7 @@ export default function SettingsPage() {
               <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => handleSaveSettings()}
+                  onClick={() => handleSaveSettings('profile')}
                   disabled={saving}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
@@ -1662,7 +1699,7 @@ export default function SettingsPage() {
               <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => handleSaveSettings()}
+                  onClick={() => handleSaveSettings('socials')}
                   disabled={saving}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
@@ -1675,340 +1712,29 @@ export default function SettingsPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: NJOFTIMET */}
-        {/* ========================================================================= */}
-        {activeTab === 'notifications' && (
-          <div className="space-y-6 animate-in fade-in-50 duration-200">
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-[#00675B]" />
-                  Preferencat e Njoftimeve
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Zgjidhni se për çfarë aktivitetesh dëshironi të merrni njoftime me email ose në platformë.
-                </p>
-              </div>
-
-              {/* Group 1: Property Activity */}
-              <div className="mb-6">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-2">
-                  Aktiviteti i Pronave & Blerësit
-                </h4>
-                <div className="divide-y divide-gray-100 rounded-2xl border border-gray-100 px-4 bg-gray-50/30">
-                  {/* Messages */}
-                  <div className="py-4 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[#101828]">
-                        Mesazhet e reja nga blerësit
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Merrni një njoftim të menjëhershëm kur një blerës ju dërgon mesazh mbi një pronë.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((p) => ({ ...p, messages: !p.messages }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.messages ? 'bg-[#00675B]' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          notifications.messages ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Inquiries */}
-                  <div className="py-4 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[#101828]">
-                        Kërkesa interesi & telefonata
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Njoftim kur një klient kërkon të vizitojë pronën ose klikon numrin tuaj të telefonit.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((p) => ({ ...p, inquiries: !p.inquiries }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.inquiries ? 'bg-[#00675B]' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          notifications.inquiries ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Followers */}
-                  <div className="py-4 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[#101828]">
-                        Ndiqës të rinj (Followers)
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Merrni njoftim kur një blerës ose kompani tjetër fillon të ndjekë profilin tuaj.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((p) => ({ ...p, followers: !p.followers }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.followers ? 'bg-[#00675B]' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          notifications.followers ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Group 2: Market & Platform */}
-              <div>
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-2">
-                  Tregu & Statistikat
-                </h4>
-                <div className="divide-y divide-gray-100 rounded-2xl border border-gray-100 px-4 bg-gray-50/30">
-                  {/* Weekly Report */}
-                  <div className="py-4 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[#101828]">
-                        Raporti javor i shikueshmërisë
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Statistika javore mbi klikimet, ruajtjet në të preferuara dhe interesin për pronat tuaja.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((p) => ({ ...p, weeklyReport: !p.weeklyReport }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.weeklyReport ? 'bg-[#00675B]' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          notifications.weeklyReport ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Newsletter */}
-                  <div className="py-4 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[#101828]">
-                        Buletini me tendencat e tregut imobiliar
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Këshilla për shitjen e pronave, çmimet mesatare për m² në Kosovë dhe përditësime të platformës.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((p) => ({ ...p, newsletter: !p.newsletter }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        notifications.newsletter ? 'bg-[#00675B]' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          notifications.newsletter ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleSaveSettings()}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Ruaj preferencat e njoftimeve</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 4: PRIVATËSIA */}
-        {/* ========================================================================= */}
-        {activeTab === 'privacy' && (
-          <div className="space-y-6 animate-in fade-in-50 duration-200">
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#00675B]" />
-                  Privatësia & Dukshmëria
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Kontrolloni se si të dhënat tuaja të kontaktit dhe aktiviteti shfaqen para blerësve dhe publikut.
-                </p>
-              </div>
-
-              <div className="divide-y divide-gray-100 rounded-2xl border border-gray-100 px-4 bg-gray-50/30">
-                {/* Show Phone */}
-                <div className="py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">
-                      Shfaq numrin e telefonit publikisht
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Blerësit mund të shohin numrin tuaj dhe t&apos;ju telefonojnë drejtpërdrejt nga shpallja.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrivacy((p) => ({ ...p, showPhone: !p.showPhone }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showPhone ? 'bg-[#00675B]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        privacy.showPhone ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Show Socials */}
-                <div className="py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">
-                      Shfaq lidhjet e rrjeteve sociale në shpallje
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Lejoni blerësit të hapin Instagram, Facebook, WhatsApp dhe TikTok tuaj direkt nga faqja e pronës.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrivacy((p) => ({ ...p, showSocials: !p.showSocials }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showSocials ? 'bg-[#00675B]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        privacy.showSocials ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Show Online Status */}
-                <div className="py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">
-                      Shfaq statusin Online / Aktiv
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Tregon një pikë të gjelbër kur jeni aktiv në platformë, duke rritur besueshmërinë te blerësit.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrivacy((p) => ({ ...p, showOnline: !p.showOnline }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showOnline ? 'bg-[#00675B]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        privacy.showOnline ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Direct Messages */}
-                <div className="py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">
-                      Lejo mesazhe të menjëhershme në platformë
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Përdoruesit e kyçur mund t&apos;ju shkruajnë përmes sistemit të mesazheve të Bleje Pronën.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrivacy((p) => ({ ...p, allowDirectMsgs: !p.allowDirectMsgs }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.allowDirectMsgs ? 'bg-[#00675B]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        privacy.allowDirectMsgs ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* Show Listings on Profile */}
-                <div className="py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">
-                      Shfaq listën e pronave në profilin publik
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Të gjithë vizitorët e profilit tuaj mund të shfletojnë të gjitha shpalljet tuaja aktive.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPrivacy((p) => ({ ...p, showListingsOnProfile: !p.showListingsOnProfile }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      privacy.showListingsOnProfile ? 'bg-[#00675B]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        privacy.showListingsOnProfile ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleSaveSettings()}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Ruaj cilësimet e privatësisë</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
         {/* TAB 5: SIGURIA & SESIONET */}
         {/* ========================================================================= */}
         {activeTab === 'security' && (
           <div className="space-y-6 animate-in fade-in-50 duration-200">
+            {/* Google OAuth account notice */}
+            {isGoogleUser && (
+              <div className="flex items-start gap-3 p-4 sm:p-5 rounded-2xl bg-[#C8B882]/10 border border-[#C8B882]/40">
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#C8B882]/50 text-[#00675B] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#101828]">
+                    Llogari e lidhur me Google
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                    Hyrja në këtë llogari bëhet përmes Google ({userEmail}). Ndryshimi i fjalëkalimit
+                    më poshtë nuk prek hyrjen me Google — krijon vetëm një mënyrë shtesë hyrjeje me
+                    email &amp; fjalëkalim.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Password Change Card */}
             <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
               <div className="mb-5">
@@ -2094,7 +1820,7 @@ export default function SettingsPage() {
 
                 <button
                   type="submit"
-                  disabled={updatingPassword || !newPassword}
+                  disabled={updatingPassword || !newPassword || Boolean(getPasswordValidationError(newPassword))}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   {updatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
@@ -2171,26 +1897,28 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Mobile Floating Save Bar */}
-      <div className="sm:hidden fixed bottom-4 inset-x-4 z-40 bg-white/95 backdrop-blur-xl border border-gray-200/90 p-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] flex items-center justify-between gap-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-200">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-extrabold text-gray-900 truncate">
-            {tabs.find((t) => t.id === activeTab)?.label}
-          </p>
-          <p className="text-[10px] text-gray-500 truncate">
-            Ruani ndryshimet tuaja me 1-prekje
-          </p>
+      {/* Mobile Floating Save Bar (profile/socials only — security has its own password form) */}
+      {activeTab !== 'security' && (
+        <div className="sm:hidden fixed bottom-4 inset-x-4 z-40 bg-white/95 backdrop-blur-xl border border-gray-200/90 p-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] flex items-center justify-between gap-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-200">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-extrabold text-gray-900 truncate">
+              {tabs.find((t) => t.id === activeTab)?.label}
+            </p>
+            <p className="text-[10px] text-gray-500 truncate">
+              Ruani ndryshimet tuaja me 1-prekje
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSaveSettings(activeTab === 'socials' ? 'socials' : 'profile')}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00675B] active:scale-95 text-white text-xs font-bold shadow-md cursor-pointer shrink-0 disabled:opacity-75"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span>{saving ? 'Ruajtje...' : 'Ruaj'}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => handleSaveSettings()}
-          disabled={saving}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00675B] active:scale-95 text-white text-xs font-bold shadow-md cursor-pointer shrink-0 disabled:opacity-75"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          <span>{saving ? 'Ruajtje...' : 'Ruaj'}</span>
-        </button>
-      </div>
+      )}
 
       {/* Modals */}
       <AvatarPickerModal

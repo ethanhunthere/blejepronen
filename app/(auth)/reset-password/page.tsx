@@ -16,18 +16,36 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
+  const [expiredLink, setExpiredLink] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
     async function verifySession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      // Supabase rejects expired/invalid recovery links at the callback and
+      // redirects here with ?error=... — a session never materialises, so
+      // neither does the form.
+      const hasErrorParam = (() => {
+        try {
+          const params = new URLSearchParams(window.location.search)
+          return Boolean(params.get('error') || params.get('error_description'))
+        } catch {
+          return false
+        }
+      })()
 
-      if (!session) {
-        // In case the user came directly without token or link expired
-        setError('Linku i rivendosjes ka skaduar ose është i pavlefshëm. Ju lutemi kërkoni një link të ri.')
+      let hasSession = false
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        hasSession = Boolean(session)
+      } catch {
+        hasSession = false
+      }
+
+      if (!hasSession || hasErrorParam) {
+        setExpiredLink(true)
       }
       setCheckingSession(false)
     }
@@ -121,6 +139,43 @@ export default function ResetPasswordPage() {
     )
   }
 
+  if (expiredLink) {
+    return (
+      <AuthShell
+        headline="Rivendosja e fjalëkalimit"
+        subline="Linku i sigurt nuk është më i vlefshëm."
+      >
+        <div className="w-full text-center py-4">
+          <div className="w-16 h-16 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-amber-600" />
+          </div>
+          <h1 className="text-2xl sm:text-[27px] font-black leading-tight tracking-tight text-[#101828]">
+            Linku ka skaduar
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-sm mx-auto">
+            Ky link rivendosje ka skaduar ose nuk është i vlefshëm. Kërko një link të ri dhe ndiq hapin e parë.
+          </p>
+
+          <div className="mt-6 space-y-2.5">
+            <Link
+              href="/forgot-password"
+              className="w-full min-h-[44px] h-11 sm:h-12 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-[#00675B]/20 inline-flex items-center justify-center cursor-pointer"
+            >
+              Kërko link të ri
+            </Link>
+            <Link
+              href="/login"
+              className="w-full min-h-[44px] h-11 inline-flex items-center justify-center gap-1.5 text-xs sm:text-[13px] text-gray-500 hover:text-gray-900 transition-colors cursor-pointer font-medium"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Kthehu te hyrja</span>
+            </Link>
+          </div>
+        </div>
+      </AuthShell>
+    )
+  }
+
   return (
     <AuthShell
       headline="Fjalëkalimi i Ri"
@@ -152,6 +207,7 @@ export default function ResetPasswordPage() {
                 type="password"
                 label="Fjalëkalimi i ri"
                 placeholder="Të paktën 6 karaktere"
+                autoComplete="new-password"
                 value={password}
                 onChange={(val) => setPassword(val)}
                 icon={<Lock className="h-4 w-4 text-gray-400" />}
@@ -164,6 +220,7 @@ export default function ResetPasswordPage() {
                 type="password"
                 label="Konfirmo fjalëkalimin e ri"
                 placeholder="Rishkruani fjalëkalimin"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(val) => setConfirmPassword(val)}
                 icon={<Lock className="h-4 w-4 text-gray-400" />}

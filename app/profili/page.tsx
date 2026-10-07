@@ -27,7 +27,8 @@ import {
 } from 'lucide-react'
 import type { Profile } from '@/lib/supabase'
 import LogoutModal from '@/components/LogoutModal'
-import AvatarPickerModal from '@/components/AvatarPickerModal'
+import AvatarPickerModal, { prepareAvatarImage } from '@/components/AvatarPickerModal'
+import ProfileEditModal, { type ProfileEditValues } from '@/components/ProfileEditModal'
 import { getAvatarUrl } from '@/lib/avatars'
 import { toast } from 'sonner'
 import SocialLinksBar from '@/components/SocialIcons'
@@ -41,6 +42,17 @@ export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState('')
   const [isCompany, setIsCompany] = useState(false)
   const [companyDescription, setCompanyDescription] = useState('')
+  const [individualBio, setIndividualBio] = useState('')
+  const [editValues, setEditValues] = useState<ProfileEditValues>({
+    individualFirstName: '',
+    individualLastName: '',
+    individualPhone: '',
+    individualBio: '',
+    companyName: '',
+    companyContactPerson: '',
+    companyPhone: '',
+    companyDescription: '',
+  })
   const [foundedYear, setFoundedYear] = useState('')
   const [nipt, setNipt] = useState('')
   const [officeAddress, setOfficeAddress] = useState('')
@@ -56,6 +68,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -126,12 +139,32 @@ export default function ProfilePage() {
       setIsCompany(isComp)
 
       if (meta) {
-        if (meta.company_description) setCompanyDescription(meta.company_description)
+        const desc = meta.company_description || (isComp ? meta.bio : '') || ''
+        if (desc) setCompanyDescription(desc)
+        const indBio = meta.individual_bio || (!isComp ? meta.bio : '') || ''
+        if (indBio) setIndividualBio(indBio)
         if (meta.founded_year) setFoundedYear(String(meta.founded_year))
         if (meta.nipt) setNipt(meta.nipt)
         if (meta.office_address) setOfficeAddress(meta.office_address)
         if (meta.website) setWebsite(meta.website)
         if (meta.city) setCity(meta.city)
+
+        setEditValues({
+          individualFirstName: meta.individual_first_name || (!isComp ? prof?.first_name : '') || '',
+          individualLastName:
+            meta.individual_last_name ||
+            (!isComp && prof?.last_name && prof.last_name !== 'Kompani' ? prof.last_name : '') ||
+            '',
+          individualPhone: meta.individual_phone || (!isComp ? prof?.phone : '') || '',
+          individualBio: indBio,
+          companyName: meta.company_name || (isComp ? prof?.first_name : '') || '',
+          companyContactPerson:
+            meta.contact_person ||
+            (isComp && prof?.last_name && prof.last_name !== 'Kompani' ? prof.last_name : '') ||
+            '',
+          companyPhone: meta.company_phone || (isComp ? prof?.phone : '') || '',
+          companyDescription: desc,
+        })
 
         setSocials({
           instagram: meta.instagram || '',
@@ -169,12 +202,13 @@ export default function ProfilePage() {
         return
       }
 
-      const ext = file.name.split('.').pop() || 'jpg'
+      // 1:1 crop + 512×512 WebP compression before hitting Storage
+      const { blob, ext, contentType } = await prepareAvatarImage(file)
       const path = `${userId}/${Date.now()}-avatar.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { contentType: file.type, upsert: true })
+        .upload(path, blob, { contentType, upsert: true })
 
       if (uploadError) throw uploadError
 
@@ -266,7 +300,13 @@ export default function ProfilePage() {
           url: publicUrl,
         })
         return
-      } catch {}
+      } catch (err) {
+        // Cancelled native share sheet: silently abort — never fall through to
+        // the clipboard path, otherwise users see a false "u kopjua" toast.
+        const name = err instanceof Error ? err.name : ''
+        if (name === 'AbortError') return
+        // Any other share failure falls back to clipboard copy below.
+      }
     }
 
     try {
@@ -277,6 +317,43 @@ export default function ProfilePage() {
     } catch {
       toast.error('Nuk u arrit kopjimi i linkut.')
     }
+  }
+
+  // Callback for the inline ProfileEditModal (POST /api/profile/save)
+  const handleEditSaved = (next: ProfileEditValues) => {
+    setEditValues(next)
+    if (isCompany) {
+      setCompanyDescription(next.companyDescription)
+    } else {
+      setIndividualBio(next.individualBio)
+    }
+
+    const nextFirst = isCompany ? next.companyName : next.individualFirstName
+    const nextLast = isCompany
+      ? next.companyContactPerson || 'Kompani'
+      : next.individualLastName
+    const nextPhone = isCompany
+      ? next.companyPhone || profile?.phone || ''
+      : next.individualPhone || profile?.phone || ''
+
+    setProfile((prev) =>
+      prev
+        ? { ...prev, first_name: nextFirst, last_name: nextLast, phone: nextPhone }
+        : prev
+    )
+
+    try {
+      const cached = localStorage.getItem('bp_profile_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        parsed.firstName = nextFirst
+        parsed.lastName = nextLast
+        parsed.isCompany = isCompany
+        localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('profile-updated'))
   }
 
   if (loading) {
@@ -515,40 +592,43 @@ export default function ProfilePage() {
                 )}
               </button>
 
-              <Link
-                href="/settings"
+              <button
+                type="button"
+                onClick={() => setShowEditModal(true)}
                 className="h-10 px-4 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-[#00675B]/20 active:scale-95 transition-all cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Ndrysho të Dhënat</span>
-              </Link>
+              </button>
             </div>
           </div>
 
-          {/* Description Section */}
-          {(companyDescription || isCompany) && (
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                {isCompany ? 'Rreth Kompanisë' : 'Përshkrim'}
-              </h3>
-              {companyDescription ? (
-                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed max-w-3xl">
-                  {companyDescription}
-                </p>
-              ) : (
-                <div className="flex items-center justify-between gap-3 text-xs text-gray-500 py-1">
-                  <span>Nuk keni vendosur ende një përshkrim për profilin tuaj.</span>
-                  <Link
-                    href="/settings"
-                    className="text-[#00675B] font-bold hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>+ Shto në Cilësime</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Description Section — rendered for individuals AND companies */}
+          {(() => {
+            const activeBio = isCompany ? companyDescription : individualBio
+            return (
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  {isCompany ? 'Rreth Kompanisë' : 'Përshkrim'}
+                </h3>
+                {activeBio ? (
+                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed max-w-3xl">{activeBio}</p>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 text-xs text-gray-500 py-1">
+                    <span>Nuk keni vendosur ende një përshkrim për profilin tuaj.</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(true)}
+                      className="text-[#00675B] font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>+ Shto këtu</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
 
         {/* ====== 2-COLUMN DASHBOARD BENTO ====== */}
@@ -748,6 +828,15 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Inline Profile Edit Modal — saves straight to /api/profile/save */}
+        <ProfileEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          isCompany={isCompany}
+          values={editValues}
+          onSaved={handleEditSaved}
+        />
 
         {/* Avatar Picker Modal */}
         <AvatarPickerModal

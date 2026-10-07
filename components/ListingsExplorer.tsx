@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useFavorites } from '@/lib/useFavorites'
 import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
@@ -10,9 +11,10 @@ import {
   Search,
   SlidersHorizontal,
   X,
-  Loader2,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   MapPin,
   Building2,
   Check,
@@ -109,6 +111,56 @@ type AgentResult = Pick<
   'id' | 'first_name' | 'last_name' | 'avatar_url' | 'email_verified' | 'created_at'
 >
 
+function filtersEqual(a: FilterState, b: FilterState): boolean {
+  const sorted = (xs: string[]) => [...xs].sort()
+  const af = sorted(a.features)
+  const bf = sorted(b.features)
+  return (
+    a.search === b.search &&
+    a.city === b.city &&
+    a.neighborhood === b.neighborhood &&
+    a.type === b.type &&
+    a.minPrice === b.minPrice &&
+    a.maxPrice === b.maxPrice &&
+    a.rooms === b.rooms &&
+    a.minArea === b.minArea &&
+    a.maxArea === b.maxArea &&
+    a.condition === b.condition &&
+    a.apartment_type === b.apartment_type &&
+    a.floor === b.floor &&
+    a.agentId === b.agentId &&
+    af.length === bf.length &&
+    af.every((f, i) => f === bf[i])
+  )
+}
+
+/**
+ * Single serializer for /listings URLs — shared by the filter→URL sync, the
+ * crawlable pagination links, and router.replace so every writer produces the
+ * exact same query string (keeps the lastAppliedSearchRef guard in sync).
+ * `pageIndex` is 0-based internally, the URL `page` param is 1-based.
+ */
+function buildListingsQuery(filters: FilterState, sort: SortOption, pageIndex: number): string {
+  const params = new URLSearchParams()
+  if (filters.search.trim()) params.set('search', filters.search.trim())
+  if (filters.city) params.set('city', filters.city)
+  if (filters.neighborhood) params.set('neighborhood', filters.neighborhood)
+  if (filters.type) params.set('type', filters.type)
+  if (filters.minPrice) params.set('minPrice', filters.minPrice)
+  if (filters.maxPrice) params.set('maxPrice', filters.maxPrice)
+  if (filters.rooms) params.set('rooms', filters.rooms)
+  if (filters.minArea) params.set('minArea', filters.minArea)
+  if (filters.maxArea) params.set('maxArea', filters.maxArea)
+  if (filters.condition) params.set('condition', filters.condition)
+  if (filters.apartment_type) params.set('apartment_type', filters.apartment_type)
+  if (filters.floor) params.set('floor', filters.floor)
+  if (filters.features.length > 0) params.set('features', filters.features.join(','))
+  if (filters.agentId) params.set('agentId', filters.agentId)
+  if (sort !== 'newest') params.set('sort', sort)
+  if (pageIndex > 0) params.set('page', String(pageIndex + 1))
+  return params.toString()
+}
+
 export interface ListingsExplorerProps {
   /** Server-rendered first page (SSR seed) so crawlers and first paint get real HTML */
   initialRows?: Listing[]
@@ -122,6 +174,7 @@ export function ListingsExplorer({
   initialParams = {},
 }: ListingsExplorerProps) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const { favoriteIds, toggleFavorite } = useFavorites()
 
@@ -150,13 +203,19 @@ export function ListingsExplorer({
 
   // ---- Data State ----
   const [listings, setListings] = useState<Listing[]>(initialRows)
-  const [page, setPage] = useState(0)
+  // 0-based page index, seeded from the 1-based URL `page` param (?page=1 → 0)
+  const [page, setPage] = useState(() =>
+    Math.max(0, (Number(initialParams.page) || 1) - 1)
+  )
   const [fetchState, setFetchState] = useState({
     loading: initialRows.length === 0,
     hasMore: initialRows.length >= 12,
   })
   const [totalResults, setTotalResults] = useState(initialTotal)
   const seededFetchRef = useRef(initialRows.length > 0)
+  // Page index the next filter-triggered fetch should load (preserves ?page=N
+  // when an external navigation changes filters and page at once).
+  const targetPageRef = useRef<number | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [agentMap, setAgentMap] = useState<Record<string, AgentResult>>({})
 
@@ -187,77 +246,16 @@ export function ListingsExplorer({
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const lastAppliedSearchRef = useRef<string | null>(null)
 
-  // Read URL params whenever URL search params change (e.g. navigation to /listings?type=qira)
-  useEffect(() => {
-    const currentParamsString = searchParams.toString()
-    if (lastAppliedSearchRef.current === currentParamsString) return
-    lastAppliedSearchRef.current = currentParamsString
 
-    const pSearch = searchParams.get('search') || ''
-    const pCity = searchParams.get('city') || ''
-    const pNeighborhood = searchParams.get('neighborhood') || ''
-    const pType = (searchParams.get('type') as '' | 'shitje' | 'qira') || ''
-    const pMinPrice = searchParams.get('minPrice') || ''
-    const pMaxPrice = searchParams.get('maxPrice') || ''
-    const pRooms = searchParams.get('rooms') || ''
-    const pMinArea = searchParams.get('minArea') || ''
-    const pMaxArea = searchParams.get('maxArea') || ''
-    const pCondition = searchParams.get('condition') || ''
-    const pApartmentType = searchParams.get('apartment_type') || ''
-    const pFloor = searchParams.get('floor') || ''
-    const pFeaturesParam = searchParams.get('features')
-    const pFeatures = pFeaturesParam ? pFeaturesParam.split(',') : []
-    const pAgentId = searchParams.get('agentId') || ''
-    const pSort = (searchParams.get('sort') as SortOption) || 'newest'
-
-    setSearchInput(pSearch)
-    setSortBy(pSort)
-    setFilters({
-      search: pSearch,
-      city: pCity,
-      neighborhood: pNeighborhood,
-      type: pType,
-      minPrice: pMinPrice,
-      maxPrice: pMaxPrice,
-      rooms: pRooms,
-      minArea: pMinArea,
-      maxArea: pMaxArea,
-      condition: pCondition,
-      apartment_type: pApartmentType,
-      floor: pFloor,
-      features: pFeatures,
-      agentId: pAgentId,
-    })
-  }, [searchParams])
-
-  // Sync to URL
+  // Sync to URL — Next.js App Router navigation (browser back/forward keeps
+  // working); scroll stays put because filter edits shouldn't jump the page.
   const updateUrlParams = useCallback(
-    (newFilters: FilterState, newSort: SortOption) => {
-      if (typeof window === 'undefined') return
-      const params = new URLSearchParams()
-
-      if (newFilters.search.trim()) params.set('search', newFilters.search.trim())
-      if (newFilters.city) params.set('city', newFilters.city)
-      if (newFilters.neighborhood) params.set('neighborhood', newFilters.neighborhood)
-      if (newFilters.type) params.set('type', newFilters.type)
-      if (newFilters.minPrice) params.set('minPrice', newFilters.minPrice)
-      if (newFilters.maxPrice) params.set('maxPrice', newFilters.maxPrice)
-      if (newFilters.rooms) params.set('rooms', newFilters.rooms)
-      if (newFilters.minArea) params.set('minArea', newFilters.minArea)
-      if (newFilters.maxArea) params.set('maxArea', newFilters.maxArea)
-      if (newFilters.condition) params.set('condition', newFilters.condition)
-      if (newFilters.apartment_type) params.set('apartment_type', newFilters.apartment_type)
-      if (newFilters.floor) params.set('floor', newFilters.floor)
-      if (newFilters.features.length > 0) params.set('features', newFilters.features.join(','))
-      if (newFilters.agentId) params.set('agentId', newFilters.agentId)
-      if (newSort !== 'newest') params.set('sort', newSort)
-
-      const qs = params.toString()
+    (newFilters: FilterState, newSort: SortOption, pageIndex = 0) => {
+      const qs = buildListingsQuery(newFilters, newSort, pageIndex)
       lastAppliedSearchRef.current = qs
-      const newUrl = qs ? `/listings?${qs}` : '/listings'
-      window.history.replaceState(null, '', newUrl)
+      router.replace(qs ? `/listings?${qs}` : '/listings', { scroll: false })
     },
-    []
+    [router]
   )
 
   // Click outside handling
@@ -290,12 +288,12 @@ export function ListingsExplorer({
 
   // Query Supabase
   const fetchListings = useCallback(
-    async (pageNum = 0) => {
-      if (pageNum === 0) setPage(0)
+    async (pageNum = 0, mode: 'reset' | 'append' = pageNum === 0 ? 'reset' : 'append') => {
+      if (mode === 'reset') setPage(pageNum)
       setFetchState(prev => ({
         ...prev,
         loading: true,
-        hasMore: pageNum === 0 ? true : prev.hasMore,
+        hasMore: mode === 'reset' ? true : prev.hasMore,
       }))
       setLoadError(false)
 
@@ -414,7 +412,7 @@ export function ListingsExplorer({
           console.error('Agent search error:', profileError)
         }
 
-        if (pageNum === 0) {
+        if (mode === 'reset') {
           setListings(listingResults)
           setTotalResults(listingCount ?? listingResults.length)
           if (agentResultsData.length > 0) {
@@ -447,15 +445,81 @@ export function ListingsExplorer({
     [filters, sortBy, supabase]
   )
 
+  // Read URL params whenever URL search params change (external navigation,
+  // pagination <Link> clicks, back/forward). Filter edits write the URL first
+  // via router.replace (see updateUrlParams), so that guard short-circuits here.
   useEffect(() => {
-    // The server already rendered page one for these exact params; skip the
-    // duplicate round-trip on mount and fetch only on subsequent changes.
+    const currentParamsString = searchParams.toString()
+    if (lastAppliedSearchRef.current === currentParamsString) return
+    lastAppliedSearchRef.current = currentParamsString
+
+    const pSearch = searchParams.get('search') || ''
+    const pCity = searchParams.get('city') || ''
+    const pNeighborhood = searchParams.get('neighborhood') || ''
+    const pType = (searchParams.get('type') as '' | 'shitje' | 'qira') || ''
+    const pMinPrice = searchParams.get('minPrice') || ''
+    const pMaxPrice = searchParams.get('maxPrice') || ''
+    const pRooms = searchParams.get('rooms') || ''
+    const pMinArea = searchParams.get('minArea') || ''
+    const pMaxArea = searchParams.get('maxArea') || ''
+    const pCondition = searchParams.get('condition') || ''
+    const pApartmentType = searchParams.get('apartment_type') || ''
+    const pFloor = searchParams.get('floor') || ''
+    const pFeaturesParam = searchParams.get('features')
+    const pFeatures = pFeaturesParam ? pFeaturesParam.split(',') : []
+    const pAgentId = searchParams.get('agentId') || ''
+    const pSort = (searchParams.get('sort') as SortOption) || 'newest'
+    // 1-based URL page → 0-based index (matches server-side normalization)
+    const pPage = Math.max(0, (Number(searchParams.get('page')) || 1) - 1)
+
+    const nextFilters: FilterState = {
+      search: pSearch,
+      city: pCity,
+      neighborhood: pNeighborhood,
+      type: pType,
+      minPrice: pMinPrice,
+      maxPrice: pMaxPrice,
+      rooms: pRooms,
+      minArea: pMinArea,
+      maxArea: pMaxArea,
+      condition: pCondition,
+      apartment_type: pApartmentType,
+      floor: pFloor,
+      features: pFeatures,
+      agentId: pAgentId,
+    }
+
+    if (!filtersEqual(nextFilters, filters) || pSort !== sortBy || pSearch !== searchInput) {
+      // Query changed externally → adopt it. The fetch effect reloads the
+      // results and rewrites the URL; carry the requested page across so
+      // back/forward between paginated URLs keeps working.
+      if (pPage > 0) targetPageRef.current = pPage
+      setSearchInput(pSearch)
+      setSortBy(pSort)
+      setFilters(nextFilters)
+      return
+    }
+
+    // Same query, different page → swap the current rows for that page.
+    if (pPage !== page) {
+      void fetchListings(pPage, 'reset')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  useEffect(() => {
+    // The server already rendered the requested page for these exact params;
+    // skip the duplicate round-trip on mount and fetch only on subsequent
+    // filter/sort changes (which reset to page 1 unless a navigation asked
+    // for a specific page — see targetPageRef).
     if (seededFetchRef.current) {
       seededFetchRef.current = false
       return
     }
-    fetchListings(0)
-    updateUrlParams(filters, sortBy)
+    const targetPage = targetPageRef.current ?? 0
+    targetPageRef.current = null
+    fetchListings(targetPage, 'reset')
+    updateUrlParams(filters, sortBy, targetPage)
   }, [fetchListings, filters, sortBy, updateUrlParams])
 
   useEffect(() => {
@@ -549,6 +613,27 @@ export function ListingsExplorer({
 
   const selectedAgent = filters.agentId ? agentMap[filters.agentId] ?? null : null
 
+  // ---- Crawlable pagination: numbered <Link>s (1-based URL) so crawlers can
+  // reach listings beyond page 1; "Ngarko më shumë" stays for in-place loads.
+  const pageCount = Math.max(1, Math.ceil(totalResults / PAGE_SIZE))
+  const hrefForPage = (targetIndex: number) => {
+    const qs = buildListingsQuery(filters, sortBy, targetIndex)
+    return qs ? `/listings?${qs}` : '/listings'
+  }
+  const pageItems = useMemo<Array<number | 'gap'>>(() => {
+    const items: Array<number | 'gap'> = []
+    const current = page + 1
+    const push = (n: number) => {
+      if (!items.includes(n)) items.push(n)
+    }
+    push(1)
+    if (current > 3) items.push('gap')
+    for (let n = Math.max(2, current - 1); n <= Math.min(pageCount - 1, current + 1); n++) push(n)
+    if (current < pageCount - 2) items.push('gap')
+    if (pageCount > 1) push(pageCount)
+    return items
+  }, [page, pageCount])
+
   const openMoreFilters = () => {
     setTempModalFilters({
       minArea: filters.minArea,
@@ -583,7 +668,7 @@ export function ListingsExplorer({
   return (
     <div className="min-h-screen bg-[#F2F7F7] pb-24">
       <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-20 sm:pt-22">
-        {/* Compact Header Row: Title + count badge on left, Segmented Type pills on right */}
+        {/* Tier 1 — Title + count badge on left, segmented type pills on right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#101828]">
@@ -620,11 +705,12 @@ export function ListingsExplorer({
           </div>
         </div>
 
-        {/* Clean, Compact Filter Bar */}
+        {/* Tier 2 — one unified control card (search, menus, sort, quick pills,
+            active chips, agent context) instead of stacked sub-header bars */}
         <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-2 sm:p-2.5 mb-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-center">
             {/* 1. Search Bar */}
-            <div className="sm:col-span-2 lg:col-span-4 xl:col-span-5 relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#00675B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00675B]/15 transition-all">
+            <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 relative flex items-center rounded-xl bg-gray-50 border border-gray-200 focus-within:border-[#00675B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00675B]/15 transition-all">
               <Search className="h-4 w-4 text-gray-400 ml-3 flex-shrink-0" />
               <input
                 type="text"
@@ -884,7 +970,7 @@ export function ListingsExplorer({
             </div>
 
             {/* 5. More Filters Button */}
-            <div className="lg:col-span-2 xl:col-span-1">
+            <div className="lg:col-span-1 xl:col-span-1">
               <button
                 type="button"
                 onClick={openMoreFilters}
@@ -903,12 +989,62 @@ export function ListingsExplorer({
                 )}
               </button>
             </div>
-          </div>
-        </div>
 
-        {/* City Pills Track + Sort */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide flex-1">
+            {/* 6. Sort Dropdown */}
+            <div className="relative lg:col-span-2 xl:col-span-1" ref={sortRef}>
+              <button
+                type="button"
+                onClick={() => setSortOpen(!sortOpen)}
+                className="w-full h-9 px-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs sm:text-sm font-semibold text-gray-700 flex items-center justify-between gap-1.5 transition-all cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5 truncate">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
+                  <span className="truncate">
+                    {sortBy === 'newest'
+                      ? 'Më të rejat'
+                      : sortBy === 'price_asc'
+                      ? 'Çmimi më i ulët'
+                      : sortBy === 'price_desc'
+                      ? 'Çmimi më i lartë'
+                      : sortBy === 'area_desc'
+                      ? 'Sipërfaqja më e madhe'
+                      : 'Sipërfaqja më e vogël'}
+                  </span>
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {sortOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 p-1 min-w-[180px]">
+                  {[
+                    { key: 'newest', label: 'Më të rejat' },
+                    { key: 'price_asc', label: 'Çmimi: më i ulët' },
+                    { key: 'price_desc', label: 'Çmimi: më i lartë' },
+                    { key: 'area_desc', label: 'Sipërfaqja: më e madhe' },
+                    { key: 'area_asc', label: 'Sipërfaqja: më e vogël' },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => {
+                        setSortBy(opt.key as SortOption)
+                        setSortOpen(false)
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                        sortBy === opt.key ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {sortBy === opt.key && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick pills row: cities + neighborhoods (same card tier) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 mt-2 pt-2 border-t border-gray-100 scrollbar-hide">
             <button
               type="button"
               onClick={() => setFilters(prev => ({ ...prev, city: '', neighborhood: '' }))}
@@ -955,105 +1091,51 @@ export function ListingsExplorer({
                 </button>
               )
             })}
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="relative shrink-0" ref={sortRef}>
-            <button
-              type="button"
-              onClick={() => setSortOpen(!sortOpen)}
-              className="h-8 px-2.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <ArrowUpDown className="h-3 w-3 text-gray-400" />
-              <span className="hidden sm:inline">
-                {sortBy === 'newest'
-                  ? 'Më të rejat'
-                  : sortBy === 'price_asc'
-                  ? 'Çmimi më i ulët'
-                  : sortBy === 'price_desc'
-                  ? 'Çmimi më i lartë'
-                  : sortBy === 'area_desc'
-                  ? 'Sipërfaqja më e madhe'
-                  : 'Sipërfaqja më e vogël'}
-              </span>
-              <span className="sm:hidden">Radhit</span>
-              <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {sortOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 p-1 min-w-[180px]">
-                {[
-                  { key: 'newest', label: 'Më të rejat' },
-                  { key: 'price_asc', label: 'Çmimi: më i ulët' },
-                  { key: 'price_desc', label: 'Çmimi: më i lartë' },
-                  { key: 'area_desc', label: 'Sipërfaqja: më e madhe' },
-                  { key: 'area_asc', label: 'Sipërfaqja: më e vogël' },
-                ].map(opt => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => {
-                      setSortBy(opt.key as SortOption)
-                      setSortOpen(false)
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
-                      sortBy === opt.key ? 'bg-[#00675B] text-white' : 'hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <span>{opt.label}</span>
-                    {sortBy === opt.key && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Neighborhood Quick Pills (If City Selected) */}
-        {filters.city && availableNeighborhoods.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-3 scrollbar-hide">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider shrink-0 mr-1">
-              Lagjet:
-            </span>
-            <button
-              type="button"
-              onClick={() => setFilters(prev => ({ ...prev, neighborhood: '' }))}
-              className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
-                !filters.neighborhood
-                  ? 'bg-gray-800 text-white border-gray-800'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              Të gjitha
-            </button>
-            {availableNeighborhoods.slice(0, 14).map(n => {
-              const isSelected = filters.neighborhood === n
-              return (
+            {filters.city && availableNeighborhoods.length > 0 && (
+              <>
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider shrink-0 ml-1 pl-3 border-l border-gray-200">
+                  Lagjet:
+                </span>
                 <button
-                  key={n}
                   type="button"
-                  onClick={() =>
-                    setFilters(prev => ({
-                      ...prev,
-                      neighborhood: isSelected ? '' : n,
-                    }))
-                  }
+                  onClick={() => setFilters(prev => ({ ...prev, neighborhood: '' }))}
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
-                    isSelected
-                      ? 'bg-[#00675B] text-white border-[#00675B]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900'
+                    !filters.neighborhood
+                      ? 'bg-gray-800 text-white border-gray-800'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  {n}
+                  Të gjitha
                 </button>
-              )
-            })}
+                {availableNeighborhoods.slice(0, 14).map(n => {
+                  const isSelected = filters.neighborhood === n
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() =>
+                        setFilters(prev => ({
+                          ...prev,
+                          neighborhood: isSelected ? '' : n,
+                        }))
+                      }
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                        isSelected
+                          ? 'bg-[#00675B] text-white border-[#00675B]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                })}
+              </>
+            )}
           </div>
-        )}
 
-        {/* Active Filter Chips */}
+        {/* Active Filter Chips (inside the tier-2 card) */}
         {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
             <span className="text-xs font-semibold text-gray-500 mr-1">Filtrat:</span>
 
             {filters.search && (
@@ -1162,7 +1244,7 @@ export function ListingsExplorer({
 
         {/* Selected Agent Banner */}
         {!fetchState.loading && filters.agentId && selectedAgent && (
-          <div className="mb-3 bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-4">
+          <div className="mt-2 bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center font-bold text-sm text-[#00675B]">
                 {selectedAgent.avatar_url ? (
@@ -1192,6 +1274,7 @@ export function ListingsExplorer({
             </button>
           </div>
         )}
+        </div>
 
         {/* =========================================================================
             LISTINGS GRID
@@ -1212,7 +1295,7 @@ export function ListingsExplorer({
             </p>
             <button
               type="button"
-              onClick={() => fetchListings(0)}
+              onClick={() => fetchListings(page, 'reset')}
               className="px-4 py-2 rounded-xl bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] cursor-pointer"
             >
               Provo përsëri
@@ -1264,6 +1347,71 @@ export function ListingsExplorer({
                   Ngarko më shumë
                 </button>
               </div>
+            )}
+
+            {/* Crawlable pagination — real <a href> links for crawlers/SEO */}
+            {pageCount > 1 && (
+              <nav
+                aria-label="Paginimi i katalogut"
+                className="mt-8 flex flex-wrap items-center justify-center gap-1.5"
+              >
+                {page > 0 ? (
+                  <Link
+                    href={hrefForPage(page - 1)}
+                    rel="prev"
+                    aria-label="Faqja e mëparshme"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-gray-600 hover:border-[#00675B] hover:text-[#00675B] transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-gray-300"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </span>
+                )}
+
+                {pageItems.map((item, i) =>
+                  item === 'gap' ? (
+                    <span key={`gap-${i}`} className="px-1 text-xs text-gray-400" aria-hidden="true">
+                      …
+                    </span>
+                  ) : (
+                    <Link
+                      key={item}
+                      href={hrefForPage(item - 1)}
+                      aria-current={item === page + 1 ? 'page' : undefined}
+                      className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                        item === page + 1
+                          ? 'border-[#00675B] bg-[#00675B] text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-[#00675B] hover:text-[#00675B]'
+                      }`}
+                    >
+                      {item}
+                    </Link>
+                  )
+                )}
+
+                {page + 1 < pageCount ? (
+                  <Link
+                    href={hrefForPage(page + 1)}
+                    rel="next"
+                    aria-label="Faqja tjetër"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-gray-600 hover:border-[#00675B] hover:text-[#00675B] transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-gray-300"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                )}
+              </nav>
             )}
           </>
         )}

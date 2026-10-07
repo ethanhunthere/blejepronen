@@ -22,8 +22,12 @@ export default function ProfileShareButton({ displayName, className = '' }: Prof
           url,
         })
         return
-      } catch {
-        // user cancelled or share failed, fallback to copy
+      } catch (err) {
+        // Cancelled share sheet (AbortError) is not a success and not a
+        // failure — return silently instead of falling through to the
+        // clipboard copy and showing a false "u kopjua" toast.
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        // Real share failure: fall back to clipboard copy below.
       }
     }
 

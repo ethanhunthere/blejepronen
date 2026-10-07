@@ -10,6 +10,7 @@ import {
   fmtPrice,
   hubPathEn,
   hubPathSq,
+  marketPathEn,
   marketPathSq,
   type HubType,
 } from '@/lib/seo-slugs'
@@ -33,7 +34,8 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
   const stats = await fetchMarketStats(city)
   const meta = TYPE_META[type][lang]
   const where = hood ? (lang === 'sq' ? `${hood}, ${city}` : `${hood} in ${city}`) : city
-  const median = stats?.medianSalePpm2 ?? null
+  const isSale = type === 'shitje'
+  const median = isSale ? (stats?.medianSalePpm2 ?? null) : null
 
   const h1 =
     lang === 'sq'
@@ -42,16 +44,14 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
 
   const intro =
     lang === 'sq'
-      ? `Aktualisht ${total} pronë aktive ${meta.phrase} në ${where}.` +
-        (median && type === 'shitje'
+      ? `Aktualisht ${total} ${total === 1 ? 'pronë' : 'prona'} aktive ${meta.phrase} në ${where}.` +
+        (median
           ? ` Mesatarja e çmimit për m² në ${city} është ${fmtPrice(median)}, bazuar në listimet aktive.`
-          : '') +
-        ' Të dhënat përditësohen automatikisht sa herë që publikohet ose ndryshon një shpallje.'
-      : `${total} active properties ${meta.phrase} in ${where}, Kosovo.` +
-        (median && type === 'shitje'
+          : '')
+      : `${total} active ${total === 1 ? 'property' : 'properties'} ${meta.phrase} in ${where}, Kosovo.` +
+        (median
           ? ` The current market average in ${city} is €${fmtInt(median)} per m², computed from active listings.`
-          : '') +
-        ' Figures refresh automatically as listings are published or updated.'
+          : '')
 
   const breadcrumb = [
     { name: lang === 'sq' ? 'Kreu' : 'Home', url: '/' },
@@ -167,12 +167,19 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
               </dt>
               <dd className="text-xl font-extrabold text-[#101828] tabular-nums">{stats.forRent}</dd>
             </div>
+            {/* Sale median €/m² is only meaningful on sale hubs — rental hubs show neighborhood coverage instead */}
             <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
               <dt className="text-[11px] uppercase tracking-wide text-gray-500">
-                {lang === 'sq' ? 'Mesatarja €/m²' : 'Median €/m²'}
+                {isSale
+                  ? lang === 'sq'
+                    ? 'Mesatarja €/m²'
+                    : 'Median €/m²'
+                  : lang === 'sq'
+                  ? 'Lagje'
+                  : 'Neighborhoods'}
               </dt>
               <dd className="text-xl font-extrabold text-[#00675B] tabular-nums">
-                {median ? fmtInt(median) : '—'}
+                {isSale ? (median ? fmtInt(median) : '—') : stats.neighborhoods.length}
               </dd>
             </div>
           </dl>
@@ -202,7 +209,7 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
               : `${TYPE_META[otherType].en.category} in ${city}`}
           </Link>
           <Link
-            href={marketPathSq(city)}
+            href={lang === 'sq' ? marketPathSq(city) : marketPathEn(city)}
             className="text-xs font-semibold px-3 py-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-[#00675B]"
           >
             {lang === 'sq' ? `Tregu i pronave — ${city}` : `Property market — ${city}`}

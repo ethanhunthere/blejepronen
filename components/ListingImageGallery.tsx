@@ -58,13 +58,19 @@ export default function ListingImageGallery({
   return (
     <>
       <div id="listing-gallery" className="relative">
-        {/* Desktop grid */}
-        <div className="hidden md:grid h-[340px] md:h-[390px] lg:h-[430px] grid-cols-[1.5fr_1fr] grid-rows-2 gap-2.5 rounded-3xl overflow-hidden bg-gray-100 shadow-xs">
+        {/* Desktop grid — adaptive bento mosaic (1 / 2 / 3 / 4 / 5+ photos) */}
+        <div
+          className={`hidden md:grid h-[340px] md:h-[390px] lg:h-[430px] gap-2.5 rounded-3xl overflow-hidden bg-gray-100 shadow-xs ${
+            total === 1 ? 'grid-cols-1 grid-rows-1' : 'grid-cols-[1.5fr_1fr] grid-rows-2'
+          }`}
+        >
           {/* Main left image */}
           <button
             type="button"
             onClick={() => openFullscreen(0)}
-            className="relative row-span-2 group overflow-hidden focus:outline-none cursor-pointer"
+            className={`relative group overflow-hidden focus:outline-none cursor-pointer ${
+              total > 1 ? 'row-span-2' : ''
+            }`}
             aria-label="Foto kryesore"
           >
             <Image
@@ -77,47 +83,37 @@ export default function ListingImageGallery({
             />
           </button>
 
-          {/* Right top */}
-          {normalized[1] && (
-            <button
-              type="button"
-              onClick={() => openFullscreen(1)}
-              className={`relative group overflow-hidden focus:outline-none cursor-pointer ${
-                !normalized[2] ? 'row-span-2' : ''
-              }`}
-              aria-label="Foto 2"
-            >
-              <Image
-                src={normalized[1]}
-                alt={`${title} - foto 2`}
-                fill
-                className="object-cover transition-all duration-300 group-hover:brightness-90"
-                sizes="(max-width: 1024px) 40vw, 35vw"
-              />
-            </button>
-          )}
-
-          {/* Right bottom */}
-          {normalized[2] && (
-            <button
-              type="button"
-              onClick={() => openFullscreen(2)}
-              className="relative group overflow-hidden focus:outline-none cursor-pointer"
-              aria-label="Foto 3"
-            >
-              <Image
-                src={normalized[2]}
-                alt={`${title} - foto 3`}
-                fill
-                className="object-cover transition-all duration-300 group-hover:brightness-90"
-                sizes="(max-width: 1024px) 40vw, 35vw"
-              />
-              {total > 3 && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">+{total - 3} foto</span>
-                </div>
-              )}
-            </button>
+          {/* Right column: stacked side tiles (fills the column for every count) */}
+          {total > 1 && (
+            <div className="row-span-2 flex flex-col gap-2.5 min-h-0">
+              {normalized.slice(1, 4).map((src, idx) => {
+                const sideIndex = idx + 1
+                const isLastSide = sideIndex === Math.min(total - 1, 3)
+                const remaining = total - 4
+                return (
+                  <button
+                    key={sideIndex}
+                    type="button"
+                    onClick={() => openFullscreen(sideIndex)}
+                    className="relative flex-1 min-h-0 group overflow-hidden focus:outline-none cursor-pointer"
+                    aria-label={`Foto ${sideIndex + 1}`}
+                  >
+                    <Image
+                      src={src}
+                      alt={`${title} - foto ${sideIndex + 1}`}
+                      fill
+                      className="object-cover transition-all duration-300 group-hover:brightness-90"
+                      sizes="(max-width: 1024px) 40vw, 35vw"
+                    />
+                    {isLastSide && remaining > 0 && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white text-xl font-bold">+{remaining} foto</span>
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           )}
 
           {/* Badges */}

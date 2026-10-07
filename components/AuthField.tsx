@@ -14,6 +14,8 @@ interface AuthFieldProps {
   value: string
   onChange: (value: string) => void
   error?: string
+  /** Stable `name` for password managers / autofill; defaults to `id`. */
+  name?: string
   autoComplete?: string
   topRight?: React.ReactNode
   helperText?: React.ReactNode
@@ -28,6 +30,7 @@ export default function AuthField({
   value,
   onChange,
   error,
+  name,
   autoComplete,
   topRight,
   helperText,
@@ -59,6 +62,7 @@ export default function AuthField({
         </span>
         <Input
           id={id}
+          name={name ?? id}
           type={effectiveType}
           placeholder={placeholder}
           autoComplete={autoComplete}
