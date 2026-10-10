@@ -54,7 +54,7 @@ export default function NotFoundScreen() {
               styles.primaryBtn,
               { backgroundColor: theme === 'green' ? colors.gold : colors.primary },
             ]}
-            onPress={() => router.replace('/' as any)}
+            onPress={() => router.replace('/(tabs)' as any)}
           >
             <ArrowLeft
               size={18}

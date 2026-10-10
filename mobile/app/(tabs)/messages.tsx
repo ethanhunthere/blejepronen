@@ -484,7 +484,7 @@ export default function MessagesScreen() {
                 {!searchQuery && (
                   <Pressable
                     style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
-                    onPress={() => router.push('/listings' as any)}
+                    onPress={() => router.push('/(tabs)/listings' as any)}
                   >
                     <Text style={[styles.exploreBtnText, { color: primaryBtnText }]}>
                       Eksploro Pronat

@@ -543,7 +543,7 @@ export default function PostPropertyScreen() {
       if (newListingId) {
         router.replace(`/listings/${newListingId}` as any)
       } else {
-        router.replace('/listings' as any)
+        router.replace('/(tabs)/listings' as any)
       }
     } catch (err: any) {
       // The insert never landed — discard the photos already pushed to Storage

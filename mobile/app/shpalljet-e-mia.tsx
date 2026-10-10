@@ -997,7 +997,7 @@ export default function ShpalljetEMiaScreen() {
             onPress={() => {
               playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
-              router.push('/post' as any)
+              router.push('/(tabs)/post' as any)
             }}
           >
             <Plus
@@ -1557,7 +1557,7 @@ export default function ShpalljetEMiaScreen() {
             onPress={() => {
               playTapSound()
               if (Platform.OS !== 'web') Haptics.selectionAsync()
-              router.push('/post' as any)
+              router.push('/(tabs)/post' as any)
             }}
             hitSlop={8}
           >
