@@ -670,7 +670,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-sm font-bold text-[#101828]">
                     {listingsCount > 0
-                      ? `Keni ${listingsCount} pronë të publikuar aktualisht.`
+                      ? `Keni ${listingsCount} ${listingsCount === 1 ? 'pronë të publikuar' : 'prona të publikuara'} aktualisht.`
                       : 'Nuk keni asnjë pronë të publikuar ende.'}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -755,8 +755,8 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between py-2 border-b border-gray-100">
                   <span className="text-gray-500">Statusi</span>
                   <span className="font-bold text-emerald-700 inline-flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Aktiv & Verifikuar
+                    {isVerified && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                    {isVerified ? 'Aktiv & Verifikuar' : 'Aktiv'}
                   </span>
                 </div>
 

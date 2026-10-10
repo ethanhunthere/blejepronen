@@ -389,9 +389,9 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* ---- RIGHT PANEL ---- */}
-      <main className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#F2F7F7]`}>
+      <div className={`${isChatOpen ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-w-0 bg-[#F2F7F7]`}>
         {children}
-      </main>
+      </div>
 
       {/* Animations */}
       <style jsx global>{`

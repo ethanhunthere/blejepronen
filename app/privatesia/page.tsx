@@ -21,7 +21,7 @@ export default function PrivacyPage() {
 
           <PageHeader
             title="Politika e Privatësisë"
-            subtitle="Përditësuar së fundmi: 2026. Transparenca dhe siguria e të dhënave tuaja personale janë prioriteti ynë kryesor."
+            subtitle="Përditësuar së fundmi: 10 tetor 2026. Transparenca dhe siguria e të dhënave tuaja personale janë prioriteti ynë kryesor."
           />
 
           <div className="space-y-8 divide-y divide-gray-100">

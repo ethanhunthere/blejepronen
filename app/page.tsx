@@ -35,7 +35,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       <HomeHero />
 
       {/* Error state */}
@@ -189,6 +189,6 @@ export default async function HomePage() {
       </section>
 
       <ScrollToTop />
-    </main>
+    </div>
   )
 }

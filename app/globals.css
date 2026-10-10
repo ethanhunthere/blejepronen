@@ -254,36 +254,15 @@ html {
 }
 
 /* ListingCard hover polish with multi-tier ambient + specular depth */
-.listing-card-hover {
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 240ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.listing-card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04),
-              0 12px 28px -8px rgba(15, 23, 42, 0.09);
-}
 
 
 
 
 
 /* Ken Burns hero photo zoom */
-.ken-burns {
-  animation: ken-burns 12s ease-in-out infinite alternate;
-}
 
-@keyframes ken-burns {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.08); }
-}
 
 /* Slow-shifting gradient for the light-theme hero */
-.hero-gradient-animate {
-  background-size: 200% 200%;
-  animation: hero-gradient-shift 18s ease-in-out infinite alternate;
-}
 
 @keyframes hero-gradient-shift {
   0% { background-position: 0% 0%; }
@@ -305,29 +284,19 @@ html {
     scroll-behavior: auto;
   }
 
-  .ken-burns {
-    animation: none;
+  /* Inline keyframe animations applied via style attributes in the chat
+     surfaces — the only selector hook available to disable them. */
+  [style*='msgSlideIn'],
+  [style*='typingWave'],
+  [style*='fadeSlideUp'],
+  [style*='unreadPulse'] {
+    animation: none !important;
   }
-
-  .hero-gradient-animate {
-    animation: none;
-  }
-
-  .aos-fade-up,
-  .aos-from-left,
-  .aos-from-right,
-  .aos-from-bottom,
-  .aos-scale-in {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-
 }
 
 /* Accessible focus styles */
 :focus-visible {
-  outline: 2px solid #00675B;
+  outline: 2px solid var(--brand, #00675B);
   outline-offset: 2px;
 }
 button:focus-visible,
@@ -335,7 +304,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #00675B;
+  outline: 2px solid var(--brand, #00675B);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -352,18 +321,8 @@ textarea:focus-visible {
 /* =========================================================
    Type scale - 4px grid based
    ========================================================= */
-.text-display { font-size: 48px; line-height: 56px; font-weight: 800; letter-spacing: -0.02em; }
-.text-h1 { font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.01em; }
-.text-h2 { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
-.text-h3 { font-size: 20px; line-height: 28px; font-weight: 600; }
-.text-body-lg { font-size: 16px; line-height: 24px; font-weight: 400; }
-.text-body { font-size: 14px; line-height: 20px; font-weight: 400; }
-.text-caption { font-size: 12px; line-height: 16px; font-weight: 400; }
-.text-label { font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
 /* Micro-animations */
-.transition-ui { transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); }
-.transition-slow { transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* Card hover - Apple-style lift */
 .card-hover {
@@ -378,11 +337,6 @@ textarea:focus-visible {
 }
 
 /* Focus ring - accessible */
-.focus-ring:focus-visible {
-  outline: 2px solid #111827;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
 
 /* Shimmer loading animation */
 @keyframes shimmer {
@@ -396,19 +350,8 @@ textarea:focus-visible {
 }
 
 /* Smooth page entrance */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up {
-  animation: fadeUp 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
 
 /* Stagger children */
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 50ms; }
-.stagger > *:nth-child(3) { animation-delay: 100ms; }
-.stagger > *:nth-child(4) { animation-delay: 150ms; }
 
 /* Input focus ring */
 input:focus-visible, textarea:focus-visible, select:focus-visible {
@@ -462,20 +405,6 @@ select:-webkit-autofill:focus {
 }
 
 /* Link underline animation */
-.link-underline {
-  position: relative;
-}
-.link-underline::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background: currentColor;
-  transition: width 200ms ease;
-}
-.link-underline:hover::after { width: 100%; }
 
 /* Pulse for notification badge */
 @keyframes badge-pulse {
@@ -489,7 +418,6 @@ img { transition: opacity 300ms ease; }
 
 @media (prefers-reduced-motion: reduce) {
   .card-hover:hover { transform: none; }
-  .animate-fade-up { animation: none; opacity: 1; transform: none; }
   .badge-new { animation: none; }
   .skeleton { animation: none; }
 }
@@ -529,12 +457,7 @@ body:has([data-auth-page]) > main {
 }
 
 /* Slow cinematic drift for the homepage hero backdrop */
-@keyframes kenburns {
-  from { transform: scale(1.05) translate3d(0, 0, 0); }
-  to { transform: scale(1.16) translate3d(-1.5%, -1.5%, 0); }
-}
 @media (prefers-reduced-motion: reduce) {
-  .animate-\[kenburns_28s_ease-in-out_infinite_alternate\] { animation: none; }
 }
 
 /* Instant 0ms Navbar Auth States (renders synchronously before React hydration) */
@@ -594,8 +517,5 @@ html:not([data-auth]) .mobile-auth-logged-out {
   background-image: var(--nav-avatar, none);
   background-size: cover;
   background-position: center;
-}
-.navbar-avatar-initial::before {
-  content: var(--nav-initial, attr(data-initial));
 }
 

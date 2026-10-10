@@ -69,11 +69,11 @@ export default function ContactPage() {
                   Koha e Përgjigjes
                 </p>
                 <p className="text-sm sm:text-base font-bold text-[#101828]">
-                  Brenda 24 orëve
+                  Zakonisht brenda 24 orëve
                 </p>
               </div>
               <p className="text-xs text-gray-500 mt-4">
-                Ekipi ynë monitoron mesazhet 7 ditë të javës.
+                Ekipi ynë monitoron mesazhet çdo ditë pune.
               </p>
             </div>
 

@@ -21,7 +21,7 @@ export default function TermsPage() {
 
           <PageHeader
             title="Kushtet e Përdorimit"
-            subtitle="Përditësuar së fundmi: 2026. Ju lutemi lexoni me vëmendje rregullat dhe kushtet e përdorimit të platformës Bleje Pronën."
+            subtitle="Përditësuar së fundmi: 10 tetor 2026. Ju lutemi lexoni me vëmendje rregullat dhe kushtet e përdorimit të platformës Bleje Pronën."
           />
 
           <div className="space-y-8 divide-y divide-gray-100">
@@ -86,7 +86,7 @@ export default function TermsPage() {
                 Periudha Provë & Publikimi Falas
               </h2>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Platforma ofron periudhë promovuese 30-ditore pa asnjë pagesë për çdo listim të ri. Ne nuk kërkojmë të dhëna të kartës së kreditit për publikimin fillestar. Çdo rinovim apo veçori promocionale e ardhshme menaxhohet me transparencë të plotë me ekipin tonë të mbështetjes.
+                Platforma ofron periudhë promovuese 30-ditore pa asnjë pagesë për çdo listim të ri. Ne nuk kërkojmë të dhëna të kartës së kreditit për publikimin fillestar. Çdo vazhdim apo veçori promocionale e ardhshme menaxhohet me transparencë të plotë me ekipin tonë të mbështetjes.
               </p>
             </section>
 
@@ -112,7 +112,7 @@ export default function TermsPage() {
                 Kufizimi i Përgjegjësisë
               </h2>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-                Bleje Pronën bën çdo përpjekje të arsyeshme për të verifikuar integritetin e përdoruesve, por nuk garanton gjendjen fizike të pronave, pastërtinë e dokumenteve hipotekore apo korrektësinë e pagesave ndërmjet palëve. Rekomandojmë gjithmonë kryerjen e kontrolleve juridike te noteri përpara çdo transaksioni.
+                Bleje Pronën bën çdo përpjekje të arsyeshme për të verifikuar integritetin e përdoruesve, por nuk garanton gjendjen fizike të pronave, pastërtinë e dokumenteve kadastrale apo korrektësinë e pagesave ndërmjet palëve. Rekomandojmë gjithmonë kryerjen e kontrolleve juridike te noteri përpara çdo transaksioni.
               </p>
             </section>
           </div>

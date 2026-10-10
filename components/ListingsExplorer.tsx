@@ -669,7 +669,7 @@ export function ListingsExplorer({
 
   return (
     <div className="min-h-screen bg-[#F2F7F7] pb-24">
-      <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-20 sm:pt-22">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-20 sm:pt-22">
         {/* Tier 1 — Title + count badge on left, segmented type pills on right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
           <div className="flex items-center gap-2.5">
@@ -1433,7 +1433,7 @@ export function ListingsExplorer({
             )}
           </>
         )}
-      </main>
+      </div>
 
       {/* =========================================================================
           MORE FILTERS MODAL (Clean & functional)

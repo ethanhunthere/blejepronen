@@ -132,7 +132,7 @@ export default async function AdminPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
       <div className="w-full px-4 sm:px-6 py-10">
-        <h1 className="text-2xl font-bold text-[#101828] mb-8">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[#101828] mb-8">Paneli i Administrimit</h1>
 
         {/* Stats — exact head counts from the database */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
@@ -222,7 +222,7 @@ export default async function AdminPage() {
           <div className="overflow-x-auto">
             {reportsTableMissing ? (
               <p className="px-6 py-8 text-sm text-gray-500">
-                Fjalori i raporteve mungon. Aplikoni migrimin
+                Tabela e raporteve mungon. Aplikoni migrimin
                 <code className="mx-1 px-1.5 py-0.5 bg-gray-100 rounded">20260928_003_host_lifecycle_reports_analytics.sql</code>
                 që seksioni të funksionojë.
               </p>

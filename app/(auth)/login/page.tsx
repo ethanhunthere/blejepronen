@@ -234,7 +234,7 @@ function LoginForm() {
 
   return (
     <AuthShell
-      headline="Mirë se erdhe prapë"
+      headline="Mirë se u kthyet"
       subline="Gjej shtëpinë tënde të re ose menaxho pronat e tua me shpejtësi."
     >
       <AuthPanel

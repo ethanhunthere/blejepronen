@@ -812,7 +812,7 @@ export default function SettingsPage() {
         )}
 
         {/* Tab Bar Navigation */}
-        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-6 flex overflow-x-auto no-scrollbar gap-1">
+        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-6 flex overflow-x-auto scrollbar-hide gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -977,7 +977,7 @@ export default function SettingsPage() {
                       </p>
                       <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
                         {isEmailVerified
-                          ? 'Email-i juaj është tashmë i verifikuar. Nuk keni nevojë të verifikoheni përsëri me email. Mjafton të plotësoni të dhënat e biznesit poshtë për t’u pajisur me stemën zyrtare të verifikimit.'
+                          ? 'Email-i juaj është tashmë i verifikuar. Nuk keni nevojë të verifikoheni përsëri me email. Mjafton të plotësoni të dhënat e biznesit poshtë për t’u pajisur me shenjën e profilit të plotësuar.'
                           : 'Plotësoni emrin dhe të dhënat e kompanisë poshtë në faqe për t’u shfaqur si biznes i verifikuar.'}
                       </p>
                     </div>
@@ -1866,7 +1866,7 @@ export default function SettingsPage() {
             {/* Danger Zone */}
             <div className="bg-red-50/50 border border-red-200/60 rounded-3xl p-5 sm:p-7">
               <h3 className="text-base font-bold text-red-700 mb-1">
-                Zona e Rrezikut
+                Veprime të parikthyeshme
               </h3>
               <p className="text-xs text-gray-600 mb-5">
                 Veprimet e mëposhtme janë përfundimtare dhe mund të fshijnë të gjitha të dhënat tuaja nga Bleje Pronën.

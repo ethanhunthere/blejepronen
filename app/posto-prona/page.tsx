@@ -127,7 +127,7 @@ const CATEGORIES: Record<PropertyCategory, CategoryConfig> = {
       'Siguri 24h',
       'Panoramë',
       'Bodrum',
-      'Rrethojë e sigurt',
+      'Rrethojë e sigurtë',
     ],
     areaPresets: [
       { label: '120 m²', value: 120 },
@@ -296,7 +296,7 @@ const CATEGORIES: Record<PropertyCategory, CategoryConfig> = {
       'Parking',
       'Siguri 24h',
       'Kamera sigurie',
-      'Qepen me telekomandë',
+      'Qepena me telekomandë',
       'Prizë për EV',
       'Ndriçim 24h',
       'Ventilacion',
@@ -1214,7 +1214,7 @@ export default function PostoPronaPage() {
       const message = uploadErr instanceof Error ? uploadErr.message : 'Gabim i panjohur'
       console.error('Image upload batch failed:', message)
       await rollbackUploads()
-      setError(`Ngarkimi i fotove dështoi: ${message}. Sigurohu që "listings" bucket ekziston në Supabase.`)
+      setError(`Ngarkimi i fotove dështoi: ${message}. Ruajtja e fotove dështoi. Provoni përsëri.`)
       setUploading(false)
       setUploadProgress(0)
       isSubmittingRef.current = false
@@ -1274,7 +1274,7 @@ export default function PostoPronaPage() {
       } else if (isEdit && saveError.code === 'PGRST116') {
         setError('Nuk u gjet listimi për ndryshim ose nuk keni leje. Kthehuni te postimet tuaja.')
       } else {
-        setError(`Gabim gjatë ruajtjes së listimit (${saveError.code || 'e panjohur'}). Provo përsëri.`)
+        setError('Gabim gjatë ruajtjes së listimit. Provo përsëri.')
       }
       setUploading(false)
       setUploadProgress(0)
@@ -1496,7 +1496,7 @@ export default function PostoPronaPage() {
                               : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                           }`}
                         >
-                          <span>{t === 'shitje' ? '🏠 Në Shitje' : '🔑 Me Qira'}</span>
+                          <span>{t === 'shitje' ? 'Në Shitje' : 'Me Qira'}</span>
                         </button>
                       )
                     })}
@@ -2119,7 +2119,7 @@ export default function PostoPronaPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                         <div className="space-y-1.5">
                           <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
-                            Komunaliet & Infrastruktura
+                            Infrastruktura komunale
                           </span>
                           <div className="flex flex-wrap gap-1.5">
                             {['Rrymë elektrike', 'Ujësjellës', 'Kanalizim', 'Ndriçim publik', 'E rrethuar'].map((util) => {
@@ -2349,7 +2349,7 @@ export default function PostoPronaPage() {
                           Pajisja & Siguria
                         </span>
                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                          {['Qepen me telekomandë', 'Kamera sigurie', 'Prizë për EV', 'Rampë e lehtë hyrëse', 'Ndriçim 24h', 'Ventilacion', 'Siguri 24h'].map((feat) => {
+                          {['Qepena me telekomandë', 'Kamera sigurie', 'Prizë për EV', 'Rampë e lehtë hyrëse', 'Ndriçim 24h', 'Ventilacion', 'Siguri 24h'].map((feat) => {
                             const isSel = formData.features.includes(feat)
                             return (
                               <button
@@ -2767,7 +2767,7 @@ export default function PostoPronaPage() {
                     Titulli & Përshkrimi
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1 ml-9.5">
-                    Një titull i saktë dhe përshkrim i pasur tërheq 3x më shumë klientë të interesuar.
+                    Një titull i saktë dhe përshkrim i pasur tërheq më shumë klientë të interesuar.
                   </p>
                 </div>
 
@@ -3018,7 +3018,7 @@ export default function PostoPronaPage() {
                 <p className="text-center text-xs text-gray-500 mt-3">
                   Duke klikuar &quot;{submitLabel}&quot;, ju pranoni{' '}
                   <Link href="/kushtet" className="text-[#00675B] font-medium hover:underline">
-                    Kushtet e Shërbimit
+                    Kushtet e Përdorimit
                   </Link>{' '}
                   dhe{' '}
                   <Link href="/privatesia" className="text-[#00675B] font-medium hover:underline">
@@ -3081,12 +3081,12 @@ export default function PostoPronaPage() {
                       {activeCategory.hasRooms && (
                         <div className="flex items-center gap-1">
                           <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{formData.rooms || '2'} dhoma</span>
+                          <span>{formData.rooms ? `${formData.rooms} dhoma` : '— dhoma'}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
                         <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{formData.area_m2 || '85'} m²</span>
+                        <span>{formData.area_m2 ? `${formData.area_m2} m²` : '— m²'}</span>
                       </div>
                     </div>
 
@@ -3188,12 +3188,12 @@ export default function PostoPronaPage() {
                   {activeCategory.hasRooms && (
                     <div className="flex items-center gap-1">
                       <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{formData.rooms || '2'} dhoma</span>
+                      <span>{formData.rooms ? `${formData.rooms} dhoma` : '— dhoma'}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{formData.area_m2 || '85'} m²</span>
+                    <span>{formData.area_m2 ? `${formData.area_m2} m²` : '— m²'}</span>
                   </div>
                 </div>
 
