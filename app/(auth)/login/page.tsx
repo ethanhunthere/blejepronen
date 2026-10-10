@@ -261,7 +261,7 @@ function LoginForm() {
           <QueryNotices />
         </Suspense>
 
-        <form onSubmit={handleLogin} noValidate className="space-y-2.5 sm:space-y-3">
+        <form onSubmit={handleLogin} noValidate className="space-y-2 sm:space-y-2.5">
           <AuthField
             id="email"
             label="Email"
@@ -288,7 +288,7 @@ function LoginForm() {
             topRight={
               <Link
                 href="/forgot-password"
-                className="font-medium text-[11.5px] text-[#00675B] hover:underline"
+                className="font-medium text-[11px] text-[#00675B] hover:underline"
               >
                 Keni harruar fjalëkalimin?
               </Link>
@@ -304,7 +304,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#00675B]/20 hover:shadow-md hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-0.5 w-full min-h-[38px] h-9.5 sm:h-10 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[13.5px] font-semibold rounded-xl transition-all shadow-xs hover:shadow-sm inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading || !!oauthLoading}
           >
             {loading ? (

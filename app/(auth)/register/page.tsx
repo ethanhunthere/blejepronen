@@ -328,10 +328,10 @@ export default function RegisterPage() {
             </div>
           }
         >
-          <form onSubmit={handleRegister} noValidate className="space-y-2.5 sm:space-y-3">
+          <form onSubmit={handleRegister} noValidate className="space-y-2 sm:space-y-2.5">
             {/* Extra reassurance hint when Kompani is selected */}
             {accountType === 'company' && (
-              <div className="p-2 rounded-xl bg-[#00675B]/5 border border-[#00675B]/20 text-[11px] text-[#00675B] flex items-center gap-1.5 animate-in fade-in duration-200">
+              <div className="p-1.5 rounded-lg bg-[#00675B]/5 border border-[#00675B]/20 text-[10.5px] text-[#00675B] flex items-center gap-1.5 animate-in fade-in duration-200">
                 <Building2 className="h-3.5 w-3.5 shrink-0 text-[#00675B]" />
                 <span>
                   Llogaria e kompanisë pajiset me profil agjencie dhe etiketë zyrtare në të gjitha pronat.
@@ -388,11 +388,11 @@ export default function RegisterPage() {
               helperText={
                 password.length > 0 ? (
                   password.length >= 6 ? (
-                    <span className="text-emerald-600 font-medium flex items-center gap-1 mt-0.5 text-[11px]">
+                    <span className="text-emerald-600 font-medium flex items-center gap-1 mt-0.5 text-[10.5px]">
                       <CheckCircle2 className="h-3 w-3" /> Fjalëkalimi plotëson kriteret
                     </span>
                   ) : (
-                    <span className="text-amber-600 font-medium flex items-center gap-1 mt-0.5 text-[11px]">
+                    <span className="text-amber-600 font-medium flex items-center gap-1 mt-0.5 text-[10.5px]">
                       <AlertCircle className="h-3 w-3" /> Duhen të paktën 6 karaktere
                     </span>
                   )
@@ -402,7 +402,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="mt-1 w-full min-h-[40px] h-10 sm:h-10.5 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[14px] font-semibold rounded-xl transition-all shadow-sm shadow-[#00675B]/20 hover:shadow-md hover:shadow-[#00675B]/30 inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-0.5 w-full min-h-[38px] h-9.5 sm:h-10 bg-[#00675B] hover:bg-[#004D43] active:scale-[0.99] text-white text-xs sm:text-[13.5px] font-semibold rounded-xl transition-all shadow-xs hover:shadow-sm inline-flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading || !!oauthLoading}
             >
               {loading ? (
@@ -415,7 +415,7 @@ export default function RegisterPage() {
               )}
             </button>
 
-            <p className="text-[10.5px] text-gray-500 text-center leading-normal pt-0.5">
+            <p className="text-[10px] text-gray-500 text-center leading-normal pt-0">
               Duke u regjistruar, ju pranoni{' '}
               <Link href="/kushtet" className="text-gray-700 underline hover:text-[#00675B]">
                 Kushtet e Përdorimit

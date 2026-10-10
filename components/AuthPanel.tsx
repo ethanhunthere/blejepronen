@@ -92,14 +92,14 @@ export default function AuthPanel({
   const activeProvidersCount = [onGoogle, onApple, onFacebook].filter(Boolean).length
 
   return (
-    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.04] p-6 sm:p-8">
-      {badge && <div className="mb-2">{badge}</div>}
+    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.04] p-4.5 sm:p-5.5 lg:p-5">
+      {badge && <div className="mb-1.5">{badge}</div>}
 
-      <div className="space-y-1.5 text-left">
-        <h1 className="text-xl sm:text-[23px] font-black leading-tight tracking-tight text-slate-900">
+      <div className="space-y-1 text-left">
+        <h1 className="text-lg sm:text-xl font-black leading-tight tracking-tight text-slate-900">
           {title}
         </h1>
-        <p className="text-xs sm:text-[13px] text-slate-500 leading-normal">{subtitle}</p>
+        <p className="text-xs sm:text-[12.5px] text-slate-500 leading-normal">{subtitle}</p>
       </div>
 
       {/* Dual-Track Persona Architecture Switcher */}
@@ -107,7 +107,7 @@ export default function AuthPanel({
         <div
           role="tablist"
           aria-label="Lloji i llogarisë"
-          className="mt-3.5 p-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1.5"
+          className="mt-2.5 p-1 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1"
         >
           <button
             type="button"
@@ -119,14 +119,14 @@ export default function AuthPanel({
             onKeyDown={(e) => {
               if (e.key === 'ArrowRight') onAccountTypeChange('company')
             }}
-            className={`flex items-center justify-center gap-2 min-h-[40px] py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 min-h-[34px] py-1 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'individual'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
-            <User className="h-4 w-4 shrink-0" />
-            <span className="text-xs sm:text-[13px]">Individ</span>
+            <User className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs sm:text-[12.5px]">Individ</span>
           </button>
 
           <button
@@ -139,26 +139,26 @@ export default function AuthPanel({
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft') onAccountTypeChange('individual')
             }}
-            className={`flex items-center justify-center gap-2 min-h-[40px] py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 min-h-[34px] py-1 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'company'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
             }`}
           >
-            <Building2 className="h-4 w-4 shrink-0" />
-            <span className="text-xs sm:text-[13px]">Kompani / Biznes</span>
+            <Building2 className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-xs sm:text-[12.5px]">Kompani / Biznes</span>
           </button>
         </div>
       )}
 
-      <div className="mt-4 sm:mt-4.5">
+      <div className="mt-2.5 sm:mt-3">
         {error && (
           <Alert
             variant="destructive"
-            className="mb-3.5 py-2.5 px-3.5 bg-red-50/90 border border-red-200 text-red-600 rounded-xl text-xs sm:text-[12.5px] leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
+            className="mb-2.5 py-2 px-3 bg-red-50/90 border border-red-200 text-red-600 rounded-xl text-xs leading-snug animate-in fade-in slide-in-from-top-1 duration-200"
           >
-            <AlertDescription className="text-xs sm:text-[12.5px] font-medium flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+            <AlertDescription className="text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
               <span>{error}</span>
             </AlertDescription>
           </Alert>
@@ -170,7 +170,7 @@ export default function AuthPanel({
             className={
               activeProvidersCount === 1
                 ? 'w-full'
-                : `grid grid-cols-${activeProvidersCount} gap-2.5 sm:gap-3`
+                : `grid grid-cols-${activeProvidersCount} gap-2`
             }
           >
             {onApple && (
@@ -178,7 +178,7 @@ export default function AuthPanel({
                 type="button"
                 onClick={onApple}
                 disabled={Boolean(oauthLoading) || isSubmitting}
-                className="w-full min-h-[44px] h-11 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="w-full min-h-[38px] h-[38px] sm:h-9.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Apple"
               >
                 {oauthLoading === 'apple' ? (
@@ -197,7 +197,7 @@ export default function AuthPanel({
                 type="button"
                 onClick={onGoogle}
                 disabled={Boolean(oauthLoading) || isSubmitting}
-                className="w-full min-h-[44px] h-11 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="w-full min-h-[38px] h-[38px] sm:h-9.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Google"
               >
                 {oauthLoading === 'google' ? (
@@ -216,7 +216,7 @@ export default function AuthPanel({
                 type="button"
                 onClick={onFacebook}
                 disabled={Boolean(oauthLoading) || isSubmitting}
-                className="w-full min-h-[44px] h-11 bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                className="w-full min-h-[38px] h-[38px] sm:h-9.5 bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Facebook"
               >
                 {oauthLoading === 'facebook' ? (
@@ -233,12 +233,12 @@ export default function AuthPanel({
         )}
 
         {/* Clean "ose me email" / "or" divider */}
-        <div className="relative my-4 sm:my-4.5">
+        <div className="relative my-2.5 sm:my-3">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-slate-200/80" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="bg-white px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
               ose me email
             </span>
           </div>
@@ -247,7 +247,7 @@ export default function AuthPanel({
         {children}
       </div>
 
-      <div className="mt-4 sm:mt-5 border-t border-slate-100 pt-3.5 text-center text-xs text-slate-500 leading-normal">
+      <div className="mt-3 sm:mt-3.5 border-t border-slate-100 pt-2.5 text-center text-xs text-slate-500 leading-normal">
         {footer}
       </div>
     </div>

@@ -40,21 +40,21 @@ export default function AuthField({
   const effectiveType = isPasswordField ? (showPassword ? 'text' : 'password') : type
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5 sm:space-y-1">
       <div className="flex items-center justify-between">
         <Label
           htmlFor={id}
-          className={`text-xs sm:text-[13px] font-semibold transition-colors ${
+          className={`text-xs font-semibold transition-colors ${
             error ? 'text-red-600' : 'text-gray-700'
           }`}
         >
           {label}
         </Label>
-        {topRight && <div className="text-xs">{topRight}</div>}
+        {topRight && <div className="text-[11.5px]">{topRight}</div>}
       </div>
       <div className="relative">
         <span
-          className={`absolute left-3 top-2.5 sm:top-3 transition-colors [&>svg]:h-4 [&>svg]:w-4 ${
+          className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors [&>svg]:h-4 [&>svg]:w-4 ${
             error ? 'text-red-500' : 'text-gray-400'
           }`}
         >
@@ -68,7 +68,7 @@ export default function AuthField({
           autoComplete={autoComplete}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={`pl-9 sm:pl-10 ${isPasswordField ? 'pr-12' : 'pr-3'} h-10 sm:h-11 rounded-xl border text-base sm:text-sm text-[#101828] placeholder:text-gray-400 transition-colors ${
+          className={`pl-9 sm:pl-9.5 ${isPasswordField ? 'pr-11' : 'pr-3'} h-9 sm:h-9.5 rounded-xl border text-sm text-[#101828] placeholder:text-gray-400 transition-colors ${
             error
               ? 'border-red-300 bg-red-50/60 focus:bg-white focus:border-red-400'
               : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-[#00675B]/40'
@@ -81,7 +81,7 @@ export default function AuthField({
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
-            className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 active:scale-95 transition-all cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#00675B]"
+            className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 active:scale-95 transition-all cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#00675B]"
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />

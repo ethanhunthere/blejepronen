@@ -60,23 +60,22 @@ export default function AuthShell({
       {/* Marker consumed by globals.css to hide the site footer on auth screens */}
       <span data-auth-page hidden />
 
-      {/* Left: subtle soft background with the floating card (55% — optically reads ~60/40 because
-          the white field carries less visual mass than the globe-filled teal) */}
-      <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-slate-50/60 px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
-        <div className="w-full max-w-[420px] my-auto py-5 sm:py-8 flex flex-col justify-center shrink-0">
+      {/* Left: subtle soft background with the floating card */}
+      <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center justify-center bg-slate-50/60 px-4 sm:px-6 lg:px-8 xl:px-12 overflow-y-auto lg:overflow-hidden overscroll-contain">
+        <div className="w-full max-w-[400px] my-auto py-2 sm:py-3 lg:py-3 flex flex-col justify-center shrink-0">
           <Link
             href="/"
-            className="mb-3.5 sm:mb-4 inline-flex items-center gap-2 transition-opacity hover:opacity-85 self-start"
+            className="mb-2 sm:mb-2.5 inline-flex items-center gap-2 transition-opacity hover:opacity-85 self-start"
           >
             <Image
               src="/logo-teal.png"
               alt="Bleje Pronën"
-              width={36}
-              height={36}
+              width={32}
+              height={32}
               priority
-              className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
+              className="h-7 w-7 sm:h-7.5 sm:w-7.5 object-contain"
             />
-            <span className="text-2xl font-black tracking-tight text-[#00675B]">
+            <span className="text-xl sm:text-[22px] font-black tracking-tight text-[#00675B]">
               Bleje <span className="text-[#C8B882]">Pronën</span>
             </span>
           </Link>
