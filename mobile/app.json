@@ -30,8 +30,10 @@
         }
       },
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj."
-      }
+        "NSFaceIDUsageDescription": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bitcode": false
     },
     "android": {
       "backgroundColor": "#00675B",
@@ -60,7 +62,12 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.WAKE_LOCK",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.BLUETOOTH"
       ]
     },
     "web": {
@@ -130,6 +137,15 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "70f51c17-5cdc-4c3d-acb0-64a8adc30b15"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/70f51c17-5cdc-4c3d-acb0-64a8adc30b15"
     }
   }
 }
