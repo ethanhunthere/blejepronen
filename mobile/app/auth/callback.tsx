@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 
 import { supabase, safeExchangeCodeForSession } from '@/lib/supabase'
-import { syncAuthSession } from '@/lib/auth-cache'
+import { syncAuthSession, SAFE_PROFILE_COLUMNS } from '@/lib/auth-cache'
 import { safeBack, isSafeInternalRedirect } from '@/lib/navigation'
 
 /**
@@ -59,7 +59,7 @@ export default function AuthCallbackRoute() {
           try {
             const { data: prof } = await supabase
               .from('profiles')
-              .select('*')
+              .select(SAFE_PROFILE_COLUMNS)
               .eq('id', user.id)
               .maybeSingle()
             freshProfile = prof

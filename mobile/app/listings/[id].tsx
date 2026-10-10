@@ -231,7 +231,7 @@ export default function ListingDetailScreen() {
           supabase.auth.getUser(),
           supabase
             .from('listings')
-            .select('*, profiles:user_id(*)')
+            .select('*, profiles:user_id(id, first_name, last_name, avatar_url, email_verified)')
             .eq('id', id)
             .single(),
         ])
@@ -260,8 +260,8 @@ export default function ListingDetailScreen() {
         ) {
           try {
             const { data: directProf } = await supabase
-              .from('profiles')
-              .select('*')
+              .from('profiles_public')
+              .select('id, first_name, last_name, avatar_url, email_verified, created_at')
               .eq('id', loadedListing.user_id)
               .maybeSingle()
 

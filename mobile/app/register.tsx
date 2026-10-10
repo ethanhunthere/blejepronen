@@ -41,7 +41,7 @@ import { Logo } from '@/components/Logo'
 import { apiSignUp, apiVerifyOtp, apiResendCode } from '@/lib/api'
 import { useBanner } from '@/context/BannerContext'
 import { safeBack, openLoginScreen, resolveAuthSuccess } from '@/lib/navigation'
-import { syncAuthSession } from '@/lib/auth-cache'
+import { syncAuthSession, SAFE_PROFILE_COLUMNS } from '@/lib/auth-cache'
 import { TactilePressable, SlidingTabSwitcher, AuthProgressOverlay } from '@/components/motion'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import { GoogleLogo, AppleLogo, FacebookLogo } from '@/components/SocialLogos'
@@ -266,7 +266,7 @@ export default function RegisterScreen() {
         try {
           const { data: prof } = await supabase
             .from('profiles')
-            .select('*')
+            .select(SAFE_PROFILE_COLUMNS)
             .eq('id', user.id)
             .maybeSingle()
           freshProfile = prof
@@ -387,7 +387,7 @@ export default function RegisterScreen() {
           try {
             const { data: prof } = await supabase
               .from('profiles')
-              .select('*')
+              .select(SAFE_PROFILE_COLUMNS)
               .eq('id', opportunisticUser.id)
               .maybeSingle()
             freshProfile = prof

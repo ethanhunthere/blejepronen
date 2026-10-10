@@ -39,7 +39,7 @@ import { Logo } from '@/components/Logo'
 
 import { useBanner } from '@/context/BannerContext'
 import { safeBack, openRegisterScreen, resolveAuthSuccess } from '@/lib/navigation'
-import { syncAuthSession } from '@/lib/auth-cache'
+import { syncAuthSession, SAFE_PROFILE_COLUMNS } from '@/lib/auth-cache'
 import { TactilePressable, AuthProgressOverlay } from '@/components/motion'
 import { GoogleLogo, AppleLogo, FacebookLogo } from '@/components/SocialLogos'
 
@@ -200,7 +200,7 @@ export default function LoginScreen() {
         try {
           const { data: prof } = await supabase
             .from('profiles')
-            .select('*')
+            .select(SAFE_PROFILE_COLUMNS)
             .eq('id', user.id)
             .maybeSingle()
           freshProfile = prof
@@ -306,7 +306,7 @@ export default function LoginScreen() {
           try {
             const { data: prof } = await supabase
               .from('profiles')
-              .select('*')
+              .select(SAFE_PROFILE_COLUMNS)
               .eq('id', opportunisticUser.id)
               .maybeSingle()
             freshProfile = prof
@@ -454,7 +454,7 @@ export default function LoginScreen() {
       try {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('*')
+          .select(SAFE_PROFILE_COLUMNS)
           .eq('id', data.user.id)
           .maybeSingle()
         freshProfile = prof

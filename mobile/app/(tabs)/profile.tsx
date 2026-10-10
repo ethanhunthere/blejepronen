@@ -57,7 +57,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts, ThemeMode } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
-import { subscribeAuthEvents } from '@/lib/auth-cache'
+import { subscribeAuthEvents, SAFE_PROFILE_COLUMNS } from '@/lib/auth-cache'
 import { useBanner } from '@/context/BannerContext'
 import { DraggableBottomSheet } from '@/components/motion'
 import { apiDeleteAccount, apiVerifyOtp, apiResendCode } from '@/lib/api'
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select(SAFE_PROFILE_COLUMNS)
         .eq('id', user.id)
         .maybeSingle()
       return data || null

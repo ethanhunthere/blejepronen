@@ -20,6 +20,7 @@ import {
   setSyncAuthUser,
   setSyncProfile,
   isLogoutInProgress,
+  SAFE_PROFILE_COLUMNS,
 } from '@/lib/auth-cache'
 import { useLogout } from '@/context/LogoutContext'
 import { playSuccessSound } from '@/lib/sound'
@@ -259,7 +260,7 @@ export default function CompletoProfilinScreen() {
         // Fetch DB profile to prefill
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select(SAFE_PROFILE_COLUMNS)
           .eq('id', user.id)
           .maybeSingle()
 
@@ -290,21 +291,22 @@ export default function CompletoProfilinScreen() {
         )
         setFirstName(initialFirst)
         setLastName(initialLast)
-        setIndividualPhone(sanitizeInitial(profile?.phone || meta.phone || meta.individual_phone || ''))
-        setIndividualBio(sanitizeInitial(meta.bio || meta.individual_bio || profile?.bio || ''))
-        if (meta.city || profile?.city) setIndividualCity(meta.city || profile?.city)
+        const p = profile as any
+        setIndividualPhone(sanitizeInitial(p?.phone || meta.phone || meta.individual_phone || ''))
+        setIndividualBio(sanitizeInitial(meta.bio || meta.individual_bio || p?.bio || ''))
+        if (meta.city || p?.city) setIndividualCity(meta.city || p?.city)
 
         // Prefill Company (ensuring dummy/sample values are never loaded as active text)
-        setCompanyName(sanitizeInitial(meta.company_name || (isComp ? profile?.first_name : '') || ''))
+        setCompanyName(sanitizeInitial(meta.company_name || (isComp ? p?.first_name : '') || ''))
         setCompanyContactPerson(
-          sanitizeInitial(meta.contact_person || (isComp && profile?.last_name !== 'Kompani' ? profile?.last_name : '') || '')
+          sanitizeInitial(meta.contact_person || (isComp && p?.last_name !== 'Kompani' ? p?.last_name : '') || '')
         )
-        setCompanyPhone(sanitizeInitial(meta.company_phone || (isComp ? profile?.phone : '') || meta.phone || ''))
+        setCompanyPhone(sanitizeInitial(meta.company_phone || (isComp ? p?.phone : '') || meta.phone || ''))
         setFoundedYear(sanitizeInitial(meta.founded_year ? String(meta.founded_year) : ''))
         setNipt(sanitizeInitial(meta.nipt || ''))
-        setCompanyDescription(sanitizeInitial(meta.company_description || meta.bio || profile?.bio || ''))
+        setCompanyDescription(sanitizeInitial(meta.company_description || meta.bio || p?.bio || ''))
         setWebsite(sanitizeInitial(meta.website || ''))
-        if (meta.city || profile?.city) setCompanyCity(meta.city || profile?.city)
+        if (meta.city || p?.city) setCompanyCity(meta.city || p?.city)
       } catch (e) {
         console.warn('Load user in completo profilin notice:', e)
       } finally {

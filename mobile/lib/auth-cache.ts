@@ -189,12 +189,15 @@ export function waitForAuthCacheHydration(): Promise<CachedAuthState | null> {
   return hydrationPromise
 }
 
+export const SAFE_PROFILE_COLUMNS =
+  'id, first_name, last_name, avatar_url, email_verified, created_at, phone, email'
+
 // Background profile refresh that doesn't block initial frame
 async function fetchFreshProfile(userId: string) {
   try {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select(SAFE_PROFILE_COLUMNS)
       .eq('id', userId)
       .maybeSingle()
 
