@@ -23,6 +23,7 @@ import {
   ArrowDownUp,
   ChevronDown,
   RotateCcw,
+  Bookmark,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -33,6 +34,7 @@ import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { PropertyFilterBar } from '@/components/PropertyFilterBar'
 import { PropertyFilterModal } from '@/components/PropertyFilterModal'
 import { SortBottomSheet } from '@/components/SortBottomSheet'
+import { SavedSearchesSheet, type SavedSearchSnapshot } from '@/components/SavedSearchesSheet'
 import {
   PropertyFilterState,
   DEFAULT_FILTER_STATE,
@@ -87,6 +89,32 @@ export default function ListingsScreen() {
     city: params.city || '',
     neighborhood: params.neighborhood || '',
   }))
+  const [showSavedSearches, setShowSavedSearches] = useState(false)
+
+  const savedSearchSnapshot = useMemo<SavedSearchSnapshot>(
+    () => ({
+      label: [
+        filters.city || 'Kosovë',
+        filters.transactionType === 'shitje'
+          ? 'për shitje'
+          : filters.transactionType === 'qira'
+            ? 'me qira'
+            : null,
+        filters.searchQuery ? `"${filters.searchQuery}"` : null,
+      ]
+        .filter(Boolean)
+        .join(' • '),
+      city: filters.city || undefined,
+      type: filters.transactionType === 'all' ? undefined : filters.transactionType,
+      minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+      maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+      rooms: filters.rooms && filters.rooms !== 'all' ? Number(filters.rooms) : undefined,
+      minArea: filters.minArea ? Number(filters.minArea) : undefined,
+      maxArea: filters.maxArea ? Number(filters.maxArea) : undefined,
+      searchQuery: filters.searchQuery || undefined,
+    }),
+    [filters]
+  )
 
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showSortSheet, setShowSortSheet] = useState(false)
@@ -495,9 +523,31 @@ export default function ListingsScreen() {
               </View>
             )}
           </TactilePressable>
+
+          {/* Saved searches */}
+          <TactilePressable
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderWidth: 0.5,
+              },
+            ]}
+            onPress={() => setShowSavedSearches(true)}
+            activeScale={0.94}
+            haptic="selection"
+          >
+            <Bookmark size={18} color={colors.textPrimary} strokeWidth={2.2} />
+          </TactilePressable>
         </View>
 
-        {/* Shared Modular Filter Bar */}
+        <SavedSearchesSheet
+          visible={showSavedSearches}
+          onClose={() => setShowSavedSearches(false)}
+          current={savedSearchSnapshot}
+          router={router}
+        />
         <PropertyFilterBar
           transactionType={filters.transactionType}
           onChangeTransactionType={(t) => {

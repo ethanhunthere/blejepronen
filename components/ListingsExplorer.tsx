@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useFavorites } from '@/lib/useFavorites'
 import ListingCard, { ListingCardSkeleton } from '@/components/ListingCard'
+import SavedSearchesMenu from '@/components/SavedSearchesMenu'
 import {
   Search,
   SlidersHorizontal,
@@ -680,7 +681,8 @@ export function ListingsExplorer({
           </div>
 
           {/* Clean Segmented Intent Toggle */}
-          <div className="inline-flex p-0.5 rounded-xl bg-white border border-gray-200/90 shadow-2xs self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="inline-flex p-0.5 rounded-xl bg-white border border-gray-200/90 shadow-2xs">
             {[
               { key: '', label: 'Të gjitha' },
               { key: 'shitje', label: 'Shitje' },
@@ -702,6 +704,21 @@ export function ListingsExplorer({
                 </button>
               )
             })}
+          </div>
+
+          <SavedSearchesMenu
+            current={{
+              search: filters.search || undefined,
+              city: filters.city || undefined,
+              type: filters.type || undefined,
+              minPrice: filters.minPrice || undefined,
+              maxPrice: filters.maxPrice || undefined,
+              rooms: filters.rooms || undefined,
+              minArea: filters.minArea || undefined,
+              maxArea: filters.maxArea || undefined,
+              apartment_type: filters.apartment_type || undefined,
+            }}
+          />
           </div>
         </div>
 
