@@ -39,6 +39,16 @@ function hubGate(pathname: string, index: HubIndex): boolean {
   return true
 }
 
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type, authorization',
+    'Access-Control-Max-Age': '600',
+    Vary: 'Origin',
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') || request.nextUrl.hostname
   // Canonical redirect www to apex domain
@@ -48,6 +58,20 @@ export async function proxy(request: NextRequest) {
     newUrl.host = cleanHost
     newUrl.protocol = 'https:'
     return NextResponse.redirect(newUrl, { status: 301 })
+  }
+
+  // Local/preview web builds of the mobile app call this API cross-origin.
+  // Allow loopback origins without credentials (the mobile clients authenticate
+  // with Bearer tokens, never cookies), so dev/QA funnels are not dead on
+  // arrival. Production same-origin traffic is unaffected.
+  const origin = request.headers.get('origin')
+  if (origin && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) && request.nextUrl.pathname.startsWith('/api/')) {
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { status: 204, headers: corsHeaders(origin) })
+    }
+    const res = NextResponse.next({ request })
+    for (const [k, v] of Object.entries(corsHeaders(origin))) res.headers.set(k, v)
+    return res
   }
 
   // Inventory gate: unstocked hub/market paths answer with a real 404 instead

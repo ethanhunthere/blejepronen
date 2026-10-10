@@ -170,6 +170,7 @@ export default function CompletoProfilinScreen() {
 
   // Dirty-guard snapshot: taken once prefill lands, compared on back-nav.
   const formSnapshotRef = useRef<string | null>(null)
+  const liveSnapshotRef = useRef<string>('')
   const currentFormSnapshot = () =>
     JSON.stringify([
       accountType,
@@ -203,11 +204,15 @@ export default function CompletoProfilinScreen() {
   // release never reflows the exiting screen mid-transition.
   // Bypassed unconditionally during logout so prompt collision never occurs.
   useEffect(() => {
+    // Live mirror of the form values: the beforeRemove listener below is
+    // registered once and would otherwise compare against mount-time state.
+    liveSnapshotRef.current = currentFormSnapshot()
+
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       Keyboard.dismiss()
       if (isLoggingOut || isLogoutInProgress()) return
       const snapshot = formSnapshotRef.current
-      if (snapshot && snapshot !== currentFormSnapshot()) {
+      if (snapshot && snapshot !== liveSnapshotRef.current) {
         e.preventDefault()
         Alert.alert(
           'Ndryshime të paruajtura',
@@ -218,7 +223,7 @@ export default function CompletoProfilinScreen() {
               text: 'Dil pa ruajtur',
               style: 'destructive',
               onPress: () => {
-                formSnapshotRef.current = currentFormSnapshot()
+                formSnapshotRef.current = liveSnapshotRef.current
                 navigation.dispatch(e.data.action)
               },
             },
