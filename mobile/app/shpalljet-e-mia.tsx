@@ -1500,6 +1500,8 @@ export default function ShpalljetEMiaScreen() {
                 onPress={() => handleDeleteListing(item)}
                 disabled={isBusy}
                 hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={`Fshi shpalljen ${item.title}`}
               >
                 <Trash2 size={isCompact ? 15 : 16} color="#EF4444" strokeWidth={2.2} />
               </Pressable>

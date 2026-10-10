@@ -707,7 +707,10 @@ export default function TabLayout() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <RouteErrorGuard label="tab-bar">
       <Tabs
-        detachInactiveScreens={false}
+        // Native keeps scenes attached for instant tab switches; on web there
+        // is no native view hiding, so attached scenes stack in flow and the
+        // active tab renders off-screen. Detach on web only.
+        detachInactiveScreens={Platform.OS !== 'web'}
         unstable_screenErrorBoundary={RouteErrorBoundary as any}
         tabBar={(props) => <IOSTabBar {...props} unreadCount={unreadCount} />}
         screenOptions={{
