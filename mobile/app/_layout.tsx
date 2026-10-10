@@ -1,8 +1,14 @@
 import '@/lib/splash-guard'
 import 'react-native-gesture-handler'
+import * as WebBrowser from 'expo-web-browser'
+
+// Complete any pending web-browser auth sessions across platforms
+WebBrowser.maybeCompleteAuthSession()
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback, useRef } from 'react'
+
 import {
   Stack,
   ThemeProvider as NavigationThemeProvider,

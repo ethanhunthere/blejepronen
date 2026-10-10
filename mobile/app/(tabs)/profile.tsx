@@ -88,8 +88,11 @@ import {
 import { createSafeChannel } from '@/lib/realtime'
 import { openLoginScreen, openRegisterScreen } from '@/lib/navigation'
 import { useLogout } from '@/context/LogoutContext'
+import { fetchFollowStats } from '@/lib/social-graph'
+import { FollowsModal } from '@/components/FollowsModal'
 
 export default function ProfileScreen() {
+
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { colors, theme, setTheme } = useTheme()
@@ -165,7 +168,16 @@ export default function ProfileScreen() {
     messagesCount: 0,
   })
 
+  // Social graph metrics (followers & following)
+  const [socialStats, setSocialStats] = useState({
+    followersCount: 0,
+    followingCount: 0,
+  })
+  const [followsModalVisible, setFollowsModalVisible] = useState(false)
+  const [followsModalTab, setFollowsModalTab] = useState<'followers' | 'following'>('followers')
+
   // Last known user ref to keep session checks stable
+
   const prevUserRef = useRef<any>(null)
 
   // Derived accessors
@@ -264,7 +276,7 @@ export default function ProfileScreen() {
   // Fetch live stats in background
   const fetchUserStats = useCallback(async (userId: string) => {
     try {
-      const [listingsRes, favsMap, convosRes] = await Promise.all([
+      const [listingsRes, favsMap, convosRes, followRes] = await Promise.all([
         supabase
           .from('listings')
           .select('id', { count: 'exact', head: true })
@@ -274,6 +286,7 @@ export default function ProfileScreen() {
           .from('conversations')
           .select('id', { count: 'exact', head: true })
           .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`),
+        fetchFollowStats(userId, false).catch(() => null),
       ])
 
       const listingsCount = listingsRes.count || 0
@@ -282,10 +295,17 @@ export default function ProfileScreen() {
       const messagesCount = convosRes.count || 0
 
       setStats({ listingsCount, savedCount, messagesCount })
+      if (followRes) {
+        setSocialStats({
+          followersCount: followRes.followersCount ?? 0,
+          followingCount: followRes.followingCount ?? 0,
+        })
+      }
     } catch (err) {
       console.warn('Fetch user stats notice:', err)
     }
   }, [])
+
 
   const checkSession = useCallback(async () => {
     if (isLogoutInProgress()) {
@@ -1280,8 +1300,64 @@ export default function ProfileScreen() {
               </View>
             </View>
 
+            {/* Social Graph Stats (Instagram-style) */}
+            <View style={[styles.socialStatsBar, { borderTopColor: specularBorder }]}>
+              <Pressable
+                style={styles.socialStatItem}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  requestShpalljetFilter('all')
+                  router.push('/shpalljet-e-mia' as any)
+                }}
+              >
+                <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                  {stats.listingsCount}
+                </Text>
+                <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                  {stats.listingsCount === 1 ? 'pronë' : 'prona'}
+                </Text>
+              </Pressable>
+
+              <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+              <Pressable
+                style={styles.socialStatItem}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setFollowsModalTab('followers')
+                  setFollowsModalVisible(true)
+                }}
+              >
+                <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                  {socialStats.followersCount}
+                </Text>
+                <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                  ndiqës
+                </Text>
+              </Pressable>
+
+              <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+              <Pressable
+                style={styles.socialStatItem}
+                onPress={() => {
+                  if (Platform.OS !== 'web') Haptics.selectionAsync()
+                  setFollowsModalTab('following')
+                  setFollowsModalVisible(true)
+                }}
+              >
+                <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                  {socialStats.followingCount}
+                </Text>
+                <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                  duke ndjekur
+                </Text>
+              </Pressable>
+            </View>
+
             {/* Quick Action Button: Ndrysho Profilin */}
             <View style={styles.heroActionsRow}>
+
               <Pressable
                 style={[
                   styles.heroEditBtn,
@@ -2684,9 +2760,35 @@ export default function ProfileScreen() {
               </View>
             </ScrollView>
       </DraggableBottomSheet>
+
+      {/* ─── SOCIAL GRAPH FOLLOWERS & FOLLOWING MODAL SHEET ─── */}
+      {currentUser && (
+        <FollowsModal
+          visible={followsModalVisible}
+          onClose={() => setFollowsModalVisible(false)}
+          userId={currentUser.id}
+          userName={
+            dbProfile?.first_name
+              ? `${dbProfile.first_name} ${dbProfile.last_name || ''}`.trim()
+              : currentUser?.user_metadata?.first_name
+              ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name || ''}`.trim()
+              : currentUser.email?.split('@')[0] || 'Profili Im'
+          }
+          initialTab={followsModalTab}
+          initialFollowersCount={socialStats.followersCount}
+          initialFollowingCount={socialStats.followingCount}
+          onStatsChange={(newFollowers, newFollowing) => {
+            setSocialStats({
+              followersCount: newFollowers,
+              followingCount: newFollowing,
+            })
+          }}
+        />
+      )}
     </View>
   )
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -2833,7 +2935,37 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: Fonts.regular,
   },
+  socialStatsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    marginTop: 10,
+    marginBottom: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    width: '100%',
+  },
+  socialStatItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    minHeight: 38,
+  },
+  socialStatNum: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+  },
+  socialStatLabel: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+  socialStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+  },
   heroActionsRow: {
+
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

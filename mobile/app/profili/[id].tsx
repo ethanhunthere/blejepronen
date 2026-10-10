@@ -36,6 +36,8 @@ import {
   ChevronRight,
   Briefcase,
   Check,
+  UserPlus,
+  UserCheck,
 } from 'lucide-react-native'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing, Profile } from '@/lib/supabase'
@@ -47,6 +49,8 @@ import { ListingCard } from '@/components/ListingCard'
 import { SkeletonBox } from '@/components/ListingSkeleton'
 import { useFavorites } from '@/lib/favorites'
 import { getSyncAuthUser } from '@/lib/auth-cache'
+import { fetchFollowStats, followUser, unfollowUser } from '@/lib/social-graph'
+import { FollowsModal } from '@/components/FollowsModal'
 import {
   getCachedProfile,
   setCachedProfile,
@@ -85,6 +89,14 @@ export default function PublicProfileScreen() {
   const [contactAuthed, setContactAuthed] = useState(false)
   const { favorites, toggleFavorite } = useFavorites()
 
+  // Social graph metrics (followers & following)
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followActionLoading, setFollowActionLoading] = useState(false)
+  const [followsModalVisible, setFollowsModalVisible] = useState(false)
+  const [followsModalTab, setFollowsModalTab] = useState<'followers' | 'following'>('followers')
+
   const isMountedRef = useRef(true)
   // A background revalidation failure must never replace painted cache content
   const hasProfileRef = useRef(Boolean(cachedProfile))
@@ -96,7 +108,7 @@ export default function PublicProfileScreen() {
     }
   }, [])
 
-  // Concurrently fetch profile and active listings
+  // Concurrently fetch profile, active listings, and social graph metrics
   const loadData = useCallback(async (isRefresh = false) => {
     if (!profileId) {
       if (isMountedRef.current) {
@@ -111,7 +123,7 @@ export default function PublicProfileScreen() {
     setError(null)
 
     try {
-      const [profileRes, listingsRes] = await Promise.all([
+      const [profileRes, listingsRes, followStatsRes] = await Promise.all([
         supabase
           .from('profiles_public')
           .select('*')
@@ -125,6 +137,14 @@ export default function PublicProfileScreen() {
           .eq('user_id', profileId)
           .eq('is_active', true)
           .order('created_at', { ascending: false }),
+        (async () => {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession()
+            return await fetchFollowStats(profileId, false, sessionData.session?.access_token)
+          } catch {
+            return null
+          }
+        })(),
       ])
 
       if (!isMountedRef.current) return
@@ -147,6 +167,12 @@ export default function PublicProfileScreen() {
         setProfile(freshProfile)
         setListings(freshListings)
         hasProfileRef.current = true
+
+        if (followStatsRes) {
+          setFollowersCount(followStatsRes.followersCount)
+          setFollowingCount(followStatsRes.followingCount)
+          setIsFollowing(Boolean(followStatsRes.isFollowing))
+        }
       }
     } catch (err: any) {
       console.warn('Public profile load exception:', err)
@@ -180,6 +206,58 @@ export default function PublicProfileScreen() {
     },
     [router, profileId, toggleFavorite]
   )
+
+  // Follow / Unfollow handling with optimistic update, haptics, and rollback
+  const handleToggleFollow = useCallback(async () => {
+    const currentUser = getSyncAuthUser()
+    if (!currentUser) {
+      openLoginScreen(router, {
+        redirectTo: `/profili/${profileId}`,
+        reason: 'follow',
+      })
+      return
+    }
+
+    if (currentUser.id === profileId) {
+      Alert.alert('Profili Juaj', 'Nuk mund të ndiqni llogarinë tuaj.')
+      return
+    }
+
+    const targetId = profileId
+    if (followActionLoading || !targetId) return
+    setFollowActionLoading(true)
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+
+    const wasFollowing = isFollowing
+    setIsFollowing(!wasFollowing)
+    setFollowersCount((prev) => Math.max(0, prev + (wasFollowing ? -1 : 1)))
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData.session?.access_token
+      if (wasFollowing) {
+        const res = await unfollowUser(targetId, token)
+        if (!res.success) {
+          setIsFollowing(wasFollowing)
+          setFollowersCount((prev) => prev + 1)
+          Alert.alert('Vërejtje', res.error || 'Nuk mund të hiqet ndjekja.')
+        }
+      } else {
+        const res = await followUser(targetId, token)
+        if (!res.success) {
+          setIsFollowing(wasFollowing)
+          setFollowersCount((prev) => Math.max(0, prev - 1))
+          Alert.alert('Vërejtje', res.error || 'Nuk mund të realizohet ndjekja.')
+        }
+      }
+    } catch (err: any) {
+      setIsFollowing(wasFollowing)
+      setFollowersCount((prev) => prev + (wasFollowing ? 1 : -1))
+      Alert.alert('Gabim', err?.message || 'Ndodhi një gabim gjatë veprimit.')
+    } finally {
+      setFollowActionLoading(false)
+    }
+  }, [isFollowing, followActionLoading, profileId, router])
 
   // Profile entity classification & display name
   const isCompany = useMemo(() => {
@@ -743,6 +821,111 @@ export default function PublicProfileScreen() {
                 </View>
               )}
 
+              {/* ─── Social Graph Stats & Follow Action ─── */}
+              <View style={[styles.socialStatsBar, { borderTopColor: specularBorder }]}>
+                <View style={styles.socialStatItem}>
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {listings.length}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    {listings.length === 1 ? 'pronë' : 'prona'}
+                  </Text>
+                </View>
+
+                <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+                <Pressable
+                  style={styles.socialStatItem}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    setFollowsModalTab('followers')
+                    setFollowsModalVisible(true)
+                  }}
+                >
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {followersCount}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    ndiqës
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+                <Pressable
+                  style={styles.socialStatItem}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    setFollowsModalTab('following')
+                    setFollowsModalVisible(true)
+                  }}
+                >
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {followingCount}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    duke ndjekur
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Follow / Unfollow CTA */}
+              {profileId && getSyncAuthUser()?.id !== profileId && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.followActionBtn,
+                    isFollowing
+                      ? [
+                          styles.followingActionBtn,
+                          {
+                            backgroundColor: colors.surfaceSubtle,
+                            borderColor: specularBorder,
+                          },
+                        ]
+                      : [
+                          styles.notFollowingActionBtn,
+                          {
+                            backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                            borderColor: theme === 'green' ? colors.gold : colors.primaryDark,
+                          },
+                        ],
+                    pressed && styles.btnPressed,
+                  ]}
+                  onPress={handleToggleFollow}
+                  disabled={followActionLoading}
+                >
+                  {followActionLoading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={isFollowing ? colors.textPrimary : theme === 'green' ? '#071C18' : '#FFFFFF'}
+                    />
+                  ) : isFollowing ? (
+                    <>
+                      <UserCheck size={16} color={colors.textPrimary} strokeWidth={2.4} />
+                      <Text style={[styles.followActionBtnText, { color: colors.textPrimary }]}>
+                        Duke ndjekur
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus
+                        size={16}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        style={[
+                          styles.followActionBtnText,
+                          { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                        ]}
+                      >
+                        Ndiq Agjencinë
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
+
               {/* ─── Corporate Contact Suite ─── */}
               <View style={styles.contactContainer}>
                 {/* Primary Action: Direct In-App Chat */}
@@ -1202,6 +1385,111 @@ export default function PublicProfileScreen() {
                 </View>
               )}
 
+              {/* ─── Social Graph Stats & Follow Action ─── */}
+              <View style={[styles.socialStatsBar, { borderTopColor: specularBorder }]}>
+                <View style={styles.socialStatItem}>
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {listings.length}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    {listings.length === 1 ? 'pronë' : 'prona'}
+                  </Text>
+                </View>
+
+                <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+                <Pressable
+                  style={styles.socialStatItem}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    setFollowsModalTab('followers')
+                    setFollowsModalVisible(true)
+                  }}
+                >
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {followersCount}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    ndiqës
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.socialStatDivider, { backgroundColor: specularBorder }]} />
+
+                <Pressable
+                  style={styles.socialStatItem}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync()
+                    setFollowsModalTab('following')
+                    setFollowsModalVisible(true)
+                  }}
+                >
+                  <Text style={[styles.socialStatNum, { color: colors.textPrimary }]}>
+                    {followingCount}
+                  </Text>
+                  <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
+                    duke ndjekur
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Follow / Unfollow CTA */}
+              {profileId && getSyncAuthUser()?.id !== profileId && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.followActionBtn,
+                    isFollowing
+                      ? [
+                          styles.followingActionBtn,
+                          {
+                            backgroundColor: colors.surfaceSubtle,
+                            borderColor: specularBorder,
+                          },
+                        ]
+                      : [
+                          styles.notFollowingActionBtn,
+                          {
+                            backgroundColor: theme === 'green' ? colors.gold : colors.primary,
+                            borderColor: theme === 'green' ? colors.gold : colors.primaryDark,
+                          },
+                        ],
+                    pressed && styles.btnPressed,
+                  ]}
+                  onPress={handleToggleFollow}
+                  disabled={followActionLoading}
+                >
+                  {followActionLoading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={isFollowing ? colors.textPrimary : theme === 'green' ? '#071C18' : '#FFFFFF'}
+                    />
+                  ) : isFollowing ? (
+                    <>
+                      <UserCheck size={16} color={colors.textPrimary} strokeWidth={2.4} />
+                      <Text style={[styles.followActionBtnText, { color: colors.textPrimary }]}>
+                        Duke ndjekur
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus
+                        size={16}
+                        color={theme === 'green' ? '#071C18' : '#FFFFFF'}
+                        strokeWidth={2.4}
+                      />
+                      <Text
+                        style={[
+                          styles.followActionBtnText,
+                          { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
+                        ]}
+                      >
+                        Ndiq Shitësin
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
+
               {/* ─── Streamlined Personal Actions ─── */}
               <View style={styles.personalActionsRow}>
                 {/* 1. Direct In-App Chat */}
@@ -1423,6 +1711,23 @@ export default function PublicProfileScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* ─── SOCIAL GRAPH FOLLOWERS & FOLLOWING MODAL SHEET ─── */}
+      {profileId && (
+        <FollowsModal
+          visible={followsModalVisible}
+          onClose={() => setFollowsModalVisible(false)}
+          userId={profileId}
+          userName={displayName}
+          initialTab={followsModalTab}
+          initialFollowersCount={followersCount}
+          initialFollowingCount={followingCount}
+          onStatsChange={(newFollowers, newFollowing) => {
+            setFollowersCount(newFollowers)
+            setFollowingCount(newFollowing)
+          }}
+        />
+      )}
     </View>
   )
 }
@@ -1932,5 +2237,54 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontFamily: Fonts.bold,
+  },
+
+  // ─── Social Graph Stats & Follow Action ───
+  socialStatsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    marginTop: 10,
+    marginBottom: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    width: '100%',
+  },
+  socialStatItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    minHeight: 38,
+  },
+  socialStatNum: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+  },
+  socialStatLabel: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    marginTop: 2,
+  },
+  socialStatDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 22,
+  },
+  followActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    marginBottom: 10,
+  },
+  followingActionBtn: {},
+  notFollowingActionBtn: {},
+  followActionBtnText: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    letterSpacing: -0.2,
   },
 })

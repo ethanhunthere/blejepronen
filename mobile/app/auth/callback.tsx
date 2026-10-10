@@ -3,7 +3,8 @@ import { View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 
-import { supabase } from '@/lib/supabase'
+import { supabase, safeExchangeCodeForSession } from '@/lib/supabase'
+import { syncAuthSession } from '@/lib/auth-cache'
 import { safeBack } from '@/lib/navigation'
 
 /**
@@ -27,14 +28,20 @@ export default function AuthCallbackRoute() {
     if (handledRef.current) return
     handledRef.current = true
 
-    // Android Custom Tabs can linger above the app after the intent handoff
+    // Android Custom Tabs / iOS ASWebAuthenticationSession cleanup
     void WebBrowser.dismissBrowser().catch(() => {})
 
     ;(async () => {
       try {
         if (params.code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(params.code)
-          if (error) throw error
+          const { error } = await safeExchangeCodeForSession(params.code)
+          if (error) {
+            // Verify if session exists despite error
+            const {
+              data: { session },
+            } = await supabase.auth.getSession()
+            if (!session?.user) throw error
+          }
         } else if (params.access_token || params.refresh_token) {
           // Implicit-flow tokens in the deep-link URL — refuse. PKCE is required.
           console.warn('AuthCallback: rejected URL-borne tokens (PKCE required)')
@@ -42,8 +49,26 @@ export default function AuthCallbackRoute() {
         } else {
           throw new Error(params.error || 'missing_credentials')
         }
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+          let freshProfile: any = null
+          try {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle()
+            freshProfile = prof
+          } catch {}
+          syncAuthSession(user, freshProfile)
+        }
+
         router.replace('/(tabs)')
-      } catch {
+      } catch (err) {
+        console.warn('AuthCallback error, navigating back:', err)
         safeBack(router, '/(tabs)')
       }
     })()
@@ -51,3 +76,4 @@ export default function AuthCallbackRoute() {
 
   return <View />
 }
+

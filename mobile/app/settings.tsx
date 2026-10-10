@@ -23,7 +23,9 @@ import {
   getSyncProfile,
   setSyncAuthUser,
   setSyncProfile,
+  isLogoutInProgress,
 } from '@/lib/auth-cache'
+
 import { playThemeSound, playTapSound, playSuccessSound } from '@/lib/sound'
 import {
   ArrowLeft,
@@ -105,7 +107,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation()
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
-  const { requestLogout, executeLogout } = useLogout()
+  const { requestLogout, executeLogout, isLoggingOut } = useLogout()
 
   const insets = useSafeAreaInsets()
   const syncUser = getSyncAuthUser()
@@ -137,9 +139,10 @@ export default function SettingsScreen() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // Unsaved-changes back guard (hardware back, swipe-back, header arrow all
-  // route through beforeRemove).
+  // route through beforeRemove). Bypassed completely during logout to eliminate prompt conflict.
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (isLoggingOut || isLogoutInProgress()) return
       if (!hasUnsavedChanges) return
       e.preventDefault()
       Alert.alert(
@@ -159,7 +162,8 @@ export default function SettingsScreen() {
       )
     })
     return unsubscribe
-  }, [navigation, hasUnsavedChanges])
+  }, [navigation, hasUnsavedChanges, isLoggingOut])
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(syncUser?.id || null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState(syncUser?.email || '')

@@ -34,8 +34,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { useTheme, Fonts } from '@/constants/theme'
-import { supabase } from '@/lib/supabase'
+import { supabase, safeExchangeCodeForSession } from '@/lib/supabase'
 import { Logo } from '@/components/Logo'
+
 import { useBanner } from '@/context/BannerContext'
 import { safeBack, openRegisterScreen, resolveAuthSuccess } from '@/lib/navigation'
 import { syncAuthSession } from '@/lib/auth-cache'
@@ -182,8 +183,13 @@ export default function LoginScreen() {
         )
       }
 
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode)
-      if (exchangeError) throw exchangeError
+      const { error: exchangeError } = await safeExchangeCodeForSession(authCode)
+      if (exchangeError) {
+        const {
+          data: { user: existingUser },
+        } = await supabase.auth.getUser()
+        if (!existingUser) throw exchangeError
+      }
 
       const {
         data: { user },
@@ -251,10 +257,12 @@ export default function LoginScreen() {
 
     try {
       // Native deep-link redirect from app.json scheme (blejepronen://):
-      // the provider returns straight into the app; the /auth/callback
-      // route (warm intents + cold launches) and the auth-session result
-      // below both complete the session natively.
-      const redirectUrl = Linking.createURL('/auth/callback')
+      // normalized to eliminate double/triple slashes across platforms
+      const redirectUrl =
+        Platform.OS === 'web'
+          ? Linking.createURL('/auth/callback')
+          : 'blejepronen://auth/callback'
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -284,12 +292,56 @@ export default function LoginScreen() {
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
       void WebBrowser.dismissBrowser().catch(() => {})
+
       if (result.type === 'success' && result.url) {
         await finishOAuth(result.url, providerTitle)
       } else {
-        oauthHandledRef.current = false
-        setOauthLoading(null)
+        // Opportunistic fallback: verify if the native intent already authenticated the session
+        const {
+          data: { user: opportunisticUser },
+        } = await supabase.auth.getUser()
+
+        if (opportunisticUser) {
+          let freshProfile: any = null
+          try {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', opportunisticUser.id)
+              .maybeSingle()
+            freshProfile = prof
+          } catch {}
+
+          syncAuthSession(opportunisticUser, freshProfile)
+
+          const meta = opportunisticUser.user_metadata || {}
+          const displayName =
+            meta.full_name ||
+            meta.first_name ||
+            meta.company_name ||
+            opportunisticUser.email?.split('@')[0] ||
+            'Përdorues'
+
+          showBanner({
+            type: 'success',
+            title: 'Mirësevini!',
+            message: `Jeni kyçur me sukses si ${displayName}.`,
+          })
+
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          }
+          allowDismissRef.current = true
+          setLoading(false)
+          setOauthLoading(null)
+          setDone(true)
+          resolveAuthSuccess(router, params.redirectTo)
+        } else {
+          oauthHandledRef.current = false
+          setOauthLoading(null)
+        }
       }
+
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : `Ndodhi një problem gjatë hyrjes me ${providerTitle}.`

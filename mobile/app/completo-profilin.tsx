@@ -19,8 +19,11 @@ import {
   getSyncProfile,
   setSyncAuthUser,
   setSyncProfile,
+  isLogoutInProgress,
 } from '@/lib/auth-cache'
+import { useLogout } from '@/context/LogoutContext'
 import { playSuccessSound } from '@/lib/sound'
+
 import { BlurView } from 'expo-blur'
 import {
   User,
@@ -87,6 +90,7 @@ export default function CompletoProfilinScreen() {
   const isFromSignup = params.from === 'signup'
   const { colors, theme } = useTheme()
   const { showBanner } = useBanner()
+  const { isLoggingOut } = useLogout()
 
   // Subtle, faint placeholder color with lowered opacity so placeholders
   // are visibly distinct from active user input across all themes
@@ -104,6 +108,7 @@ export default function CompletoProfilinScreen() {
   const [submitting, setSubmitting] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(syncUser)
   const [accessToken, setAccessToken] = useState<string>('')
+
 
   // Account Type
   const [accountType, setAccountType] = useState<'individual' | 'company'>(
@@ -196,9 +201,11 @@ export default function CompletoProfilinScreen() {
 
   // Dismiss the keyboard at pop-start so the KeyboardAvoidingView padding
   // release never reflows the exiting screen mid-transition.
+  // Bypassed unconditionally during logout so prompt collision never occurs.
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       Keyboard.dismiss()
+      if (isLoggingOut || isLogoutInProgress()) return
       const snapshot = formSnapshotRef.current
       if (snapshot && snapshot !== currentFormSnapshot()) {
         e.preventDefault()
@@ -220,7 +227,8 @@ export default function CompletoProfilinScreen() {
       }
     })
     return unsubscribe
-  }, [navigation])
+  }, [navigation, isLoggingOut])
+
 
   useEffect(() => {
     async function loadData() {
@@ -429,68 +437,9 @@ export default function CompletoProfilinScreen() {
         throw new Error(authUpdateError.message || 'Dështoi përditësimi i të dhënave në llogari.')
       }
 
-      // 3. Authoritative Supabase `profiles` Table Update
-      const now = new Date().toISOString()
-      const updatedProfileRow = {
-        first_name: activeFirstName,
-        last_name: activeLastName,
-        phone: activePhone,
-        avatar_url: selectedAvatar,
-        updated_at: now,
-      }
-
-      // Direct UPDATE first (preserves existing columns like email, email_verified, created_at)
-      const { data: updateData, error: updateError } = await supabase
-        .from('profiles')
-        .update(updatedProfileRow)
-        .eq('id', activeUser.id)
-        .select()
-
-      if (updateError || !updateData || updateData.length === 0) {
-        // Fallback to UPSERT if row does not exist yet
-        const { error: upsertError } = await supabase.from('profiles').upsert(
-          {
-            id: activeUser.id,
-            ...updatedProfileRow,
-            email: activeUser.email || undefined,
-            email_verified: Boolean(
-              activeUser.email_confirmed_at ||
-              activeUser.confirmed_at ||
-              activeUser.app_metadata?.provider === 'google' ||
-              syncProfile?.email_verified
-            ),
-          },
-          { onConflict: 'id' }
-        )
-
-        if (upsertError) {
-          console.error('Supabase profiles upsert error:', upsertError)
-          throw new Error(upsertError.message || 'Dështoi ruajtja e profilit në databazë.')
-        }
-      }
-
-      // 4. Instant Global Auth Cache Hydration for 0ms multi-screen sync
-      const freshUser = authUpdateData?.user || activeUser
-      const freshProfile = {
-        ...(syncProfile || {}),
-        id: activeUser.id,
-        first_name: activeFirstName,
-        last_name: activeLastName,
-        phone: activePhone,
-        avatar_url: selectedAvatar,
-        account_type: isCompany ? 'company' : 'individual',
-        is_company: isCompany,
-        city: activeCity,
-        bio: activeBio,
-        company_name: isCompany ? companyName.trim() : undefined,
-        contact_person: isCompany ? companyContactPerson.trim() : undefined,
-      }
-
-      setSyncAuthUser(freshUser)
-      setSyncProfile(freshProfile)
-
-      // 5. Concurrently sync with Next.js web backend (non-blocking)
+      // 3. Authoritative Sync via Web API (with Service Role / Admin privileges)
       const token = session?.access_token || accessToken
+      let apiSuccess = false
       if (token) {
         const payload: ProfileSettingsPayload = {
           isCompany,
@@ -514,16 +463,68 @@ export default function CompletoProfilinScreen() {
           bio: activeBio,
         }
 
-        apiSaveProfileSettings(payload, token)
-          .then((res) => {
-            if (!res.success) {
-              console.warn('Background web sync notice:', res.error)
-            }
-          })
-          .catch((e) => {
-            console.warn('Background web sync catch:', e)
-          })
+        try {
+          const apiRes = await apiSaveProfileSettings(payload, token)
+          if (apiRes.success) {
+            apiSuccess = true
+          } else {
+            console.warn('apiSaveProfileSettings response notice:', apiRes.error)
+          }
+        } catch (apiErr) {
+          console.warn('apiSaveProfileSettings exception notice:', apiErr)
+        }
       }
+
+      // 4. Client-side database update for immediate client cache parity
+      const updatedProfileRow = {
+        first_name: activeFirstName,
+        last_name: activeLastName,
+        phone: activePhone,
+        avatar_url: selectedAvatar,
+      }
+
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(updatedProfileRow)
+          .eq('id', activeUser.id)
+
+        if (updateError) {
+          // If row did not exist yet, attempt insert
+          await supabase.from('profiles').insert({
+            id: activeUser.id,
+            ...updatedProfileRow,
+            email: activeUser.email || undefined,
+          })
+        }
+      } catch (dbErr) {
+        // Handled gracefully: if auth metadata or apiSaveProfileSettings succeeded,
+        // direct client database RLS restrictions must never crash the user experience
+        console.warn('Direct database sync notice (handled gracefully):', dbErr)
+      }
+
+      // 5. Instant Global Auth Cache Hydration for 0ms multi-screen sync
+      const freshUser = authUpdateData?.user || activeUser
+      const freshProfile = {
+        ...(syncProfile || {}),
+        id: activeUser.id,
+        first_name: activeFirstName,
+        last_name: activeLastName,
+        phone: activePhone,
+        avatar_url: selectedAvatar,
+        account_type: isCompany ? 'company' : 'individual',
+        is_company: isCompany,
+        city: activeCity,
+        bio: activeBio,
+        company_name: isCompany ? companyName.trim() : undefined,
+        contact_person: isCompany ? companyContactPerson.trim() : undefined,
+      }
+
+      setSyncAuthUser(freshUser)
+      setSyncProfile(freshProfile)
+
+      // Sync form snapshot so back-navigation doesn't prompt for unsaved changes
+      formSnapshotRef.current = currentFormSnapshot()
 
       // 6. Tactile haptic & sound confirmation
       playSuccessSound()
@@ -546,6 +547,7 @@ export default function CompletoProfilinScreen() {
         safeBack(router, '/(tabs)/profile')
       }
     } catch (err: any) {
+
       console.error('Save profile exception in completo-profilin:', err)
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)

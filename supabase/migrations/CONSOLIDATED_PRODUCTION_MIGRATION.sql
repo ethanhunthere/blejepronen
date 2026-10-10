@@ -201,6 +201,14 @@ end $$;
 create policy "Users can view own profile"
   on public.profiles for select using (auth.uid() = id);
 
+drop policy if exists "Users can insert own profile" on public.profiles;
+create policy "Users can insert own profile"
+  on public.profiles for insert with check (auth.uid() = id);
+
+drop policy if exists "Users can update own profile" on public.profiles;
+create policy "Users can update own profile"
+  on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+
 -- Public surface: non-sensitive columns
 create or replace view public.profiles_public as
   select id, first_name, last_name, avatar_url, email_verified, created_at
@@ -217,11 +225,14 @@ grant select (id, first_name, last_name, avatar_url, email_verified, created_at)
 grant select (id, first_name, last_name, avatar_url, email_verified, created_at, phone, email)
   on public.profiles to authenticated;
 
-grant update (first_name, last_name, avatar_url, phone),
-      insert (id, first_name, last_name, avatar_url, phone)
+grant insert (id, first_name, last_name, avatar_url, phone, email, updated_at)
+  on public.profiles to authenticated;
+
+grant update (first_name, last_name, avatar_url, phone, email, updated_at)
   on public.profiles to authenticated;
 
 grant all on public.profiles to service_role;
+
 grant all on public.saved_searches to service_role;
 grant all on public.listing_reports to service_role;
 grant all on public.listing_events to service_role;

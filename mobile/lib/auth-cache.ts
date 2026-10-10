@@ -218,6 +218,9 @@ export function isLogoutInProgress(): boolean {
   return isLoggingOut
 }
 
+export const isLoggingOutState = isLogoutInProgress
+
+
 // ==========================================================================
 // SINGLE AUTH EVENT BUS
 // ==========================================================================

@@ -13,6 +13,29 @@ function getAdminClient() {
   })
 }
 
+async function getAuthUser(request: Request) {
+  try {
+    const serverSupabase = await createServerSupabaseClient()
+    const {
+      data: { user: cookieUser },
+    } = await serverSupabase.auth.getUser()
+    if (cookieUser) return cookieUser
+  } catch {}
+
+  const authHeader = request.headers.get('authorization')
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '').trim()
+    try {
+      const admin = getAdminClient()
+      const {
+        data: { user: bearerUser },
+      } = await admin.auth.getUser(token)
+      if (bearerUser) return bearerUser
+    } catch {}
+  }
+  return null
+}
+
 export type FollowUserItem = {
   id: string
   name: string
@@ -32,13 +55,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'missing_target', message: 'targetUserId is required' }, { status: 400 })
     }
 
-    const serverSupabase = await createServerSupabaseClient()
-    const {
-      data: { user: currentUser },
-    } = await serverSupabase.auth.getUser()
+    const currentUser = await getAuthUser(request)
     const currentUserId = currentUser?.id || null
 
     const admin = getAdminClient()
+
 
     // First attempt: check public.follows table
     let useTable = true
@@ -193,13 +214,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const serverSupabase = await createServerSupabaseClient()
-    const {
-      data: { user: currentUser },
-      error: authError,
-    } = await serverSupabase.auth.getUser()
+    const currentUser = await getAuthUser(request)
 
-    if (authError || !currentUser) {
+    if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'Ju lutem kyçuni për të ndjekur këtë profil.' }, { status: 401 })
     }
 
@@ -284,15 +301,12 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const serverSupabase = await createServerSupabaseClient()
-    const {
-      data: { user: currentUser },
-      error: authError,
-    } = await serverSupabase.auth.getUser()
+    const currentUser = await getAuthUser(request)
 
-    if (authError || !currentUser) {
+    if (!currentUser) {
       return NextResponse.json({ error: 'unauthorized', message: 'Ju lutem kyçuni për të menaxhuar ndjekjet.' }, { status: 401 })
     }
+
 
     const { searchParams } = new URL(request.url)
     let targetUserId = searchParams.get('targetUserId')

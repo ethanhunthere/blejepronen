@@ -219,7 +219,109 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 })
 
+const exchangeMutex = new Map<string, Promise<{ data: any; error: any }>>()
+let lastExchangedCode = ''
+let lastExchangedAt = 0
+
+/**
+ * Concurrency-safe, mutex-protected PKCE authorization code exchange.
+ *
+ * Prevents "invalid flow state, no valid flow state found" errors caused by
+ * duplicate/concurrent exchanges between deep-link listeners (auth/callback.tsx)
+ * and in-app browser promises (openAuthSessionAsync in login.tsx / register.tsx).
+ */
+export async function safeExchangeCodeForSession(
+  code: string
+): Promise<{ data: any; error: any }> {
+  if (!code || typeof code !== 'string') {
+    return { data: null, error: new Error('Kodi i autorizimit mungon.') }
+  }
+
+  // 1. If an authenticated session already exists, return it immediately
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (session?.user) {
+      return { data: { session, user: session.user }, error: null }
+    }
+  } catch {}
+
+  // 2. If this exact code was recently exchanged within the last 45s, check session again
+  if (lastExchangedCode === code && Date.now() - lastExchangedAt < 45000) {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (session?.user) {
+        return { data: { session, user: session.user }, error: null }
+      }
+    } catch {}
+  }
+
+  // 3. Deduplicate concurrent in-flight requests for the exact same code
+  const existingPromise = exchangeMutex.get(code)
+  if (existingPromise) {
+    return existingPromise
+  }
+
+  const promise = (async () => {
+    try {
+      const result = await supabase.auth.exchangeCodeForSession(code)
+      if (!result.error) {
+        lastExchangedCode = code
+        lastExchangedAt = Date.now()
+        return result
+      }
+
+      // If Supabase returns "invalid flow state" or code expired/already used,
+      // verify if a session was actually established concurrently
+      const msg = result.error?.message?.toLowerCase() || ''
+      if (
+        msg.includes('invalid flow state') ||
+        msg.includes('no valid flow state') ||
+        msg.includes('code verifier') ||
+        msg.includes('already been used') ||
+        msg.includes('already used')
+      ) {
+        // Double-check active session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (session?.user) {
+          lastExchangedCode = code
+          lastExchangedAt = Date.now()
+          return { data: { session, user: session.user }, error: null }
+        }
+      }
+
+      return result
+    } catch (err: any) {
+      // Check session in catch block as well
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (session?.user) {
+          lastExchangedCode = code
+          lastExchangedAt = Date.now()
+          return { data: { session, user: session.user }, error: null }
+        }
+      } catch {}
+      return { data: null, error: err }
+    } finally {
+      setTimeout(() => {
+        exchangeMutex.delete(code)
+      }, 5000)
+    }
+  })()
+
+  exchangeMutex.set(code, promise)
+  return promise
+}
+
 export interface Listing {
+
   id: string
   user_id: string
   title: string
