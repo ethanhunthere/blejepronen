@@ -106,11 +106,11 @@ export async function apiSignUp(params: SignupParams): Promise<ApiResponse> {
       }),
     })
 
-    const data = await res.json()
-    if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data?.success) {
       return {
         success: false,
-        error: data.error || data.message || 'Gabim gjatë regjistrimit.',
+        error: data?.error || data?.message || 'Gabim gjatë regjistrimit.',
       }
     }
 
@@ -147,11 +147,11 @@ export async function apiVerifyOtp(params: VerifyOtpParams): Promise<ApiResponse
       }),
     })
 
-    const data = await res.json()
-    if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data?.success) {
       return {
         success: false,
-        error: data.message || data.error || 'Kodi është i gabuar ose ka skaduar.',
+        error: data?.message || data?.error || 'Kodi është i gabuar ose ka skaduar.',
       }
     }
 
@@ -183,11 +183,11 @@ export async function apiResendCode(email: string): Promise<ApiResponse> {
       }),
     })
 
-    const data = await res.json()
-    if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data?.success) {
       return {
         success: false,
-        error: data.error || data.message || 'Dështoi ridërgimi i kodit.',
+        error: data?.error || data?.message || 'Dështoi ridërgimi i kodit.',
       }
     }
 
@@ -218,17 +218,17 @@ export async function apiDeleteAccount(accessToken: string): Promise<ApiResponse
       },
     })
 
-    const data = await res.json()
-    if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => null)
+    if (!res.ok || !data?.success) {
       return {
         success: false,
-        error: data.message || data.error || 'Dështoi fshirja e llogarisë.',
+        error: data?.message || data?.error || 'Dështoi fshirja e llogarisë.',
       }
     }
 
     return {
       success: true,
-      message: data.message || 'Llogaria juaj u fshi përfundimisht.',
+      message: data?.message || 'Llogaria juaj u fshi përfundimisht.',
     }
   } catch (err: any) {
     console.warn('apiDeleteAccount network exception:', err)

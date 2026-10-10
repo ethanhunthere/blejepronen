@@ -252,6 +252,14 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
                 contentStyle: { backgroundColor: colors.background },
               }}
             />
+            <Stack.Screen
+              name="auth/callback"
+              options={{
+                headerShown: false,
+                animation: 'fade',
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            />
             <Stack.Screen name="modal" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
             <Stack.Screen name="+not-found" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
           </Stack>

@@ -121,7 +121,7 @@ export function FollowsModal({
   const filteredList = useMemo(() => {
     if (!searchQuery.trim()) return rawList
     const q = searchQuery.toLowerCase().trim()
-    return rawList.filter((item) => item.name.toLowerCase().includes(q))
+    return rawList.filter((item) => (item.name || '').toLowerCase().includes(q))
   }, [rawList, searchQuery])
 
   // Follow / Unfollow inline action
