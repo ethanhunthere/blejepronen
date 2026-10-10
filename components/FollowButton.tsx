@@ -29,7 +29,17 @@ export default function FollowButton({
   const [followersCount, setFollowersCount] = useState(initialFollowersCount)
   const [isHovered, setIsHovered] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem('blejepronen_cached_user')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return parsed?.id || null
+      }
+    } catch {}
+    return null
+  })
   const router = useRouter()
   const supabase = createClient()
 

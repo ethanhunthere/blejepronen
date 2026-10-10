@@ -68,7 +68,7 @@ export default function AuthField({
           autoComplete={autoComplete}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={`pl-9 sm:pl-10 ${isPasswordField ? 'pr-10 sm:pr-11' : 'pr-3'} h-10 sm:h-11 rounded-xl border text-sm text-[#101828] placeholder:text-gray-400 transition-colors ${
+          className={`pl-9 sm:pl-10 ${isPasswordField ? 'pr-12' : 'pr-3'} h-10 sm:h-11 rounded-xl border text-base sm:text-sm text-[#101828] placeholder:text-gray-400 transition-colors ${
             error
               ? 'border-red-300 bg-red-50/60 focus:bg-white focus:border-red-400'
               : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-[#00675B]/40'
@@ -81,8 +81,7 @@ export default function AuthField({
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
-            tabIndex={-1}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 active:scale-95 transition-all cursor-pointer focus:outline-hidden"
+            className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 active:scale-95 transition-all cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#00675B]"
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -96,6 +95,7 @@ export default function AuthField({
         <p
           id={`${id}-error`}
           role="alert"
+          aria-live="polite"
           className="flex items-center gap-1 text-[12px] font-medium text-red-600 animate-in fade-in slide-in-from-top-1 duration-200"
         >
           <AlertCircle className="h-3 w-3 shrink-0" />

@@ -1,6 +1,4 @@
-import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { Loader2 } from 'lucide-react'
 
 import { ListingsExplorer } from '@/components/ListingsExplorer'
 import { fetchListingsServer, type ListingsQueryParams, type ListingsSort } from '@/lib/listings-query'
@@ -122,15 +120,7 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
-      <Suspense
-        fallback={
-          <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00675B]" />
-          </div>
-        }
-      >
-        <ListingsExplorer initialRows={rows} initialTotal={total} initialParams={initialParams} />
-      </Suspense>
+      <ListingsExplorer initialRows={rows} initialTotal={total} initialParams={initialParams} />
     </>
   )
 }

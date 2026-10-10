@@ -76,6 +76,12 @@ export default function CompletoProfilinCompanyPage() {
 
       // Pre-fill from user_metadata
       const meta = user.user_metadata
+      const isIndiv = meta?.account_type === 'individual' && !meta?.company_name
+      if (isIndiv) {
+        router.replace('/completo-profilin-fast')
+        return
+      }
+
       if (meta) {
         const comp = meta.company_name || meta.first_name || meta.full_name || ''
         if (comp) setCompanyName(comp)
@@ -83,6 +89,7 @@ export default function CompletoProfilinCompanyPage() {
         if (meta.founded_year) setFoundedYear(String(meta.founded_year))
         if (meta.company_description) setDescription(meta.company_description)
         if (meta.contact_person) setContactPerson(meta.contact_person)
+        if (meta.avatar_url || meta.picture) setAvatar(meta.avatar_url || meta.picture)
       }
 
       // If user already has profile record saved, merge
@@ -93,11 +100,11 @@ export default function CompletoProfilinCompanyPage() {
         .maybeSingle()
 
       if (profile) {
-        if (profile.first_name) setCompanyName(prev => prev || profile.first_name)
+        if (profile.first_name) setCompanyName((prev) => prev || profile.first_name)
         if (profile.last_name && profile.last_name !== 'Kompani') {
-          setContactPerson(prev => prev || profile.last_name)
+          setContactPerson((prev) => prev || profile.last_name)
         }
-        if (profile.phone) setPhone(prev => prev || profile.phone)
+        if (profile.phone) setPhone((prev) => prev || profile.phone)
         if (profile.avatar_url) setAvatar(profile.avatar_url)
       }
 
@@ -147,9 +154,18 @@ export default function CompletoProfilinCompanyPage() {
     setLoading(true)
 
     try {
+      const supabase = createClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const token = session?.access_token
+
       const res = await fetch('/api/profile/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           firstName: companyName.trim(),
           lastName: contactPerson.trim() || 'Kompani',
@@ -173,43 +189,32 @@ export default function CompletoProfilinCompanyPage() {
         return
       }
 
-      toast.success('Llogaria e kompanisë u verifikua me sukses!')
+      // Update cached navbar profile
+      try {
+        localStorage.setItem(
+          'blejepronen_cached_navbar_profile',
+          JSON.stringify({
+            userId: session?.user?.id || '',
+            firstName: companyName.trim(),
+            avatarUrl: avatar,
+            isCompany: true,
+            incomplete: false,
+          })
+        )
+      } catch {}
+
+      toast.success('Llogaria e kompanisë u plotësua me sukses!')
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('profile-updated'))
-        window.location.href = '/'
       }
+
+      const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const redirectUrl = sp?.get('redirect') || sp?.get('next') || '/'
+      router.replace(redirectUrl)
     } catch (err) {
       console.error('Submit company profile error:', err)
       setError('Ndodhi një gabim gjatë ruajtjes. Provoni përsëri.')
       setLoading(false)
-    }
-  }
-
-  const handleContinueWithoutVerifying = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      await fetch('/api/profile/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: companyName.trim() || 'Kompani',
-          lastName: contactPerson.trim() || 'Kompani',
-          phone: phone.trim(),
-          emailVerified: false,
-          isCompany: true,
-          companyDescription: description.trim(),
-          foundedYear: foundedYear.trim(),
-        }),
-      })
-    } catch (e) {
-      console.warn('Continue without verifying save notice:', e)
-    }
-
-    toast.info('Mund ta verifikoni llogarinë tuaj në çdo kohë nga profili.')
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('profile-updated'))
-      window.location.href = '/'
     }
   }
 
@@ -342,6 +347,7 @@ export default function CompletoProfilinCompanyPage() {
                   <Input
                     id="foundedYear"
                     type="number"
+                    inputMode="numeric"
                     min="1900"
                     max={new Date().getFullYear()}
                     placeholder="psh. 2018"
@@ -446,18 +452,6 @@ export default function CompletoProfilinCompanyPage() {
                 </span>
               )}
             </Button>
-
-            {/* Skip / Continue without verifying */}
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={handleContinueWithoutVerifying}
-                disabled={loading}
-                className="text-xs sm:text-sm font-medium text-gray-500 hover:text-[#00675B] transition-colors py-1.5 cursor-pointer disabled:opacity-50"
-              >
-                Vazhdo pa verifikuar →
-              </button>
-            </div>
           </form>
         </div>
       </div>

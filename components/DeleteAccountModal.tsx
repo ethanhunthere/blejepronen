@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Trash2, X, AlertTriangle, CheckCircle2, Loader2, ShieldAlert, Building2 } from 'lucide-react'
+import { Trash2, X, AlertTriangle, Loader2, Building2 } from 'lucide-react'
 
 interface DeleteAccountModalProps {
   isOpen: boolean
@@ -14,7 +14,7 @@ interface DeleteAccountModalProps {
   onDeleteConfirmed: () => Promise<boolean | void>
 }
 
-type DeletePhase = 'confirm' | 'deleting' | 'done'
+const CONFIRM_KEYWORD = 'FSHIJ'
 
 export default function DeleteAccountModal({
   isOpen,
@@ -25,77 +25,63 @@ export default function DeleteAccountModal({
   avatarUrl,
   onDeleteConfirmed,
 }: DeleteAccountModalProps) {
-  const [phase, setPhase] = useState<DeletePhase>('confirm')
-  const [progress, setProgress] = useState(0)
+  const [confirmInput, setConfirmInput] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Reset phase when modal opens or closes
   useEffect(() => {
     if (isOpen) {
-      setPhase('confirm')
-      setProgress(0)
+      setConfirmInput('')
       setErrorMessage('')
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current)
+      setIsDeleting(false)
     }
   }, [isOpen])
 
-  // ESC key closes only during confirmation phase
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && phase === 'confirm') {
+      if (e.key === 'Escape' && !isDeleting) {
         onClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, phase, onClose])
+  }, [isOpen, isDeleting, onClose])
 
-  const handleConfirm = useCallback(async () => {
+  const isConfirmed = confirmInput.trim().toUpperCase() === CONFIRM_KEYWORD
+
+  const handleConfirm = async () => {
+    if (!isConfirmed || isDeleting) return
     setErrorMessage('')
-    setPhase('deleting')
-    setProgress(15)
-
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 85) {
-          clearInterval(interval)
-          return 85
-        }
-        return prev + Math.floor(Math.random() * 15 + 8)
-      })
-    }, 120)
-    timerRef.current = interval
+    setIsDeleting(true)
 
     try {
       const result = await onDeleteConfirmed()
       if (result === false) {
-        if (timerRef.current) clearInterval(timerRef.current)
-        setPhase('confirm')
         setErrorMessage('Ndodhi një gabim gjatë fshirjes së llogarisë. Ju lutem provoni përsëri.')
+        setIsDeleting(false)
         return
       }
-    } catch (err) {
-      console.error('Delete account modal error:', err)
-      if (timerRef.current) clearInterval(timerRef.current)
-      setPhase('confirm')
-      setErrorMessage('Ndodhi një gabim gjatë fshirjes së llogarisë.')
-      return
-    }
 
-    if (timerRef.current) clearInterval(timerRef.current)
-    setProgress(100)
-    setPhase('done')
+      // Cleanup client storage and cookies
+      try {
+        localStorage.removeItem('blejepronen_cached_user')
+        localStorage.removeItem('blejepronen_cached_navbar_profile')
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('sb-')) localStorage.removeItem(key)
+        })
+        document.documentElement.setAttribute('data-auth', 'logged-out')
+      } catch {}
 
-    // Smooth pause so the user sees the confirmation before clean redirect
-    setTimeout(() => {
       if (typeof window !== 'undefined') {
         window.location.replace('/')
       }
-    }, 600)
-  }, [onDeleteConfirmed])
+    } catch (err) {
+      console.error('Delete account modal error:', err)
+      setErrorMessage('Ndodhi një gabim gjatë fshirjes së llogarisë.')
+      setIsDeleting(false)
+    }
+  }
 
   if (!isOpen) return null
 
@@ -104,160 +90,113 @@ export default function DeleteAccountModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-account-title"
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[#120303]/75 backdrop-blur-xl animate-fade-in transition-all duration-300"
+      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      {/* Backdrop click to cancel */}
       <div
-        className="absolute inset-0"
+        className="fixed inset-0"
         onClick={() => {
-          if (phase === 'confirm') onClose()
+          if (!isDeleting) onClose()
         }}
       />
 
-      {/* Center Modal Card */}
-      <div className="relative w-full max-w-[400px] rounded-3xl bg-white/95 backdrop-blur-2xl p-7 sm:p-9 shadow-[0_32px_80px_-16px_rgba(40,5,5,0.5)] border border-red-100/80 text-center flex flex-col items-center overflow-hidden transition-all duration-300">
-        {/* Ambient top red glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-600/15 rounded-full blur-2xl pointer-events-none" />
+      <div
+        className="relative w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-200 text-center flex flex-col items-center pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-7 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isDeleting}
+          aria-label="Mbyll dritaren"
+          className="absolute top-4 right-4 h-9 w-9 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
-        {/* Phase 1: Confirmation Dialog */}
-        {phase === 'confirm' && (
-          <>
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Mbyll dritaren"
-              className="absolute top-4 right-4 h-9 w-9 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
+        <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-600 mb-4">
+          <Trash2 className="h-5 w-5" />
+        </div>
 
-            {/* Trash icon badge with soft glow */}
-            <div className="relative w-14 h-14 rounded-2xl bg-red-50 border border-red-200/80 flex items-center justify-center text-red-600 shadow-sm mb-4">
-              <Trash2 className="h-6 w-6 text-red-600" />
+        <h3
+          id="delete-account-title"
+          className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight"
+        >
+          Dëshironi të fshini llogarinë?
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-[320px]">
+          Ky veprim është përfundimtar. Të gjitha pronat tuaja, bisedat dhe të dhënat e profilit do të fshihen.
+        </p>
+
+        {errorMessage && (
+          <div className="mt-3 w-full p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 text-center font-medium">
+            {errorMessage}
+          </div>
+        )}
+
+        {(userEmail || userName) && (
+          <div className="mt-4 w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-left">
+            <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 bg-red-50 text-red-600 font-bold text-xs flex items-center justify-center border border-red-200">
+              <Image src={avatarUrl || '/avatars/avatar-1.png'} alt="" fill sizes="36px" className="object-cover" />
             </div>
-
-            <h3
-              id="delete-account-title"
-              className="text-xl font-bold text-[#101828] tracking-tight leading-snug"
-            >
-              Dëshironi të fshini llogarinë?
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1.5 max-w-[310px] leading-relaxed">
-              Ky veprim është përfundimtar dhe nuk mund të kthehet më pas.
-            </p>
-
-            {errorMessage && (
-              <div className="mt-3 w-full p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 text-center font-medium">
-                {errorMessage}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 truncate">
+                {userName && (
+                  <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{userName}</p>
+                )}
+                {isCompany && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-[#00675B]/10 text-[#00675B] rounded-full px-2 py-0.5 shrink-0">
+                    <Building2 className="h-2.5 w-2.5" /> Kompani
+                  </span>
+                )}
               </div>
-            )}
-
-            {/* User Account Micro-Card */}
-            {(userEmail || userName) && (
-              <div className="mt-4 w-full flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 text-left">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-red-500/10 text-red-600 font-bold text-sm flex items-center justify-center border border-gray-200">
-                  <Image src={avatarUrl || '/avatars/avatar-1.png'} alt="" fill sizes="40px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 truncate">
-                    {userName && (
-                      <p className="text-sm font-semibold text-[#101828] truncate">{userName}</p>
-                    )}
-                    {isCompany && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-[#00675B]/10 text-[#00675B] rounded-full px-2 py-0.5 shrink-0">
-                        <Building2 className="h-2.5 w-2.5" /> Kompani
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">{userEmail}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Warning Callout */}
-            <div className="mt-4 w-full p-3.5 rounded-2xl bg-red-50/90 border border-red-200 text-left text-xs text-red-800 leading-relaxed flex items-start gap-2.5">
-              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-              <span>
-                Të gjitha pronat tuaja të listuara, bisedat dhe të dhënat e profilit do të fshihen menjëherë nga platforma.
-              </span>
+              <p className="text-xs text-slate-500 truncate">{userEmail}</p>
             </div>
+          </div>
+        )}
 
-            {/* Action Buttons */}
-            <div className="mt-6 w-full flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 min-h-[46px] rounded-xl bg-gray-100 hover:bg-gray-200 text-[#101828] font-semibold text-sm transition-all duration-200 cursor-pointer active:scale-95"
-              >
-                Anulo
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                className="flex-1 min-h-[46px] rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-md shadow-red-600/25 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"
-              >
+        <div className="mt-4 w-full p-3 rounded-xl bg-red-50/70 border border-red-200 text-left text-xs text-red-800 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+          <span>
+            Për të konfirmuar, shkruani <strong>{CONFIRM_KEYWORD}</strong> më poshtë:
+          </span>
+        </div>
+
+        <div className="mt-3 w-full">
+          <input
+            type="text"
+            value={confirmInput}
+            onChange={(e) => setConfirmInput(e.target.value)}
+            disabled={isDeleting}
+            placeholder={`Shkruani ${CONFIRM_KEYWORD}`}
+            className="w-full h-11 px-3 text-center tracking-widest font-bold uppercase rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/20 text-base sm:text-sm transition-all disabled:opacity-50"
+          />
+        </div>
+
+        <div className="mt-5 w-full flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isDeleting}
+            className="flex-1 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            Anulo
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={!isConfirmed || isDeleting}
+            className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm active:scale-95 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
                 <Trash2 className="h-4 w-4" />
-                <span>Po, fshij</span>
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Phase 2: Deleting Animation */}
-        {phase === 'deleting' && (
-          <div className="py-2 flex flex-col items-center">
-            {/* Animated Emblem with Orbital Ring */}
-            <div className="relative mb-5 flex items-center justify-center">
-              <div className="absolute -inset-3 rounded-3xl border-2 border-dashed border-red-500/40 animate-[spin_8s_linear_infinite]" />
-              <div className="w-18 h-18 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center shadow-xl shadow-red-600/35 ring-8 ring-red-500/15">
-                <Trash2 className="h-9 w-9 text-white animate-pulse" />
-              </div>
-            </div>
-
-            <h3 className="text-lg sm:text-xl font-bold text-[#101828] tracking-tight">
-              Duke fshirë llogarinë...
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-[290px] leading-relaxed">
-              Të gjitha pronat, mesazhet dhe të dhënat po fshihen nga sistemi.
-            </p>
-
-            {/* Smooth Progress Bar */}
-            <div className="w-52 h-1.5 bg-gray-100 rounded-full overflow-hidden mt-6">
-              <div
-                className="h-full bg-gradient-to-r from-red-500 via-rose-500 to-amber-500 rounded-full transition-all duration-200 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            {/* Security Pill */}
-            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-100 text-red-700 text-[11px] font-medium">
-              <ShieldAlert className="h-3.5 w-3.5 text-red-600" />
-              <span>Fshirje e plotë dhe e sigurt e të dhënave</span>
-            </div>
-          </div>
-        )}
-
-        {/* Phase 3: Done Transition */}
-        {phase === 'done' && (
-          <div className="py-2 flex flex-col items-center animate-fade-in">
-            <div className="w-18 h-18 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 mb-5 ring-8 ring-emerald-500/15 scale-100 transition-all duration-300">
-              <CheckCircle2 className="h-9 w-9 text-white" />
-            </div>
-
-            <h3 className="text-lg sm:text-xl font-bold text-[#101828] tracking-tight">
-              Llogaria u fshi me sukses!
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Të gjitha të dhënat tuaja u pastruan. Po ju ridrejtojmë...
-            </p>
-
-            <div className="mt-6 flex items-center gap-2 text-xs text-gray-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-red-600" />
-              <span>Faleminderit që përdorët Bleje Pronën</span>
-            </div>
-          </div>
-        )}
+                <span>Fshij Llogarinë</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )

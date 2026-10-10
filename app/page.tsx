@@ -93,7 +93,7 @@ export default async function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="w-full bg-slate-50/70 border-t border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20">
+      <section className="w-full bg-slate-50/70 px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20">
         <div className="mx-auto max-w-[1400px]">
           <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">

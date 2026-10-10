@@ -180,35 +180,19 @@ function LoginForm() {
     }
   }
 
-  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook') => {
+  const handleGoogleOAuth = async () => {
     try {
-      setOauthLoading(provider)
+      setOauthLoading('google')
       setError('')
-
-      const providerNames: Record<string, string> = {
-        google: 'Google',
-        apple: 'Apple',
-        facebook: 'Facebook',
-      }
-      const providerTitle = providerNames[provider] || provider
-
-      // NOTE: no persona/Individ-Kompani cookie is written here. The persona
-      // switcher lives on the registration page only — writing it from login
-      // used to overwrite company account metadata on the OAuth callback.
 
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
 
-      const targetProvider = provider as
-        | 'google'
-        | 'apple'
-        | 'facebook'
-
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
-        provider: targetProvider,
+        provider: 'google',
         options: {
           redirectTo: `${origin}/auth/callback`,
           skipBrowserRedirect: false,
-          queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
+          queryParams: { prompt: 'select_account' },
         },
       })
 
@@ -217,13 +201,7 @@ function LoginForm() {
           setOauthLoading(null)
           return
         }
-        const msg = oauthErr.message?.toLowerCase() || ''
-        const errObj = oauthErr as unknown as { code?: string | number; status?: number }
-        if (msg.includes('provider is not enabled') || errObj.code === 400 || errObj.status === 400) {
-          setError(`Hyrja përmes ${providerTitle} po përgatitet në sistem. Mund të kyçeni menjëherë me Google ose me email.`)
-        } else {
-          setError(oauthErr.message || `Ndodhi një problem me hyrjen përmes ${providerTitle}.`)
-        }
+        setError(oauthErr.message || 'Ndodhi një problem gjatë hyrjes me Google.')
         setOauthLoading(null)
         return
       }
@@ -233,8 +211,8 @@ function LoginForm() {
         setOauthLoading(null)
         return
       }
-      console.error(`${provider} OAuth error:`, err)
-      setError(`Hyrja përmes këtij opsioni po aktivizohet. Përdorni Google ose email për hyrje të menjëhershme.`)
+      console.error('Google OAuth error:', err)
+      setError('Ndodhi një problem gjatë hyrjes me Google. Ju lutem provoni me email.')
       setOauthLoading(null)
     }
   }
@@ -247,11 +225,10 @@ function LoginForm() {
       <AuthPanel
         title="Hyr në llogari"
         subtitle="Futu me llogarinë tënde personale"
-        googleLabel="Google"
-        onGoogle={() => handleOAuth('google')}
-        onApple={() => handleOAuth('apple')}
-        onFacebook={() => handleOAuth('facebook')}
+        googleLabel="Vazhdo me Google"
+        onGoogle={handleGoogleOAuth}
         oauthLoading={oauthLoading}
+        isSubmitting={loading}
         error={error}
         footer={
           <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">

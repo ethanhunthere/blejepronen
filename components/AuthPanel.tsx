@@ -62,6 +62,7 @@ interface AuthPanelProps {
   onApple?: () => void
   onFacebook?: () => void
   oauthLoading?: string | null
+  isSubmitting?: boolean
   error?: React.ReactNode
   badge?: React.ReactNode
   children: React.ReactNode
@@ -74,11 +75,12 @@ interface AuthPanelProps {
 export default function AuthPanel({
   title,
   subtitle,
-  googleLabel = 'Google',
+  googleLabel = 'Vazhdo me Google',
   onGoogle,
   onApple,
   onFacebook,
   oauthLoading = null,
+  isSubmitting = false,
   error,
   badge,
   children,
@@ -87,8 +89,10 @@ export default function AuthPanel({
   onAccountTypeChange,
   showAccountTypeSelector = false,
 }: AuthPanelProps) {
+  const activeProvidersCount = [onGoogle, onApple, onFacebook].filter(Boolean).length
+
   return (
-    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/85 shadow-xl shadow-slate-900/[0.04] p-6 sm:p-8 backdrop-blur-sm">
+    <div className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/[0.04] p-6 sm:p-8">
       {badge && <div className="mb-2">{badge}</div>}
 
       <div className="space-y-1.5 text-left">
@@ -100,11 +104,22 @@ export default function AuthPanel({
 
       {/* Dual-Track Persona Architecture Switcher */}
       {showAccountTypeSelector && onAccountTypeChange && (
-        <div className="mt-3.5 p-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1.5">
+        <div
+          role="tablist"
+          aria-label="Lloji i llogarisë"
+          className="mt-3.5 p-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 grid grid-cols-2 gap-1.5"
+        >
           <button
             type="button"
+            role="tab"
+            id="tab-individual"
+            aria-selected={accountType === 'individual'}
+            aria-controls="panel-individual"
             onClick={() => onAccountTypeChange('individual')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') onAccountTypeChange('company')
+            }}
+            className={`flex items-center justify-center gap-2 min-h-[40px] py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'individual'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
@@ -116,8 +131,15 @@ export default function AuthPanel({
 
           <button
             type="button"
+            role="tab"
+            id="tab-company"
+            aria-selected={accountType === 'company'}
+            aria-controls="panel-company"
             onClick={() => onAccountTypeChange('company')}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') onAccountTypeChange('individual')
+            }}
+            className={`flex items-center justify-center gap-2 min-h-[40px] py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
               accountType === 'company'
                 ? 'bg-white text-[#00675B] shadow-xs font-bold ring-1 ring-black/5'
                 : 'text-slate-500 hover:text-slate-800 font-semibold'
@@ -142,15 +164,21 @@ export default function AuthPanel({
           </Alert>
         )}
 
-        {/* Branded, evenly spaced 3-button social auth row: Apple, Google, Facebook */}
-        {(onApple || onGoogle || onFacebook) && (
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+        {/* Social auth: full-width primary button when single provider, or even grid */}
+        {activeProvidersCount > 0 && (
+          <div
+            className={
+              activeProvidersCount === 1
+                ? 'w-full'
+                : `grid grid-cols-${activeProvidersCount} gap-2.5 sm:gap-3`
+            }
+          >
             {onApple && (
               <button
                 type="button"
                 onClick={onApple}
-                disabled={!!oauthLoading}
-                className="min-h-[42px] h-[42px] bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                disabled={Boolean(oauthLoading) || isSubmitting}
+                className="w-full min-h-[44px] h-11 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Apple"
               >
                 {oauthLoading === 'apple' ? (
@@ -168,8 +196,8 @@ export default function AuthPanel({
               <button
                 type="button"
                 onClick={onGoogle}
-                disabled={!!oauthLoading}
-                className="min-h-[42px] h-[42px] bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                disabled={Boolean(oauthLoading) || isSubmitting}
+                className="w-full min-h-[44px] h-11 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-800 border border-slate-200/90 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Google"
               >
                 {oauthLoading === 'google' ? (
@@ -187,8 +215,8 @@ export default function AuthPanel({
               <button
                 type="button"
                 onClick={onFacebook}
-                disabled={!!oauthLoading}
-                className="min-h-[42px] h-[42px] bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs sm:text-[12.5px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
+                disabled={Boolean(oauthLoading) || isSubmitting}
+                className="w-full min-h-[44px] h-11 bg-white hover:bg-blue-50/50 active:scale-[0.98] text-[#1877F2] border border-slate-200 hover:border-blue-200 text-xs sm:text-[13px] font-semibold rounded-xl inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs disabled:opacity-60"
                 title="Vazhdo me Facebook"
               >
                 {oauthLoading === 'facebook' ? (

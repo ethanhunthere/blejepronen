@@ -1,13 +1,31 @@
 import { memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import Globe from '@/components/originkit/ui/globe-fast'
+import { ShieldCheck, Building2, Users, CheckCircle2 } from 'lucide-react'
 
 interface AuthShellProps {
   children: React.ReactNode
   headline?: string
   subline?: string
 }
+
+const TRUST_METRICS = [
+  {
+    icon: Building2,
+    title: 'Mijëra prona aktive',
+    desc: 'Banesa, shtëpi, troje dhe hapësira afariste në të gjithë Kosovën.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Prona të verifikuara',
+    desc: 'Shpallje me të dhëna të sakta, çmime reale dhe fotografi origjinale.',
+  },
+  {
+    icon: Users,
+    title: 'Pa komisione të fshehura',
+    desc: 'Komunikim i drejtpërdrejtë me pronarët dhe agjencitë e autorizuara.',
+  },
+]
 
 const AuthTealPanel = memo(function AuthTealPanel({
   headline,
@@ -17,34 +35,51 @@ const AuthTealPanel = memo(function AuthTealPanel({
   subline: string
 }) {
   return (
-    <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col overflow-hidden bg-[#00675B]">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(50%_40%_at_15%_0%,rgba(200,184,130,0.18),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(55%_45%_at_85%_100%,rgba(255,255,255,0.08),transparent_70%)]" />
-        <Image
-          src="/logo-white.png"
-          alt=""
-          width={512}
-          height={512}
-          className="absolute -right-24 -bottom-32 w-[420px] max-w-none opacity-[0.06] -rotate-6"
-        />
-      </div>
-
-      {/* Decorative copy: part of the background, not interactive UI */}
+    <div className="relative hidden lg:flex lg:w-[45%] h-full flex-col justify-between overflow-hidden bg-[#00675B] p-12 xl:p-14 text-white">
+      {/* Subtle Architectural Grid Pattern */}
       <div
-        aria-hidden
-        className="relative pointer-events-none select-none px-12 xl:px-14 pt-12 xl:pt-14 shrink-0"
-      >
-        <h2 className="max-w-md text-3xl xl:text-[34px] font-extrabold leading-[1.15] tracking-tight text-white">
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 -bottom-32 w-96 h-96 rounded-full bg-[#C8B882]/10 blur-3xl"
+      />
+
+      {/* Top Section: Brand Statement */}
+      <div className="relative z-10 space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-[#C8B882] text-xs font-semibold backdrop-blur-xs">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Platforma #1 e Pronave në Kosovë</span>
+        </div>
+        <h2 className="max-w-md text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-white">
           {headline}
         </h2>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70 font-normal">
+        <p className="max-w-sm text-sm xl:text-base leading-relaxed text-white/80 font-normal">
           {subline}
         </p>
       </div>
 
-      <div className="relative min-h-0 flex-1 -mt-2 overflow-hidden" id="auth-animation-container">
-        <Globe scale={9} />
+      {/* Bottom Section: Real-Estate Trust Metrics */}
+      <div className="relative z-10 space-y-5 pt-8 border-t border-white/15">
+        {TRUST_METRICS.map((metric) => {
+          const IconComp = metric.icon
+          return (
+            <div key={metric.title} className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-[#C8B882]">
+                <IconComp className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-bold text-white leading-snug">{metric.title}</h3>
+                <p className="text-xs text-white/70 leading-relaxed">{metric.desc}</p>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -60,8 +95,7 @@ export default function AuthShell({
       {/* Marker consumed by globals.css to hide the site footer on auth screens */}
       <span data-auth-page hidden />
 
-      {/* Left: subtle soft background with the floating card (55% — optically reads ~60/40 because
-          the white field carries less visual mass than the globe-filled teal) */}
+      {/* Left: subtle soft background with the floating card */}
       <div className="relative flex w-full lg:w-[55%] h-full flex-col items-center bg-slate-50/60 px-4 sm:px-8 lg:px-12 xl:px-16 overflow-y-auto overscroll-contain scrollbar-thin">
         <div className="w-full max-w-[420px] my-auto py-5 sm:py-8 flex flex-col justify-center shrink-0">
           <Link
@@ -84,7 +118,7 @@ export default function AuthShell({
         </div>
       </div>
 
-      {/* Right 45%: teal panel — brand statement floating above the globe */}
+      {/* Right 45%: teal panel — brand statement with trust metrics */}
       <AuthTealPanel headline={headline} subline={subline} />
     </div>
   )

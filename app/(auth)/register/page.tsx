@@ -236,17 +236,10 @@ export default function RegisterPage() {
     )
   }
 
-  const handleOAuth = async (provider: 'google' | 'apple' | 'facebook') => {
+  const handleGoogleOAuth = async () => {
     try {
-      setOauthLoading(provider)
+      setOauthLoading('google')
       setError('')
-
-      const providerNames: Record<string, string> = {
-        google: 'Google',
-        apple: 'Apple',
-        facebook: 'Facebook',
-      }
-      const providerTitle = providerNames[provider] || provider
 
       // Persist persona selection across OAuth boundary
       try {
@@ -255,17 +248,13 @@ export default function RegisterPage() {
       } catch {}
 
       const origin = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace('www.', '')
-      const targetProvider = provider as
-        | 'google'
-        | 'apple'
-        | 'facebook'
 
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
-        provider: targetProvider,
+        provider: 'google',
         options: {
           redirectTo: `${origin}/auth/callback`,
           skipBrowserRedirect: false,
-          queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
+          queryParams: { prompt: 'select_account' },
         },
       })
 
@@ -274,13 +263,7 @@ export default function RegisterPage() {
           setOauthLoading(null)
           return
         }
-        const msg = oauthErr.message?.toLowerCase() || ''
-        const errObj = oauthErr as unknown as { code?: string | number; status?: number }
-        if (msg.includes('provider is not enabled') || errObj.code === 400 || errObj.status === 400) {
-          setError(`Regjistrimi përmes ${providerTitle} po përgatitet në sistem. Mund të regjistroheni menjëherë me Google ose me email.`)
-        } else {
-          setError(oauthErr.message || `Ndodhi një problem gjatë regjistrimit me ${providerTitle}.`)
-        }
+        setError(oauthErr.message || 'Ndodhi një problem gjatë regjistrimit me Google.')
         setOauthLoading(null)
         return
       }
@@ -290,8 +273,8 @@ export default function RegisterPage() {
         setOauthLoading(null)
         return
       }
-      console.error(`${provider} OAuth error:`, err)
-      setError(`Regjistrimi përmes këtij opsioni po aktivizohet. Përdorni Google ose email për hyrje të menjëhershme.`)
+      console.error('Google OAuth error:', err)
+      setError('Ndodhi një problem gjatë regjistrimit me Google. Provoni me email.')
       setOauthLoading(null)
     }
   }
@@ -311,11 +294,10 @@ export default function RegisterPage() {
               ? 'Regjistro agjencinë ose kompaninë tënde'
               : 'Krijo profilin tënd personal falas'
           }
-          googleLabel="Google"
-          onGoogle={() => handleOAuth('google')}
-          onApple={() => handleOAuth('apple')}
-          onFacebook={() => handleOAuth('facebook')}
+          googleLabel="Vazhdo me Google"
+          onGoogle={handleGoogleOAuth}
           oauthLoading={oauthLoading}
+          isSubmitting={loading}
           accountType={accountType}
           onAccountTypeChange={(t) => {
             setAccountType(t)

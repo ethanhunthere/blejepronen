@@ -441,7 +441,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center gap-2 flex-shrink-0">
                 <div
                   onClick={() => setShowAvatarModal(true)}
-                  className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-gray-100 cursor-pointer group hover:scale-[1.02] transition-all duration-200 ring-2 ring-[#00675B]/15"
+                  className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100 cursor-pointer group hover:scale-[1.02] transition-all duration-200 ring-2 ring-[#00675B]/15"
                   title="Kliko për të ndryshuar avatarin"
                 >
                   <Image

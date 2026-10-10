@@ -45,7 +45,7 @@ export default function MobileContactBar({
               if (!isFavorited) toast.success('U ruajt te të preferuarat!')
               else toast.info('U hoq nga të preferuarat.')
             }}
-            className={`w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 transition-all active:scale-95 ${
+            className={`w-11 h-11 rounded-full border flex items-center justify-center flex-shrink-0 transition-all active:scale-95 cursor-pointer ${
               isFavorited
                 ? 'border-rose-200 bg-rose-50 text-rose-500'
                 : 'border-gray-200 bg-gray-50 text-gray-500'
@@ -77,7 +77,7 @@ export default function MobileContactBar({
               href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-10 px-3.5 rounded-xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              className="min-h-[44px] h-11 px-4 rounded-xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
               aria-label="Kontakto në WhatsApp"
             >
               <MessageCircle className="h-4 w-4 fill-white" />
@@ -88,7 +88,7 @@ export default function MobileContactBar({
           {phone ? (
             <a
               href={`tel:${normalizePhoneNumber(phone)}`}
-              className="h-10 px-3.5 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
               aria-label="Telefono shitësin"
             >
               <Phone className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function MobileContactBar({
           ) : (
             <a
               href="#seller-info"
-              className="h-10 px-3.5 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
             >
               <span>Detajet</span>
             </a>

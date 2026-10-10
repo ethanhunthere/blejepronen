@@ -88,6 +88,10 @@ export default function CompletoProfilinFastPage() {
           setFirstName(googleFirst || '')
           setLastName(googleLast || '')
         }
+
+        if (meta.avatar_url || meta.picture) {
+          setAvatar(meta.avatar_url || meta.picture)
+        }
       }
 
       // If user already has profile details saved, load them
@@ -98,9 +102,10 @@ export default function CompletoProfilinFastPage() {
         .maybeSingle()
 
       if (profile) {
-        if (profile.first_name) setFirstName(prev => prev || profile.first_name)
-        if (profile.last_name && profile.last_name !== 'Kompani') setLastName(prev => prev || profile.last_name)
-        if (profile.phone) setPhone(prev => prev || profile.phone)
+        if (profile.first_name) setFirstName((prev) => prev || profile.first_name)
+        if (profile.last_name && profile.last_name !== 'Kompani')
+          setLastName((prev) => prev || profile.last_name)
+        if (profile.phone) setPhone((prev) => prev || profile.phone)
         if (profile.avatar_url) setAvatar(profile.avatar_url)
       }
 
@@ -116,7 +121,9 @@ export default function CompletoProfilinFastPage() {
 
     const nextErrors: { firstName?: string; lastName?: string; phone?: string } = {}
     if (!firstName.trim()) {
-      nextErrors.firstName = isCompany ? 'Emri i kompanisë është i detyrueshëm.' : 'Emri është i detyrueshëm.'
+      nextErrors.firstName = isCompany
+        ? 'Emri i kompanisë është i detyrueshëm.'
+        : 'Emri është i detyrueshëm.'
     }
     if (!isCompany && !lastName.trim()) {
       nextErrors.lastName = 'Mbiemri është i detyrueshëm.'
@@ -130,12 +137,21 @@ export default function CompletoProfilinFastPage() {
     setLoading(true)
 
     try {
+      const supabase = createClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const token = session?.access_token
+
       const res = await fetch('/api/profile/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           firstName: firstName.trim(),
-          lastName: isCompany ? (lastName.trim() || 'Kompani') : lastName.trim(),
+          lastName: isCompany ? lastName.trim() || 'Kompani' : lastName.trim(),
           phone: phone.trim(),
           emailVerified: true,
           isCompany,
@@ -154,11 +170,28 @@ export default function CompletoProfilinFastPage() {
         return
       }
 
+      // Update cached navbar profile
+      try {
+        localStorage.setItem(
+          'blejepronen_cached_navbar_profile',
+          JSON.stringify({
+            userId: session?.user?.id || '',
+            firstName: firstName.trim(),
+            avatarUrl: avatar,
+            isCompany: false,
+            incomplete: false,
+          })
+        )
+      } catch {}
+
       toast.success('Profili u plotësua me sukses!')
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('profile-updated'))
-        window.location.href = '/'
       }
+
+      const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const redirectUrl = sp?.get('redirect') || sp?.get('next') || '/'
+      router.replace(redirectUrl)
     } catch (err) {
       console.error('Submit error:', err)
       setError('Ndodhi një gabim. Provoni përsëri.')
@@ -224,7 +257,6 @@ export default function CompletoProfilinFastPage() {
                   <Input
                     id="firstName"
                     placeholder="Emri yt"
-                    autoFocus
                     className={`pl-10 h-11 rounded-xl bg-gray-50 text-sm text-[#101828] placeholder:text-gray-400 focus:bg-white transition-colors ${
                       fieldErrors.firstName
                         ? 'border-red-300 bg-red-50/60 focus:border-red-400'

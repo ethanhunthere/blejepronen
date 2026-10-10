@@ -26,7 +26,6 @@ import {
 import { playThemeSound, playTapSound, playSuccessSound } from '@/lib/sound'
 import {
   ArrowLeft,
-  User,
   Bell,
   Shield,
   Lock,
@@ -45,7 +44,6 @@ import {
   Sun,
   Leaf,
   Moon,
-  ChevronRight,
   RefreshCw,
   HardDrive,
   Info,
@@ -942,41 +940,6 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Quick link banner to dedicated Profile Editor */}
-          <Pressable
-            style={[
-              styles.profileBannerCard,
-              {
-                backgroundColor: theme === 'white' ? '#F8FAFC' : 'rgba(255, 255, 255, 0.05)',
-                borderColor: specularBorder,
-              },
-            ]}
-            onPress={() => {
-              playTapSound()
-              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
-              router.push('/completo-profilin')
-            }}
-          >
-            <View style={styles.profileBannerLeft}>
-              <View
-                style={[
-                  styles.profileBannerIconCircle,
-                  { backgroundColor: brandHighlight + '18' },
-                ]}
-              >
-                <User size={18} color={brandHighlight} strokeWidth={2.2} />
-              </View>
-              <View style={styles.profileBannerTextGroup}>
-                <Text style={[styles.profileBannerTitle, { color: colors.textPrimary }]}>
-                  Ndrysho Profilin
-                </Text>
-                <Text style={[styles.profileBannerSub, { color: colors.textMuted }]}>
-                  Emri, telefoni, qyteti dhe të dhënat e profilit tuaj
-                </Text>
-              </View>
-            </View>
-            <ChevronRight size={18} color={colors.textMuted} />
-          </Pressable>
 
 
           {/* ======================================================== */}
@@ -2310,41 +2273,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: Fonts.semiBold,
   },
-  profileBannerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  profileBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  profileBannerIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileBannerTextGroup: {
-    flex: 1,
-  },
-  profileBannerTitle: {
-    fontSize: 14.5,
-    fontFamily: Fonts.bold,
-  },
-  profileBannerSub: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    marginTop: 2,
-  },
+
   settingsLogoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

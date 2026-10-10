@@ -71,7 +71,7 @@ export default function ProfileSocialStats({
 
   return (
     <>
-      <div className={`flex items-center gap-3 sm:gap-6 py-2.5 ${className}`}>
+      <div className={`flex items-center flex-wrap gap-2.5 sm:gap-5 py-2 ${className}`}>
         {/* Listings count */}
         <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 font-medium">
           <span className="font-extrabold text-[#101828] text-sm sm:text-base">
@@ -82,30 +82,30 @@ export default function ProfileSocialStats({
           </span>
         </div>
 
-        <span className="text-gray-200">|</span>
+        <span aria-hidden="true" className="h-3.5 w-px bg-slate-200 shrink-0" />
 
         {/* Followers button (Instagram-style) */}
         <button
           type="button"
           onClick={openFollowers}
-          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
+          className="flex items-center gap-1.5 min-h-[36px] text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
           title="Shiko ndiqësit"
         >
           <span className="font-extrabold text-[#101828] group-hover:text-[#00675B] text-sm sm:text-base transition-colors">
             {followersCount}
           </span>
           <span className="text-gray-500 group-hover:text-[#00675B] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
-            {followersCount === 1 ? 'ndiqës' : 'ndiqës'}
+            ndiqës
           </span>
         </button>
 
-        <span className="text-gray-200">|</span>
+        <span aria-hidden="true" className="h-3.5 w-px bg-slate-200 shrink-0" />
 
         {/* Following button (Instagram-style) */}
         <button
           type="button"
           onClick={openFollowing}
-          className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
+          className="flex items-center gap-1.5 min-h-[36px] text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
           title="Shiko llogaritë që ndjek"
         >
           <span className="font-extrabold text-[#101828] group-hover:text-[#00675B] text-sm sm:text-base transition-colors">

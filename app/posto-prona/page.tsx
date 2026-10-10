@@ -1058,21 +1058,51 @@ export default function PostoPronaPage() {
 
     if (!existingProfile?.email_verified) {
       setUnverified(true)
+      const msg = 'Verifikoni profilin tuaj para se të publikoni pronën.'
+      setError(msg)
+      toast.error(msg)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       setUploading(false)
       isSubmittingRef.current = false
       return
     }
 
-    // Step 1: Validate price & numeric values
+    // Step 1: Validate required fields & numeric values
+    if (!formData.title.trim()) {
+      const msg = 'Titulli i pronës është i detyrueshëm.'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById('title')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setUploading(false)
+      isSubmittingRef.current = false
+      return
+    }
+
+    if (!formData.city) {
+      const msg = 'Ju lutem zgjidhni qytetin e pronës.'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById('city')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setUploading(false)
+      isSubmittingRef.current = false
+      return
+    }
+
     const priceNum = Number(formData.price)
     if (isNaN(priceNum) || priceNum <= 0) {
-      setError('Çmimi duhet të jetë më i madh se 0 €')
+      const msg = 'Çmimi duhet të jetë më i madh se 0 €'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById('price')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       setUploading(false)
       isSubmittingRef.current = false
       return
     }
     if (priceNum > MAX_PRICE) {
-      setError('Çmimi duhet të jetë nën 50,000,000 €')
+      const msg = 'Çmimi duhet të jetë nën 50,000,000 €'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById('price')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       setUploading(false)
       isSubmittingRef.current = false
       return
@@ -1080,7 +1110,20 @@ export default function PostoPronaPage() {
 
     const areaNum = Number(formData.area_m2)
     if (isNaN(areaNum) || areaNum <= 0) {
-      setError('Sipërfaqja duhet të jetë më e madhe se 0 m²')
+      const msg = 'Sipërfaqja duhet të jetë më e madhe se 0 m²'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById(formData.category === 'toke' && formData.areaUnit === 'ari' ? 'land_ari' : 'area_m2')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setUploading(false)
+      isSubmittingRef.current = false
+      return
+    }
+
+    if (images.length === 0 && previews.length === 0) {
+      const msg = 'Ju lutem ngarkoni të paktën një fotografi të pronës.'
+      setError(msg)
+      toast.error(msg)
+      document.getElementById('file-upload')?.parentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       setUploading(false)
       isSubmittingRef.current = false
       return
@@ -2886,9 +2929,10 @@ export default function PostoPronaPage() {
                           <button
                             type="button"
                             onClick={() => makePrimaryImage(i)}
-                            className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-sm text-[#101828] text-[11px] font-semibold py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-center shadow-xs hover:bg-white cursor-pointer"
+                            className="absolute bottom-2 left-2 right-2 bg-white/95 text-[#101828] text-[11px] font-bold py-1.5 px-2 rounded-lg opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-center shadow-xs hover:bg-white cursor-pointer min-h-[32px] flex items-center justify-center gap-1 border border-gray-200/60"
                           >
-                            Bëje kryesore
+                            <Star className="w-3 h-3 text-amber-500" />
+                            <span>Bëje kryesore</span>
                           </button>
                         )}
 

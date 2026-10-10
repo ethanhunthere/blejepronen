@@ -413,6 +413,20 @@ export default function PostimetEMiaPage() {
             ? 'Prona u shënua si e dhënë me qira.'
             : 'Prona u shënua si e shitur.'
       )
+
+      // Revalidate SSR caches
+      try {
+        fetch('/api/revalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: listing.id,
+            city: listing.city,
+            type: listing.type,
+            neighborhood: listing.neighborhood,
+          }),
+        }).catch(() => {})
+      } catch {}
     } catch (err) {
       console.error('Listing status toggle error:', err)
       toast.error('Dështoi përditësimi i statusit të pronës.')
@@ -454,12 +468,28 @@ export default function PostimetEMiaPage() {
       return
     }
 
+    // 3. Revalidate SSR caches
+    try {
+      fetch('/api/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: listingToDelete.id,
+          city: listingToDelete.city,
+          type: listingToDelete.type,
+          neighborhood: listingToDelete.neighborhood,
+        }),
+      }).catch(() => {})
+    } catch {}
+
     setListings((prev) => prev.filter((l) => l.id !== listingToDelete.id))
     toast.success('Prona u fshi me sukses.')
     setListingToDelete(null)
   }
 
   const total = listings.length
+  const activeCount = listings.filter((l) => l.is_active).length
+  const inactiveCount = total - activeCount
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
@@ -522,7 +552,7 @@ export default function PostimetEMiaPage() {
 
         {activeTab === 'favorites' ? (
           favoritesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <ListingCardSkeleton key={i} />
               ))}
@@ -543,7 +573,7 @@ export default function PostimetEMiaPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {favoriteListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
@@ -555,7 +585,7 @@ export default function PostimetEMiaPage() {
             </div>
           )
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <ListingCardSkeleton key={i} />
             ))}
@@ -577,23 +607,41 @@ export default function PostimetEMiaPage() {
           </div>
         ) : (
           <>
-            {/* Quick stats indicator */}
-            <div className="mb-8 flex items-center gap-3">
-              <div className="bg-white border border-gray-200/70 shadow-xs rounded-2xl px-5 py-3.5 flex items-center gap-3.5">
+            {/* 3-segment summary stats */}
+            <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-white border border-gray-200/70 shadow-xs rounded-2xl px-5 py-4 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-[#00675B]/10 flex items-center justify-center text-[#00675B]">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[#101828] leading-none">{total}</p>
-                  <p className="text-xs text-gray-500 mt-1 font-medium">
-                    {total === 1 ? 'Pronë aktive' : 'Prona gjithsej'}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">Prona gjithsej</p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-emerald-100 shadow-xs rounded-2xl px-5 py-4 flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <BadgeCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-700 leading-none">{activeCount}</p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">Aktive në treg</p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-gray-200/70 shadow-xs rounded-2xl px-5 py-4 flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-700 leading-none">{inactiveCount}</p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">Joaktive / Të shitura</p>
                 </div>
               </div>
             </div>
 
             {/* Responsive listings grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 min-[3000px]:grid-cols-10 min-[4000px]:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {listings.map((listing) => (
                 <MyListingCard
                   key={listing.id}

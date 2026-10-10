@@ -1,31 +1,59 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface ExpandableTextProps {
   text: string
   maxLength?: number
+  clampLines?: number
+  className?: string
 }
 
-export default function ExpandableText({ text, maxLength = 300 }: ExpandableTextProps) {
+export default function ExpandableText({
+  text,
+  maxLength,
+  clampLines = 4,
+  className = '',
+}: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false)
-  const shouldTruncate = text.length > maxLength
+  const [canExpand, setCanExpand] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
 
-  const displayText =
-    expanded || !shouldTruncate ? text : text.slice(0, maxLength).trimEnd() + '…'
+  useEffect(() => {
+    const el = textRef.current
+    if (!el) return
+    const isOverflowing =
+      el.scrollHeight > el.clientHeight + 2 || (maxLength ? text.length > maxLength : false)
+    setCanExpand(isOverflowing)
+  }, [text, clampLines, maxLength])
 
   return (
-    <div>
-      <p className="text-gray-600 leading-relaxed text-base whitespace-pre-line">
-        {displayText}
+    <div className={className}>
+      <p
+        ref={textRef}
+        className={`text-gray-600 leading-relaxed text-base whitespace-pre-line transition-all ${
+          !expanded ? 'overflow-hidden' : ''
+        }`}
+        style={
+          !expanded
+            ? {
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: clampLines,
+              }
+            : undefined
+        }
+      >
+        {text}
       </p>
-      {shouldTruncate && (
+      {canExpand && (
         <button
           type="button"
+          aria-expanded={expanded}
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 text-[#374151] hover:text-[#101828] hover:underline text-sm font-medium transition-colors duration-150 cursor-pointer"
+          className="mt-2 text-[#00675B] hover:text-[#004D43] text-sm font-semibold transition-colors duration-150 cursor-pointer"
         >
-          {expanded ? 'Lexo më pak' : 'Lexo më shumë'}
+          {expanded ? 'Shfaq më pak' : 'Shfaq më shumë'}
         </button>
       )}
     </div>

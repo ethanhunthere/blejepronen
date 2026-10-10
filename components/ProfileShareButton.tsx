@@ -13,7 +13,14 @@ export default function ProfileShareButton({ displayName, className = '' }: Prof
   const [copied, setCopied] = useState(false)
 
   const handleShare = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : 'https://blejepronen.com'
+    let url = typeof window !== 'undefined' ? window.location.href : 'https://blejepronen.com'
+    try {
+      const parsed = new URL(url)
+      parsed.searchParams.delete('ref')
+      parsed.searchParams.delete('fbclid')
+      url = parsed.toString()
+    } catch {}
+
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -22,12 +29,8 @@ export default function ProfileShareButton({ displayName, className = '' }: Prof
           url,
         })
         return
-      } catch (err) {
-        // Cancelled share sheet (AbortError) is not a success and not a
-        // failure — return silently instead of falling through to the
-        // clipboard copy and showing a false "u kopjua" toast.
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        // Real share failure: fall back to clipboard copy below.
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name === 'AbortError') return
       }
     }
 
@@ -45,9 +48,9 @@ export default function ProfileShareButton({ displayName, className = '' }: Prof
     <button
       type="button"
       onClick={handleShare}
-      className={`inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#101828] text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer ${className}`}
-      aria-label="Ndaj profilin"
-      title="Ndaj profilin"
+      className={`inline-flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-10 h-11 sm:h-10 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#101828] text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer ${className}`}
+      aria-label="Shpërndaj profilin"
+      title="Shpërndaj profilin"
     >
       {copied ? (
         <>
@@ -57,7 +60,7 @@ export default function ProfileShareButton({ displayName, className = '' }: Prof
       ) : (
         <>
           <Share2 className="h-4 w-4 text-gray-500" />
-          <span>Ndaj profilin</span>
+          <span>Shpërndaj</span>
         </>
       )}
     </button>

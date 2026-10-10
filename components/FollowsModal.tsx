@@ -99,9 +99,9 @@ export default function FollowsModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90dvh] sm:max-h-[85vh] animate-in zoom-in-95 duration-200 pb-[env(safe-area-inset-bottom,0px)] sm:pb-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -159,7 +159,7 @@ export default function FollowsModal({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={activeTab === 'followers' ? 'Kërko në ndiqës...' : 'Kërko llogari...'}
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all"
+              className="w-full pl-9 pr-8 py-2 text-base sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all"
             />
             {searchQuery && (
               <button
@@ -174,7 +174,7 @@ export default function FollowsModal({
         </div>
 
         {/* Content list */}
-        <div className="flex-1 overflow-y-auto px-4 py-2 divide-y divide-gray-50 min-h-[220px]">
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1.5 min-h-[220px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Loader2 className="w-6 h-6 animate-spin text-[#00675B] mb-2" />

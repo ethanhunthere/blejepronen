@@ -124,7 +124,14 @@ export default function ContactSellerCard({
   }
 
   const handleShare = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : `https://blejepronen.com/listings/${listingId}`
+    let url = typeof window !== 'undefined' ? window.location.href : `https://blejepronen.com/listings/${listingId}`
+    try {
+      const parsed = new URL(url)
+      parsed.searchParams.delete('fbclid')
+      parsed.searchParams.delete('ref')
+      url = parsed.toString()
+    } catch {}
+
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
@@ -133,8 +140,10 @@ export default function ContactSellerCard({
           url,
         })
         return
-      } catch {
-        // Fallback
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name === 'AbortError') {
+          return
+        }
       }
     }
 

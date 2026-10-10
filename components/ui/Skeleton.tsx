@@ -36,7 +36,7 @@ export function Skeleton({ variant, className, style, children }: SkeletonProps)
       aria-hidden="true"
       style={style}
       className={cn(
-        'animate-pulse',
+        'animate-pulse motion-reduce:animate-none',
         FILL,
         variant ? VARIANT_CLASSES[variant] : 'rounded-md',
         className
@@ -175,14 +175,22 @@ export function SkeletonCard({
     <Announce announce={announce} announceLabel={announceLabel}>
       <div
         className={cn(
-          'overflow-hidden rounded-2xl border border-[color:var(--bp-color-border,#E4E7EC)] bg-[var(--bp-color-surface,#FFFFFF)]',
+          'flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs',
           className
         )}
       >
-        {image ? <Skeleton className="h-44 w-full rounded-none" /> : null}
-        <div className="space-y-3 p-4">
-          <Skeleton variant="text" className="h-4 w-1/2" />
-          <SkeletonText lines={lines} />
+        {image ? <Skeleton className="aspect-[4/3] w-full rounded-none shrink-0" /> : null}
+        <div className="flex-1 flex flex-col p-4 space-y-3">
+          <Skeleton variant="text" className="h-4 w-3/4 rounded" />
+          <Skeleton variant="text" className="h-3 w-1/2 rounded" />
+          <div className="flex items-center gap-3 pt-1">
+            <Skeleton variant="text" className="h-3 w-16 rounded" />
+            <Skeleton variant="text" className="h-3 w-16 rounded" />
+          </div>
+          <div className="flex items-baseline justify-between pt-3 mt-auto border-t border-slate-100">
+            <Skeleton variant="text" className="h-5 w-24 rounded" />
+            <Skeleton variant="text" className="h-3 w-16 rounded" />
+          </div>
         </div>
       </div>
     </Announce>
