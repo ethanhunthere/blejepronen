@@ -1703,7 +1703,7 @@ export default function PostoPronaPage() {
                           Lloji i shtëpisë
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          {['Shtëpi private', 'Shtëpi me oborr', 'Townhouse (në varg)', 'Shtëpi 2-familjare'].map((st) => {
+                          {activeCategory.subtypes.map((st) => {
                             const isSel = formData.subtype === st
                             return (
                               <button
@@ -1868,7 +1868,7 @@ export default function PostoPronaPage() {
                           Koncepti & Lloji i vilës
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          {['Vilë luksoze', 'Vilë pushimi / malore', 'Vilë rezidenciale (Gated)', 'Vilë duplex'].map((st) => {
+                          {activeCategory.subtypes.map((st) => {
                             const isSel = formData.subtype === st
                             return (
                               <button
