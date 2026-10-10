@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import {
+import { Alert,
   View,
   Text,
   StyleSheet,
@@ -100,7 +100,7 @@ export default function CompletoProfilinScreen() {
   const syncUser = getSyncAuthUser()
   const syncProfile = getSyncProfile()
 
-  const [loadingInitial, setLoadingInitial] = useState(false)
+  const [loadingInitial, setLoadingInitial] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(syncUser)
   const [accessToken, setAccessToken] = useState<string>('')
@@ -163,6 +163,27 @@ export default function CompletoProfilinScreen() {
   // Errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Dirty-guard snapshot: taken once prefill lands, compared on back-nav.
+  const formSnapshotRef = useRef<string | null>(null)
+  const currentFormSnapshot = () =>
+    JSON.stringify([
+      accountType,
+      selectedAvatar,
+      firstName,
+      lastName,
+      individualPhone,
+      individualCity,
+      individualBio,
+      companyName,
+      companyContactPerson,
+      companyPhone,
+      companyCity,
+      foundedYear,
+      nipt,
+      companyDescription,
+      website,
+    ])
+
   const isMountedRef = useRef(true)
   useEffect(() => {
     isMountedRef.current = true
@@ -176,8 +197,27 @@ export default function CompletoProfilinScreen() {
   // Dismiss the keyboard at pop-start so the KeyboardAvoidingView padding
   // release never reflows the exiting screen mid-transition.
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       Keyboard.dismiss()
+      const snapshot = formSnapshotRef.current
+      if (snapshot && snapshot !== currentFormSnapshot()) {
+        e.preventDefault()
+        Alert.alert(
+          'Ndryshime të paruajtura',
+          'Ke ndryshime të paruajtura në profil. Dëshiron të dalësh pa i ruajtur?',
+          [
+            { text: 'Qëndro', style: 'cancel' },
+            {
+              text: 'Dil pa ruajtur',
+              style: 'destructive',
+              onPress: () => {
+                formSnapshotRef.current = currentFormSnapshot()
+                navigation.dispatch(e.data.action)
+              },
+            },
+          ]
+        )
+      }
     })
     return unsubscribe
   }, [navigation])
@@ -255,6 +295,7 @@ export default function CompletoProfilinScreen() {
       } catch (e) {
         console.warn('Load user in completo profilin notice:', e)
       } finally {
+        formSnapshotRef.current = currentFormSnapshot()
         setLoadingInitial(false)
       }
     }

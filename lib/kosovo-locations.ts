@@ -2,121 +2,121 @@ export const KOSOVO_LOCATIONS: Record<string, string[]> = {
   'Deçan': [
     'Qendër', 'Gllogjan', 'Irzniq', 'Isniq', 'Carrabreg i Epërm',
     'Carrabreg i Poshtëm', 'Strellc i Epërm', 'Strellc i Poshtëm', 'Lloçan', 'Prapaqan',
-    'Baballoq', 'Rastavicë', 'Pobërgjë', 'Vranoc', 'Lagjja e Re'
+    'Baballoq', 'Rastavicë', 'Pobërgjë', 'Vranoc'
   ],
   'Dragash': [
     'Qendër', 'Restelicë', 'Brod', 'Shishtavec', 'Krushevë',
     'Rapçë', 'Zlipotok', 'Bellobrad', 'Blaç', 'Brezne',
-    'Kuklibeg', 'Plavë', 'Radesh', 'Lagjja e Re'
+    'Kuklibeg', 'Plavë', 'Radesh'
   ],
   'Drenas': [
     'Qendër', 'Komoran', 'Çikatovë e Vjetër', 'Çikatovë e Re', 'Korroticë e Epërme',
     'Korroticë e Poshtme', 'Poklek', 'Gllanasellë', 'Tërstenik', 'Dobroshec',
-    'Zabel i Ulët', 'Gradicë', 'Likoshan', 'Llapushnik', 'Lagjja e Re'
+    'Zabel i Ulët', 'Gradicë', 'Likoshan', 'Llapushnik'
   ],
   'Ferizaj': [
     'Qendër', 'Varosh', 'Bibaj', 'Sojevë', 'Talinoc i Muhaxherëve',
     'Talinoc i Jerlive', 'Babush', 'Komogllavë', 'Mirosalë', 'Koshare',
     'Doganaj', 'Prelez i Muhaxherëve', 'Prelez i Jerlive', 'Gaçkë', 'Greme',
     'Lloshkobare', 'Nerodime', 'Pleshinë', 'Rahovicë', 'Sllatinë',
-    'Zaskok', 'Zona Industriale', 'Dardania', 'Lagjja e Re'
+    'Zaskok', 'Zona Industriale', 'Dardania'
   ],
   'Fushë Kosovë': [
     'Qendër', 'Bresje', 'Fushë Kosovë e Re', 'Miradi e Epërme', 'Miradi e Poshtme',
     'Bardh i Madh', 'Bardh i Vogël', 'Harilaç', 'Kuzmin', 'Sllatinë e Madhe',
-    'Sllatinë e Vogël', 'Graboc', 'Zona Industriale', 'Dardania', 'Lagjja e Re'
+    'Sllatinë e Vogël', 'Graboc', 'Zona Industriale', 'Dardania'
   ],
   'Graçanicë': [
-    'Qendër', 'Kishnicë', 'Llapllasellë', 'Çagllavicë', 'Badoc',
-    'Sushicë', 'Preoc', 'Skullan', 'Lagjja e Re'
+    'Qendër', 'Kishnicë', 'Llapllasellë', 'Badoc',
+    'Sushicë', 'Preoc', 'Skullan'
   ],
   'Gjakovë': [
     'Qendër', 'Çarshia e Madhe', 'Çabrati', 'Blloku i Ri', 'Varosh',
     'Orize', 'Bishtazhin', 'Cërmjan', 'Rogovë', 'Brekoc',
     'Moglicë', 'Skivjan', 'Korenicë', 'Lipovec', 'Bec',
-    'Ponoshec', 'Hereç', 'Ujz', 'Damjan', 'Lagjja e Re'
+    'Ponoshec', 'Hereç', 'Ujz', 'Damjan'
   ],
   'Gjilan': [
     'Qendër', 'Dardania', 'Arbëria', 'Kamnik', 'Gavran',
     'Dheu i Bardhë', 'Zabeli', 'Livoc i Epërm', 'Livoc i Poshtëm', 'Malishevë',
     'Cërnicë', 'Zhegër', 'Llashticë', 'Velekincë', 'Bresalc',
-    'Dobërçan', 'Shillovë', 'Perlepnicë', 'Kmetoc', 'Lagjja e Re'
+    'Dobërçan', 'Shillovë', 'Perlepnicë', 'Kmetoc'
   ],
   'Hani i Elezit': [
     'Qendër', 'Seçishtë', 'Paldenicë', 'Dimcë', 'Dromjak',
-    'Gorancë', 'Krivenik', 'Rezhancë', 'Lagjja e Re'
+    'Gorancë', 'Krivenik', 'Rezhancë'
   ],
   'Istog': [
     'Qendër', 'Banja e Pejës', 'Kaliçan', 'Vrellë', 'Lubozhdë',
     'Studenicë', 'Cerrcë', 'Gurrakoc', 'Tomoc', 'Kovragë',
-    'Rakosh', 'Sinajë', 'Zallq', 'Dobrushë', 'Lagjja e Re'
+    'Rakosh', 'Sinajë', 'Zallq', 'Dobrushë'
   ],
   'Junik': [
-    'Qendër', 'Jasiq', 'Gjocaj', 'Rastavicë', 'Lagjja e Re'
+    'Qendër', 'Jasiq', 'Gjocaj', 'Rastavicë'
   ],
   'Kaçanik': [
     'Qendër', 'Doganaj', 'Stagovë', 'Begracë', 'Runjevë',
     'Dubravë', 'Rekë', 'Kovaçec', 'Glloboçicë', 'Bob',
-    'Biçec', 'Ivajë', 'Llanishtë', 'Lagjja e Re'
+    'Biçec', 'Ivajë', 'Llanishtë'
   ],
   'Kamenicë': [
     'Qendër', 'Berivojcë', 'Hogosht', 'Roganë', 'Ropotovë',
     'Koretin', 'Shipashnicë', 'Topanicë', 'Karaçevë e Epërme', 'Karaçevë e Poshtme',
-    'Busavatë', 'Muçivërc', 'Strezoc', 'Lagjja e Re'
+    'Busavatë', 'Muçivërc', 'Strezoc'
   ],
   'Klinë': [
     'Qendër', 'Zajm', 'Jashanicë', 'Dresnik', 'Gllarevë',
     'Siqevë', 'Sferkë', 'Poterq', 'Cerovik', 'Shtupel',
-    'Jagodë', 'Ranoc', 'Grabanicë', 'Lagjja e Re'
+    'Jagodë', 'Ranoc', 'Grabanicë'
   ],
   'Kllokot': [
-    'Qendër', 'Mogillë', 'Vrboc', 'Gërnçar', 'Lagjja e Re'
+    'Qendër', 'Mogillë', 'Vrboc', 'Gërnçar'
   ],
   'Leposaviq': [
-    'Qendër', 'Soçanicë', 'Leshak', 'Dren', 'Jarinjë', 'Lagjja e Re'
+    'Qendër', 'Soçanicë', 'Leshak', 'Dren', 'Jarinjë'
   ],
   'Lipjan': [
     'Qendër', 'Akllap', 'Gadime e Epërme', 'Gadime e Poshtme', 'Banullë',
     'Janjevë', 'Magure', 'Rufc i Ri', 'Rufc i Vjetër', 'Sllovi',
-    'Smallushë', 'Dobrajë', 'Shalë', 'Bregu i Zi', 'Torinë', 'Lagjja e Re'
+    'Smallushë', 'Dobrajë', 'Shalë', 'Bregu i Zi', 'Torinë'
   ],
   'Malishevë': [
     'Qendër', 'Banjë', 'Bellanicë', 'Kijevë', 'Drenoc',
     'Carrallukë', 'Dragobil', 'Bubavec', 'Balincë', 'Astrazup',
-    'Panorc', 'Lladroc', 'Gurbardh', 'Llapçevë', 'Lagjja e Re'
+    'Panorc', 'Lladroc', 'Gurbardh', 'Llapçevë'
   ],
   'Mamushë': [
-    'Qendër', 'Zona Veriore', 'Zona Jugore', 'Lagjja e Re'
+    'Qendër', 'Zona Veriore', 'Zona Jugore'
   ],
   'Mitrovicë': [
     'Qendër', 'Bair', 'Shipol', 'Iliridë', 'Tavnik',
     'Suhodoll', 'Zhabar', 'Vaganicë', 'Lushtë', 'Koshtovë',
-    'Shupkovc', 'Frashër', 'Vrbnicë', 'Vinarc', 'Lagjja e Re'
+    'Shupkovc', 'Frashër', 'Vrbnicë', 'Vinarc'
   ],
   'Mitrovicë Veriore': [
-    'Qendër', 'Kodra e Minatorëve', 'Mikronaselje', 'Bosnjacka Mahala', 'Brxho', 'Lagjja e Re'
+    'Qendër', 'Kodra e Minatorëve', 'Mikronaselje', 'Bosnjacka Mahala', 'Brxho'
   ],
   'Novobërdë': [
-    'Qendër', 'Bostan', 'Prekoc', 'Jasenovik', 'Zebincë', 'Tullar', 'Lagjja e Re'
+    'Qendër', 'Bostan', 'Prekoc', 'Jasenovik', 'Zebincë', 'Tullar'
   ],
   'Obiliq': [
     'Qendër', 'Mazgit', 'Plemetin', 'Kastriot i Ri', 'Milloshevë',
-    'Bakshi', 'Shkabaj', 'Siboc', 'Hade', 'Crkvena Vodica', 'Raskovë', 'Lagjja e Re'
+    'Bakshi', 'Shkabaj', 'Siboc', 'Hade', 'Crkvena Vodica', 'Raskovë'
   ],
   'Partesh': [
-    'Qendër', 'Pasjan', 'Budrikë e Poshtme', 'Lagjja e Re'
+    'Qendër', 'Pasjan', 'Budrikë e Poshtme'
   ],
   'Pejë': [
     'Qendër', 'Çarshia e Vjetër', 'Kapeshnica', 'Karagaq', 'Asllan Çeshme',
     'Fidanishte', 'Dardania', 'Vitomiricë', 'Zahaq', 'Treboviq',
     'Poçestë', 'Radac', 'Rugovë', 'Bellopojë', 'Novosellë',
-    'Baran', 'Gorazhdec', 'Brestovik', 'Loxhë', 'Raushiq', 'Bllagajë', 'Lagjja e Re'
+    'Baran', 'Gorazhdec', 'Brestovik', 'Loxhë', 'Raushiq', 'Bllagajë'
   ],
   'Podujevë': [
     'Qendër', 'Besiana', 'Letanc', 'Gllamnik', 'Peran',
     'Lupç i Poshtëm', 'Lupç i Epërm', 'Lluzhan', 'Sekiraçë', 'Shakovicë',
     'Batllavë', 'Orllan', 'Siboc', 'Bajçinë', 'Dumosh',
-    'Sveçël', 'Bradash', 'Dumnicë', 'Lagjja e Re'
+    'Sveçël', 'Bradash', 'Dumnicë'
   ],
   'Prishtinë': [
     'Qendër', 'Dardania', 'Ulpiana', 'Ulpiana 1', 'Arbëria',
@@ -126,7 +126,7 @@ export const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Dodona', 'Lagjja e Muhaxherëve', 'Vreshtat', 'Veternik', 'Hajvali',
     'Besia', 'Prishtina e Re', 'Ramiz Sadiku', 'Çagllavicë', 'Mramuri',
     'Bërnica e Poshtme', 'Bërnica e Epërme', 'Barileva', 'Gërmia', 'Zllatar',
-    'Taukbahçe', 'Zona Industriale', 'Lagjja e Spitalit', 'Lagjja e Re', 'Arbëria e Re',
+    'Taukbahçe', 'Zona Industriale', 'Lagjja e Spitalit', 'Arbëria e Re',
     'Fusha e Pajtimit', 'Lagjja e Medresesë', 'Perroi i Njelmet', 'Qyteza Pejton', 'Parku i Qytetit',
     'Vellusha', 'Matiqan', 'Shkabaj'
   ],
@@ -135,57 +135,57 @@ export const KOSOVO_LOCATIONS: Record<string, string[]> = {
     'Dardania', 'Arbana', 'Jaglenica', 'Kurillë', 'Jeta e Re',
     'Tusuz', 'Bazhdarhane', 'Petrovë', 'Zhur', 'Reçan',
     'Lubizhdë', 'Korishë', 'Mushnikovë', 'Gjonaj', 'Piranë',
-    'Vlashnjë', 'Landovicë', 'Nashec', 'Zona Industriale', 'Lagjja e Re'
+    'Vlashnjë', 'Landovicë', 'Nashec', 'Zona Industriale'
   ],
   'Rahovec': [
     'Qendër', 'Çifllak', 'Kramovik', 'Krushë e Madhe', 'Xerxë',
     'Fortesë', 'Ratkoc', 'Dejnë', 'Drenoc', 'Hoçë e Madhe',
-    'Hoçë e Vogël', 'Zatriq', 'Pastasel', 'Opterushë', 'Lagjja e Re'
+    'Hoçë e Vogël', 'Zatriq', 'Pastasel', 'Opterushë'
   ],
   'Ranillug': [
-    'Qendër', 'Ropotovë e Madhe', 'Ropotovë e Vogël', 'Domoroc', 'Korminjan', 'Lagjja e Re'
+    'Qendër', 'Ropotovë e Madhe', 'Ropotovë e Vogël', 'Domoroc', 'Korminjan'
   ],
   'Skënderaj': [
     'Qendër', 'Prekaz i Poshtëm', 'Prekaz i Epërm', 'Polac', 'Likoc',
     'Runik', 'Klinë e Epërme', 'Klinë e Mesme', 'Klinë e Poshtme', 'Turiqec',
-    'Marinë', 'Tërstenik', 'Makërmal', 'Llaushë', 'Kryeshec', 'Lagjja e Re'
+    'Marinë', 'Tërstenik', 'Makërmal', 'Llaushë', 'Kryeshec'
   ],
   'Suharekë': [
     'Qendër', 'Bllacë', 'Bukosh', 'Duhël', 'Greikoc',
     'Gjinoc', 'Mushtisht', 'Mohlan', 'Reshtan', 'Samadrexhë',
     'Semetisht', 'Shirokë', 'Studençan', 'Vraniq', 'Savrovë',
-    'Sopijë', 'Sallagrazhdë', 'Lagjja e Re'
+    'Sopijë', 'Sallagrazhdë'
   ],
   'Shtërpcë': [
     'Qendër', 'Brezovicë', 'Brod', 'Firajë', 'Drajkovc',
-    'Jazhincë', 'Sushicë', 'Biti e Epërme', 'Biti e Poshtme', 'Lagjja e Re'
+    'Jazhincë', 'Sushicë', 'Biti e Epërme', 'Biti e Poshtme'
   ],
   'Shtime': [
     'Qendër', 'Reçak', 'Petrovë', 'Davidoc', 'Godanc i Epërm',
     'Godanc i Poshtëm', 'Muzeqinë', 'Pjetërshticë', 'Rashincë', 'Carralevë',
-    'Belincë', 'Vojnoc', 'Zborc', 'Llanisht', 'Mollopolc', 'Lagjja e Re'
+    'Belincë', 'Vojnoc', 'Zborc', 'Llanisht', 'Mollopolc'
   ],
   'Viti': [
     'Qendër', 'Pozharan', 'Smirë', 'Drobesh', 'Kabash',
     'Binçë', 'Radivojc', 'Beguncë', 'Vërban', 'Ramjan',
-    'Gushicë', 'Mogillë', 'Letnicë', 'Stubëll', 'Zhiti', 'Lagjja e Re'
+    'Gushicë', 'Mogillë', 'Letnicë', 'Stubëll', 'Zhiti'
   ],
   'Vushtrri': [
     'Qendër', 'Bahgreq', 'Kalaja', 'Doberllukë', 'Gojbulë',
     'Maxhunaj', 'Nadakoc', 'Novolan', 'Pantinë', 'Pestovë',
     'Prelluzhë', 'Reznik', 'Samadrexhë', 'Stanoc i Epërm', 'Stanoc i Poshtëm',
-    'Studime', 'Smrekonicë', 'Sfaraçak', 'Lagjja e Re'
+    'Studime', 'Smrekonicë', 'Sfaraçak'
   ],
   'Zubin Potok': [
-    'Qendër', 'Çabër', 'Gazivodë', 'Zupç', 'Varagë', 'Bube', 'Brnjak', 'Lagjja e Re'
+    'Qendër', 'Çabër', 'Gazivodë', 'Zupç', 'Varagë', 'Bube', 'Brnjak'
   ],
   'Zveçan': [
-    'Qendër', 'Banjskë', 'Zhitkoc', 'Rudare', 'Graboc', 'Korilë', 'Lagjja e Re'
+    'Qendër', 'Banjskë', 'Zhitkoc', 'Rudare', 'Graboc', 'Korilë'
   ]
 }
 
 /**
- * All 38 official municipalities of Kosovo, strictly sorted in authentic Albanian alphabetical order (A-Z).
+ * All 38 official municipalities of Kosovo, ordered by municipality; neighborhood lists are curated, not exhaustive.
  */
 export const ALL_CITIES: string[] = Object.keys(KOSOVO_LOCATIONS)
 

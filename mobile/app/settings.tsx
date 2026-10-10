@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import Constants from 'expo-constants'
 import {
   View,
   Text,
@@ -14,7 +15,7 @@ import {
   Linking,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect , useNavigation} from 'expo-router'
 import { Image as ExpoImage } from 'expo-image'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
@@ -101,6 +102,7 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
 
 export default function SettingsScreen() {
   const router = useRouter()
+  const navigation = useNavigation()
   const { colors, theme, setTheme } = useTheme()
   const { showBanner } = useBanner()
   const { requestLogout, executeLogout } = useLogout()
@@ -133,6 +135,31 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Unsaved-changes back guard (hardware back, swipe-back, header arrow all
+  // route through beforeRemove).
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (!hasUnsavedChanges) return
+      e.preventDefault()
+      Alert.alert(
+        'Ndryshime të paruajtura',
+        'Ke ndryshime të paruajtura te cilësimet. Dëshiron të dalësh pa i ruajtur?',
+        [
+          { text: 'Qëndro', style: 'cancel' },
+          {
+            text: 'Dil pa ruajtur',
+            style: 'destructive',
+            onPress: () => {
+              setHasUnsavedChanges(false)
+              navigation.dispatch(e.data.action)
+            },
+          },
+        ]
+      )
+    })
+    return unsubscribe
+  }, [navigation, hasUnsavedChanges])
   const [currentUserId, setCurrentUserId] = useState<string | null>(syncUser?.id || null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState(syncUser?.email || '')
@@ -1921,7 +1948,7 @@ export default function SettingsScreen() {
                 <View style={styles.appInfoRow}>
                   <Text style={[styles.appInfoLabel, { color: colors.textMuted }]}>Versioni:</Text>
                   <Text style={[styles.appInfoValue, { color: colors.textPrimary }]}>
-                    v1.0.0 (Build 2026.09)
+                    v{Constants.expoConfig?.version ?? '1.0.0'}
                   </Text>
                 </View>
                 <View style={styles.appInfoRow}>

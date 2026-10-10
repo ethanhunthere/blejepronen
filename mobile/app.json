@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Bleje Pron\u00ebn",
+    "name": "Bleje Pronën",
     "slug": "blejepronen",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -107,26 +107,29 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "microphonePermission": "Bleje Pron\u00ebn ju lejon t\u00eb telefononi direk n\u00eb aplikacion me shit\u00ebsin/bler\u00ebsin (thirrje zanore falas)."
+          "microphonePermission": "Bleje Pronën ju lejon të telefononi direk në aplikacion me shitësin/blerësin (thirrje zanore falas)."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Bleje Pron\u00ebn p\u00ebrdor galerin\u00eb tuaj p\u00ebr t\u00eb shtuar fotot e banes\u00ebs dhe foton e profilit.",
-          "cameraPermission": "Bleje Pron\u00ebn p\u00ebrdor kamer\u00ebn p\u00ebr t\u00eb fotografuar banes\u00ebsn q\u00eb po postoni."
+          "photosPermission": "Bleje Pronën përdor galerinë tuaj për të shtuar fotot e banesës dhe foton e profilit.",
+          "cameraPermission": "Bleje Pronën përdor kamerën për të fotografuar banesësn që po postoni."
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Bleje Pron\u00ebn p\u00ebrdor Face ID p\u00ebr ky\u00e7je t\u00eb sigurt dhe t\u00eb shpejt\u00eb n\u00eb llogarin\u00eb tuaj."
+          "faceIDPermission": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj."
         }
       ],
       "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
