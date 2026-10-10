@@ -134,6 +134,8 @@ function migrateLegacySession() {
 }
 migrateLegacySession()
 
+const isServerSSR = Platform.OS === 'web' && typeof window === 'undefined'
+
 /**
  * Storage adapter for Supabase auth sessions.
  *
@@ -141,9 +143,14 @@ migrateLegacySession()
  * then degrades to AsyncStorage, then to memory — never silently dropping the
  * session (which would log the user out on next launch).
  * Oversized values are chunked into SecureStore rather than stored plaintext.
+ * In SSR / Node.js build environments, memory storage is used to prevent
+ * "window is not defined" exceptions.
  */
 const safeStorage = {
   getItem: async (key: string): Promise<string | null> => {
+    if (isServerSSR) {
+      return memoryStorage.get(key) ?? null
+    }
     try {
       if (USE_SECURE) {
         const secure = await secureGet(key)
@@ -161,13 +168,13 @@ const safeStorage = {
         return legacy
       }
       return memoryStorage.get(key) ?? null
-    } catch (e) {
-      console.warn('Session read failed, using memory fallback:', e)
+    } catch {
       return memoryStorage.get(key) ?? null
     }
   },
   setItem: async (key: string, value: string): Promise<void> => {
     memoryStorage.set(key, value)
+    if (isServerSSR) return
     if (USE_SECURE) {
       try {
         await secureSet(key, value)
@@ -184,14 +191,16 @@ const safeStorage = {
       } catch (e) {
         console.warn('Secure storage write FAILED twice - staying memory-only:', e)
       }
+    } else {
+      try {
+        await AsyncStorage.setItem(key, value)
+      } catch {}
     }
-    // SecureStore failed twice: keep the session in memory only. This adapter
-    // only ever carries auth material, so a plaintext AsyncStorage fallback
-    // would write tokens to disk — never acceptable.
     return
   },
   removeItem: async (key: string): Promise<void> => {
     memoryStorage.delete(key)
+    if (isServerSSR) return
     if (USE_SECURE) {
       try {
         await secureDelete(key)
