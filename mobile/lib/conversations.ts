@@ -481,7 +481,9 @@ async function drain(): Promise<void> {
       await runLoad(full)
     } catch (err: any) {
       console.warn('Conversations store load notice:', err?.message || err)
-      emit({ loading: false, refreshing: false, error: String(err?.message || err) })
+      // ready must flip on failure too — otherwise the tab renders its
+      // skeleton forever with no error card and no retry path.
+      emit({ loading: false, refreshing: false, ready: true, error: String(err?.message || err) })
     } finally {
       inFlight = null
     }

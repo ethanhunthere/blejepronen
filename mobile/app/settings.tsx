@@ -272,11 +272,20 @@ export default function SettingsScreen() {
         setAccessToken(session?.access_token || null)
         setUserEmail(activeUser.email || '')
 
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, phone, email_verified, avatar_url')
-          .eq('id', activeUser.id)
-          .single()
+        const loadController = new AbortController()
+        const loadTimeout = setTimeout(() => loadController.abort(), 8000)
+        let prof: any = null
+        try {
+          const res = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, phone, email_verified, avatar_url')
+            .eq('id', activeUser.id)
+            .abortSignal(loadController.signal)
+            .single()
+          prof = res.data
+        } finally {
+          clearTimeout(loadTimeout)
+        }
 
         if (!isMountedRef.current) return
 
@@ -802,6 +811,23 @@ export default function SettingsScreen() {
   if (loading) {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        {/* Keep the back affordance visible while loading — a dead network
+            must never trap the user on a bare spinner. */}
+        <View style={[styles.headerBar, { borderBottomColor: specularBorder }]}>
+          <Pressable
+            style={[styles.headerIconButton, { backgroundColor: colors.surfaceSubtle }]}
+            onPress={() => safeBack(router, '/(tabs)/profile')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Kthehu"
+          >
+            <ArrowLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          </Pressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Cilësimet</Text>
+          </View>
+          <View style={styles.headerIconButton} />
+        </View>
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textMuted }]}>

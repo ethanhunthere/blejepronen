@@ -39,6 +39,7 @@ import {
   type ConversationSummary,
 } from '@/lib/conversations'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { CallModal } from '@/components/CallModal'
 import { playTapSound } from '@/lib/sound'
 import { ConversationFeedSkeleton } from '@/components/ListingSkeleton'
@@ -321,6 +322,11 @@ export default function MessagesScreen() {
       >
         {loading ? (
           <ConversationFeedSkeleton count={5} />
+        ) : store.error && conversations.length === 0 ? (
+          <ErrorState
+            message="Bisedat nuk mund të ngarkoheshin."
+            onRetry={() => { void refreshConversations() }}
+          />
         ) : !currentUser ? (
           /* Unauthenticated Auth Gatekeeper */
           <View

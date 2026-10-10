@@ -16,6 +16,7 @@ import {
 import Animated from 'react-native-reanimated'
 import { useTabBarCollapseOnScroll } from '@/lib/tab-bar-scroll'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import {
@@ -171,6 +172,7 @@ export default function ProfileScreen() {
   const currentUser = authState?.user || null
   const dbProfile = authState?.profile || null
   const authResolved = !loading
+  const [sessionFailed, setSessionFailed] = useState(false)
 
   // Track previous authenticated user state for scroll reset on auth lifecycle transitions
   const hasMountedRef = useRef(false)
@@ -293,6 +295,7 @@ export default function ProfileScreen() {
     }
 
     try {
+      setSessionFailed(false)
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -319,6 +322,7 @@ export default function ProfileScreen() {
       }
     } catch (err) {
       console.warn('Session check notice:', err)
+      setSessionFailed(true)
     } finally {
       setLoading(false)
     }
@@ -1028,6 +1032,15 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      {sessionFailed && !currentUser && authResolved ? (
+        <ErrorState
+          message="Sesioni nuk mund të verifikohej."
+          onRetry={() => {
+            setSessionFailed(false)
+            void checkSession()
+          }}
+        />
+      ) : null}
       {/* ─── 1. TOP HEADER BAR ─── */}
       <View style={styles.header}>
         <View style={styles.headerTitleWrap}>

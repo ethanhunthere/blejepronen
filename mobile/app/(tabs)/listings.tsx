@@ -35,6 +35,7 @@ import { PropertyFilterBar } from '@/components/PropertyFilterBar'
 import { PropertyFilterModal } from '@/components/PropertyFilterModal'
 import { SortBottomSheet } from '@/components/SortBottomSheet'
 import { SavedSearchesSheet, type SavedSearchSnapshot } from '@/components/SavedSearchesSheet'
+import { ErrorState } from '@/components/ui/ErrorState'
 import {
   PropertyFilterState,
   DEFAULT_FILTER_STATE,
@@ -154,6 +155,7 @@ export default function ListingsScreen() {
   // Honest server total for the active filter set — `null` until the first
   // counted response lands, so no counter ever renders a windowed guess.
   const [total, setTotal] = useState<number | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -285,12 +287,14 @@ export default function ListingsScreen() {
         }
 
         setTotal(serverTotal)
+        setLoadFailed(false)
         nextFromRef.current = from + rows.length
         // Honest paging: measured against the server total, not the window size.
         setHasMore(from + rows.length < serverTotal)
       } catch (err: any) {
         if (rid === reqIdRef.current) {
           console.warn('Listings fetch catch:', err?.message || err)
+          setLoadFailed(true)
         }
       } finally {
         if (rid === reqIdRef.current) {
@@ -728,6 +732,14 @@ export default function ListingsScreen() {
         {/* Listings Feed */}
         {loading && listings.length === 0 ? (
           <ListingFeedSkeleton count={4} />
+        ) : loadFailed && listings.length === 0 ? (
+          <ErrorState
+            message="Pronat nuk mund të ngarkoheshin."
+            onRetry={() => {
+              setLoadFailed(false)
+              void onRefresh()
+            }}
+          />
         ) : listings.length === 0 ? (
           <View
             style={[
@@ -759,7 +771,7 @@ export default function ListingsScreen() {
               }}
             >
               <Text style={[styles.resetButtonText, { color: colors.primary }]}>
-                Pastro të gjitha filtrat
+                Pastro të gjithë filtrat
               </Text>
             </TactilePressable>
           </View>

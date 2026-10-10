@@ -55,6 +55,8 @@ import { markConversationReadLocally, noteOutgoingMessage } from '@/lib/conversa
 import { setOpenConversation } from '@/lib/notifications'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
+import { MediaLightbox } from '@/components/MediaLightbox'
+import * as ImageManipulator from 'expo-image-manipulator'
 import { DraggableBottomSheet } from '@/components/motion'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
@@ -128,6 +130,7 @@ export default function ChatConversationScreen() {
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null)
   const [showAttachmentTray, setShowAttachmentTray] = useState(false)
 
   // ── History paging (audit §4.1) ────────────────────────────────────
@@ -529,7 +532,14 @@ export default function ChatConversationScreen() {
     setSending(true)
     try {
       const path = `${currentUserId}/messages/${id}/${Date.now()}.jpg`
-      const blob = await fetch(uri).then((r) => r.blob())
+      // Compress client-side before upload — a 12MP capture must never go
+      // to storage (or JS memory) at full size.
+      const manipulated = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1600 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      )
+      const blob = await fetch(manipulated.uri).then((r) => r.blob())
       const { error } = await supabase.storage
         .from('listings')
         .upload(path, blob, { contentType: 'image/jpeg' })
@@ -671,7 +681,14 @@ export default function ChatConversationScreen() {
             ]}
           >
             {isPhoto ? (
-              <View style={styles.photoBubbleContainer}>
+              <Pressable
+                onPress={() => {
+                  setLightboxPhoto(item.content.replace('[Foto:', '').replace(']', '').trim())
+                }}
+                accessibilityRole="imagebutton"
+                accessibilityLabel="Hap foton me madhësi të plotë"
+                style={styles.photoBubbleContainer}
+              >
                 <Image
                   source={{
                     uri: item.content.replace('[Foto:', '').replace(']', '').trim(),
@@ -680,7 +697,7 @@ export default function ChatConversationScreen() {
                   contentFit="cover"
                   transition={200}
                 />
-              </View>
+              </Pressable>
             ) : (
               <Text style={[styles.messageText, { color: textColor }]}>{item.content}</Text>
             )}
@@ -1077,6 +1094,15 @@ export default function ChatConversationScreen() {
       </DraggableBottomSheet>
 
       {/* Apple iOS 18 Contact Action Sheet */}
+      {lightboxPhoto ? (
+        <MediaLightbox
+          images={[lightboxPhoto]}
+          visible={Boolean(lightboxPhoto)}
+          initialIndex={0}
+          onClose={() => setLightboxPhoto(null)}
+        />
+      ) : null}
+
       <CallModal
         visible={contactSheetVisible}
         onClose={() => setContactSheetVisible(false)}
@@ -1303,7 +1329,7 @@ const styles = StyleSheet.create({
   },
   photoBubbleContainer: {
     width: 220,
-    height: 160,
+    aspectRatio: 4 / 3,
     borderRadius: 12,
     overflow: 'hidden',
     marginVertical: 2,

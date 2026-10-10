@@ -31,6 +31,7 @@ import { useTheme, Fonts } from '@/constants/theme'
 import type { Listing } from '@/lib/supabase'
 import { useFavorites, fetchFavoriteIds } from '@/lib/favorites'
 import { ListingCard } from '@/components/ListingCard'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { ListingFeedSkeleton } from '@/components/ListingSkeleton'
 import { Logo } from '@/components/Logo'
 import { PropertyFilterBar } from '@/components/PropertyFilterBar'
@@ -261,6 +262,7 @@ export default function HomeScreen() {
   // Honest server totals — `null` until the first counted response lands, so no
   // counter ever renders the size of the fetched window.
   const [total, setTotal] = useState<number | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [featuredTotal, setFeaturedTotal] = useState<number | null>(null)
@@ -336,12 +338,14 @@ export default function HomeScreen() {
 
       setListings(rows)
       setTotal(serverTotal)
+      setLoadFailed(false)
       setCachedQueryListings(currentKey, { rows, total: serverTotal })
       // Only the canonical window may seed the shared offline cache.
       if (canonical) setCachedListings(rows)
     } catch (err: any) {
       if (rid === reqIdRef.current) {
         console.warn('Listing catch notice:', err?.message || err)
+        setLoadFailed(true)
       }
     } finally {
       if (rid === reqIdRef.current) {
@@ -811,6 +815,14 @@ export default function HomeScreen() {
             {/* Empty State */}
             {loading && listings.length === 0 ? (
               <ListingFeedSkeleton count={3} />
+            ) : loadFailed && listings.length === 0 ? (
+              <ErrorState
+                message="Pronat nuk mund të ngarkoheshin."
+                onRetry={() => {
+                  setLoadFailed(false)
+                  void fetchListings()
+                }}
+              />
             ) : listings.length === 0 ? (
               <View
                 style={[

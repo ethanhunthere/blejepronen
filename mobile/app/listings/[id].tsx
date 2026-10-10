@@ -15,6 +15,7 @@ import {
   Animated,
   useWindowDimensions,
   TextInput,
+  Keyboard,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -53,6 +54,7 @@ import {
   UserCheck,
   SlidersHorizontal,
   Calculator,
+  Flag,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
@@ -60,6 +62,7 @@ import { supabase, Listing } from '@/lib/supabase'
 import { apiResolveContacts } from '@/lib/api'
 import { useTrackListingView, trackListingFavorite, trackListingLead } from '@/lib/listing-analytics'
 import { MarketDeltaCard } from '@/components/MarketDeltaCard'
+import { ReportListingSheet } from '@/components/ReportListingSheet'
 import { getAvatarSource } from '@/lib/avatars'
 import { useFavorites } from '@/lib/favorites'
 import { openLoginScreen } from '@/lib/navigation'
@@ -128,6 +131,7 @@ export default function ListingDetailScreen() {
   const [listing, setListing] = useState<Listing | null>(() => cachedListing)
   useTrackListingView(listing?.id, { ownerId: listing?.user_id })
   const [loading, setLoading] = useState(() => !cachedListing)
+  const [reportOpen, setReportOpen] = useState(false)
   const { isFavorite: checkFavorite, toggleFavorite: toggleFav } = useFavorites()
   const isFavorite = id ? checkFavorite(id) : false
 
@@ -944,15 +948,48 @@ export default function ListingDetailScreen() {
               iconSize={19}
               variant={!isHeaderSticky || theme !== 'white' ? 'dark' : 'light'}
             />
+
+            {/* Report / flag — UGC moderation entry point */}
+            <TactilePressable
+              style={styles.navActionBtnWrap}
+              onPress={() => setReportOpen(true)}
+              hitSlop={10}
+              activeScale={0.92}
+              haptic="light"
+              accessibilityRole="button"
+              accessibilityLabel="Raporto këtë shpallje"
+            >
+              <View
+                style={[
+                  styles.navCircleStickyDisc,
+                  { backgroundColor: 'rgba(17,24,39,0.55)' },
+                ]}
+              >
+                <Flag size={16} color="#FFFFFF" strokeWidth={2.2} />
+              </View>
+            </TactilePressable>
           </View>
         </View>
       </View>
+
+      <ReportListingSheet
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        listingId={listing?.id ?? null}
+        listingTitle={listing?.title}
+        listingCity={listing?.city}
+        onRequireAuth={() => {
+          setReportOpen(false)
+          openLoginScreen(router, { redirectTo: `/listings/${id}`, reason: 'report' })
+        }}
+      />
 
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 2. MAIN SCROLLABLE CONTENT BODY                               */}
       {/* ───────────────────────────────────────────────────────────── */}
       <Animated.ScrollView
         style={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={Animated.event(
@@ -1430,6 +1467,7 @@ export default function ListingDetailScreen() {
                       }}
                       keyboardType="number-pad"
                       returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                     />
                     <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
                   </View>
@@ -1588,6 +1626,7 @@ export default function ListingDetailScreen() {
                           }}
                           keyboardType="number-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>vjet</Text>
                       </View>
@@ -1685,6 +1724,7 @@ export default function ListingDetailScreen() {
                           }}
                           keyboardType="decimal-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
                       </View>
@@ -1791,6 +1831,7 @@ export default function ListingDetailScreen() {
                           }}
                           keyboardType="number-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>€</Text>
                       </View>
@@ -1832,6 +1873,7 @@ export default function ListingDetailScreen() {
                           onChangeText={(v) => setIncomeStr(v.replace(/[^\d]/g, '').slice(0, 6))}
                           keyboardType="number-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanIncomeSuffix, { color: colors.textMuted }]}>€</Text>
                       </View>
@@ -1869,6 +1911,7 @@ export default function ListingDetailScreen() {
                           }}
                           keyboardType="number-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
                       </View>
@@ -1983,6 +2026,7 @@ export default function ListingDetailScreen() {
                           }}
                           keyboardType="decimal-pad"
                           returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                         />
                         <Text style={[styles.loanInputUnit, { color: colors.textMuted }]}>%</Text>
                       </View>

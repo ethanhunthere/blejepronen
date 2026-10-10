@@ -139,6 +139,7 @@ export default function PublicProfileScreen() {
         setProfile(null)
         setListings([])
       } else {
+        if (listingsRes.error) throw new Error(listingsRes.error.message)
         const freshProfile = profileRes.data as PublicProfile
         const freshListings = (listingsRes.data || []) as unknown as Listing[]
         setCachedProfile(profileId, freshProfile)

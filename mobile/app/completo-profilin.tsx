@@ -51,9 +51,9 @@ import { ALL_CITIES } from '@/lib/kosovo-locations'
 const CITIES = ALL_CITIES
 
 const DUMMY_SAMPLES = new Set([
-  'alban',
-  'kelmendi',
-  'alban kelmendi',
+  // Placeholder-shaped values only. Real names/years must NEVER be blanked —
+  // a seller genuinely named "Alban Kelmendi" or founded in 2018 would
+  // otherwise lose their data on every load and save.
   'p.sh. alban',
   'p.sh. kelmendi',
   'alban.kelmendi',
@@ -66,14 +66,9 @@ const DUMMY_SAMPLES = new Set([
   '049123456',
   '038123456',
   '044123456',
-  'pristina real estate llc',
-  'p.sh. pristina real estate llc',
-  'besnik krasniqi',
-  'p.sh. besnik krasniqi',
   '811234567',
   'p.sh. 811234567',
   'https://agjencia.com',
-  '2018',
   'p.sh. 2018',
 ])
 
