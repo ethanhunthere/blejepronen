@@ -2,7 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { getCookieDomain } from '@/lib/supabase'
+
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceKey) {
+    throw new Error('Supabase admin environment variables are not configured')
+  }
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -91,11 +103,15 @@ export async function GET(request: NextRequest) {
       const personaCookie = cookieStore.get('blejepronen_persona')?.value
       const targetAccountType = personaCookie === 'company' ? 'company' : personaCookie === 'individual' ? 'individual' : null
 
+      // Trust writes are server-derived: the service role is the only writer
+      // of email_verified (profiles column grants exclude client roles).
+      const admin = getAdminClient()
+
       if (targetAccountType) {
         try {
-          await supabase
+          await admin
             .from('profiles')
-            .update({ account_type: targetAccountType, email_verified: true })
+            .update({ email_verified: true })
             .eq('id', user.id)
 
           await supabase.auth.updateUser({
@@ -107,7 +123,7 @@ export async function GET(request: NextRequest) {
       } else {
         // Ensure social OAuth users have email_verified true by default
         try {
-          await supabase
+          await admin
             .from('profiles')
             .update({ email_verified: true })
             .eq('id', user.id)
@@ -115,9 +131,9 @@ export async function GET(request: NextRequest) {
       }
 
       // 2. Query updated profile
-      const { data: profile } = await supabase
+      const { data: profile } = await admin
         .from('profiles')
-        .select('first_name, email_verified, account_type')
+        .select('first_name, email_verified')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -127,7 +143,7 @@ export async function GET(request: NextRequest) {
       } catch {}
 
       if (!profile?.first_name) {
-        const isComp = profile?.account_type === 'company' || user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
+        const isComp = user.user_metadata?.account_type === 'company' || Boolean(user.user_metadata?.company_name)
         const targetRoute = isComp ? '/completo-profilin-company' : '/completo-profilin-fast'
         const redirectRes = NextResponse.redirect(`${origin}${targetRoute}`)
         response.cookies.getAll().forEach(cookie => {

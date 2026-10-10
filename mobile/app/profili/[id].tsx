@@ -42,6 +42,7 @@ import { supabase, Listing, Profile } from '@/lib/supabase'
 import { getAvatarSource } from '@/lib/avatars'
 import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import { safeBack, openLoginScreen } from '@/lib/navigation'
+import { apiResolveContacts } from '@/lib/api'
 import { ListingCard } from '@/components/ListingCard'
 import { SkeletonBox } from '@/components/ListingSkeleton'
 import { useFavorites } from '@/lib/favorites'
@@ -81,6 +82,7 @@ export default function PublicProfileScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'shitje' | 'qira'>('all')
+  const [contactAuthed, setContactAuthed] = useState(false)
   const { favorites, toggleFavorite } = useFavorites()
 
   const isMountedRef = useRef(true)
@@ -111,7 +113,7 @@ export default function PublicProfileScreen() {
     try {
       const [profileRes, listingsRes] = await Promise.all([
         supabase
-          .from('profiles')
+          .from('profiles_public')
           .select('*')
           .eq('id', profileId)
           .maybeSingle(),
@@ -212,8 +214,38 @@ export default function PublicProfileScreen() {
     }
   }, [profile?.created_at])
 
+  // Contact details (phone) resolve only for signed-in users: profiles is
+  // owner-only at the row level, so the gated web route is the single path.
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const token = data.session?.access_token ?? null
+        if (!token) {
+          if (mounted) setContactAuthed(false)
+          return
+        }
+        if (mounted) setContactAuthed(true)
+        const contacts = await apiResolveContacts(token, `userId=${encodeURIComponent(profileId ?? '')}`)
+        if (mounted && contacts?.phone) {
+          setProfile((prev) => (prev ? { ...prev, phone: contacts.phone ?? null } : prev))
+        }
+      } catch {
+        // contact CTAs stay gated/disabled — never a crash
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [profileId])
+
   // Communication Action Triggers
   const handleCall = useCallback(() => {
+    if (!contactAuthed) {
+      openLoginScreen(router, { redirectTo: `/profili/${profileId}`, reason: 'contact' })
+      return
+    }
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.phone
     if (!rawPhone) {
@@ -224,9 +256,13 @@ export default function PublicProfileScreen() {
     Linking.openURL(`tel:${normalized}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të iniciohet thirrja telefonike.')
     })
-  }, [profile?.phone])
+  }, [profile?.phone, contactAuthed, profileId, router])
 
   const handleWhatsApp = useCallback(() => {
+    if (!contactAuthed) {
+      openLoginScreen(router, { redirectTo: `/profili/${profileId}`, reason: 'contact' })
+      return
+    }
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.whatsapp || profile?.phone
     if (!rawPhone) {
@@ -242,9 +278,13 @@ export default function PublicProfileScreen() {
     Linking.openURL(`https://wa.me/${cleanNumber}?text=${greetingMsg}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni WhatsApp.')
     })
-  }, [profile?.whatsapp, profile?.phone, displayName, isCompany])
+  }, [profile?.whatsapp, profile?.phone, displayName, isCompany, contactAuthed, profileId, router])
 
   const handleSMS = useCallback(() => {
+    if (!contactAuthed) {
+      openLoginScreen(router, { redirectTo: `/profili/${profileId}`, reason: 'contact' })
+      return
+    }
     if (Platform.OS !== 'web') Haptics.selectionAsync()
     const rawPhone = profile?.phone || profile?.whatsapp
     if (!rawPhone) {
@@ -260,7 +300,7 @@ export default function PublicProfileScreen() {
     ).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni i mesazheve.')
     })
-  }, [profile?.phone, profile?.whatsapp])
+  }, [profile?.phone, profile?.whatsapp, contactAuthed, profileId, router])
 
   const handleShare = useCallback(async () => {
     if (Platform.OS !== 'web') Haptics.selectionAsync()
@@ -744,18 +784,20 @@ export default function PublicProfileScreen() {
                         borderColor: colors.primaryDark,
                       },
                       pressed && styles.btnPressed,
-                      !profile.phone && styles.btnDisabled,
+                      !profile.phone && contactAuthed && styles.btnDisabled,
                     ]}
                     onPress={handleCall}
-                    disabled={!profile.phone}
+                    disabled={!profile.phone && contactAuthed}
                   >
                     <Phone size={18} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
                       <Text style={styles.actionBtnTitle}>Telefono Agjencinë</Text>
                       <Text style={styles.actionBtnSubtitle} numberOfLines={1}>
-                        {profile.phone
-                          ? formatPhoneDisplay(profile.phone)
-                          : 'Numri mungon'}
+                        {!contactAuthed
+                          ? 'Kyçu për të parë kontaktin'
+                          : profile.phone
+                            ? formatPhoneDisplay(profile.phone)
+                            : 'Numri mungon'}
                       </Text>
                     </View>
                   </Pressable>
@@ -766,10 +808,10 @@ export default function PublicProfileScreen() {
                       styles.actionBtn,
                       styles.whatsappBtn,
                       pressed && styles.btnPressed,
-                      !(profile.whatsapp || profile.phone) && styles.btnDisabled,
+                      !(profile.whatsapp || profile.phone) && contactAuthed && styles.btnDisabled,
                     ]}
                     onPress={handleWhatsApp}
-                    disabled={!(profile.whatsapp || profile.phone)}
+                    disabled={!(profile.whatsapp || profile.phone) && contactAuthed}
                   >
                     <MessageCircle size={19} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
@@ -780,7 +822,7 @@ export default function PublicProfileScreen() {
                 </View>
 
                 {/* Auxiliary Row */}
-                {Boolean(profile.phone || profile.whatsapp) && (
+                {Boolean(contactAuthed && (profile.phone || profile.whatsapp)) && (
                   <View style={styles.auxRow}>
                     <Pressable
                       style={({ pressed }) => [
@@ -1190,14 +1232,14 @@ export default function PublicProfileScreen() {
                       borderWidth: StyleSheet.hairlineWidth,
                     },
                     pressed && styles.btnPressed,
-                    !profile.phone && styles.btnDisabled,
+                    !profile.phone && contactAuthed && styles.btnDisabled,
                   ]}
                   onPress={handleCall}
-                  disabled={!profile.phone}
+                  disabled={!profile.phone && contactAuthed}
                 >
                   <Phone size={15} color={colors.textPrimary} strokeWidth={2.2} />
                   <Text style={[styles.personalActionBtnText, { color: colors.textPrimary }]}>
-                    {profile.phone ? 'Telefono' : 'Pa numër'}
+                    {!contactAuthed ? 'Kyçu për kontakt' : profile.phone ? 'Telefono' : 'Pa numër'}
                   </Text>
                 </Pressable>
 
@@ -1207,10 +1249,10 @@ export default function PublicProfileScreen() {
                     styles.personalActionBtn,
                     styles.personalWhatsAppBtn,
                     pressed && styles.btnPressed,
-                    !(profile.whatsapp || profile.phone) && styles.btnDisabled,
+                    !(profile.whatsapp || profile.phone) && contactAuthed && styles.btnDisabled,
                   ]}
                   onPress={handleWhatsApp}
-                  disabled={!(profile.whatsapp || profile.phone)}
+                  disabled={!(profile.whatsapp || profile.phone) && contactAuthed}
                 >
                   <MessageCircle size={16} color="#FFFFFF" strokeWidth={2.4} />
                   <Text style={styles.personalActionBtnText}>WhatsApp</Text>

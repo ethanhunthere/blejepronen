@@ -57,6 +57,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
+import { apiResolveContacts } from '@/lib/api'
 import { getAvatarSource } from '@/lib/avatars'
 import { useFavorites } from '@/lib/favorites'
 import { openLoginScreen } from '@/lib/navigation'
@@ -336,19 +337,28 @@ export default function ListingDetailScreen() {
 
     let isMounted = true
     ;(async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', targetUserId)
-        .maybeSingle()
-      if (isMounted && data) {
+      const [{ data }, session] = await Promise.all([
+        supabase
+          .from('profiles_public')
+          .select('*')
+          .eq('id', targetUserId)
+          .maybeSingle(),
+        supabase.auth.getSession(),
+      ])
+      // Phone resolves through the gated web route (profiles is owner-only).
+      const contacts = await apiResolveContacts(
+        session.data.session?.access_token ?? null,
+        `listingId=${encodeURIComponent(listing?.id || cachedListing?.id || '')}`
+      )
+      if (isMounted && (data || contacts?.phone)) {
         setListing((prev) => {
           if (!prev) return prev
           return {
             ...prev,
             profiles: {
               ...(prev.profiles || {}),
-              ...data,
+              ...(data || {}),
+              phone: contacts?.phone ?? (prev.profiles as any)?.phone ?? null,
             },
           } as Listing
         })

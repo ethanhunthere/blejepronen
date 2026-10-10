@@ -727,9 +727,8 @@ export default function ProfileScreen() {
         return
       }
 
-      await supabase.from('profiles').update({ email_verified: true }).eq('id', currentUser.id)
-      await supabase.auth.updateUser({ data: { email_verified: true } })
-
+      // The server (apiVerifyOtp) is the only writer of email_verified;
+      // local state just mirrors the server-confirmed truth.
       setAuthState((prev) => {
         if (!prev) return prev
         const updatedProfile = { ...prev.profile, email_verified: true }

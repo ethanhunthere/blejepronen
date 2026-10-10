@@ -19,6 +19,7 @@ import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import { toast } from 'sonner'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
+import { trackListingLead } from '@/lib/analytics'
 import FollowButton from '@/components/FollowButton'
 import {
   deriveTrustSignals,
@@ -30,7 +31,6 @@ import {
 interface SellerInfo {
   firstName: string
   lastName: string
-  phone: string | null
   avatarUrl: string | null
   emailVerified: boolean
   userId: string
@@ -69,6 +69,7 @@ export default function ContactSellerCard({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loginUrl, setLoginUrl] = useState(`/login`)
   const [copied, setCopied] = useState(false)
+  const [resolvedPhone, setResolvedPhone] = useState<string | null>(null)
   const { favoriteIds, toggleFavorite } = useFavorites()
 
   useEffect(() => {
@@ -77,14 +78,24 @@ export default function ContactSellerCard({
       if (session?.user) {
         setIsLoggedIn(true)
         setCurrentUserId(session.user.id)
+        // Contact details are never server-rendered: resolve after login.
+        fetch(`/api/contact?listingId=${encodeURIComponent(listingId)}`, {
+          credentials: 'same-origin',
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((json: { phone?: string | null } | null) => {
+            setResolvedPhone(json?.phone ?? null)
+          })
+          .catch(() => setResolvedPhone(null))
       } else {
         setIsLoggedIn(false)
+        setResolvedPhone(null)
       }
     })
     setLoginUrl(`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`)
   }, [listingId])
 
-  const rawPhone = seller.phone || ''
+  const rawPhone = resolvedPhone || ''
   const cleanPhone = rawPhone ? normalizePhoneNumber(rawPhone).replace(/\D/g, '') : ''
   const displayPhone = rawPhone ? formatPhoneDisplay(rawPhone) : ''
 
@@ -101,7 +112,7 @@ export default function ContactSellerCard({
     trust ??
     deriveTrustSignals({
       email_verified: seller.emailVerified,
-      phone: seller.phone,
+      phone: resolvedPhone,
     })
   const showTrustBadge = shouldShowBadge(trustSignals)
 
@@ -294,13 +305,22 @@ export default function ContactSellerCard({
 
       {/* Primary Conversion CTAs */}
       <div className="space-y-2.5">
-        {cleanPhone ? (
+        {!isLoggedIn ? (
+          <a
+            href={loginUrl}
+            className="w-full min-h-[44px] bg-[#00675B] hover:bg-[#004D43] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-xs active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Lock className="h-4 w-4" />
+            <span>Kyçu për të parë kontaktin</span>
+          </a>
+        ) : cleanPhone ? (
           <>
             {/* WhatsApp */}
             <a
               href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => void trackListingLead(listingId)}
               className="w-full min-h-[44px] bg-[#25D366] hover:bg-[#20ba59] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-xs active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageCircle className="h-4 w-4 fill-white" />
@@ -309,7 +329,8 @@ export default function ContactSellerCard({
 
             {/* Direct Phone Call */}
             <a
-              href={`tel:${normalizePhoneNumber(seller.phone || '')}`}
+              href={`tel:${normalizePhoneNumber(rawPhone)}`}
+              onClick={() => void trackListingLead(listingId)}
               className="w-full min-h-[44px] bg-[#00675B] hover:bg-[#004D43] text-white py-2.5 px-4 rounded-xl font-semibold text-sm shadow-xs active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Phone className="h-4 w-4" />

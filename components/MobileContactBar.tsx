@@ -1,30 +1,68 @@
 'use client'
 
-import { Phone, MessageCircle, Heart } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Phone, MessageCircle, Heart, Lock } from 'lucide-react'
+import Link from 'next/link'
 import { useFavorites } from '@/lib/useFavorites'
 import { normalizePhoneNumber } from '@/lib/phone'
+import { trackListingLead } from '@/lib/analytics'
+import { createPublicSupabaseClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 
 interface MobileContactBarProps {
   price: string
   pricePerSqm?: string | null
-  phone?: string | null
   listingId: string
   listingTitle?: string
   listingCity?: string
 }
 
+type ContactState =
+  | { status: 'loading' }
+  | { status: 'anon' }
+  | { status: 'ready'; phone: string | null }
+
 export default function MobileContactBar({
   price,
   pricePerSqm,
-  phone,
   listingId,
   listingTitle,
   listingCity,
 }: MobileContactBarProps) {
   const { favoriteIds, toggleFavorite } = useFavorites()
   const isFavorited = favoriteIds.includes(listingId)
+  const [contact, setContact] = useState<ContactState>({ status: 'loading' })
 
+  // Contact details are never server-rendered: resolve them after login.
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const supabase = createPublicSupabaseClient()
+        const { data } = await supabase.auth.getSession()
+        if (!data.session) {
+          if (mounted) setContact({ status: 'anon' })
+          return
+        }
+        const res = await fetch(`/api/contact?listingId=${encodeURIComponent(listingId)}`, {
+          credentials: 'same-origin',
+        })
+        if (!res.ok) {
+          if (mounted) setContact({ status: 'ready', phone: null })
+          return
+        }
+        const json = (await res.json()) as { phone?: string | null; isOwn?: boolean }
+        if (mounted) setContact({ status: 'ready', phone: json.phone ?? null })
+      } catch {
+        if (mounted) setContact({ status: 'ready', phone: null })
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [listingId])
+
+  const phone = contact.status === 'ready' ? contact.phone : null
   const cleanPhone = phone ? normalizePhoneNumber(phone).replace(/\D/g, '') : ''
   const waGreeting = encodeURIComponent(
     `Përshëndetje! Po ju kontaktoj nga BlejePronën për pronën tuaj: "${listingTitle || 'Pronë'}"${listingCity ? ` në ${listingCity}` : ''} (https://blejepronen.com/listings/${listingId}). A është ende e lirë?`
@@ -32,7 +70,7 @@ export default function MobileContactBar({
   const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waGreeting}` : null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/80 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 pt-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]">
+    <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-200/80 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-4 pt-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-between gap-3">
         {/* Left: Heart + Price */}
         <div className="flex items-center gap-2.5 min-w-0">
@@ -72,35 +110,49 @@ export default function MobileContactBar({
 
         {/* Right: Instant Contact CTAs */}
         <div className="flex items-center gap-2 shrink-0">
-          {whatsAppUrl && (
-            <a
-              href={whatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-h-[44px] h-11 px-4 rounded-xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-              aria-label="Kontakto në WhatsApp"
-            >
-              <MessageCircle className="h-4 w-4 fill-white" />
-              <span>WhatsApp</span>
-            </a>
-          )}
-
-          {phone ? (
-            <a
-              href={`tel:${normalizePhoneNumber(phone)}`}
+          {contact.status === 'anon' ? (
+            <Link
+              href={`/login?redirect=/listings/${listingId}`}
               className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-              aria-label="Telefono shitësin"
             >
-              <Phone className="h-4 w-4" />
-              <span>Telefono</span>
-            </a>
+              <Lock className="h-4 w-4" />
+              <span>Kyçu për kontakt</span>
+            </Link>
           ) : (
-            <a
-              href="#seller-info"
-              className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-            >
-              <span>Detajet</span>
-            </a>
+            <>
+              {whatsAppUrl && (
+                <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => void trackListingLead(listingId)}
+                  className="min-h-[44px] h-11 px-4 rounded-xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  aria-label="Kontakto në WhatsApp"
+                >
+                  <MessageCircle className="h-4 w-4 fill-white" />
+                  <span>WhatsApp</span>
+                </a>
+              )}
+
+              {phone ? (
+                <a
+                  href={`tel:${normalizePhoneNumber(phone)}`}
+                  onClick={() => void trackListingLead(listingId)}
+                  className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  aria-label="Telefono shitësin"
+                >
+                  <Phone className="h-4 w-4" />
+                  <span>Telefono</span>
+                </a>
+              ) : (
+                <a
+                  href="#seller-info"
+                  className="min-h-[44px] h-11 px-4 rounded-xl bg-[#00675B] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                >
+                  <span>Detajet</span>
+                </a>
+              )}
+            </>
           )}
         </div>
       </div>

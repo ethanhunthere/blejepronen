@@ -57,6 +57,33 @@ export interface ApiResponse<T = any> {
 }
 
 /**
+ * Authenticated contact resolution against the web API. Phone numbers are
+ * never readable from PostgREST (profiles is owner-only + column-sealed);
+ * the web route /api/contact is the single gated path.
+ *
+ *   query examples: "listingId=<id>" | "userId=<id>" | "userIds=a,b,c" (≤20)
+ */
+export async function apiResolveContacts(
+  accessToken: string | null,
+  query: string
+): Promise<{ phone?: string | null; isOwn?: boolean; phones?: Record<string, string | null> } | null> {
+  if (!accessToken) return null
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/contact?${query}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) return null
+    return (await res.json()) as {
+      phone?: string | null
+      isOwn?: boolean
+      phones?: Record<string, string | null>
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
  * Register a new user via the backend API.
  * This creates the user, generates a 6-digit verification code,
  * and sends it via Resend email.

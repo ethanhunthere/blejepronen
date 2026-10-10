@@ -246,13 +246,8 @@ export default function RegisterScreen() {
       if (user) {
         if (accountType === 'company') {
           try {
-            // profiles has no account_type column — the persona lives in auth
-            // metadata; only the verification flag belongs to the profiles row.
-            await supabase
-              .from('profiles')
-              .update({ email_verified: true })
-              .eq('id', user.id)
-
+            // profiles has no account_type column and email_verified is
+            // server-derived — only the persona metadata belongs here.
             await supabase.auth.updateUser({
               data: { account_type: 'company' },
             })

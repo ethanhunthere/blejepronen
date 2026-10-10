@@ -42,6 +42,7 @@ import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { apiResolveContacts } from '@/lib/api'
 import { createSafeChannel } from '@/lib/realtime'
 import {
   CHAT_PAGE_SIZE,
@@ -243,18 +244,23 @@ export default function ChatConversationScreen() {
         let counterpart: any = null
         if (counterpartId) {
           // Identity from profiles_public (RLS-safe for other users); phone
-          // from profiles (RLS may null it for other users — correct privacy).
-          const [pubRes, privRes] = await Promise.all([
+          // resolves through the gated web route (profiles is owner-only).
+          const [pubRes, session] = await Promise.all([
             supabase
               .from('profiles_public')
               .select('id, first_name, last_name, avatar_url, email_verified')
               .eq('id', counterpartId)
               .maybeSingle(),
-            supabase.from('profiles').select('id, phone').eq('id', counterpartId).maybeSingle(),
+            supabase.auth.getSession(),
           ])
           if (!isMountedRef.current) return
           const pub = pubRes.data
-          const priv = privRes.data
+          const contacts = await apiResolveContacts(
+            session.data.session?.access_token ?? null,
+            `userId=${encodeURIComponent(counterpartId)}`
+          )
+          if (!isMountedRef.current) return
+          const priv = contacts?.phone ? { phone: contacts.phone } : null
           if (pub) {
             counterpart = {
               id: pub.id,

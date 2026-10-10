@@ -8,16 +8,14 @@ import {
   CalendarDays,
   MapPin,
   Building2,
-  Phone,
-  MessageCircle,
   Share2,
   ChevronLeft,
 } from 'lucide-react'
 import ListingCard from '@/components/ListingCard'
 import SocialLinksBar from '@/components/SocialIcons'
 import { type SocialLinks, hasAnySocial } from '@/lib/socials'
-import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
 import ProfileShareButton from '@/components/ProfileShareButton'
+import ProfileContactButtons from '@/components/ProfileContactButtons'
 import { ProfileFollowButton } from '@/components/ProfileEditModal'
 import ProfileSocialStats from '@/components/ProfileSocialStats'
 
@@ -32,7 +30,7 @@ async function getPublicProfile(id: string) {
   const [{ data: profile }, userRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id,first_name,last_name,phone,avatar_url,email_verified,created_at')
+      .select('id,first_name,last_name,avatar_url,email_verified,created_at')
       .eq('id', id)
       .single(),
     supabase.auth.admin.getUserById(id).catch(() => ({ data: { user: null } })),
@@ -60,7 +58,7 @@ async function getPublicProfile(id: string) {
   const socials: SocialLinks = {
     instagram: meta.instagram || null,
     facebook: meta.facebook || null,
-    whatsapp: meta.whatsapp || (profile.phone ? profile.phone : null),
+    whatsapp: meta.whatsapp || null,
     tiktok: meta.tiktok || null,
   }
 
@@ -141,18 +139,6 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
     year: 'numeric',
     month: 'long',
   })
-
-  const rawPhone = profile.phone || ''
-  const cleanPhone = rawPhone ? normalizePhoneNumber(rawPhone).replace(/\D/g, '') : ''
-  const displayPhone = rawPhone ? formatPhoneDisplay(rawPhone) : ''
-  const waGreeting = encodeURIComponent(
-    `Përshëndetje ${displayName}! Po ju kontaktoj nga platforma Bleje Pronën.`
-  )
-  const whatsAppUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${waGreeting}`
-    : socials.whatsapp
-      ? `https://wa.me/${socials.whatsapp.replace(/\D/g, '')}?text=${waGreeting}`
-      : null
 
   return (
     <div className="min-h-screen bg-[#F2F7F7]">
@@ -238,27 +224,11 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                 size="md"
               />
 
-              {whatsAppUrl && (
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-10 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all"
-                >
-                  <MessageCircle className="h-4 w-4 fill-white" />
-                  <span>WhatsApp</span>
-                </a>
-              )}
-
-              {cleanPhone && (
-                <a
-                  href={`tel:${profile.phone}`}
-                  className="h-10 px-4 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all"
-                >
-                  <Phone className="h-4 w-4" />
-                  <span>Telefono ({displayPhone})</span>
-                </a>
-              )}
+              <ProfileContactButtons
+                userId={id}
+                whatsappHandle={socials.whatsapp}
+                displayName={displayName}
+              />
 
               <ProfileShareButton displayName={displayName} />
             </div>

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from './supabase'
+import { apiResolveContacts } from './api'
 import { createSafeChannel } from './realtime'
 import { isLogoutInProgress, subscribeAuthEvents } from './auth-cache'
 
@@ -260,15 +261,24 @@ async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
   const ids = Array.from(counterpartIds)
 
   if (ids.length > 0) {
-    const [pubRes, privRes] = await Promise.all([
+    const [pubRes, session] = await Promise.all([
       supabase
         .from('profiles_public')
         .select('id, first_name, last_name, avatar_url, email_verified')
         .in('id', ids),
-      supabase.from('profiles').select('id, phone').in('id', ids),
+      supabase.auth.getSession(),
     ])
     if (pubRes.data) for (const p of pubRes.data as any[]) publicById.set(p.id, p)
-    if (privRes.data) for (const p of privRes.data as any[]) privateById.set(p.id, p)
+    // Phones resolve through the gated web route (profiles is owner-only).
+    const contacts = await apiResolveContacts(
+      session.data.session?.access_token ?? null,
+      `userIds=${encodeURIComponent(ids.join(','))}`
+    )
+    if (contacts?.phones) {
+      for (const [id, phone] of Object.entries(contacts.phones)) {
+        privateById.set(id, { id, phone })
+      }
+    }
   }
 
   return (data as any[]).map((c) => {

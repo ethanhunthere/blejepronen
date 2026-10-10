@@ -48,6 +48,8 @@ import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import MortgageCalculator from '@/components/MortgageCalculator'
 import FollowButton from '@/components/FollowButton'
 import { slugify } from '@/lib/seo-slugs'
+import { fetchMarketStats } from '@/lib/listings-query'
+import { ListingViewTracker } from '@/lib/analytics'
 import {
   deriveTrustSignals,
   shouldShowBadge,
@@ -137,7 +139,6 @@ interface ListingWithProfile extends Listing {
   profiles: {
     first_name: string
     last_name: string
-    phone: string | null
     avatar_url: string | null
     email_verified?: boolean
   } | null
@@ -150,7 +151,7 @@ const getListing = cache(async (id: string) => {
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles(first_name,last_name,phone,avatar_url,email_verified)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
     )
     .eq('id', id)
     .eq('is_active', true)
@@ -355,7 +356,7 @@ export default async function ListingDetailPage({
   const showSellerBadge = shouldShowBadge(sellerTrust)
   const effectiveSocials: SocialLinks = {
     ...sellerData.socials,
-    whatsapp: sellerData.socials?.whatsapp || (listing.profiles?.phone ? listing.profiles.phone : null),
+    whatsapp: sellerData.socials?.whatsapp || null,
   }
 
   const priceStr = formatPrice(listing.price)
@@ -375,6 +376,15 @@ export default async function ListingDetailPage({
   const pricePerSqmValue =
     listing.area_m2 > 0 && listing.type === 'shitje'
       ? Math.round(listing.price / listing.area_m2)
+      : null
+
+  // Market delta signal (€/m² vs city median) — computed server-side from
+  // live inventory so the page stays a trustworthy, indexable money page.
+  const marketStats =
+    listing.type === 'shitje' && pricePerSqmValue ? await fetchMarketStats(listing.city) : null
+  const marketDeltaPct =
+    pricePerSqmValue && marketStats?.medianSalePpm2
+      ? Math.round(((pricePerSqmValue - marketStats.medianSalePpm2) / marketStats.medianSalePpm2) * 100)
       : null
 
   const jsonLd = {
@@ -460,6 +470,7 @@ export default async function ListingDetailPage({
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-28 lg:pb-16">
+      <ListingViewTracker listingId={listing.id} ownerId={listing.user_id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -600,6 +611,16 @@ export default async function ListingDetailPage({
                       </p>
                       {pricePerSqm && (
                         <p className="text-[10px] text-slate-400 font-normal">{pricePerSqm}/m²</p>
+                      )}
+                      {marketDeltaPct !== null && (
+                        <p
+                          className={`text-[10px] font-semibold ${
+                            marketDeltaPct > 0 ? 'text-amber-600' : 'text-[#00675B]'
+                          }`}
+                        >
+                          {marketDeltaPct > 0 ? '+' : ''}
+                          {marketDeltaPct}% vs mesatarja e {listing.city}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -861,7 +882,6 @@ export default async function ListingDetailPage({
               seller={{
                 firstName: listing.profiles?.first_name || '',
                 lastName: listing.profiles?.last_name || '',
-                phone: listing.profiles?.phone || null,
                 avatarUrl: listing.profiles?.avatar_url || null,
                 emailVerified: listing.profiles?.email_verified || false,
                 userId: listing.user_id,
@@ -904,7 +924,6 @@ export default async function ListingDetailPage({
       <MobileContactBar
         price={priceStr}
         pricePerSqm={pricePerSqm}
-        phone={listing.profiles?.phone || null}
         listingId={listing.id}
         listingTitle={listing.title}
         listingCity={listing.city}
