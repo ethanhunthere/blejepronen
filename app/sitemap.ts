@@ -35,14 +35,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
   const supabase = createPublicSupabaseClient()
 
-  const [listingsRes, profilesRes, hubParams] = await Promise.all([
+  const [listingsRes, profilesRes, hostsRes, hubParams] = await Promise.all([
     supabase.from('listings').select('id,updated_at').eq('is_active', true).limit(5000),
     supabase.from('profiles').select('id,updated_at').limit(1000),
+    supabase.from('listings').select('user_id').eq('is_active', true).limit(5000),
     fetchHubStaticParams(),
   ])
 
   const listings = (listingsRes.data || []) as ListingRow[]
-  const profiles = (profilesRes.data || []) as ProfileRow[]
+  // Only host profiles with live inventory belong in the sitemap — submitting
+  // empty profiles invites crawl waste and PII surface for no user value.
+  const hostIds = new Set(
+    ((hostsRes.data || []) as { user_id: string }[]).map((r) => r.user_id)
+  )
+  const profiles = ((profilesRes.data || []) as ProfileRow[]).filter((p) => hostIds.has(p.id))
 
   const entries: MetadataRoute.Sitemap = [
     { url: SITE_URL, lastModified: now, changeFrequency: 'daily', priority: 1.0 },

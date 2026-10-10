@@ -179,7 +179,7 @@ export default async function AdminPage() {
                       {listing.profiles?.first_name} {listing.profiles?.last_name}
                     </td>
                     <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">{listing.city}</td>
-                    <td className="px-3 py-3 md:px-6 md:py-4 text-[#101828] font-medium">€{listing.price.toLocaleString()}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-4 text-[#101828] font-medium">€{(listing.price ?? 0).toLocaleString()}</td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
                       <Badge className={listing.is_active ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-red-50 text-red-500 border border-red-200'}>
                         {listing.is_active ? 'Aktiv' : 'Joaktiv'}

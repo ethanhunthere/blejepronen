@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { MessageCircle, Search } from 'lucide-react'
 
 interface ConversationItem {
@@ -53,38 +54,68 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const userIdRef = useRef<string | null>(null)
+  const convIdsRef = useRef<string[]>([])
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const channelRef = useRef<ReturnType<SupabaseClient['channel']> | null>(null)
   const isChatOpen = pathname !== '/mesazhet'
 
   const fetchConversations = useCallback(async (uid: string) => {
+    // Conversations + listing only; messages are fetched as one bounded batch
+    // (last-message + unread) instead of embedding the whole corpus per row.
     const { data } = await supabase
       .from('conversations')
       .select(
         `id, listing_id, buyer_id, seller_id, updated_at,
-         listing:listings!inner ( title, images, price ),
-         messages ( content, created_at, sender_id, is_read )`
+         listing:listings!inner ( title, images, price )`
       )
       .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
       .order('updated_at', { ascending: false })
 
     if (!data) return
+    if (data.length === 0) {
+      convIdsRef.current = []
+      setConversations([])
+      return
+    }
+
+    const ids = data.map((c) => c.id)
+    convIdsRef.current = ids
 
     const userIds = new Set<string>()
-    data.forEach(c => {
+    data.forEach((c) => {
       userIds.add(c.buyer_id === uid ? c.seller_id : c.buyer_id)
     })
 
-    if (userIds.size === 0) { setConversations([]); return }
+    const [profilesRes, msgsRes, unreadRes] = await Promise.all([
+      supabase
+        .from('profiles_public')
+        .select('id,first_name,last_name,avatar_url,email_verified')
+        .in('id', Array.from(userIds)),
+      supabase
+        .from('messages')
+        .select('id, conversation_id, content, created_at, sender_id, is_read')
+        .in('conversation_id', ids)
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase
+        .from('messages')
+        .select('id, conversation_id')
+        .in('conversation_id', ids)
+        .eq('is_read', false)
+        .neq('sender_id', uid),
+    ])
 
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id,first_name,last_name,avatar_url')
-      .in('id', Array.from(userIds))
+    const profileMap = new Map(((profilesRes.data || []) as { id: string }[]).map((p) => [p.id, p]))
+    const lastByConv = new Map<string, { content: string; created_at: string; sender_id: string; is_read: boolean }>()
+    for (const m of (msgsRes.data || []) as { conversation_id: string; content: string; created_at: string; sender_id: string; is_read: boolean }[]) {
+      if (!lastByConv.has(m.conversation_id)) lastByConv.set(m.conversation_id, m)
+    }
+    const unreadCounts = new Map<string, number>()
+    for (const m of (unreadRes.data || []) as { conversation_id: string }[]) {
+      unreadCounts.set(m.conversation_id, (unreadCounts.get(m.conversation_id) || 0) + 1)
+    }
 
-    const profileMap = new Map((profiles || []).map(p => [p.id, p]))
-
-    const result: ConversationItem[] = data.map(c => {
-      const msgs = (c.messages || []) as { content: string; created_at: string; sender_id: string; is_read: boolean }[]
-      const sorted = [...msgs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    const result: ConversationItem[] = data.map((c) => {
       const otherId = c.buyer_id === uid ? c.seller_id : c.buyer_id
       const listingData = c.listing as unknown as { title: string; images: string[]; price: number }[] | { title: string; images: string[]; price: number }
       const listing = Array.isArray(listingData) ? listingData[0] : listingData
@@ -96,14 +127,24 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
         seller_id: c.seller_id,
         updated_at: c.updated_at,
         listing: listing || null,
-        otherUser: profileMap.get(otherId) || null,
-        lastMessage: sorted[0] || null,
-        unreadCount: msgs.filter(m => !m.is_read && m.sender_id !== uid).length,
+        otherUser: (profileMap.get(otherId) as ConversationItem['otherUser']) || null,
+        lastMessage: lastByConv.get(c.id) || null,
+        unreadCount: unreadCounts.get(c.id) || 0,
       }
     })
 
     setConversations(result)
   }, [supabase])
+
+  const scheduleRefetch = useCallback(
+    (uid: string) => {
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current)
+      refetchTimerRef.current = setTimeout(() => {
+        void fetchConversations(uid)
+      }, 400)
+    },
+    [fetchConversations]
+  )
 
   useEffect(() => {
     conversations.slice(0, 5).forEach((c) => {
@@ -156,33 +197,50 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       userIdRef.current = uid
       await fetchConversations(uid)
       setLoading(false)
+
+      // Scoped realtime: only events for this user's conversations (plus new
+      // conversations addressed to them) trigger a debounced refetch — no
+      // cross-tenant firehose, no per-event full-inbox download.
+      const ids = convIdsRef.current
+      const msgFilter = ids.length
+        ? `conversation_id=in.(${ids.join(',')})`
+        : 'conversation_id=eq.00000000-0000-0000-0000-000000000000'
+      const channel = supabase
+        .channel('mesazhet-list-updates')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages', filter: msgFilter },
+          () => scheduleRefetch(uid)
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'messages', filter: msgFilter },
+          () => scheduleRefetch(uid)
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'conversations', filter: `buyer_id=eq.${uid}` },
+          () => scheduleRefetch(uid)
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'conversations', filter: `seller_id=eq.${uid}` },
+          () => scheduleRefetch(uid)
+        )
+        .subscribe()
+      channelRef.current = channel
     }
 
     init()
 
-    // Realtime: listen for new messages across all conversations to keep list fresh
-    const channel = supabase
-      .channel('mesazhet-list-updates')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => {
-          const uid = userIdRef.current
-          if (uid) fetchConversations(uid)
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages' },
-        () => {
-          const uid = userIdRef.current
-          if (uid) fetchConversations(uid)
-        }
-      )
-      .subscribe()
-
-    return () => { channel.unsubscribe() }
-  }, [fetchConversations, router, supabase])
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
+        channelRef.current = null
+      }
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current)
+    }
+  }, [fetchConversations, scheduleRefetch, router, supabase])
 
   const filteredConvs = search.trim()
     ? conversations.filter(

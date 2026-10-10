@@ -32,6 +32,7 @@ export default function CompletoProfilinCompanyPage() {
     description?: string
     contactPerson?: string
   }>({})
+  const [emailConfirmed, setEmailConfirmed] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -66,6 +67,7 @@ export default function CompletoProfilinCompanyPage() {
 
       if (!activeUser) {
         if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          setChecking(false)
           return
         }
         router.push('/login')
@@ -73,6 +75,7 @@ export default function CompletoProfilinCompanyPage() {
       }
 
       const user = activeUser
+      setEmailConfirmed(Boolean(user.email_confirmed_at))
 
       // Pre-fill from user_metadata
       const meta = user.user_metadata
@@ -170,7 +173,6 @@ export default function CompletoProfilinCompanyPage() {
           firstName: companyName.trim(),
           lastName: contactPerson.trim() || 'Kompani',
           phone: phone.trim(),
-          emailVerified: true,
           isCompany: true,
           companyDescription: description.trim(),
           foundedYear: foundedYear.trim(),
@@ -209,7 +211,8 @@ export default function CompletoProfilinCompanyPage() {
       }
 
       const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-      const redirectUrl = sp?.get('redirect') || sp?.get('next') || '/'
+      const rawRedirect = sp?.get('redirect') || sp?.get('next') || '/'
+      const redirectUrl = /^\/(?!\/)/.test(rawRedirect) ? rawRedirect : '/'
       router.replace(redirectUrl)
     } catch (err) {
       console.error('Submit company profile error:', err)
@@ -229,7 +232,8 @@ export default function CompletoProfilinCompanyPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
-        {/* Verification Success Pill - Clean reassurance */}
+        {/* Verification Success Pill - only when the server confirms it */}
+        {emailConfirmed && (
         <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-[#00675B]/10 border border-[#00675B]/25 text-[#00675B] text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[#00675B]" />
@@ -239,6 +243,7 @@ export default function CompletoProfilinCompanyPage() {
             <Building2 className="h-3 w-3" /> Kompani
           </span>
         </div>
+        )}
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-6 sm:p-8 md:p-9">

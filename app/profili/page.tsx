@@ -106,6 +106,7 @@ export default function ProfilePage() {
 
       if (!activeUser) {
         if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          setLoading(false)
           return
         }
         router.push('/login')
@@ -115,18 +116,28 @@ export default function ProfilePage() {
       setUserId(activeUser.id)
       setUserEmail(activeUser.email || '')
 
-      const [{ data: prof }, { count: lCount }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
-          .eq('id', activeUser.id)
-          .single(),
-        supabase
-          .from('listings')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', activeUser.id)
-          .eq('is_active', true),
-      ])
+      let prof: any = null
+      let lCount: number | null = 0
+      try {
+        const [profRes, listRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id,first_name,last_name,phone,email_verified,avatar_url,created_at,updated_at')
+            .eq('id', activeUser.id)
+            .single(),
+          supabase
+            .from('listings')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', activeUser.id)
+            .eq('is_active', true),
+        ])
+        prof = profRes.data
+        lCount = listRes.count
+      } catch (err) {
+        console.error('Profile load error:', err)
+      } finally {
+        setLoading(false)
+      }
 
       setListingsCount(lCount || 0)
 

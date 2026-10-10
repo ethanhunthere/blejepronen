@@ -193,6 +193,15 @@ export async function getTelemetrySnapshot(): Promise<TelemetrySnapshot> {
  */
 export async function revalidateSellerListings(userId: string) {
   try {
+    // Privileged action: only the seller themselves (or an admin) may trigger
+    // ISR revalidation, and only for a well-formed uuid.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || '')) return
+    const serverSupabase = await createServerSupabaseClient()
+    const {
+      data: { user },
+    } = await serverSupabase.auth.getUser()
+    if (!user || (user.id !== userId && user.user_metadata?.role !== 'admin')) return
+
     const supabase = await createAdminSupabaseClient()
 
     const { data: listings, error } = await supabase

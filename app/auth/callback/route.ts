@@ -19,7 +19,9 @@ function getAdminClient() {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/'
+  const rawNext = requestUrl.searchParams.get('next') ?? '/'
+  // Same-origin only: "?next=@evil.com" would otherwise parse as an external host.
+  const next = /^\/(?!\/)/.test(rawNext) ? rawNext : '/'
   const origin = requestUrl.origin.replace('www.', '')
   const hostname = requestUrl.hostname
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || hostname

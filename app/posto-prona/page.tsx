@@ -1005,6 +1005,9 @@ export default function PostoPronaPage() {
     setError('')
 
     // Step 0: Validate authentication
+    // The whole submit path is guarded by try/finally so a rejection can
+    // never leave the overlay up and the submit button wedged.
+    try {
     const {
       data: { user },
       error: authError,
@@ -1275,6 +1278,10 @@ export default function PostoPronaPage() {
       }),
     }).catch(() => {})
     router.push(`/listings/${listing.id}`)
+    } finally {
+      setUploading(false)
+      isSubmittingRef.current = false
+    }
   }
 
   // Edit mode: the listing is being fetched/prefilled (or a redirect is

@@ -80,6 +80,7 @@ export default function ChatPage() {
   const [newMsg, setNewMsg] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const [connected, setConnected] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -145,6 +146,7 @@ export default function ChatPage() {
 
       if (!activeUser) {
         if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          setLoading(false)
           return
         }
         router.push(`/login?next=${encodeURIComponent(`/mesazhet/${conversationId}`)}`)
@@ -153,56 +155,64 @@ export default function ChatPage() {
 
       setUserId(activeUser.id)
 
-      supabase
-        .from('conversations')
-        .select('id,listing_id,buyer_id,seller_id,listing:listings!inner(id,title,price,city,rooms,area_m2,type,images)')
-        .eq('id', conversationId)
-        .single()
-        .then(({ data: c }) => {
-          if (!c) { router.push('/mesazhet'); return }
+      try {
+        const { data: c } = await supabase
+          .from('conversations')
+          .select('id,listing_id,buyer_id,seller_id,listing:listings!inner(id,title,price,city,rooms,area_m2,type,images)')
+          .eq('id', conversationId)
+          .single()
 
-          const otherId = c.buyer_id === activeUser.id ? c.seller_id : c.buyer_id
-          supabase
-            .from('profiles')
-            .select('id,first_name,last_name,avatar_url')
-            .eq('id', otherId)
-            .single()
-            .then(({ data: profile }) => {
-              setConv({
-                id: c.id,
-                listing_id: c.listing_id,
-                buyer_id: c.buyer_id,
-                seller_id: c.seller_id,
-                listing: c.listing as unknown as ConvData['listing'],
-                otherUser: profile as ConvData['otherUser'],
-              })
-              setLoading(false)
-            })
+        if (!c) {
+          router.push('/mesazhet')
+          return
+        }
+
+        const otherId = c.buyer_id === activeUser.id ? c.seller_id : c.buyer_id
+        const { data: profile } = await supabase
+          .from('profiles_public')
+          .select('id,first_name,last_name,avatar_url,email_verified')
+          .eq('id', otherId)
+          .maybeSingle()
+
+        setConv({
+          id: c.id,
+          listing_id: c.listing_id,
+          buyer_id: c.buyer_id,
+          seller_id: c.seller_id,
+          listing: c.listing as unknown as ConvData['listing'],
+          otherUser: (profile as ConvData['otherUser']) || null,
         })
 
-      supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
-        .then(({ data: msgs }) => {
-          const ms = (msgs || []) as MessageRow[]
-          setMessages(ms)
-          const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== activeUser.id).length
-          if (unreadCount > 0) {
-            supabase
+        const { data: msgs } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true })
+
+        const ms = (msgs || []) as MessageRow[]
+        setMessages(ms)
+        const unreadCount = ms.filter(m => !m.is_read && m.sender_id !== activeUser.id).length
+        if (unreadCount > 0) {
+          try {
+            await supabase
               .from('messages')
               .update({ is_read: true })
               .eq('conversation_id', conversationId)
               .neq('sender_id', activeUser.id)
               .eq('is_read', false)
-              .then(() => {
-                window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadCount } }))
-              })
+            window.dispatchEvent(new CustomEvent('messages-read', { detail: { count: unreadCount } }))
+          } catch {
+            // read-receipts are best-effort; never block the thread
           }
-          // Auto-scroll to bottom after initial load
-          setTimeout(() => scrollToBottom(false), 50)
-        })
+        }
+        // Auto-scroll to bottom after initial load
+        setTimeout(() => scrollToBottom(false), 50)
+      } catch (err) {
+        console.error('Failed to load conversation:', err)
+        setLoadError(true)
+      } finally {
+        setLoading(false)
+      }
     }
 
     init()
@@ -338,6 +348,24 @@ export default function ChatPage() {
             <div className="w-5 h-5 border-2 border-gray-200 border-t-[#00675B] rounded-full animate-spin" />
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-[#F2F7F7] px-6 text-center">
+        <p className="text-sm font-semibold text-[#101828]">Biseda nuk mund të ngarkohej</p>
+        <p className="text-xs text-gray-500 max-w-[280px]">
+          Kontrollo lidhjen e internetit dhe provo përsëri.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="min-h-[40px] px-4 rounded-xl bg-[#00675B] text-white text-xs font-semibold hover:bg-[#004D43] transition-colors cursor-pointer"
+        >
+          Provo përsëri
+        </button>
       </div>
     )
   }

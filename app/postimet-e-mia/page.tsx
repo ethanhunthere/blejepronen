@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -258,12 +258,18 @@ export default function PostimetEMiaPage() {
   const [now] = useState(() => Date.now())
   const [userId, setUserId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'mine' | 'favorites'>('mine')
-  const [favoriteListings, setFavoriteListings] = useState<Listing[]>([])
+  const [favoritePool, setFavoritePool] = useState<Listing[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
   const hasFetchedFavoritesRef = useRef(false)
 
   const supabase = createClient()
-  const { toggleFavorite } = useFavorites()
+  const { toggleFavorite, favoriteIds } = useFavorites()
+  // The rendered favorites list always derives from the hook's synced ids,
+  // so server rollbacks self-heal the UI without optimistic bookkeeping.
+  const favoriteListings = useMemo(
+    () => favoritePool.filter(l => favoriteIds.includes(l.id)),
+    [favoritePool, favoriteIds]
+  )
 
   const fetchListings = useCallback(async (uid: string) => {
     setLoading(true)
@@ -314,6 +320,7 @@ export default function PostimetEMiaPage() {
 
       if (!activeUser) {
         if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          setLoading(false)
           return
         }
         router.push('/login')
@@ -334,7 +341,7 @@ export default function PostimetEMiaPage() {
       const { listing_ids } = await res.json()
 
       if (!listing_ids || listing_ids.length === 0) {
-        setFavoriteListings([])
+        setFavoritePool([])
         return
       }
 
@@ -344,7 +351,7 @@ export default function PostimetEMiaPage() {
         .in('id', listing_ids)
 
       if (error) throw error
-      setFavoriteListings((data || []) as unknown as Listing[])
+      setFavoritePool((data || []) as unknown as Listing[])
     } catch (err) {
       console.error('Fetch favorites error:', err)
       toast.error('Gabim gjatë ngarkimit të të preferuarave.')
@@ -360,7 +367,6 @@ export default function PostimetEMiaPage() {
   }, [activeTab, fetchFavorites])
 
   const handleUnfavorite = useCallback((id: string) => {
-    setFavoriteListings(prev => prev.filter(l => l.id !== id))
     toggleFavorite(id)
   }, [toggleFavorite])
 
@@ -439,7 +445,28 @@ export default function PostimetEMiaPage() {
     if (!userId || !listingToDelete) return
     setIsDeleting(true)
 
-    // 1. Best-effort cleanup of uploaded images in the `listings` bucket so
+    // 1. Delete the row FIRST: if this fails nothing else happens, so a
+    //    surviving row can never point at removed storage objects.
+    let deleteError: { message?: string } | null = null
+    try {
+      const res = await supabase
+        .from('listings')
+        .delete()
+        .eq('id', listingToDelete.id)
+        .eq('user_id', userId)
+      deleteError = res.error
+    } catch (e) {
+      deleteError = e as { message?: string }
+    }
+
+    if (deleteError) {
+      setIsDeleting(false)
+      console.error('Delete listing error:', deleteError)
+      toast.error('Gabim gjatë fshirjes së listimit.')
+      return
+    }
+
+    // 2. Best-effort cleanup of uploaded images in the `listings` bucket so
     //    deleted rows never leave orphaned storage objects behind.
     const storagePaths = extractListingStoragePaths(listingToDelete.images)
     if (storagePaths.length > 0) {
@@ -453,20 +480,7 @@ export default function PostimetEMiaPage() {
       }
     }
 
-    // 2. Delete the listing row itself.
-    const { error } = await supabase
-      .from('listings')
-      .delete()
-      .eq('id', listingToDelete.id)
-      .eq('user_id', userId)
-
     setIsDeleting(false)
-
-    if (error) {
-      console.error('Delete listing error:', error)
-      toast.error('Gabim gjatë fshirjes së listimit.')
-      return
-    }
 
     // 3. Revalidate SSR caches
     try {

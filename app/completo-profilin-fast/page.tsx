@@ -22,6 +22,7 @@ export default function CompletoProfilinFastPage() {
   const [phone, setPhone] = useState('')
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR)
   const [fieldErrors, setFieldErrors] = useState<{ firstName?: string; lastName?: string; phone?: string }>({})
+  const [emailConfirmed, setEmailConfirmed] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -56,6 +57,7 @@ export default function CompletoProfilinFastPage() {
 
       if (!activeUser) {
         if (typeof window !== 'undefined' && sessionStorage.getItem('blejepronen_logging_out')) {
+          setChecking(false)
           return
         }
         router.push('/login')
@@ -63,8 +65,7 @@ export default function CompletoProfilinFastPage() {
       }
 
       const user = activeUser
-
-      // Pre-fill from Google user_metadata or signup metadata
+      setEmailConfirmed(Boolean(user.email_confirmed_at))
       const meta = user.user_metadata
       const isComp = meta?.account_type === 'company' || Boolean(meta?.company_name)
       if (isComp) {
@@ -153,7 +154,6 @@ export default function CompletoProfilinFastPage() {
           firstName: firstName.trim(),
           lastName: isCompany ? lastName.trim() || 'Kompani' : lastName.trim(),
           phone: phone.trim(),
-          emailVerified: true,
           isCompany,
           avatarUrl: avatar,
         }),
@@ -190,7 +190,8 @@ export default function CompletoProfilinFastPage() {
       }
 
       const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-      const redirectUrl = sp?.get('redirect') || sp?.get('next') || '/'
+      const rawRedirect = sp?.get('redirect') || sp?.get('next') || '/'
+      const redirectUrl = /^\/(?!\/)/.test(rawRedirect) ? rawRedirect : '/'
       router.replace(redirectUrl)
     } catch (err) {
       console.error('Submit error:', err)
@@ -210,7 +211,8 @@ export default function CompletoProfilinFastPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Verification Success Pill */}
+        {/* Verification Success Pill — only when the server confirms it */}
+        {emailConfirmed && (
         <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs sm:text-sm font-medium flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
@@ -220,6 +222,7 @@ export default function CompletoProfilinFastPage() {
             Individual
           </span>
         </div>
+        )}
 
         {/* Card */}
         <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-6 sm:p-8 md:p-9">

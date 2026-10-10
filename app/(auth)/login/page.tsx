@@ -66,6 +66,20 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
+  // A blocked OAuth redirect can resolve without error and without leaving
+  // the page; never let the form stay locked in that case.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setOauthLoading(null)
+    }
+    const t = setTimeout(() => setOauthLoading(null), 20000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+
   useEffect(() => {
     router.prefetch('/')
     router.prefetch('/completo-profilin-fast')
@@ -129,7 +143,8 @@ function LoginForm() {
           }
         }
 
-        const nextUrl = searchParams.get('redirect') || searchParams.get('next') || '/'
+        const rawNext = searchParams.get('redirect') || searchParams.get('next') || '/'
+        const nextUrl = /^\/(?!\/)/.test(rawNext) ? rawNext : '/'
         router.replace(nextUrl)
         return
       }

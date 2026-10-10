@@ -248,8 +248,10 @@ export default function SettingsPage() {
 
       if (!activeUser) {
         await new Promise((r) => setTimeout(r, 300))
-        const { data } = await supabase.auth.getUser()
-        activeUser = data?.user || null
+        try {
+          const { data } = await supabase.auth.getUser()
+          activeUser = data?.user || null
+        } catch {}
       }
 
       if (!activeUser) {
@@ -598,7 +600,8 @@ export default function SettingsPage() {
   const handleSelectAvatar = async (url: string) => {
     setAvatarUrl(url)
     try {
-      await supabase.from('profiles').update({ avatar_url: url }).eq('id', currentUserId)
+      const { error: avatarErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', currentUserId)
+      if (avatarErr) throw avatarErr
       try {
         const cached = localStorage.getItem('bp_profile_cache')
         if (cached) {
@@ -643,7 +646,8 @@ export default function SettingsPage() {
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
       setAvatarUrl(publicUrl)
 
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUserId)
+      const { error: avatarErr } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUserId)
+      if (avatarErr) throw avatarErr
 
       try {
         const cached = localStorage.getItem('bp_profile_cache')

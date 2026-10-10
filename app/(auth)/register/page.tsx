@@ -223,6 +223,20 @@ export default function RegisterPage() {
 
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
 
+  // A blocked OAuth redirect can resolve without error and without leaving
+  // the page; never let the form stay locked in that case.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setOauthLoading(null)
+    }
+    const t = setTimeout(() => setOauthLoading(null), 20000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+
   const isOAuthCancel = (errText?: string | null) => {
     if (!errText) return false
     const lower = errText.toLowerCase()

@@ -23,13 +23,17 @@ function formatTime(iso: string): string {
 export default function TelemetryPanel() {
   const [snapshot, setSnapshot] = useState<TelemetrySnapshot | null>(null)
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
 
   const load = useCallback(async () => {
+    setLoading(true)
+    setFailed(false)
     try {
       const next = await getTelemetrySnapshot()
       setSnapshot(next)
     } catch (e) {
       console.error('telemetry panel refresh failed:', e)
+      setFailed(true)
     } finally {
       setLoading(false)
     }
@@ -65,7 +69,18 @@ export default function TelemetryPanel() {
       </div>
 
       <div className="p-6">
-        {!snapshot ? (
+        {failed && !loading ? (
+          <div className="flex items-center justify-between gap-3 text-sm text-red-600">
+            <span>Leximi i telemetrisë dështoi.</span>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="text-xs font-semibold underline cursor-pointer"
+            >
+              Provo përsëri
+            </button>
+          </div>
+        ) : !snapshot ? (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin text-[#00675B]" />
             Duke lexuar telemetrinë...
