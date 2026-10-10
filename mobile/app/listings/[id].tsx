@@ -58,6 +58,8 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase, Listing } from '@/lib/supabase'
 import { apiResolveContacts } from '@/lib/api'
+import { useTrackListingView, trackListingFavorite, trackListingLead } from '@/lib/listing-analytics'
+import { MarketDeltaCard } from '@/components/MarketDeltaCard'
 import { getAvatarSource } from '@/lib/avatars'
 import { useFavorites } from '@/lib/favorites'
 import { openLoginScreen } from '@/lib/navigation'
@@ -124,6 +126,7 @@ export default function ListingDetailScreen() {
   }, [])
 
   const [listing, setListing] = useState<Listing | null>(() => cachedListing)
+  useTrackListingView(listing?.id, { ownerId: listing?.user_id })
   const [loading, setLoading] = useState(() => !cachedListing)
   const { isFavorite: checkFavorite, toggleFavorite: toggleFav } = useFavorites()
   const isFavorite = id ? checkFavorite(id) : false
@@ -385,6 +388,8 @@ export default function ListingDetailScreen() {
     const res = await toggleFav(listing.id)
     if (res.requiresAuth) {
       openLoginScreen(router, { redirectTo: `/listings/${listing.id}`, reason: 'favorite' })
+    } else if (res.success && res.isFavorite) {
+      void trackListingFavorite(listing.id, { ownerId: listing.user_id })
     }
   }
 
@@ -429,6 +434,7 @@ export default function ListingDetailScreen() {
       return
     }
     setContactModalVisible(true)
+    if (listing) void trackListingLead(listing.id, { ownerId: listing.user_id })
   }
 
   const handleWhatsApp = (customText?: string) => {
@@ -450,6 +456,7 @@ export default function ListingDetailScreen() {
     Linking.openURL(`https://wa.me/${cleanWhatsAppDigits}?text=${encoded}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni WhatsApp.')
     })
+    if (listing) void trackListingLead(listing.id, { ownerId: listing.user_id })
   }
 
   const handleChat = async (initialQuery?: string) => {
@@ -469,6 +476,7 @@ export default function ListingDetailScreen() {
 
     if (startingChatRef.current) return
     startingChatRef.current = true
+    void trackListingLead(listing.id, { ownerId: listing.user_id })
     try {
       setStartingChat(true)
       const { data: existing } = await supabase
@@ -1106,6 +1114,13 @@ export default function ListingDetailScreen() {
                 </View>
               ) : null}
             </View>
+
+            {listing.type === 'shitje' && listing.area_m2 > 0 && listing.price > 0 ? (
+              <MarketDeltaCard
+                city={listing.city}
+                pricePerM2={Math.round(listing.price / listing.area_m2)}
+              />
+            ) : null}
 
             {/* Confident Editorial Title */}
             <Text style={[styles.editorialTitle, { color: colors.textPrimary }]}>
