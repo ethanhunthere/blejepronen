@@ -74,7 +74,9 @@ export default function ContactSellerCard({
 
   useEffect(() => {
     const supabase = createClient()
+    let mounted = true
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
       if (session?.user) {
         setIsLoggedIn(true)
         setCurrentUserId(session.user.id)
@@ -93,6 +95,9 @@ export default function ContactSellerCard({
       }
     })
     setLoginUrl(`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`)
+    return () => {
+      mounted = false
+    }
   }, [listingId])
 
   const rawPhone = resolvedPhone || ''

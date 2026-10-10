@@ -18,7 +18,6 @@ interface MarketPageProps {
  * the freshest listings — the GEO grounding surface for AI search engines.
  */
 export async function MarketPage({ city, lang }: MarketPageProps) {
-  const stats = await fetchMarketStats(city ?? null)
   const supabase = createPublicSupabaseClient()
 
   let latestQuery = supabase
@@ -28,9 +27,25 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
     .order('created_at', { ascending: false })
     .limit(8)
   if (city) latestQuery = latestQuery.eq('city', city)
-  const { data: latest } = await latestQuery
 
-  if (!stats) return null
+  const [stats, latestRes] = await Promise.all([
+    fetchMarketStats(city ?? null),
+    latestQuery,
+  ])
+  const latest = latestRes.data
+
+  if (!stats) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <p className="text-sm font-semibold text-[#101828]">
+          {lang === 'sq' ? 'Statistikat nuk mund të ngarkoheshin.' : 'Statistics could not be loaded.'}
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          {lang === 'sq' ? 'Provoni të rifreskoni faqen pas pak.' : 'Please refresh in a moment.'}
+        </p>
+      </div>
+    )
+  }
 
   const title = city ? (lang === 'sq' ? `Tregu i pronave në ${city}` : `Property market in ${city}, Kosovo`) : lang === 'sq' ? 'Tregu i pronave në Kosovë' : 'Kosovo property market'
 

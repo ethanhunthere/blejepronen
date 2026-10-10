@@ -87,7 +87,7 @@ export default function PostPropertyScreen() {
   const insets = useSafeAreaInsets()
   const syncUser = getSyncAuthUser()
   const [currentUser, setCurrentUser] = useState<any>(() => syncUser)
-  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated())
+  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated() || !getSyncAuthUser())
   const [loading, setLoading] = useState(false)
   const [focusedField, setFocusedField] = useState<
     'title' | 'description' | 'price' | 'area' | 'address' | null

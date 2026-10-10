@@ -36,8 +36,11 @@ export default function LogoutModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, loading, onClose])
 
+  const [failed, setFailed] = useState(false)
+
   const handleConfirm = async () => {
     setLoading(true)
+    setFailed(false)
     try {
       try {
         localStorage.removeItem('blejepronen_cached_user')
@@ -51,14 +54,17 @@ export default function LogoutModal({
       await onLogoutConfirmed()
     } catch (err) {
       console.error('Logout error:', err)
-    } finally {
-      if (typeof window !== 'undefined') {
-        const dest = redirectTo || '/'
-        if (window.location.pathname === dest) {
-          window.location.reload()
-        } else {
-          window.location.replace(dest)
-        }
+      // A failed logout must NOT navigate or claim success.
+      setFailed(true)
+      setLoading(false)
+      return
+    }
+    if (typeof window !== 'undefined') {
+      const dest = redirectTo || '/'
+      if (window.location.pathname === dest) {
+        window.location.reload()
+      } else {
+        window.location.replace(dest)
       }
     }
   }
@@ -136,7 +142,12 @@ export default function LogoutModal({
             disabled={loading}
             className="flex-1 min-h-[44px] rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white font-semibold text-sm shadow-sm active:scale-95 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? (
+            {failed && (
+          <p className="text-xs font-semibold text-red-600 mb-2" role="alert">
+            Dalja dështoi. Provoni përsëri.
+          </p>
+        )}
+        {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>

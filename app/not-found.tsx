@@ -13,7 +13,7 @@ export default function NotFound() {
       <div className="text-center max-w-lg mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-gray-100 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.06)]">
         {/* Luxury Badge */}
         <div className="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#00675B]/15 via-emerald-50 to-[#C8B882]/20 flex items-center justify-center border border-[#00675B]/20 shadow-inner mb-6">
-          <Compass className="w-10 h-10 text-[#00675B] animate-spin" style={{ animationDuration: '24s' }} />
+          <Compass className="w-10 h-10 text-[#00675B] animate-spin"  />
           <span className="absolute -top-1 -right-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-[#00675B] text-white shadow-sm">
             404
           </span>

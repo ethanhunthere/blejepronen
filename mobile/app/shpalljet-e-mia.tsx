@@ -219,7 +219,7 @@ export default function ShpalljetEMiaScreen() {
   const [currentUser, setCurrentUser] = useState<any>(syncUser)
   // Mirrors the Post screen's auth gate: while the auth cache is still hydrating we stay
   // in the loading state, so a logged-in cold deep-link never flashes the guest gate.
-  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated())
+  const [authChecking, setAuthChecking] = useState(() => !isAuthCacheHydrated() || !getSyncAuthUser())
   const [loading, setLoading] = useState(() =>
     syncUser ? initialUserListings.length === 0 : !isAuthCacheHydrated()
   )

@@ -27,6 +27,7 @@ function langAlternates(sqPath: string, enPath: string) {
     languages: {
       sq: `${SITE_URL}${sqPath}`,
       en: `${SITE_URL}${enPath}`,
+      'x-default': `${SITE_URL}${sqPath}`,
     },
   }
 }
@@ -37,9 +38,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [listingsRes, profilesRes, hostsRes, hubParams] = await Promise.all([
     supabase.from('listings').select('id,updated_at').eq('is_active', true).limit(5000),
-    supabase.from('profiles').select('id,updated_at').limit(1000),
+    supabase.from('profiles').select('id,updated_at').order('updated_at', { ascending: false }).limit(1000),
     supabase.from('listings').select('user_id').eq('is_active', true).limit(5000),
-    fetchHubStaticParams(),
+    fetchHubStaticParams().catch(() => ({ cityTypes: [], hoods: [], cities: [] })),
   ])
 
   const listings = (listingsRes.data || []) as ListingRow[]

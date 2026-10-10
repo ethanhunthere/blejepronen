@@ -1,4 +1,5 @@
 'use client'
+const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
@@ -601,7 +602,7 @@ export function ListingsExplorer({
   const filteredCities = useMemo(() => {
     if (!citySearchQuery.trim()) return ALL_CITIES
     const q = citySearchQuery.toLowerCase()
-    return ALL_CITIES.filter(c => c.toLowerCase().includes(q))
+    return ALL_CITIES.filter(c => fold(c).includes(fold(q)))
   }, [citySearchQuery])
 
   const availableNeighborhoods = useMemo(() => {

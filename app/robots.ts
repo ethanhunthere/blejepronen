@@ -17,6 +17,10 @@ const PRIVATE_PATHS = [
   '/completo-profilin',
   '/completo-profilin-fast',
   '/completo-profilin-company',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
 ]
 
 export default function robots(): MetadataRoute.Robots {
@@ -42,7 +46,7 @@ export default function robots(): MetadataRoute.Robots {
           'Bytespider',
           'cohere-ai',
         ],
-        allow: ['/', '/listings', '/pronat', '/tregu', '/en', '/profili', '/kontakti', '/kushtet', '/privatesia', '/llms.txt'],
+        allow: ['/', '/listings', '/pronat', '/tregu', '/en', '/kontakti', '/kushtet', '/privatesia', '/llms.txt'],
         disallow: PRIVATE_PATHS,
       },
     ],

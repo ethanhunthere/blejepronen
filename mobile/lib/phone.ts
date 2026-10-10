@@ -8,12 +8,12 @@ export function normalizePhoneNumber(raw: string): string {
     clean = '+' + clean.slice(2)
   }
 
-  // Local Kosovo format e.g. 044123456 or 046814700 -> +38344123456
-  if (/^0(3|4)\d{7}$/.test(clean)) {
+  // Kosovo mobiles 044–049 + 6 digits, and Kosovo landlines 028/029.
+  if (/^0(4[4-9])\d{6}$/.test(clean) || /^0(28|29)\d{5,6}$/.test(clean)) {
     clean = '+383' + clean.slice(1)
   }
-  // Local Albania format e.g. 0691234567 -> +355691234567
-  else if (/^06\d{8}$/.test(clean)) {
+  // Albania mobiles 06x, then remaining Albanian landlines (02/03/04/05).
+  else if (/^06\d{8}$/.test(clean) || /^0[2-5]\d{7}$/.test(clean)) {
     clean = '+355' + clean.slice(1)
   }
   // If starts with 383 without +

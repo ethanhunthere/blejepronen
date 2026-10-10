@@ -123,6 +123,8 @@ export async function fetchMarketStats(city: string | null): Promise<{
     .from('listings')
     .select('price, area_m2, type, neighborhood, updated_at, created_at', { count: 'exact' })
     .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(5000)
   if (city) query = query.eq('city', city)
 
   const { data, count, error } = await query
@@ -134,7 +136,11 @@ export async function fetchMarketStats(city: string | null): Promise<{
     .filter((r) => r.area_m2 && r.area_m2 > 0)
     .map((r) => r.price / r.area_m2)
     .sort((a, b) => a - b)
-  const median = ppms.length ? ppms[Math.floor(ppms.length / 2)] : null
+    const median = ppms.length
+    ? ppms.length % 2
+      ? ppms[Math.floor(ppms.length / 2)]
+      : (ppms[ppms.length / 2 - 1] + ppms[ppms.length / 2]) / 2
+    : null
 
   const byHood = new Map<string, number>()
   for (const r of data) {
@@ -157,8 +163,8 @@ export async function fetchMarketStats(city: string | null): Promise<{
     forSale: sale.length,
     forRent: rent.length,
     medianSalePpm2: median ? Math.round(median) : null,
-    minSale: sale.length ? Math.min(...sale.map((r) => r.price)) : null,
-    maxSale: sale.length ? Math.max(...sale.map((r) => r.price)) : null,
+    minSale: sale.length ? sale.reduce((a, r) => Math.min(a, r.price as number), Infinity) : null,
+    maxSale: sale.length ? sale.reduce((a, r) => Math.max(a, r.price as number), -Infinity) : null,
     neighborhoods,
     latestUpdate: latest,
   }

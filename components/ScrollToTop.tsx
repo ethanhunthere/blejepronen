@@ -18,7 +18,7 @@ function ScrollToTop() {
   }
 
   return (
-    <button
+    <button tabIndex={visible ? 0 : -1} aria-hidden={!visible}
       type="button"
       onClick={scrollToTop}
       aria-label="Kthehu lart"
