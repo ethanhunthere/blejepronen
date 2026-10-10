@@ -362,7 +362,7 @@ export default function RegisterScreen() {
       }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
-      void WebBrowser.dismissBrowser().catch(() => {})
+      void Promise.resolve(WebBrowser.dismissBrowser()).catch(() => {})
 
       if (result.type === 'success' && result.url) {
         await finishOAuth(result.url, providerTitle)
@@ -902,7 +902,7 @@ export default function RegisterScreen() {
               {/* Screen Title & Welcome */}
               <View style={styles.titleSection}>
                 <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>
-                  Krijoni Llogari të Re
+                  Krijoni llogari të re
                 </Text>
                 <Text style={[styles.mainSubtitle, { color: colors.textMuted }]}>
                   Zgjidhni llojin e profilit dhe regjistrohuni brenda pak sekondave.
@@ -979,7 +979,7 @@ export default function RegisterScreen() {
                       />
                       <TextInput
                         style={[styles.textInput, { color: colors.textPrimary }]}
-                        placeholder="psh. Prishtina Real Estate SH.P.K."
+                        placeholder="p.sh. Prishtina Real Estate SH.P.K."
                         placeholderTextColor={colors.textLight}
                         value={companyName}
                         editable={!locked}

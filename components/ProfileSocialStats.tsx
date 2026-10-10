@@ -89,13 +89,13 @@ export default function ProfileSocialStats({
           type="button"
           onClick={openFollowers}
           className="flex items-center gap-1.5 min-h-[36px] text-xs sm:text-sm text-gray-700 hover:text-[#00675B] transition-colors group cursor-pointer"
-          title="Shiko ndiqësit"
+          title="Shiko ndjekësit"
         >
           <span className="font-extrabold text-[#101828] group-hover:text-[#00675B] text-sm sm:text-base transition-colors">
             {followersCount}
           </span>
           <span className="text-gray-500 group-hover:text-[#00675B] text-xs sm:text-sm transition-colors underline-offset-4 group-hover:underline">
-            ndiqës
+            ndjekës
           </span>
         </button>
 

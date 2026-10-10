@@ -5,7 +5,7 @@ import * as WebBrowser from 'expo-web-browser'
 
 import { supabase, safeExchangeCodeForSession } from '@/lib/supabase'
 import { syncAuthSession } from '@/lib/auth-cache'
-import { safeBack } from '@/lib/navigation'
+import { safeBack, isSafeInternalRedirect } from '@/lib/navigation'
 
 /**
  * Native OAuth callback route (blejepronen://auth/callback).
@@ -21,6 +21,7 @@ export default function AuthCallbackRoute() {
     access_token?: string
     refresh_token?: string
     error?: string
+    next?: string
   }>()
   const handledRef = useRef(false)
 
@@ -29,7 +30,7 @@ export default function AuthCallbackRoute() {
     handledRef.current = true
 
     // Android Custom Tabs / iOS ASWebAuthenticationSession cleanup
-    void WebBrowser.dismissBrowser().catch(() => {})
+    void Promise.resolve(WebBrowser.dismissBrowser()).catch(() => {})
 
     ;(async () => {
       try {
@@ -66,13 +67,21 @@ export default function AuthCallbackRoute() {
           syncAuthSession(user, freshProfile)
         }
 
-        router.replace('/(tabs)')
+        // Honor a sanitized ?next= so recovery links land on the reset
+        // screen (or any guarded-action origin) instead of dumping the
+        // user on the home tab.
+        const next = params.next
+        if (next && isSafeInternalRedirect(next)) {
+          router.replace(next as never)
+        } else {
+          router.replace('/(tabs)')
+        }
       } catch (err) {
         console.warn('AuthCallback error, navigating back:', err)
         safeBack(router, '/(tabs)')
       }
     })()
-  }, [params.code, params.access_token, params.refresh_token, params.error, router])
+  }, [params.code, params.access_token, params.refresh_token, params.error, params.next, router])
 
   return <View />
 }

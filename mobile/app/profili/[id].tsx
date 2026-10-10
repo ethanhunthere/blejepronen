@@ -846,7 +846,7 @@ export default function PublicProfileScreen() {
                     {followersCount}
                   </Text>
                   <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
-                    ndiqës
+                    ndjekës
                   </Text>
                 </Pressable>
 
@@ -1410,7 +1410,7 @@ export default function PublicProfileScreen() {
                     {followersCount}
                   </Text>
                   <Text style={[styles.socialStatLabel, { color: colors.textMuted }]}>
-                    ndiqës
+                    ndjekës
                   </Text>
                 </Pressable>
 

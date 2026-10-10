@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { TrendingDown, TrendingUp } from 'lucide-react-native'
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react-native'
 
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
@@ -59,6 +59,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
   if (!loaded || !median) return null
   const deltaPct = Math.round(((pricePerM2 - median) / median) * 100)
   const above = deltaPct > 0
+  const flat = deltaPct === 0
   const accent = above ? '#B45309' : colors.primary
 
   return (
@@ -71,7 +72,9 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
         },
       ]}
     >
-      {above ? (
+      {flat ? (
+        <Minus size={15} color={colors.textMuted} strokeWidth={2.4} />
+      ) : above ? (
         <TrendingUp size={15} color={accent} strokeWidth={2.4} />
       ) : (
         <TrendingDown size={15} color={accent} strokeWidth={2.4} />
@@ -81,7 +84,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
           {above ? '+' : ''}
           {deltaPct}%
         </Text>{' '}
-        vs mediana e {city} ({fmt(median)} €/m², {sample} shpallje)
+        {flat ? '— sa mediana' : ' vs mediana'} e {city} ({fmt(median)} €/m², {sample} shpallje)
       </Text>
     </View>
   )

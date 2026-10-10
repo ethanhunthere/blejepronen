@@ -104,7 +104,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
               <Pressable style={styles.secondaryBtn} onPress={this.handleGoHome}>
                 <Home size={16} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.secondaryBtnText}>Kthehu te Ballina</Text>
+                <Text style={styles.secondaryBtnText}>Kthehu në Kryefaqe</Text>
               </Pressable>
             </View>
 

@@ -241,6 +241,9 @@ export const FavoriteButton = memo(function FavoriteButton({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={isFavorite ? 'Hiq nga të preferuarat' : 'Ruaj te të preferuarat'}
+      accessibilityState={{ checked: isFavorite }}
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

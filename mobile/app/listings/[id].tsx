@@ -544,6 +544,14 @@ export default function ListingDetailScreen() {
       const locText = [listing.neighborhood, listing.city].filter(Boolean).join(', ')
       const messageBody = `${listing.title}\n💰 ${formatPrice(listing.price)}${m2Text}\n📍 ${locText}`
 
+      // RNW has no Share implementation: copy the link and say so, instead
+      // of failing silently.
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${messageBody}\n${shareUrl}`)
+        Alert.alert('Lidhja u kopjua', 'Lidhja e shpalljes u kopjua në memorie.')
+        return
+      }
+
       await Share.share(
         Platform.OS === 'ios'
           ? { title: listing.title, message: messageBody, url: shareUrl }
@@ -963,10 +971,12 @@ export default function ListingDetailScreen() {
               <View
                 style={[
                   styles.navCircleStickyDisc,
-                  { backgroundColor: 'rgba(17,24,39,0.55)' },
+                  { backgroundColor: 'rgba(17,24,39,0.55)', borderColor: specularBorder },
                 ]}
               >
-                <Flag size={16} color="#FFFFFF" strokeWidth={2.2} />
+                <View style={styles.navOpticalCenter}>
+                  <Flag size={16} color="#FFFFFF" strokeWidth={2.2} />
+                </View>
               </View>
             </TactilePressable>
           </View>
@@ -1016,6 +1026,7 @@ export default function ListingDetailScreen() {
               index,
             })}
             onMomentumScrollEnd={handleGalleryScrollEnd}
+            onScroll={Platform.OS === 'web' ? handleGalleryScrollEnd : undefined}
             onScrollEndDrag={handleGalleryScrollEnd}
             renderItem={({ item: img, index: i }) => (
               <Pressable
@@ -1072,7 +1083,7 @@ export default function ListingDetailScreen() {
           )}
 
           {/* Bottom Left: Property Type Badge & Featured Star */}
-          <View style={styles.heroLeftBadgesRow}>
+          <View style={styles.heroLeftBadgesRow} pointerEvents="none">
             <View
               style={[
                 styles.typeTagCapsule,
@@ -1812,7 +1823,7 @@ export default function ListingDetailScreen() {
                           Pagesë shtesë mujore (opsionale)
                         </Text>
                         <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
-                          Përshpejton shlyerjen e kryegjëses
+                          Rrit këstin mujor — matet te përballueshmëria (DTI)
                         </Text>
                       </View>
                       <View

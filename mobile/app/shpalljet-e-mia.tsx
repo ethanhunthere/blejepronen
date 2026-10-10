@@ -1602,7 +1602,7 @@ export default function ShpalljetEMiaScreen() {
           {/* Apple-grade Hierarchical Filter Section */}
           <View style={[styles.filterBarOuter, { borderBottomColor: specularBorder, backgroundColor: colors.background }]}>
             <View style={[styles.filterBarInner, { maxWidth: maxContentWidth, paddingHorizontal: responsivePadding }]}>
-              {/* Top Level Segments: Left = "Të Gjitha", Right = "Të Ruajturat" */}
+              {/* Top Level Segments: Left = "Të gjitha", Right = "Të Ruajturat" */}
               <View
                 style={[
                   styles.topSegmentTrack,
@@ -1610,7 +1610,7 @@ export default function ShpalljetEMiaScreen() {
                   { backgroundColor: colors.surface, borderColor: specularBorder },
                 ]}
               >
-                {/* Left: Të Gjitha */}
+                {/* Left: Të gjitha */}
                 <Pressable
                   style={[
                     styles.topSegmentTab,
@@ -1651,7 +1651,7 @@ export default function ShpalljetEMiaScreen() {
                       },
                     ]}
                   >
-                    Të Gjitha
+                    Të gjitha
                   </Text>
                   <View
                     style={[
@@ -1770,7 +1770,7 @@ export default function ShpalljetEMiaScreen() {
                 </Pressable>
               </View>
 
-              {/* Child Sub-Filters Section: Below "Të Gjitha" */}
+              {/* Child Sub-Filters Section: Below "Të gjitha" */}
               <View
                 style={[
                   styles.childFiltersSection,

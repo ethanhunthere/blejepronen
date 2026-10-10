@@ -218,7 +218,7 @@ export default function LoginScreen() {
 
         showBanner({
           type: 'success',
-          title: 'Mirësevini!',
+          title: 'Mirë se vini!',
           message: `Jeni kyçur me sukses si ${displayName}.`,
         })
 
@@ -277,7 +277,7 @@ export default function LoginScreen() {
           showBanner({
             type: 'info',
             title: `${providerTitle} po përgatitet`,
-            message: `Hyrja përmes ${providerTitle} po aktivizohet. Mund të kyçeni menjëherë me Google ose me email!`,
+            message: `Hyrja përmes ${providerTitle} po aktivizohet. Deri atëherë mund të kyçeni me email.`,
           })
         } else {
           setErrors({
@@ -291,7 +291,7 @@ export default function LoginScreen() {
       }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
-      void WebBrowser.dismissBrowser().catch(() => {})
+      void Promise.resolve(WebBrowser.dismissBrowser()).catch(() => {})
 
       if (result.type === 'success' && result.url) {
         await finishOAuth(result.url, providerTitle)
@@ -324,7 +324,7 @@ export default function LoginScreen() {
 
           showBanner({
             type: 'success',
-            title: 'Mirësevini!',
+            title: 'Mirë se vini!',
             message: `Jeni kyçur me sukses si ${displayName}.`,
           })
 
@@ -378,7 +378,10 @@ export default function LoginScreen() {
           onPress: async () => {
             try {
               const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-                redirectTo: 'https://blejepronen.com/auth/callback?next=/reset-password',
+                redirectTo:
+                  Platform.OS === 'web'
+                    ? `${window.location.origin}/auth/callback?next=/reset-password`
+                    : Linking.createURL('/auth/callback', { queryParams: { next: '/reset-password' } }),
               })
               if (error) throw error
               if (Platform.OS !== 'web') {
@@ -468,7 +471,7 @@ export default function LoginScreen() {
 
       showBanner({
         type: 'success',
-        title: 'Mirësevini përsëri!',
+        title: 'Mirë se u kthyet!',
         message: `Jeni kyçur me sukses si ${displayName}.`,
       })
 
@@ -581,7 +584,7 @@ export default function LoginScreen() {
           {/* Screen Title & Welcome */}
           <View style={styles.titleSection}>
             <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>
-              Mirësevini përsëri
+              Mirë se u kthyet
             </Text>
             <Text style={[styles.mainSubtitle, { color: colors.textMuted }]}>
               Kyçuni në llogarinë tuaj për të menaxhuar pronat dhe komunikimet.

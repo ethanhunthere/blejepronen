@@ -31,6 +31,7 @@ import { StatusBar } from 'expo-status-bar'
 
 import { BannerProvider } from '@/context/BannerContext'
 import { LogoutProvider } from '@/context/LogoutContext'
+import '@/lib/web-alert-polyfill'
 import { supabase } from '@/lib/supabase'
 // Deferred: react-native-webrtc + the call UI are heavy; evaluating them at
 // module scope costs startup latency for a feature most sessions never use.

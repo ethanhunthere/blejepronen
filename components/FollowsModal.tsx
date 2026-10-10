@@ -158,7 +158,7 @@ export default function FollowsModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={activeTab === 'followers' ? 'Kërko në ndiqës...' : 'Kërko llogari...'}
+              placeholder={activeTab === 'followers' ? 'Kërko në ndjekës...' : 'Kërko llogari...'}
               className="w-full pl-9 pr-8 py-2 text-base sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all"
             />
             {searchQuery && (
@@ -189,7 +189,7 @@ export default function FollowsModal({
                 {searchQuery
                   ? 'Nuk u gjet asnjë rezultat'
                   : activeTab === 'followers'
-                  ? 'Ende nuk ka ndiqës'
+                  ? 'Ende nuk ka ndjekës'
                   : 'Nuk po ndjek asnjë profil ende'}
               </p>
               <p className="text-xs text-gray-500 max-w-xs mt-1">

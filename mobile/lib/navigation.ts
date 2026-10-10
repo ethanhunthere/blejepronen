@@ -69,7 +69,7 @@ export function openRegisterScreen(router: Router, options?: AuthNavigationOptio
  * Rejects absolute URLs (`https:`, `http:`, `javascript:`), protocol-relative
  * paths (`//evil.com`), and anything that does not start with `/`.
  */
-function isSafeInternalRedirect(target: string): boolean {
+export function isSafeInternalRedirect(target: string): boolean {
   if (!target) return false
   // Any scheme (http:, https:, javascript:, file:, etc.) — reject.
   if (/^[a-zA-Z][a-zA-Z0-9+.\-]*:/.test(target)) return false

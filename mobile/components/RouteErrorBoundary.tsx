@@ -90,7 +90,7 @@ export function ErrorState({
   onRetry,
   retryLabel = 'Provo përsëri',
   onReset,
-  resetLabel = 'Kthehu te Ballina',
+  resetLabel = 'Kthehu në Kryefaqe',
   compact = false,
   children,
 }: ErrorStateProps) {

@@ -152,6 +152,7 @@ export function LogoutProgressOverlay({
         {
           backgroundColor: colors.background,
           zIndex: visible ? 99999 : -1,
+          display: visible ? 'flex' : 'none',
         },
       ]}
     >

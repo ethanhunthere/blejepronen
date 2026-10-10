@@ -493,14 +493,14 @@ export function FollowsModal({
                 {searchQuery
                   ? 'Asnjë profil nuk përputhet'
                   : activeTab === 'followers'
-                  ? 'Ende nuk ka ndiqës'
+                  ? 'Ende nuk ka ndjekës'
                   : 'Nuk ndjek asnjë profil ende'}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                 {searchQuery
                   ? `Nuk u gjet asnjë përdorues me termin "${searchQuery}".`
                   : activeTab === 'followers'
-                  ? 'Ky profil nuk ka ende ndiqës të regjistruar në platformë.'
+                  ? 'Ky profil nuk ka ende ndjekës të regjistruar në platformë.'
                   : 'Ky profil nuk ka filluar ende të ndjekë përdorues apo agjenci të tjera.'}
               </Text>
             </View>

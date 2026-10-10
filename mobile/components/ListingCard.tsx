@@ -300,7 +300,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 strokeWidth={2.2}
               />
               <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
-                {listing.rooms} dhomë
+                {listing.rooms} dhoma
               </Text>
             </View>
           )}
