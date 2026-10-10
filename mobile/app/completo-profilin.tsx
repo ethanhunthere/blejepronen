@@ -190,6 +190,10 @@ export default function CompletoProfilinScreen() {
       website,
     ])
 
+  // Live mirror of the form values: keep updated on every render so beforeRemove
+  // listener always compares against fresh state without relying on mount closure.
+  liveSnapshotRef.current = currentFormSnapshot()
+
   const isMountedRef = useRef(true)
   useEffect(() => {
     isMountedRef.current = true
@@ -204,10 +208,6 @@ export default function CompletoProfilinScreen() {
   // release never reflows the exiting screen mid-transition.
   // Bypassed unconditionally during logout so prompt collision never occurs.
   useEffect(() => {
-    // Live mirror of the form values: the beforeRemove listener below is
-    // registered once and would otherwise compare against mount-time state.
-    liveSnapshotRef.current = currentFormSnapshot()
-
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       Keyboard.dismiss()
       if (isLoggingOut || isLogoutInProgress()) return
