@@ -26,6 +26,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme, Fonts } from '@/constants/theme'
+import { useRouter } from 'expo-router'
 import { getAvatarSource } from '@/lib/avatars'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { callEngine } from '@/lib/calling'
@@ -65,6 +66,7 @@ export function CallModal({
   conversationId,
   counterpartEmailVerified,
 }: CallModalProps) {
+  const router = useRouter()
   const insets = useSafeAreaInsets()
   const { colors, theme } = useTheme()
 
@@ -94,11 +96,9 @@ export function CallModal({
   const handleClose = useCallback(() => {
     if (isClosingRef.current) return
     isClosingRef.current = true
-    animateDismiss(() => {
-      setRendered(false)
-      isClosingRef.current = false
-      onClose()
-    })
+    // onDismiss is the single exit path; a callback here would
+    // double-fire onClose on every programmatic dismissal.
+    animateDismiss()
   }, [animateDismiss, onClose])
 
   // Synchronize modal presentation lifecycle with zero unmount flicker
@@ -259,15 +259,22 @@ export function CallModal({
               <Text style={[styles.nameText, { color: colors.textPrimary }]} numberOfLines={1}>
                 {counterpartName}
               </Text>
-              {isAgency ? (
-                <Building2 size={16} color={colors.primary} strokeWidth={2.4} />
-              ) : (
-                <ShieldCheck size={16} color={colors.primary} strokeWidth={2.4} />
-              )}
+              {counterpartEmailVerified === true &&
+                (isAgency ? (
+                  <Building2 size={16} color={colors.primary} strokeWidth={2.4} />
+                ) : (
+                  <ShieldCheck size={16} color={colors.primary} strokeWidth={2.4} />
+                ))}
             </View>
 
             <Text style={[styles.roleBadge, { color: colors.textMuted }]}>
-              {isAgency ? 'Agjenci e Verifikuar' : 'Pronar / Blerës i Verifikuar'}
+              {counterpartEmailVerified === true
+                ? isAgency
+                  ? 'Agjenci e Konfirmuar'
+                  : 'Profil i Konfirmuar'
+                : isAgency
+                  ? 'Agjenci'
+                  : 'Pronar / Blerës'}
             </Text>
 
             {listingTitle && (
@@ -454,7 +461,12 @@ export function CallModal({
               </Text>
               <Pressable
                 style={[styles.chatBtn, { backgroundColor: colors.primary }]}
-                onPress={handleClose}
+                onPress={() => {
+                  handleClose()
+                  if (conversationId) {
+                    router.push(`/messages/${conversationId}` as any)
+                  }
+                }}
               >
                 <Text
                   style={[

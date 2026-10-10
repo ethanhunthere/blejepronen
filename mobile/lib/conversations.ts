@@ -528,6 +528,10 @@ export function scheduleConversationsReload(parts: ReloadParts = {}): void {
 }
 
 function resetForLogout(): void {
+  // auth-cache's performAtomicLogout destroys every supabase channel, so the
+  // mux transport is dead; drop our ref or the next login short-circuits on a
+  // zombie channel and realtime stays silent for the life of the process.
+  stopChannel()
   metaCache = []
   lastCache = {}
   unreadCache = {}

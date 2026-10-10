@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Bookmark, BookmarkCheck, Trash2, X, Lock } from 'lucide-react-native'
 
-import { useTheme } from '@/constants/theme'
+import { useTheme, useSemantic } from '@/constants/theme'
 import {
   fetchSavedSearches,
   createSavedSearch,
@@ -36,11 +36,13 @@ interface SavedSearchesSheetProps {
 
 export function SavedSearchesSheet({ visible, onClose, current, router }: SavedSearchesSheetProps) {
   const { colors } = useTheme()
+  const semantic = useSemantic()
   const insets = useSafeAreaInsets()
   const [items, setItems] = useState<SavedSearchItem[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [authed, setAuthed] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (!visible) return
@@ -52,9 +54,13 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
     }
     let mounted = true
     setLoading(true)
+    setNotice(null)
     fetchSavedSearches()
       .then((rows) => {
         if (mounted) setItems(rows)
+      })
+      .catch(() => {
+        if (mounted) setNotice('Kërkimet nuk u ngarkuan. Provo përsëri.')
       })
       .finally(() => {
         if (mounted) setLoading(false)
@@ -69,13 +75,20 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
     const res = await createSavedSearch({ ...current, title: current.label })
     setSaving(false)
     if (res.success && res.savedSearch) {
+      setNotice(null)
       setItems((prev) => [res.savedSearch as SavedSearchItem, ...prev])
+    } else {
+      setNotice(res.error || 'Ruajtja dështoi. Provo përsëri.')
     }
   }
 
   const handleDelete = async (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id))
-    await removeSavedSearch(id)
+    const ok = await removeSavedSearch(id)
+    if (ok) {
+      setItems((prev) => prev.filter((i) => i.id !== id))
+    } else {
+      setNotice('Fshirja dështoi. Provo përsëri.')
+    }
   }
 
   return (
@@ -135,6 +148,10 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
             ))}
           </ScrollView>
         )}
+
+        {notice ? (
+          <Text style={[styles.notice, { color: semantic.dangerText }]}>{notice}</Text>
+        ) : null}
 
         {authed && (
           <Pressable
@@ -229,6 +246,11 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 14,
     marginTop: 4,
+  },
+  notice: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   saveBtnText: {
     color: '#FFFFFF',

@@ -19,6 +19,7 @@ const fmt = (n: number) => new Intl.NumberFormat('de-DE').format(n)
 export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
   const { colors, theme } = useTheme()
   const [median, setMedian] = useState<number | null>(null)
+  const [sample, setSample] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
           .eq('city', city)
           .gt('price', 0)
           .gt('area_m2', 0)
+          .order('created_at', { ascending: false })
           .limit(1000)
         if (!mounted) return
         const ppms = (data || [])
@@ -41,6 +43,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
           )
           .filter((v): v is number => v !== null)
           .sort((a, b) => a - b)
+        setSample(ppms.length)
         setMedian(ppms.length ? Math.round(ppms[Math.floor(ppms.length / 2)]) : null)
       } catch {
         if (mounted) setMedian(null)
@@ -78,7 +81,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
           {above ? '+' : ''}
           {deltaPct}%
         </Text>{' '}
-        vs mesatarja e {city} ({fmt(median)} €/m²)
+        vs mediana e {city} ({fmt(median)} €/m², {sample} shpallje)
       </Text>
     </View>
   )

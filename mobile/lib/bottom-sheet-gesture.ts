@@ -105,8 +105,11 @@ export function useBottomSheetGesture({
         easing: Easing.bezier(0.33, 1, 0.68, 1),
         useNativeDriver: true,
       }).start(({ finished }) => {
+        // Always release the latch: an interrupted animation reports
+        // finished=false, and holding the latch there freezes the sheet
+        // with no working exit path.
+        isDismissingRef.current = false
         if (finished) {
-          isDismissingRef.current = false
           callback?.()
           onDismiss()
         }

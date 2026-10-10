@@ -80,11 +80,9 @@ export function DraggableBottomSheet({
   const handleClose = useCallback(() => {
     if (isClosingRef.current) return
     isClosingRef.current = true
-    animateDismiss(() => {
-      setRendered(false)
-      isClosingRef.current = false
-      onClose()
-    })
+    // onDismiss is the single exit path; a callback here would
+    // double-fire onClose on every programmatic dismissal.
+    animateDismiss()
   }, [animateDismiss, onClose])
 
   useEffect(() => {

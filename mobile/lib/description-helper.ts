@@ -99,7 +99,8 @@ export function generateProfessionalTitle(
 
     case 'shtepi': {
       const subtypePart = data.subtype ? ` ${data.subtype}` : ''
-      return `Shtëpi${subtypePart} ${actionText} ${areaPart} me Oborr – ${locationPart}`.trim()
+      const oborrPart = data.features?.includes('Oborr privat') ? ' me Oborr' : ''
+      return `Shtëpi${subtypePart} ${actionText} ${areaPart}${oborrPart} – ${locationPart}`.trim()
     }
 
     case 'vile': {
@@ -138,7 +139,11 @@ export function generateOrEnhanceDescription(
   const locationParts = [data.neighborhood, data.city].filter(Boolean)
   const locationStr = locationParts.length > 0 ? locationParts.join(', ') : data.city || 'Kosovë'
   const areaStr = data.area_m2 ? `${data.area_m2} m²` : ''
-  const priceStr = data.price ? `${Number(data.price).toLocaleString('de-DE')} €` : ''
+  const priceNum = Number(data.price)
+  const priceStr =
+    data.price && Number.isFinite(priceNum) && priceNum > 0
+      ? `${priceNum.toLocaleString('de-DE')} €`
+      : ''
   const featuresList = data.features && data.features.length > 0 ? data.features : []
 
   // Resolve condition label cleanly
@@ -163,11 +168,12 @@ export function generateOrEnhanceDescription(
         .filter(Boolean)
         .join('\n')
 
-      specSection = `Kjo pronë karakterizohet nga ndriçimi natyral dhe qasja e shpejtë në shërbimet kryesore të zonës.
+      const featureBullets = featuresList.length
+        ? featuresList.map((f) => `• ${f}`).join('\n')
+        : '• Hapësira të organizuara funksionale'
+      specSection = `Kjo pronë karakterizohet nga qasja e shpejtë në shërbimet kryesore të zonës.
 Organizimi i brendshëm përfshin:
-• Sallon ndenjeje me ambient ngrënieje dhe kuzhinë
-• Ambient pushimi me dritë natyrale
-• Banjo e kompletuar dhe ballkon funksional
+${featureBullets}
 ${detailsList ? `\nSpecifikat teknike:\n${detailsList}` : ''}`
     } else if (data.category === 'shtepi') {
       const floorDetail = data.floor ? `• Nivelet: ${data.floor}` : null
@@ -176,10 +182,16 @@ ${detailsList ? `\nSpecifikat teknike:\n${detailsList}` : ''}`
 
       const detailsList = [floorDetail, roomsDetail, conditionDetail].filter(Boolean).join('\n')
 
+      const yardBullet = data.features?.includes('Oborr privat')
+        ? '\n• Oborr privat i shfrytëzueshëm'
+        : ''
+      const parkBullet =
+        data.features?.includes('Garazh') || data.features?.includes('Garazhë')
+          ? '\n• Vend i sigurt parkimi'
+          : ''
       specSection = `Shtëpi me ambient familjar, privatësi dhe qetësi të garantuar në ${locationStr}.
 Karakteristikat e pronës:
-• Sipërfaqe banimi prej ${areaStr} me hapësira të bollshme
-• Oborr privat i shfrytëzueshëm dhe vend i sigurt parkimi
+• Sipërfaqe banimi prej ${areaStr} me hapësira të bollshme${yardBullet}${parkBullet}
 ${detailsList ? `\nDetajet e ndërtimit:\n${detailsList}` : ''}`
     } else if (data.category === 'vile') {
       specSection = `Vilë me standarde bashkëkohore ndërtimi në ${locationStr}.

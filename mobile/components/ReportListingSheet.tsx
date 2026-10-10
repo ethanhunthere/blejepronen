@@ -175,11 +175,9 @@ export function ReportListingSheet({
   const handleDismiss = useCallback(() => {
     if (phase === 'sending' || isClosingRef.current) return
     isClosingRef.current = true
-    animateDismiss(() => {
-      setVisible(false)
-      isClosingRef.current = false
-      onClose()
-    })
+    // onDismiss is the single exit path; a callback here would
+    // double-fire onClose on every programmatic dismissal.
+    animateDismiss()
   }, [animateDismiss, onClose, phase])
 
   // Sync external open/close and reset the form on every open.

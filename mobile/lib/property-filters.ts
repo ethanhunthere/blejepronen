@@ -1,3 +1,4 @@
+import { CATEGORIES } from './categories'
 import {
   LayoutGrid,
   Building2,
@@ -57,26 +58,31 @@ export const FLOOR_OPTIONS = [
   { id: '7+', label: 'Kati 7+' },
 ]
 
-export const CONDITION_OPTIONS = [
-  { id: 'all', label: 'Të gjitha' },
-  { id: 'e-re', label: 'E re' },
-  { id: 'rinovuar', label: 'E rinovuar' },
-  { id: 'e-vjeter', label: 'E vjetër' },
-  { id: 'ka-nevojë-për-rinovim', label: 'Për rinovim' },
-]
+// Derived from the writer vocabulary (lib/categories.ts) so every chip can
+// actually match a stored listing — hand-maintained lists had drifted.
+const conditionUnion = (() => {
+  const seen = new Map<string, string>()
+  for (const cat of Object.values(CATEGORIES)) {
+    for (const c of cat.conditions) {
+      if (!seen.has(c.value)) seen.set(c.value, c.label)
+    }
+  }
+  const list: { id: string; label: string }[] = [{ id: 'all', label: 'Të gjitha' }]
+  for (const [id, label] of seen.entries()) list.push({ id, label })
+  return list
+})()
 
-export const FEATURES_LIST = [
-  'Parking',
-  'Ashensor',
-  'Ballkon',
-  'Ngrohje qendrore',
-  'Klimë',
-  'Mobiluar',
-  'Siguri 24h',
-  'Pamje panoramike',
-  'Kopësht',
-  'Bodrum',
-]
+export const CONDITION_OPTIONS = conditionUnion
+
+const featureUnion = (() => {
+  const seen = new Set<string>()
+  for (const cat of Object.values(CATEGORIES)) {
+    for (const f of cat.features) seen.add(f)
+  }
+  return [...seen]
+})()
+
+export const FEATURES_LIST = featureUnion
 
 export const PRICE_PRESETS_SALE = [
   { label: '< 50k €', min: '', max: '50000' },
