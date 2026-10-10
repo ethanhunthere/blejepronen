@@ -9,12 +9,9 @@ import { createClient } from '@/lib/supabase'
 import {
   User,
   Building2,
-  Share2,
   Lock,
   Camera,
-  ImageIcon,
   CheckCircle2,
-  AlertTriangle,
   Loader2,
   Trash2,
   LogOut,
@@ -22,35 +19,22 @@ import {
   Save,
   Eye,
   EyeOff,
-  Laptop,
   Check,
-  Globe,
   MapPin,
   Phone,
   ShieldCheck,
   ArrowLeft,
-  ArrowDown,
-  AlertCircle,
   X,
-  Mail,
+  Smartphone,
+  Sparkles,
 } from 'lucide-react'
 import { CITIES } from '@/lib/cities'
 import { getAvatarUrl } from '@/lib/avatars'
 import AvatarPickerModal, { prepareAvatarImage } from '@/components/AvatarPickerModal'
 import LogoutModal from '@/components/LogoutModal'
 import DeleteAccountModal from '@/components/DeleteAccountModal'
-import SocialLinksBar, {
-  InstagramIcon,
-  FacebookIcon,
-  WhatsAppIcon,
-  TikTokIcon,
-} from '@/components/SocialIcons'
 import { revalidateSellerListings } from '@/app/actions'
 import { toast } from 'sonner'
-import { type SocialLinks, hasAnySocial, normalizeSocialUrl } from '@/lib/socials'
-
-type SettingsTab = 'profile' | 'socials' | 'security'
-type SaveSection = 'all' | 'profile' | 'socials'
 
 function getPasswordStrength(pwd: string): { score: number; label: string; color: string } {
   if (!pwd) return { score: 0, label: '', color: 'bg-gray-200' }
@@ -63,7 +47,6 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
 
   switch (score) {
     case 0:
-      return { score: 0, label: 'Shumë i dobët', color: 'bg-red-500' }
     case 1:
       return { score: 1, label: 'Shumë i dobët', color: 'bg-red-500' }
     case 2:
@@ -76,48 +59,15 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
   }
 }
 
-/**
- * Password gate shared by the live meter and the submit handler so the visual
- * strength never disagrees with what the server accepts: minimum 8 characters
- * plus a real complexity score (weak 6-character passwords are rejected).
- */
 function getPasswordValidationError(pwd: string): string | null {
   if (pwd.length < 8) return 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.'
   if (getPasswordStrength(pwd).score < 3) {
-    return 'Fjalëkalimi është shumë i dobët: përdorni shkronja të mëdha dhe të vogla, të paktën një numër (dhe mundësisht një simbol).'
+    return 'Fjalëkalimi është shumë i dobët: përdorni shkronja të mëdha, numra dhe simbole.'
   }
   return null
 }
 
-// Profile-scoped keys of the /api/profile/save payload. Per-section saves omit
-// empty ones so the API falls back to the stored user_metadata instead of
-// failing its required-name check for unrelated sections.
-const PROFILE_PAYLOAD_KEYS = [
-  'firstName',
-  'lastName',
-  'phone',
-  'bio',
-  'city',
-  'individualFirstName',
-  'individualLastName',
-  'individualPhone',
-  'individualEmail',
-  'individualBio',
-  'companyName',
-  'companyContactPerson',
-  'companyPhone',
-  'companyEmail',
-  'companyDescription',
-  'foundedYear',
-  'nipt',
-  'officeAddress',
-  'website',
-] as const
-
 const DUMMY_SAMPLES = new Set([
-  // Placeholder-shaped values only. Real names/years must NEVER be blanked —
-  // a seller genuinely named "Alban Kelmendi" or founded in 2018 would
-  // otherwise lose their data on every load and save.
   'p.sh. alban',
   'p.sh. kelmendi',
   'alban.kelmendi',
@@ -130,11 +80,6 @@ const DUMMY_SAMPLES = new Set([
   '049123456',
   '038123456',
   '044123456',
-  '811234567',
-  'p.sh. 811234567',
-  'https://agjencia.com',
-  'https://kompania.com',
-  'p.sh. 2018',
 ])
 
 function sanitizeInitial(val?: string | null): string {
@@ -147,63 +92,29 @@ function sanitizeInitial(val?: string | null): string {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
   const [isEmailVerified, setIsEmailVerified] = useState(false)
   const [isGoogleUser, setIsGoogleUser] = useState(false)
-
-  // Account Type
   const [isCompany, setIsCompany] = useState(false)
 
-  // Individual Specific Fields (Preserved permanently)
-  const [individualFirstName, setIndividualFirstName] = useState('')
-  const [individualLastName, setIndividualLastName] = useState('')
-  const [individualPhone, setIndividualPhone] = useState('')
-  const [individualEmail, setIndividualEmail] = useState('')
-  const [individualBio, setIndividualBio] = useState('')
+  // Core web-profile fields (10-20% essentials)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [city, setCity] = useState('Prishtinë')
+  const [avatarUrl, setAvatarUrl] = useState('/avatars/avatar-1.png')
 
-  // Company Specific Fields (Preserved permanently)
-  const [companyName, setCompanyName] = useState('')
-  const [companyContactPerson, setCompanyContactPerson] = useState('')
-  const [companyPhone, setCompanyPhone] = useState('')
-  const [companyEmail, setCompanyEmail] = useState('')
-  const [companyDescription, setCompanyDescription] = useState('')
-  const [foundedYear, setFoundedYear] = useState('')
-  const [nipt, setNipt] = useState('')
-  const [officeAddress, setOfficeAddress] = useState('')
-  const [website, setWebsite] = useState('')
-
-  // Common Profile Fields
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [city, setCity] = useState('')
-  const [updatingEmail, setUpdatingEmail] = useState(false)
-
-  // Social Links
-  const [socials, setSocials] = useState<SocialLinks>({
-    instagram: '',
-    facebook: '',
-    whatsapp: '',
-    tiktok: '',
-  })
-  const [linkedin, setLinkedin] = useState('')
-  const [youtube, setYoutube] = useState('')
-  const [twitter, setTwitter] = useState('')
-
-  // Notification / privacy preferences were removed: none of their toggles had
-  // a backing public.profiles column or any consumer in the codebase, so they
-  // were phantom switches persisted only to auth user_metadata.
-
-  // Security / Password Change
+  // Password Update
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [updatingPassword, setUpdatingPassword] = useState(false)
 
-  // Modals
+  // Modals & UI
   const [showAvatarModal, setShowAvatarModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -238,7 +149,7 @@ export default function SettingsPage() {
       }
 
       if (!activeUser) {
-        await new Promise((r) => setTimeout(r, 300))
+        await new Promise((r) => setTimeout(r, 200))
         try {
           const { data } = await supabase.auth.getUser()
           activeUser = data?.user || null
@@ -268,7 +179,6 @@ export default function SettingsPage() {
 
       setIsCompany(isComp)
 
-      // Verified status: email is verified permanently if confirmed or google
       const isGoogle = activeUser.app_metadata?.provider === 'google'
       setIsGoogleUser(isGoogle)
       const verified =
@@ -279,85 +189,28 @@ export default function SettingsPage() {
 
       setIsEmailVerified(verified)
 
-      // Populate Individual Fields safely (never overwritten by company exploration, and never prefilled with dummy samples)
-      const indFirst = sanitizeInitial(
-        meta.individual_first_name ||
-        (!isComp ? prof?.first_name : '') ||
-        (!isComp && meta.first_name ? meta.first_name : '') ||
-        ''
+      // Set essentials
+      const activeFirst = sanitizeInitial(
+        isComp
+          ? meta.company_name || prof?.first_name || meta.first_name || ''
+          : meta.individual_first_name || prof?.first_name || meta.first_name || ''
       )
-      const indLast = sanitizeInitial(
-        meta.individual_last_name ||
-        (!isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
-        (!isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
-        ''
+      const activeLast = sanitizeInitial(
+        isComp
+          ? ''
+          : meta.individual_last_name || (prof?.last_name !== 'Kompani' ? prof?.last_name : '') || meta.last_name || ''
       )
-      const indPhone = sanitizeInitial(
-        meta.individual_phone ||
-        (!isComp ? prof?.phone : '') ||
-        (!isComp && meta.phone ? meta.phone : '') ||
-        ''
-      )
-      const indEmail = meta.individual_email || activeUser.email || ''
-      const indBio = sanitizeInitial(meta.individual_bio || (!isComp ? meta.bio : '') || '')
-
-      setIndividualFirstName(indFirst)
-      setIndividualLastName(indLast)
-      setIndividualPhone(indPhone)
-      setIndividualEmail(indEmail)
-      setIndividualBio(indBio)
-
-      // Populate Company Fields safely (never overwritten by individual exploration, and never prefilled with dummy samples)
-      const compName = sanitizeInitial(
-        meta.company_name ||
-        (isComp ? prof?.first_name : '') ||
-        (isComp && meta.first_name ? meta.first_name : '') ||
-        ''
-      )
-      const compContact = sanitizeInitial(
-        meta.contact_person ||
-        (isComp && prof?.last_name !== 'Kompani' ? prof?.last_name : '') ||
-        (isComp && meta.last_name !== 'Kompani' ? meta.last_name : '') ||
-        ''
-      )
-      const compPhone = sanitizeInitial(
-        meta.company_phone ||
-        (isComp ? prof?.phone : '') ||
-        (isComp && meta.phone ? meta.phone : '') ||
-        ''
-      )
-      const compEmail = meta.company_email || ''
-      const compDesc = sanitizeInitial(
-        meta.company_description ||
-        (isComp ? meta.bio : '') ||
-        ''
+      const activePhone = sanitizeInitial(
+        isComp
+          ? meta.company_phone || prof?.phone || meta.phone || ''
+          : meta.individual_phone || prof?.phone || meta.phone || ''
       )
 
-      setCompanyName(compName)
-      setCompanyContactPerson(compContact)
-      setCompanyPhone(compPhone)
-      setCompanyEmail(compEmail)
-      setCompanyDescription(compDesc)
-      if (meta.founded_year) setFoundedYear(sanitizeInitial(String(meta.founded_year)))
-      if (meta.nipt) setNipt(sanitizeInitial(meta.nipt))
-      if (meta.office_address) setOfficeAddress(sanitizeInitial(meta.office_address))
-      if (meta.website) setWebsite(sanitizeInitial(meta.website))
-
-      // Common fields
+      setFirstName(activeFirst)
+      setLastName(activeLast)
+      setPhone(activePhone)
       if (meta.city) setCity(meta.city)
       setAvatarUrl(prof?.avatar_url || meta.avatar_url || '/avatars/avatar-1.png')
-
-      if (meta) {
-        setSocials({
-          instagram: meta.instagram || '',
-          facebook: meta.facebook || '',
-          whatsapp: meta.whatsapp || '',
-          tiktok: meta.tiktok || '',
-        })
-        if (meta.linkedin) setLinkedin(meta.linkedin)
-        if (meta.youtube) setYoutube(meta.youtube)
-        if (meta.twitter) setTwitter(meta.twitter)
-      }
 
       setLoading(false)
     }
@@ -365,119 +218,23 @@ export default function SettingsPage() {
     loadUserData()
   }, [router, supabase])
 
-  // Honor deep links such as /settings?tab=socials used by the profile pages
-  useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get('tab')
-    if (tab === 'profile' || tab === 'socials' || tab === 'security') {
-      setActiveTab(tab)
-    }
-  }, [])
-
-  // Email update handler
-  const handleUpdateAccountEmail = async (targetEmail: string) => {
-    const trimmed = targetEmail.trim()
-    if (!trimmed || !trimmed.includes('@')) {
-      toast.error('Ju lutemi vendosni një adresë email të vlefshme.')
-      return
-    }
-    if (trimmed.toLowerCase() === userEmail.toLowerCase()) {
-      toast.info('Kjo adresë email është tashmë email-i juaj aktiv i llogarisë.')
-      return
-    }
-    setUpdatingEmail(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ email: trimmed })
-      if (error) throw error
-      toast.success(
-        `Një email konfirmimi u dërgua te ${trimmed}. Ju lutemi klikoni linkun në email për të finalizuar ndryshimin.`
-      )
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Dështoi përditësimi i emailit të llogarisë.'
-      toast.error(msg)
-    } finally {
-      setUpdatingEmail(false)
-    }
-  }
-
-  // Save changes handler
-  // Per-section save: each section's button validates only its own fields, so
-  // a socials/privacy save is never blocked by unrelated profile-field errors.
-  const handleSaveSettings = useCallback(async (section: SaveSection = 'all') => {
+  // Save essential profile settings
+  const handleSaveSettings = useCallback(async () => {
     if (!currentUserId) return
-
-    // Profile validation runs only for profile-scoped saves
-    const savesProfile = section === 'all' || section === 'profile'
-    if (savesProfile) {
-      if (isCompany) {
-        if (!companyName.trim()) {
-          toast.error('Ju lutemi shkruani emrin e kompanisë.')
-          return
-        }
-      } else {
-        if (!individualFirstName.trim()) {
-          toast.error('Ju lutemi shkruani emrin tuaj.')
-          return
-        }
-      }
+    if (!firstName.trim()) {
+      toast.error(isCompany ? 'Emri i kompanisë është i detyrueshëm.' : 'Emri është i detyrueshëm.')
+      return
     }
 
     setSaving(true)
-
     try {
-      const activeFirstName = isCompany ? companyName.trim() : individualFirstName.trim()
-      const activeLastName = isCompany ? (companyContactPerson.trim() || 'Kompani') : individualLastName.trim()
-      const activePhone = isCompany ? (companyPhone.trim() || individualPhone.trim()) : (individualPhone.trim() || companyPhone.trim())
-      const activeBio = isCompany ? (companyDescription.trim() || individualBio.trim()) : (individualBio.trim() || companyDescription.trim())
-
-      const payload: Record<string, unknown> = {
-        firstName: activeFirstName,
-        lastName: activeLastName,
-        phone: activePhone,
+      const payload = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        city,
         avatarUrl,
         isCompany,
-        accountType: isCompany ? 'company' : 'individual',
-        bio: activeBio,
-        city: city.trim(),
-        emailVerified: isEmailVerified,
-
-        // Preserved individual data
-        individualFirstName: individualFirstName.trim(),
-        individualLastName: individualLastName.trim(),
-        individualPhone: individualPhone.trim(),
-        individualEmail: individualEmail.trim(),
-        individualBio: individualBio.trim(),
-
-        // Preserved company data
-        companyName: companyName.trim(),
-        companyContactPerson: companyContactPerson.trim(),
-        companyPhone: companyPhone.trim(),
-        companyEmail: companyEmail.trim(),
-        companyDescription: companyDescription.trim(),
-        foundedYear: foundedYear.trim(),
-        nipt: nipt.trim(),
-        officeAddress: officeAddress.trim(),
-        website: website.trim()
-          ? /^https?:\/\//i.test(website.trim())
-            ? website.trim()
-            : `https://${website.trim()}`
-          : '',
-
-        // Socials
-        instagram: socials.instagram?.trim() || '',
-        facebook: socials.facebook?.trim() || '',
-        whatsapp: socials.whatsapp?.trim() || '',
-        tiktok: socials.tiktok?.trim() || '',
-        linkedin: linkedin.trim(),
-        youtube: youtube.trim(),
-        twitter: twitter.trim(),
-      }
-
-      // Non-profile sections never push empty profile strings: the API keeps
-      // the stored values for anything omitted from the body.
-      if (!savesProfile) {
-        for (const key of PROFILE_PAYLOAD_KEYS) {
-          if (payload[key] === '') delete payload[key]
-        }
       }
 
       const res = await fetch('/api/profile/save', {
@@ -486,28 +243,26 @@ export default function SettingsPage() {
         body: JSON.stringify(payload),
       })
 
+      const data = await res.json().catch(() => null)
       if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.message || 'Dështoi ruajtja e të dhënave.')
+        throw new Error(data?.message || 'Dështoi ruajtja e cilësimeve.')
       }
 
-      // Sync local cache and broadcast instant update to Navbar
+      // Update local storage cache & broadcast
       try {
         const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
+          parsed.firstName = firstName.trim()
+          parsed.lastName = lastName.trim()
           parsed.avatarUrl = avatarUrl
-          parsed.firstName = activeFirstName
-          parsed.lastName = activeLastName
           parsed.isCompany = isCompany
-          parsed.incomplete = false
           localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${avatarUrl}")`)
         }
       } catch {}
       window.dispatchEvent(new CustomEvent('profile-updated'))
 
-      // Revalidate listings cache
       try {
         await revalidateSellerListings(currentUserId)
       } catch {}
@@ -525,45 +280,21 @@ export default function SettingsPage() {
     } finally {
       setSaving(false)
     }
-  }, [
-    currentUserId,
-    isCompany,
-    individualFirstName,
-    individualLastName,
-    individualPhone,
-    individualEmail,
-    individualBio,
-    companyName,
-    companyContactPerson,
-    companyPhone,
-    companyEmail,
-    companyDescription,
-    foundedYear,
-    nipt,
-    officeAddress,
-    website,
-    avatarUrl,
-    city,
-    isEmailVerified,
-    socials,
-    linkedin,
-    youtube,
-    twitter,
-  ])
+  }, [currentUserId, isCompany, firstName, lastName, phone, city, avatarUrl])
 
-  // Keyboard shortcut Ctrl+S / Cmd+S listener
+  // Keyboard shortcut Ctrl+S / Cmd+S
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
-        handleSaveSettings(activeTab === 'socials' ? 'socials' : 'profile')
+        handleSaveSettings()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSaveSettings, activeTab])
+  }, [handleSaveSettings])
 
-  // Password update handler
+  // Password update
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     const validationError = getPasswordValidationError(newPassword)
@@ -591,7 +322,7 @@ export default function SettingsPage() {
     }
   }
 
-  // Avatar pick from modal
+  // Select Avatar from modal
   const handleSelectAvatar = async (url: string) => {
     setAvatarUrl(url)
     try {
@@ -613,7 +344,7 @@ export default function SettingsPage() {
     }
   }
 
-  // Avatar upload from device
+  // Direct avatar file upload
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !currentUserId) return
@@ -629,7 +360,6 @@ export default function SettingsPage() {
         return
       }
 
-      // 1:1 crop + 512×512 WebP compression before hitting Storage
       const { blob, ext, contentType } = await prepareAvatarImage(file)
       const path = `${currentUserId}/${Date.now()}-settings.${ext}`
 
@@ -654,88 +384,30 @@ export default function SettingsPage() {
         }
       } catch {}
       window.dispatchEvent(new CustomEvent('profile-updated'))
-      toast.success('Fotoja e re u ngarkua me sukses!')
+      toast.success('Fotoja e profilit u përditësua me sukses!')
     } catch {
-      toast.error('Ngarkimi i fotos dështoi.')
+      toast.error('Dështoi ngarkimi i fotos së profilit.')
     } finally {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
-  // Account deletion confirmed
-  const handleConfirmDelete = async (): Promise<boolean> => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      const res = await fetch('/api/account/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      })
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        toast.error(errData?.message || 'Ndodhi një gabim gjatë fshirjes së llogarisë.')
-        return false
-      }
-
-      try {
-        sessionStorage.setItem('blejepronen_logging_out', '1')
-        document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
-      } catch {}
-      try {
-        Object.keys(localStorage).forEach((key) => {
-          if (key.startsWith('sb-') || key.startsWith('bp_')) localStorage.removeItem(key)
-        })
-      } catch {}
-
-      await supabase.auth.signOut({ scope: 'local' })
-      try {
-        await fetch('/api/logout', { method: 'POST', keepalive: true })
-      } catch {}
-
-      return true
-    } catch (err) {
-      console.error('Delete account error in settings:', err)
-      return false
-    }
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-9 w-9 animate-spin text-[#00675B] mx-auto mb-3" />
-          <p className="text-xs text-gray-500 font-semibold tracking-wide">Duke ngarkuar cilësimet...</p>
-        </div>
+      <div className="min-h-screen bg-[#F2F7F7] flex flex-col items-center justify-center py-20 px-4">
+        <Loader2 className="w-9 h-9 animate-spin text-[#00675B] mb-3" />
+        <p className="text-sm font-semibold text-gray-500">Duke ngarkuar cilësimet...</p>
       </div>
     )
   }
 
-  const tabs: {
-    id: SettingsTab
-    label: string
-    icon: React.ComponentType<{ className?: string }>
-  }[] = [
-    { id: 'profile', label: isCompany ? 'Profili i Kompanisë' : 'Profili & Llogaria', icon: isCompany ? Building2 : User },
-    { id: 'socials', label: 'Rrjetet Sociale', icon: Share2 },
-    { id: 'security', label: 'Siguria', icon: Lock },
-  ]
-
-  const isCompanyDataComplete = Boolean(
-    isCompany &&
-    companyName.trim().length > 0 &&
-    (companyDescription.trim().length > 0 || nipt.trim().length > 0 || officeAddress.trim().length > 0 || companyContactPerson.trim().length > 0)
-  )
+  const pwdStrength = getPasswordStrength(newPassword)
 
   return (
     <div className="min-h-screen bg-[#F2F7F7] py-6 sm:py-10 pb-24 sm:pb-12">
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back navigation to profile */}
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Navigation & Header */}
         <div className="mb-4">
           <Link
             href="/profili"
@@ -746,12 +418,11 @@ export default function SettingsPage() {
           </Link>
         </div>
 
-        {/* Header with Quick Profile View Link and Save CTA */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <PageHeader
-              title="Cilësimet"
-              subtitle="Menaxhoni profilin, të dhënat e kompanisë, rrjetet sociale dhe sigurinë e llogarisë"
+              title="Cilësimet e Llogarisë"
+              subtitle="Menaxhoni profilin bazë dhe sigurinë thelbësore të llogarisë tuaj në web."
             />
           </div>
 
@@ -767,19 +438,12 @@ export default function SettingsPage() {
             )}
             <button
               type="button"
-              onClick={() => handleSaveSettings('all')}
+              onClick={handleSaveSettings}
               disabled={saving}
               className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-75"
             >
-              {saving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               <span>{saving ? 'Duke ruajtur...' : 'Ruaj ndryshimet'}</span>
-              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white/20 text-white rounded-md">
-                ⌘S
-              </kbd>
             </button>
           </div>
         </div>
@@ -796,7 +460,7 @@ export default function SettingsPage() {
                   Cilësimet u ruajtën me sukses!
                 </p>
                 <p className="text-xs text-emerald-800/80 mt-0.5">
-                  Të gjitha ndryshimet tuaja u ruajtën dhe janë aktive menjëherë pa rifreskuar faqen.
+                  Të gjitha ndryshimet janë aktive menjëherë pa rifreskuar faqen.
                 </p>
               </div>
             </div>
@@ -811,1149 +475,380 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Tab Bar Navigation */}
-        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 mb-6 flex overflow-x-auto scrollbar-hide gap-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-[#00675B] text-white shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
+        {/* Mobile App Callout (Primary Experience Banner) */}
+        <div className="mb-8 rounded-3xl bg-gradient-to-br from-[#004D43] via-[#00675B] to-[#0A8F80] p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-[#C8B882]" />
+                <span>Përvoja e plotë është në Aplikacion</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
+                Dëshironi njoftime në kohë reale, siguri biometrike dhe personalizim të temës?
+              </h3>
+              <p className="text-xs sm:text-sm text-white/80 mt-2 leading-relaxed">
+                Të gjitha cilësimet e avancuara (Face ID / Touch ID, njoftimet e menjëhershme push, bisedat direkte dhe modaliteti i errët) janë të integruara ekskluzivisht në aplikacionin Bleje Pronën për iOS dhe Android.
+              </p>
+            </div>
+
+            <div className="shrink-0 flex sm:flex-col items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all cursor-default">
+                <Smartphone className="w-5 h-5 text-white" />
+                <div className="text-left">
+                  <p className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">Shkarkoni falas</p>
+                  <p className="text-xs font-bold text-white">App Store & Google Play</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* TAB 1: PROFILI & LLOGARIA */}
+        {/* CORE SECTION 1: PROFILI BAZË (10-20% ESSENTIAL SETTINGS) */}
         {/* ========================================================================= */}
-        {activeTab === 'profile' && (
-          <div className="space-y-6 animate-in fade-in-50 duration-200">
-            {/* Interactive Account Type Dual-Card Selector */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <div className="mb-4">
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-2xl bg-[#00675B]/10 flex items-center justify-center text-[#00675B]">
+                {isCompany ? <Building2 className="w-5 h-5" /> : <User className="w-5 h-5" />}
+              </div>
+              <div>
                 <h3 className="text-base sm:text-lg font-black text-[#101828]">
-                  Zgjidhni Llojin e Llogarisë
+                  {isCompany ? 'Profili i Kompanisë' : 'Profili Juaj'}
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Përcakton se si shfaqeni në njoftimet e pronave dhe në profilin publik para mijëra blerësve.
+                <p className="text-xs text-gray-500">
+                  Të dhënat kryesore të identifikimit në platformë
                 </p>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Option 1: Individual */}
-                <div
-                  onClick={() => setIsCompany(false)}
-                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                    !isCompany
-                      ? 'border-[#00675B] bg-[#00675B]/[0.03] shadow-sm ring-2 ring-[#00675B]/10'
-                      : 'border-gray-200 bg-gray-50/40 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-colors ${
-                        !isCompany ? 'bg-[#00675B] text-white' : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        <User className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-extrabold text-[#101828]">
-                            Llogari Individuale
-                          </h4>
-                          {isEmailVerified ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              E VERIFIKUAR
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200">
-                              STANDARDE
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-gray-500">Person fizik / Pronar privat</span>
-                      </div>
-                    </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      !isCompany ? 'border-[#00675B] bg-[#00675B]' : 'border-gray-300 bg-white'
-                    }`}>
-                      {!isCompany && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                    </div>
-                  </div>
-                  <ul className="mt-3.5 space-y-1.5 text-xs text-gray-600 border-t border-gray-200/60 pt-3">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Emri dhe mbiemri personal në çdo pronë</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Komunikim i drejtpërdrejtë me blerësit</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Ideale për pronarë që shesin ose japin me qira</span>
-                    </li>
-                  </ul>
+            {/* Avatar Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-2xl bg-gray-50/70 border border-gray-100 mb-6">
+              <div className="relative group shrink-0 self-start sm:self-center">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md bg-white">
+                  <Image
+                    src={getAvatarUrl(avatarUrl)}
+                    alt="Foto e profilit"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
                 </div>
-
-                {/* Option 2: Company */}
-                <div
-                  onClick={() => setIsCompany(true)}
-                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                    isCompany
-                      ? 'border-[#00675B] bg-[#00675B]/[0.03] shadow-sm ring-2 ring-[#00675B]/10'
-                      : 'border-gray-200 bg-gray-50/40 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarModal(true)}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#00675B] text-white flex items-center justify-center shadow-md hover:bg-[#004D43] transition-all cursor-pointer"
+                  title="Ndrysho avatarin"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-colors ${
-                        isCompany ? 'bg-[#00675B] text-white' : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        <Building2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-extrabold text-[#101828]">
-                            Kompani / Agjenci
-                          </h4>
-                          {isCompany && !isCompanyDataComplete ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                              E PAVERIFIKUAR
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#C8B882] text-[#00675B]">
-                              BIZNES
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-gray-500">Agjenci imobiliare / Ndërtues</span>
-                      </div>
-                    </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      isCompany ? 'border-[#00675B] bg-[#00675B]' : 'border-gray-300 bg-white'
-                    }`}>
-                      {isCompany && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                    </div>
-                  </div>
-                  <ul className="mt-3.5 space-y-1.5 text-xs text-gray-600 border-t border-gray-200/60 pt-3">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
-                      <span>Logoja zyrtare e kompanisë në të gjitha shpalljet</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
-                      <span>Shfaqje e NIPT-it, vitit të themelimit dhe adresës</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00675B] shrink-0" />
-                      <span>Faqe zyrtare e dedikuar me të gjitha pronat e agjencisë</span>
-                    </li>
-                  </ul>
-                </div>
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              {/* Unverified Company Prompt Banner with Scroll Signal */}
-              {isCompany && !isCompanyDataComplete && (
-                <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 animate-in fade-in-50 duration-200">
-                  <div className="flex items-start sm:items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                      <AlertCircle className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-amber-950">
-                        Statusi i Agjencisë: E paverifikuar si Kompani
-                      </p>
-                      <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-                        {isEmailVerified
-                          ? 'Email-i juaj është tashmë i verifikuar. Nuk keni nevojë të verifikoheni përsëri me email. Mjafton të plotësoni të dhënat e biznesit poshtë për t’u pajisur me shenjën e profilit të plotësuar.'
-                          : 'Plotësoni emrin dhe të dhënat e kompanisë poshtë në faqe për t’u shfaqur si biznes i verifikuar.'}
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-gray-900">Foto e profilit</h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Zgjidhni nga koleksioni i avatarëve ose ngarkoni një foto nga kompjuteri juaj.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      const el = document.getElementById('company-details-section')
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                        el.classList.add('ring-2', 'ring-[#00675B]', 'transition-all')
-                        setTimeout(() => el.classList.remove('ring-2', 'ring-[#00675B]'), 2000)
-                      }
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                    onClick={() => setShowAvatarModal(true)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/30 hover:shadow-xs transition-all cursor-pointer"
                   >
-                    <span>Plotëso të dhënat poshtë</span>
-                    <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                    Zgjidh Avatar
+                  </button>
+                  <label className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-700 hover:text-[#00675B] hover:border-[#00675B]/30 hover:shadow-xs transition-all cursor-pointer flex items-center gap-1.5">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                      className="hidden"
+                    />
+                    {uploadingAvatar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    <span>{uploadingAvatar ? 'Duke ngarkuar...' : 'Ngarko Foto'}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Core Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  {isCompany ? 'Emri i Kompanisë / Agjencisë *' : 'Emri *'}
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder={isCompany ? 'p.sh. Agjencia Pro Real' : 'Emri juaj'}
+                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white"
+                />
+              </div>
+
+              {!isCompany && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    Mbiemri
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Mbiemri juaj"
+                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Numri i Telefonit (WhatsApp / Kontakt)
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+383 49 123 456"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Qyteti Kryesor
+                </label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white appearance-none cursor-pointer"
+                  >
+                    {CITIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-75"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                <span>{saving ? 'Duke ruajtur...' : 'Ruaj të dhënat'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* CORE SECTION 2: SIGURIA E FJALËKALIMIT */}
+          {/* ========================================================================= */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-[#101828]">
+                  Siguria dhe Fjalëkalimi
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Përditësoni fjalëkalimin tuaj për të mbrojtur llogarinë
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-xl">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Fjalëkalimi i Ri *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Të paktën 8 karaktere"
+                    className="w-full pl-4 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-              )}
-            </div>
 
-            {/* Live Profile Card Preview */}
-            <div className="bg-gradient-to-br from-[#00675B]/[0.05] via-[#F2F7F7] to-[#C8B882]/[0.08] border border-[#00675B]/15 rounded-3xl p-5 sm:p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#00675B]">
-                    Pamja Live e Profilit Tuaj Publik
-                  </span>
-                </div>
-                <span className="text-[11px] text-gray-500 font-medium hidden sm:inline-block">
-                  Përditësohet në kohë reale gjatë shkrimit
-                </span>
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#00675B]/20 shadow-xs shrink-0 bg-gray-100">
-                  <Image
-                    src={getAvatarUrl(avatarUrl)}
-                    alt="Foto Profili"
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-base sm:text-lg font-black text-[#101828] truncate">
-                      {isCompany
-                        ? (companyName || 'Emri i Kompanisë')
-                        : `${individualFirstName || 'Emri'} ${individualLastName || 'Mbiemri'}`.trim()}
-                    </h4>
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                      isCompany
-                        ? isCompanyDataComplete
-                          ? 'bg-[#00675B]/10 text-[#00675B] border border-[#00675B]/20'
-                          : 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : isEmailVerified
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                          : 'bg-gray-100 text-gray-700 border border-gray-200'
-                    }`}>
-                      {isCompany ? (
-                        isCompanyDataComplete ? (
-                          <>
-                            <Building2 className="w-3 h-3" />
-                            <span>Kompani e Verifikuar</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-3 h-3" />
-                            <span>E paverifikuar — Kërkohen të dhënat</span>
-                          </>
-                        )
-                      ) : (
-                        isEmailVerified ? (
-                          <>
-                            <ShieldCheck className="w-3 h-3" />
-                            <span>Përdorues i Verifikuar</span>
-                          </>
-                        ) : (
-                          <>
-                            <User className="w-3 h-3" />
-                            <span>Llogari Individuale</span>
-                          </>
-                        )
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-0.5">
-                    {city && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#00675B]" />
-                        {city}
-                      </span>
-                    )}
-                    {(isCompany ? companyPhone : individualPhone) && (
-                      <span className="flex items-center gap-1 font-mono">
-                        <Phone className="w-3.5 h-3.5 text-[#00675B]" />
-                        {isCompany ? companyPhone : individualPhone}
-                      </span>
-                    )}
-                    {(isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)) && (
-                      <span className="flex items-center gap-1 font-mono text-[11px]">
-                        <Mail className="w-3.5 h-3.5 text-[#00675B]" />
-                        {isCompany ? (companyEmail || userEmail) : (individualEmail || userEmail)}
-                      </span>
-                    )}
-                    {isCompany && website && (
-                      <span className="flex items-center gap-1 text-[#00675B] font-medium">
-                        <Globe className="w-3.5 h-3.5" />
-                        {website.replace(/^https?:\/\//, '')}
-                      </span>
-                    )}
-                  </div>
-
-                  {(isCompany ? companyDescription : individualBio) && (
-                    <p className="text-xs text-gray-600 line-clamp-2 pt-1">
-                      {isCompany ? companyDescription : individualBio}
-                    </p>
-                  )}
-
-                  {hasAnySocial(socials) && (
-                    <div className="pt-2">
-                      <SocialLinksBar socials={socials} />
+                {newPassword && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-gray-500">Fortësia:</span>
+                      <span className="font-bold text-gray-700">{pwdStrength.label}</span>
                     </div>
-                  )}
-                </div>
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${pwdStrength.color}`}
+                        style={{ width: `${(pwdStrength.score / 4) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Avatar & Branding Card */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <h3 className="text-base font-bold text-[#101828] mb-4">
-                {isCompany ? 'Logoja ose Fotoja e Kompanisë' : 'Fotoja e Profilit'}
-              </h3>
-
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-gray-100 shadow-md bg-gray-100 flex-shrink-0 group">
-                  <Image
-                    src={getAvatarUrl(avatarUrl)}
-                    alt="Foto Profili"
-                    fill
-                    sizes="112px"
-                    className="object-cover group-hover:scale-105 transition-transform"
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Konfirmo Fjalëkalimin e Ri *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Përsërisni fjalëkalimin"
+                    className="w-full pl-4 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B] transition-all bg-white"
                   />
-                  <div
-                    onClick={() => setShowAvatarModal(true)}
-                    className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                   >
-                    <Camera className="w-6 h-6 mb-1 drop-shadow" />
-                    <span className="text-[10px] font-bold">Ndrysho</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowAvatarModal(true)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl bg-[#00675B]/10 text-[#00675B] hover:bg-[#00675B] hover:text-white transition-all cursor-pointer shadow-xs"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" />
-                      Zgjidh nga biblioteka
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingAvatar}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition-all cursor-pointer shadow-xs"
-                    >
-                      {uploadingAvatar ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Camera className="w-3.5 h-3.5 text-gray-500" />
-                      )}
-                      Ngarko foto nga pajisja
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-gray-400">
-                    Formate të mbështetura: JPEG, PNG, WebP (maksimumi 5MB).
-                  </p>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* General Info Card */}
-            <div id="company-details-section" className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm transition-all duration-300">
-              <h3 className="text-base font-bold text-[#101828] mb-5">
-                {isCompany ? 'Të dhënat zyrtare të kompanisë' : 'Të dhënat personale'}
-              </h3>
-
-              {isCompany ? (
-                /* COMPANY FORM */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Emri i Kompanisë / Agjencisë *
-                    </label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="p.sh. Elite Real Estate"
-                      required
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Personi Përgjegjës / Kontaktues
-                    </label>
-                    <input
-                      type="text"
-                      value={companyContactPerson}
-                      onChange={(e) => setCompanyContactPerson(e.target.value)}
-                      placeholder="p.sh. Agron Berisha"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Numri i Telefonit të Kompanisë
-                    </label>
-                    <input
-                      type="tel"
-                      value={companyPhone}
-                      onChange={(e) => setCompanyPhone(e.target.value)}
-                      placeholder="+383 44 123 456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Qyteti Kryesor
-                    </label>
-                    <select
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    >
-                      <option value="">Zgjidh qytetin...</option>
-                      {CITIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Official Company Contact Email */}
-                  <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#00675B]" />
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                          Email-i Zyrtar i Kompanisë për Kontakt
-                        </label>
-                      </div>
-                      {userEmail && (
-                        <span className="text-[11px] text-gray-500">
-                          Email-i kryesor i llogarisë: <span className="font-medium text-gray-700">{userEmail}</span>
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="email"
-                      value={companyEmail}
-                      onChange={(e) => setCompanyEmail(e.target.value)}
-                      placeholder="p.sh. info@kompania.com ose agjencia@shembull.com"
-                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">
-                      <p className="text-[11px] text-gray-500">
-                        Ky email shfaqet publikisht në shpalljet tuaja për kontakt nga blerësit.
-                      </p>
-                      {companyEmail && companyEmail.trim().toLowerCase() !== userEmail.trim().toLowerCase() && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateAccountEmail(companyEmail)}
-                          disabled={updatingEmail}
-                          className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
-                        >
-                          {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                          <span>Bëje edhe email kryesor të llogarisë</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Numri Unik Identifikues (NIPT)
-                    </label>
-                    <input
-                      type="text"
-                      value={nipt}
-                      onChange={(e) => setNipt(e.target.value)}
-                      placeholder="p.sh. 810123456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Viti i Themelimit
-                    </label>
-                    <input
-                      type="number"
-                      min="1950"
-                      max="2026"
-                      value={foundedYear}
-                      onChange={(e) => setFoundedYear(e.target.value)}
-                      placeholder="p.sh. 2018"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Website Zyrtar i Kompanisë
-                    </label>
-                    <input
-                      type="url"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      placeholder="https://kompania.com"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Adresa e Zyrës Qendrore
-                    </label>
-                    <input
-                      type="text"
-                      value={officeAddress}
-                      onChange={(e) => setOfficeAddress(e.target.value)}
-                      placeholder="p.sh. Rr. Nëna Terezë, Nr. 45, Prishtinë"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Përshkrimi Zyrtar i Kompanisë
-                      </label>
-                      <span className="text-[11px] text-gray-400">
-                        {companyDescription.length}/1000
-                      </span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      maxLength={1000}
-                      value={companyDescription}
-                      onChange={(e) => setCompanyDescription(e.target.value)}
-                      placeholder="Shkruani një përshkrim për historikun, shërbimet dhe misionin e kompanisë suaj..."
-                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-                </div>
-              ) : (
-                /* INDIVIDUAL FORM */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Emri *
-                    </label>
-                    <input
-                      type="text"
-                      value={individualFirstName}
-                      onChange={(e) => setIndividualFirstName(e.target.value)}
-                      placeholder="Emri juaj"
-                      required
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Mbiemri *
-                    </label>
-                    <input
-                      type="text"
-                      value={individualLastName}
-                      onChange={(e) => setIndividualLastName(e.target.value)}
-                      placeholder="Mbiemri juaj"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Numri i Telefonit
-                    </label>
-                    <input
-                      type="tel"
-                      value={individualPhone}
-                      onChange={(e) => setIndividualPhone(e.target.value)}
-                      placeholder="+383 44 123 456"
-                      className="w-full h-11 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                      Qyteti Kryesor
-                    </label>
-                    <select
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    >
-                      <option value="">Zgjidh qytetin...</option>
-                      {CITIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Personal Account Email */}
-                  <div className="sm:col-span-2 p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-[#00675B]" />
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                          Adresa Email e Llogarisë
-                        </label>
-                        {isEmailVerified && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" />
-                            E verifikuar
-                          </span>
-                        )}
-                      </div>
-                      {individualEmail.trim().toLowerCase() !== userEmail.trim().toLowerCase() && individualEmail.trim().length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateAccountEmail(individualEmail)}
-                          disabled={updatingEmail}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[#00675B] text-white hover:bg-[#004D43] transition-all cursor-pointer shadow-xs disabled:opacity-50 self-start sm:self-auto"
-                        >
-                          {updatingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                          <span>Dërgo konfirmim në email-in e ri</span>
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="email"
-                      value={individualEmail}
-                      onChange={(e) => setIndividualEmail(e.target.value)}
-                      placeholder="email@shembull.com"
-                      className="w-full h-11 px-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                    <p className="text-[11px] text-gray-500 mt-1.5">
-                      Ky email përdoret për kyçje dhe njoftime zyrtare. Nëse e ndryshoni, do të merrni një link konfirmimi në adresën e re për siguri maksimale.
-                    </p>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Bio / Përshkrim i shkurtër
-                      </label>
-                      <span className="text-[11px] text-gray-400">
-                        {individualBio.length}/500
-                      </span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      maxLength={500}
-                      value={individualBio}
-                      onChange={(e) => setIndividualBio(e.target.value)}
-                      placeholder="Një përshkrim i shkurtër për veten, përvojën ose kërkesat tuaja imobiliare..."
-                      className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleSaveSettings('profile')}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Ruaj të dhënat e profilit</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 2: RRJETET SOCIALE */}
-        {/* ========================================================================= */}
-        {activeTab === 'socials' && (
-          <div className="space-y-6 animate-in fade-in-50 duration-200">
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <div className="mb-6">
-                <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-[#00675B]" />
-                  Lidhjet me Rrjetet Sociale
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Këto rrjete sociale shfaqen poshtë opsionit të mesazheve në çdo shpallje të publikuar nga ju, dhe në profilin tuaj publik.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Instagram */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center text-white">
-                        <InstagramIcon className="w-4 h-4 fill-white" />
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">Instagram</label>
-                    </div>
-                    {socials.instagram && (
-                      <a
-                        href={normalizeSocialUrl('instagram', socials.instagram)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socials.instagram || ''}
-                    onChange={(e) => setSocials((p) => ({ ...p, instagram: e.target.value }))}
-                    placeholder="@kompania ose https://instagram.com/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
-                </div>
-
-                {/* Facebook */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#1877F2] flex items-center justify-center text-white">
-                        <FacebookIcon className="w-4 h-4 fill-white" />
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">Facebook</label>
-                    </div>
-                    {socials.facebook && (
-                      <a
-                        href={normalizeSocialUrl('facebook', socials.facebook)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socials.facebook || ''}
-                    onChange={(e) => setSocials((p) => ({ ...p, facebook: e.target.value }))}
-                    placeholder="https://facebook.com/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
-                </div>
-
-                {/* WhatsApp */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#25D366] flex items-center justify-center text-white">
-                        <WhatsAppIcon className="w-4 h-4 fill-white" />
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">WhatsApp</label>
-                    </div>
-                    {socials.whatsapp && (
-                      <a
-                        href={normalizeSocialUrl('whatsapp', socials.whatsapp)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socials.whatsapp || ''}
-                    onChange={(e) => setSocials((p) => ({ ...p, whatsapp: e.target.value }))}
-                    placeholder="+383 44 123 456 ose link"
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
-                </div>
-
-                {/* TikTok */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#000000] flex items-center justify-center text-white">
-                        <TikTokIcon className="w-4 h-4 fill-white" />
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">TikTok</label>
-                    </div>
-                    {socials.tiktok && (
-                      <a
-                        href={normalizeSocialUrl('tiktok', socials.tiktok)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={socials.tiktok || ''}
-                    onChange={(e) => setSocials((p) => ({ ...p, tiktok: e.target.value }))}
-                    placeholder="@kompania ose https://tiktok.com/@..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
-                </div>
-
-                {/* LinkedIn */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white font-bold text-xs">
-                        in
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">LinkedIn</label>
-                    </div>
-                    {linkedin && (
-                      <a
-                        href={linkedin.startsWith('http') ? linkedin : `https://${linkedin}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={linkedin}
-                    onChange={(e) => setLinkedin(e.target.value)}
-                    placeholder="https://linkedin.com/in/..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
-                </div>
-
-                {/* YouTube */}
-                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#FF0000] flex items-center justify-center text-white font-bold text-xs">
-                        YT
-                      </div>
-                      <label className="text-xs font-bold text-gray-700">YouTube Channel</label>
-                    </div>
-                    {youtube && (
-                      <a
-                        href={youtube.startsWith('http') ? youtube : `https://${youtube}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#00675B] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        Testo <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={youtube}
-                    onChange={(e) => setYoutube(e.target.value)}
-                    placeholder="https://youtube.com/@..."
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                  />
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
-              {/* Live Preview Card */}
-              <div className="mt-8 p-4 sm:p-5 rounded-2xl bg-gray-50 border border-gray-200/80">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Pamja live e lidhjeve tuaja sociale:
-                  </span>
-                  <span className="text-[11px] text-[#00675B] font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> E sinkronizuar me shpalljet
-                  </span>
-                </div>
-                <SocialLinksBar socials={socials} variant="large" />
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleSaveSettings('socials')}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>Ruaj rrjetet sociale</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 5: SIGURIA & SESIONET */}
-        {/* ========================================================================= */}
-        {activeTab === 'security' && (
-          <div className="space-y-6 animate-in fade-in-50 duration-200">
-            {/* Google OAuth account notice */}
-            {isGoogleUser && (
-              <div className="flex items-start gap-3 p-4 sm:p-5 rounded-2xl bg-[#C8B882]/10 border border-[#C8B882]/40">
-                <div className="w-9 h-9 rounded-xl bg-white border border-[#C8B882]/50 text-[#00675B] flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#101828]">
-                    Llogari e lidhur me Google
-                  </p>
-                  <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                    Hyrja në këtë llogari bëhet përmes Google ({userEmail}). Ndryshimi i fjalëkalimit
-                    më poshtë nuk prek hyrjen me Google — krijon vetëm një mënyrë shtesë hyrjeje me
-                    email &amp; fjalëkalim.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Password Change Card */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <div className="mb-5">
-                <h3 className="text-base sm:text-lg font-bold text-[#101828] flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-[#00675B]" />
-                  Ndrysho Fjalëkalimin
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Përdorni një fjalëkalim të sigurt me shkronja, numra dhe simbole.
-                </p>
-              </div>
-
-              <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    Fjalëkalimi i ri
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-
-                  {/* Live Password Strength Meter */}
-                  {newPassword && (
-                    <div className="mt-2.5 space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-gray-500 font-medium">Siguria e fjalëkalimit:</span>
-                        <span className="font-bold text-gray-700">
-                          {getPasswordStrength(newPassword).label}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {[1, 2, 3, 4].map((step) => {
-                          const strength = getPasswordStrength(newPassword)
-                          const isFilled = strength.score >= step
-                          return (
-                            <div
-                              key={step}
-                              className={`h-1.5 rounded-full transition-all duration-300 ${
-                                isFilled ? strength.color : 'bg-gray-200'
-                              }`}
-                            />
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
-                    Konfirmo fjalëkalimin e ri
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full h-11 px-3.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
+              <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={updatingPassword || !newPassword || Boolean(getPasswordValidationError(newPassword))}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#004D43] disabled:opacity-50 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+                  disabled={updatingPassword || !newPassword || !confirmPassword}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-gray-900 hover:bg-black text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   {updatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-                  <span>Përditëso Fjalëkalimin</span>
+                  <span>{updatingPassword ? 'Duke ndryshuar...' : 'Përditëso Fjalëkalimin'}</span>
                 </button>
-              </form>
-            </div>
+              </div>
+            </form>
+          </div>
 
-            {/* Verification Status Card */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
-              <h3 className="text-base font-bold text-[#101828] mb-4">
-                Statusi i Sigurisë së Llogarisë
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3.5">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEmailVerified ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                    {isEmailVerified ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">Email i verifikuar</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{userEmail}</p>
-                    <span className={`inline-block mt-2 text-[11px] font-bold ${isEmailVerified ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      {isEmailVerified ? '✓ E verifikuar zyrtarisht' : '⚠️ Jo e verifikuar'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#00675B]/10 text-[#00675B] flex items-center justify-center shrink-0">
-                    <Laptop className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#101828]">Sesioni Aktiv</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Shfletuesi aktual në përdorim</p>
-                    <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-bold text-emerald-700">
-                      Aktiv Tani
-                    </span>
-                  </div>
-                </div>
+          {/* ========================================================================= */}
+          {/* CORE SECTION 3: VEPRIME TË LLOGARISË */}
+          {/* ========================================================================= */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-7 shadow-sm">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-[#101828]">
+                  Llogaria Juaj
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Menaxhimi i sesionit dhe privatësisë
+                </p>
               </div>
             </div>
 
-            {/* Danger Zone */}
-            <div className="bg-red-50/50 border border-red-200/60 rounded-3xl p-5 sm:p-7">
-              <h3 className="text-base font-bold text-red-700 mb-1">
-                Veprime të parikthyeshme
-              </h3>
-              <p className="text-xs text-gray-600 mb-5">
-                Veprimet e mëposhtme janë përfundimtare dhe mund të fshijnë të gjitha të dhënat tuaja nga Bleje Pronën.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-bold transition-colors cursor-pointer shadow-xs"
-                >
-                  <LogOut className="w-4 h-4 text-gray-500" />
-                  <span>Dil nga llogaria</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Fshi llogarinë përfundimisht</span>
-                </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gray-50/70 border border-gray-100 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-bold text-gray-900 font-mono">{userEmail}</span>
+                  {isEmailVerified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Verifikuar</span>
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Ky është emaili zyrtar i identifikimit në platformë.
+                </p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 hover:text-gray-900 hover:border-gray-300 transition-all cursor-pointer self-start sm:self-center"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Çkyçu nga llogaria</span>
+              </button>
+            </div>
+
+            {/* Danger Zone: Delete Account */}
+            <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-red-600">Zonë e ndjeshme</p>
+                <p className="text-[11px] text-gray-500">
+                  Fshirja e llogarisë fshin të gjitha shpalljet dhe të dhënat tuaja përgjithmonë.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Fshij llogarinë</span>
+              </button>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Mobile Floating Save Bar (profile/socials only — security has its own password form) */}
-      {activeTab !== 'security' && (
-        <div className="sm:hidden fixed bottom-4 inset-x-4 z-40 bg-white/95 backdrop-blur-xl border border-gray-200/90 p-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] flex items-center justify-between gap-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-200">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold text-gray-900 truncate">
-              {tabs.find((t) => t.id === activeTab)?.label}
-            </p>
-            <p className="text-[10px] text-gray-500 truncate">
-              Ruani ndryshimet tuaja me 1-prekje
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => handleSaveSettings(activeTab === 'socials' ? 'socials' : 'profile')}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00675B] active:scale-95 text-white text-xs font-bold shadow-md cursor-pointer shrink-0 disabled:opacity-75"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{saving ? 'Ruajtje...' : 'Ruaj'}</span>
-          </button>
         </div>
-      )}
 
-      {/* Modals */}
-      <AvatarPickerModal
-        isOpen={showAvatarModal}
-        onClose={() => setShowAvatarModal(false)}
-        onSelectAvatar={handleSelectAvatar}
-        currentAvatarUrl={avatarUrl}
-      />
+        {/* Modals */}
+        <AvatarPickerModal
+          isOpen={showAvatarModal}
+          onClose={() => setShowAvatarModal(false)}
+          onSelectAvatar={handleSelectAvatar}
+          currentAvatarUrl={avatarUrl}
+        />
 
-      <LogoutModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        redirectTo="/login"
-        userEmail={userEmail}
-        userName={isCompany ? (companyName || `${individualFirstName} ${individualLastName}`.trim() || 'Përdorues') : (`${individualFirstName} ${individualLastName}`.trim() || 'Përdorues')}
-        avatarUrl={avatarUrl}
-        onLogoutConfirmed={async () => {
-          try {
-            sessionStorage.setItem('blejepronen_logging_out', '1')
-            document.cookie = 'blejepronen_logging_out=1; path=/; max-age=10; SameSite=Lax'
-            await supabase.auth.signOut({ scope: 'local' })
-            await fetch('/api/logout', { method: 'POST', keepalive: true })
-          } catch {}
-          router.push('/login')
-        }}
-      />
+        <LogoutModal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          userEmail={userEmail}
+          userName={firstName || 'Përdorues'}
+          avatarUrl={avatarUrl}
+          onLogoutConfirmed={async () => {
+            await supabase.auth.signOut()
+            router.push('/login')
+          }}
+        />
 
-      <DeleteAccountModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        userEmail={userEmail}
-        userName={isCompany ? (companyName || `${individualFirstName} ${individualLastName}`.trim() || 'Përdorues') : (`${individualFirstName} ${individualLastName}`.trim() || 'Përdorues')}
-        isCompany={isCompany}
-        avatarUrl={avatarUrl}
-        onDeleteConfirmed={handleConfirmDelete}
-      />
+        <DeleteAccountModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          userEmail={userEmail}
+          userName={firstName || 'Përdorues'}
+          isCompany={isCompany}
+          avatarUrl={avatarUrl}
+          onDeleteConfirmed={async () => {
+            try {
+              const res = await fetch('/api/account/delete', { method: 'POST' })
+              if (!res.ok) throw new Error('Dështoi fshirja e llogarisë.')
+              await supabase.auth.signOut()
+              toast.success('Llogaria u fshi me sukses.')
+              router.push('/login')
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : 'Dështoi fshirja e llogarisë.'
+              toast.error(msg)
+            }
+          }}
+        />
+      </div>
     </div>
   )
 }
