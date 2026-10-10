@@ -537,7 +537,7 @@ export default function RegisterScreen() {
       if (params.redirectTo) {
         resolveAuthSuccess(router, params.redirectTo)
       } else {
-        router.replace('/completo-profilin' as any)
+        router.replace({ pathname: '/completo-profilin', params: { from: 'signup' } } as any)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Gabim gjatë verifikimit të kodit.'
@@ -654,7 +654,7 @@ export default function RegisterScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <ScrollView
           contentContainerStyle={[

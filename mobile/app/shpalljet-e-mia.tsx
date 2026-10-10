@@ -1937,7 +1937,7 @@ export default function ShpalljetEMiaScreen() {
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditPriceListing(null)}>
             <BlurView

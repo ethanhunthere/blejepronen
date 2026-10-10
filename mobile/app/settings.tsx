@@ -751,13 +751,17 @@ export default function SettingsScreen() {
                 successTitle: 'Llogaria u Fshi',
                 successMessage: 'Të gjitha të dhënat dhe shpalljet tuaja u fshinë përfundimisht.',
                 onBeforeTeardown: async () => {
-                  if (session?.access_token) {
-                    const res = await apiDeleteAccount(session.access_token)
-                    if (!res.success) {
-                      throw new Error(
-                        res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
-                      )
-                    }
+                  // A missing/expired session must FAIL the deletion: silently
+                  // skipping the server call and reporting success would lie
+                  // about an irreversible destructive action.
+                  if (!session?.access_token) {
+                    throw new Error('Sesioni ka skaduar — kyçuni përsëri për të fshirë llogarinë.')
+                  }
+                  const res = await apiDeleteAccount(session.access_token)
+                  if (!res.success) {
+                    throw new Error(
+                      res.error || 'Dështoi fshirja e llogarisë. Ju lutemi provoni përsëri.'
+                    )
                   }
                 },
               })
@@ -851,7 +855,7 @@ export default function SettingsScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         style={{ flex: 1 }}
       >
         {/* Apple-grade Segmented Tab Bar */}

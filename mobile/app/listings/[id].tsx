@@ -300,7 +300,12 @@ export default function ListingDetailScreen() {
     const currentType = listing.type
     const cached = getCachedListings()
     const matches = cached
-      .filter((l) => l.id !== currentId && (l.city === currentCity || l.type === currentType))
+      .filter(
+        (l) =>
+          l.id !== currentId &&
+          l.is_active !== false &&
+          (l.city === currentCity || l.type === currentType)
+      )
       .slice(0, 6)
 
     if (matches.length >= 3) {
@@ -310,8 +315,11 @@ export default function ListingDetailScreen() {
         try {
           const { data } = await supabase
             .from('listings')
-            .select('*')
+            .select(
+              'id,title,price,city,neighborhood,address,type,images,rooms,area_m2,floor,apartment_type,is_featured,is_active,created_at,user_id,condition,features'
+            )
             .eq('city', currentCity)
+            .eq('is_active', true)
             .neq('id', currentId)
             .limit(6)
 
@@ -704,7 +712,7 @@ export default function ListingDetailScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ListingDetailSkeleton />
       </View>
     )

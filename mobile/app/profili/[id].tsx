@@ -201,8 +201,13 @@ export default function PublicProfileScreen() {
 
   const isVerified = useMemo(() => {
     if (!profile) return false
-    // Trust status must reflect actual verification, never account type.
-    return profile.email_verified === true
+    // Trust status reflects actual confirmation + completed identity,
+    // never account type or name heuristics.
+    return (
+      profile.email_verified === true &&
+      Boolean(profile.first_name) &&
+      Boolean(profile.last_name)
+    )
   }, [profile])
 
   const memberYear = useMemo(() => {
@@ -690,7 +695,7 @@ export default function PublicProfileScreen() {
                             { color: theme === 'green' ? colors.gold : '#10B981' },
                           ]}
                         >
-                          E Licencuar
+                          {isCompany ? 'Agjenci e Konfirmuar' : 'Profil i Konfirmuar'}
                         </Text>
                       </View>
                     )}

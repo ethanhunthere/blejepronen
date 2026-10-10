@@ -600,7 +600,8 @@ export default function ChatConversationScreen() {
   const handleSendOfferPrompt = () => {
     setShowAttachmentTray(false)
     if (listing?.price) {
-      const discountedPrice = Math.round((listing.price * 0.95) / 1000) * 1000
+      const step = listing.price >= 10000 ? 1000 : 50
+      const discountedPrice = Math.round((listing.price * 0.95) / step) * step
       handleSendMessage(
         `💶 Ofertë: Dëshiroj të propozoj çmimin prej ${new Intl.NumberFormat('de-DE').format(discountedPrice)} € për këtë pronë. A keni hapësirë për marrëveshje?`
       )
@@ -768,16 +769,18 @@ export default function ChatConversationScreen() {
               <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
                 {otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
               </Text>
-              <View style={styles.verifiedRow}>
-                {otherUser?.is_agency ? (
-                  <Building2 size={12} color={colors.primary} strokeWidth={2.4} />
-                ) : (
-                  <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
-                )}
-                <Text style={[styles.verifiedText, { color: colors.primary }]}>
-                  {otherUser?.is_agency ? 'Agjenci e Verifikuar' : 'Profil i Verifikuar'}
-                </Text>
-              </View>
+              {otherUser?.email_verified ? (
+                <View style={styles.verifiedRow}>
+                  {otherUser?.is_agency ? (
+                    <Building2 size={12} color={colors.primary} strokeWidth={2.4} />
+                  ) : (
+                    <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
+                  )}
+                  <Text style={[styles.verifiedText, { color: colors.primary }]}>
+                    {otherUser?.is_agency ? 'Agjenci e Konfirmuar' : 'Profil i Konfirmuar'}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -855,7 +858,7 @@ export default function ChatConversationScreen() {
       {/* 3. Messages List Area */}
       <KeyboardAvoidingView
         style={styles.chatArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
       >
         {loading ? (
@@ -883,6 +886,25 @@ export default function ChatConversationScreen() {
               if (nearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false })
             }}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            ListHeaderComponent={
+              hasMoreHistory ? (
+                <Pressable
+                  onPress={() => void loadOlderMessages()}
+                  disabled={loadingOlder}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ngarko mesazhet më të vjetra"
+                  style={[styles.loadOlderBtn, { borderColor: colors.border }]}
+                >
+                  {loadingOlder ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text style={[styles.loadOlderText, { color: colors.primary }]}>
+                      Ngarko mesazhet më të vjetra
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null
+            }
             ListEmptyComponent={
               <View style={styles.emptyMessages}>
                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.primaryLight }]}>
@@ -1073,6 +1095,20 @@ export default function ChatConversationScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadOlderBtn: {
+    alignSelf: 'center',
+    minHeight: 36,
+    paddingHorizontal: 14,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadOlderText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   screenContainer: {
     flex: 1,
   },

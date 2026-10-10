@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { View, StyleSheet, Animated } from 'react-native'
+import { View, StyleSheet, Animated, useWindowDimensions } from 'react-native'
 import { useTheme } from '@/constants/theme'
 
 export function SkeletonBox({
@@ -116,13 +116,16 @@ export function ListingFeedSkeleton({ count = 3 }: { count?: number }) {
 
 export function ListingDetailSkeleton() {
   const { colors, theme } = useTheme()
+  const { width } = useWindowDimensions()
+  // Mirror the real hero geometry exactly so nothing jumps on resolve.
+  const heroHeight = Math.min(420, Math.round(width * 0.94))
 
   const borderColor = colors.border
 
   return (
     <View style={[styles.detailRoot, { backgroundColor: colors.background }]}>
       {/* Hero Image Skeleton */}
-      <SkeletonBox width="100%" height={340} borderRadius={0} />
+      <SkeletonBox width="100%" height={heroHeight} borderRadius={0} />
 
       {/* Main Body */}
       <View style={styles.detailBody}>

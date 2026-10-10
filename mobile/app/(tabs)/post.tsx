@@ -620,7 +620,7 @@ export default function PostPropertyScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
     >
       <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}

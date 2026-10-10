@@ -555,7 +555,7 @@ export default function CompletoProfilinScreen() {
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         {/* Navigation Bar */}
         <View style={[styles.navBar, { borderBottomColor: specularBorder }]}>
