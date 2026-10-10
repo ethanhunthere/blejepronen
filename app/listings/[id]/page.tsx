@@ -151,7 +151,7 @@ const getListing = cache(async (id: string) => {
   return supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,latitude,longitude,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
     )
     .eq('id', id)
     .eq('is_active', true)
@@ -361,7 +361,7 @@ export default async function ListingDetailPage({
 
   const priceStr = formatPrice(listing.price)
   const pricePerSqm =
-    listing.area_m2 > 0 && listing.type === 'shitje'
+    listing.area_m2 > 0 && listing.price > 0 && listing.type === 'shitje'
       ? formatPrice(Math.round(listing.price / listing.area_m2))
       : null
 
@@ -374,7 +374,7 @@ export default async function ListingDetailPage({
   const lat = typeof rawRecord.latitude === 'number' ? rawRecord.latitude : null
   const lng = typeof rawRecord.longitude === 'number' ? rawRecord.longitude : null
   const pricePerSqmValue =
-    listing.area_m2 > 0 && listing.type === 'shitje'
+    listing.area_m2 > 0 && listing.price > 0 && listing.type === 'shitje'
       ? Math.round(listing.price / listing.area_m2)
       : null
 

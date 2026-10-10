@@ -396,8 +396,15 @@ function compressImage(file: File): Promise<File> {
 
     const img = new window.Image()
     const objectUrl = URL.createObjectURL(file)
+    // A corrupt file can fire neither onload nor onerror; without a timeout
+    // the upload Promise.all would hang forever and wedge the overlay.
+    const timeout = setTimeout(() => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Koha e ngarkimit të fotos skadoi. Provo me një skedar tjetër.'))
+    }, 15000)
 
     img.onload = () => {
+      clearTimeout(timeout)
       URL.revokeObjectURL(objectUrl)
 
       let { width, height } = img
@@ -421,7 +428,8 @@ function compressImage(file: File): Promise<File> {
           if (!blob) {
             return reject(new Error('Kompresimi i fotove dështoi.'))
           }
-          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg') || 'image.jpg', {
+          const base = file.name.replace(/\.[^.]+$/, '') || 'image'
+          const compressed = new File([blob], `${base}.jpg`, {
             type: 'image/jpeg',
             lastModified: Date.now(),
           })
@@ -433,6 +441,7 @@ function compressImage(file: File): Promise<File> {
     }
 
     img.onerror = () => {
+      clearTimeout(timeout)
       URL.revokeObjectURL(objectUrl)
       reject(new Error('Nuk u ngarkua foto për kompresim.'))
     }
@@ -611,7 +620,7 @@ export default function PostoPronaPage() {
     type: 'shitje',
     condition: 'e-re',
     floor: '2',
-    features: ['Parking', 'Ashensor', 'Ballkon'],
+    features: [],
   })
 
   const [images, setImages] = useState<File[]>([])
@@ -794,7 +803,7 @@ export default function PostoPronaPage() {
       floor: defaultFloor,
       areaUnit: nextCat.areaUnitDefault,
       condition: nextCat.conditions[0]?.value || 'e-re',
-      features: nextCat.features.slice(0, 3),
+      features: prev.features.filter((f) => nextCat.features.includes(f)),
     }))
   }
 
@@ -1045,7 +1054,6 @@ export default function PostoPronaPage() {
         first_name:
           user.user_metadata?.given_name ||
           user.user_metadata?.full_name?.split(' ')[0] ||
-          user.email?.split('@')[0] ||
           'Përdorues',
         last_name: user.user_metadata?.family_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
       })
@@ -1377,7 +1385,7 @@ export default function PostoPronaPage() {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Form Fields (8 Cols on Desktop) */}
             <div className="lg:col-span-8 space-y-8">

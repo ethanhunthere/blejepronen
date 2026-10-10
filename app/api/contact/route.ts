@@ -47,6 +47,23 @@ async function resolveUser(request: Request) {
   return null
 }
 
+async function applyPrivacy(
+  supabase: ReturnType<typeof getAdminClient>,
+  ownerId: string,
+  phone: string | null,
+  requesterId: string
+): Promise<string | null> {
+  if (!phone || ownerId === requesterId) return phone
+  try {
+    const { data: owner } = await supabase.auth.admin.getUserById(ownerId)
+    const privacy = (owner?.user?.user_metadata?.privacy || {}) as { showPhone?: boolean }
+    return privacy.showPhone === false ? null : phone
+  } catch {
+    // metadata unreadable → keep the number (fail open to product default)
+    return phone
+  }
+}
+
 /**
  * Authenticated contact resolution. Listing pages never server-render phone
  * numbers into public HTML; the contact CTAs fetch them from here after login.
@@ -80,7 +97,12 @@ export async function GET(request: Request) {
     const phones: Record<string, string | null> = {}
     for (const id of ids) phones[id] = null
     for (const row of data || []) {
-      phones[row.id] = typeof row.phone === 'string' && row.phone.trim() ? row.phone.trim() : null
+      phones[row.id] = await applyPrivacy(
+        supabase,
+        row.id,
+        typeof row.phone === 'string' && row.phone.trim() ? row.phone.trim() : null,
+        user.id
+      )
     }
     return NextResponse.json({ phones })
   }
@@ -90,7 +112,8 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    const phone = typeof data?.phone === 'string' && data.phone.trim() ? data.phone.trim() : null
+    const rawPhone = typeof data?.phone === 'string' && data.phone.trim() ? data.phone.trim() : null
+    const phone = await applyPrivacy(supabase, userId, rawPhone, user.id)
     return NextResponse.json({ phone, isOwn: userId === user.id })
   }
 
@@ -112,7 +135,8 @@ export async function GET(request: Request) {
   }
 
   const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles
-  const phone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null
+  const rawPhone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null
+  const phone = await applyPrivacy(supabase, data.user_id, rawPhone, user.id)
 
   return NextResponse.json({ phone, isOwn: data.user_id === user.id })
 }

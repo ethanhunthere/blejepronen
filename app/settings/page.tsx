@@ -115,9 +115,9 @@ const PROFILE_PAYLOAD_KEYS = [
 ] as const
 
 const DUMMY_SAMPLES = new Set([
-  'alban',
-  'kelmendi',
-  'alban kelmendi',
+  // Placeholder-shaped values only. Real names/years must NEVER be blanked —
+  // a seller genuinely named "Alban Kelmendi" or founded in 2018 would
+  // otherwise lose their data on every load and save.
   'p.sh. alban',
   'p.sh. kelmendi',
   'alban.kelmendi',
@@ -130,19 +130,10 @@ const DUMMY_SAMPLES = new Set([
   '049123456',
   '038123456',
   '044123456',
-  'agron berisha',
-  'p.sh. agron berisha',
-  'elite real estate',
-  'p.sh. elite real estate',
-  'pristina real estate llc',
-  'p.sh. pristina real estate llc',
-  'besnik krasniqi',
-  'p.sh. besnik krasniqi',
   '811234567',
   'p.sh. 811234567',
   'https://agjencia.com',
   'https://kompania.com',
-  '2018',
   'p.sh. 2018',
 ])
 
@@ -465,7 +456,11 @@ export default function SettingsPage() {
         foundedYear: foundedYear.trim(),
         nipt: nipt.trim(),
         officeAddress: officeAddress.trim(),
-        website: website.trim(),
+        website: website.trim()
+          ? /^https?:\/\//i.test(website.trim())
+            ? website.trim()
+            : `https://${website.trim()}`
+          : '',
 
         // Socials
         instagram: socials.instagram?.trim() || '',
@@ -498,7 +493,7 @@ export default function SettingsPage() {
 
       // Sync local cache and broadcast instant update to Navbar
       try {
-        const cached = localStorage.getItem('bp_profile_cache')
+        const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = avatarUrl
@@ -506,7 +501,7 @@ export default function SettingsPage() {
           parsed.lastName = activeLastName
           parsed.isCompany = isCompany
           parsed.incomplete = false
-          localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+          localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${avatarUrl}")`)
         }
       } catch {}
@@ -603,11 +598,11 @@ export default function SettingsPage() {
       const { error: avatarErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', currentUserId)
       if (avatarErr) throw avatarErr
       try {
-        const cached = localStorage.getItem('bp_profile_cache')
+        const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = url
-          localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+          localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${url}")`)
         }
       } catch {}
@@ -650,11 +645,11 @@ export default function SettingsPage() {
       if (avatarErr) throw avatarErr
 
       try {
-        const cached = localStorage.getItem('bp_profile_cache')
+        const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = publicUrl
-          localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+          localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${publicUrl}")`)
         }
       } catch {}
@@ -1935,6 +1930,7 @@ export default function SettingsPage() {
       <LogoutModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
+        redirectTo="/login"
         userEmail={userEmail}
         userName={isCompany ? (companyName || `${individualFirstName} ${individualLastName}`.trim() || 'Përdorues') : (`${individualFirstName} ${individualLastName}`.trim() || 'Përdorues')}
         avatarUrl={avatarUrl}

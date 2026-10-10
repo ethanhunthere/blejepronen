@@ -73,12 +73,8 @@ async function getPublicProfile(id: string) {
     if (typeof ingCount === 'number') followingCount = ingCount
   } catch {}
 
-  if (followersCount === 0 && Array.isArray(meta.followers)) {
-    followersCount = meta.followers.length
-  }
-  if (followingCount === 0 && Array.isArray(meta.following)) {
-    followingCount = meta.following.length
-  }
+  // The follows table is authoritative; user_metadata is client-writable and
+  // must never inflate public social counts.
 
   return {
     profile,
@@ -125,6 +121,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
 
   const {
     profile,
+    meta,
     isCompany,
     displayName,
     bio,
@@ -133,7 +130,8 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
     followersCount,
     followingCount,
   } = data
-  const listings = await getProfileListings(profile.id)
+  const listingsHidden = (meta.privacy as { showListingsOnProfile?: boolean } | undefined)?.showListingsOnProfile === false
+  const listings = listingsHidden ? [] : await getProfileListings(profile.id)
 
   const memberSince = new Date(profile.created_at).toLocaleDateString('sq-AL', {
     year: 'numeric',

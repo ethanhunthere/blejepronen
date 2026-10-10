@@ -494,14 +494,13 @@ img { transition: opacity 300ms ease; }
   .skeleton { animation: none; }
 }
 
-/* Auth screens are full-viewport, strictly non-scrollable split layouts. AuthShell renders a
-   [data-auth-page] marker (present in SSR HTML), so the footer is hidden from
-   first paint without waiting on client-side routing. */
+/* Auth screens are full-viewport split layouts. The hard no-scroll lock is
+   desktop-only: on phones the keyboard must be able to push the submit
+   button into reach, so small screens scroll naturally. */
 html:has([data-auth-page]),
 body:has([data-auth-page]) {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  overflow: hidden !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
 }
 
 body:has([data-auth-page]) > footer {
@@ -511,15 +510,21 @@ body:has([data-auth-page]) > footer {
 body:has([data-auth-page]) > main {
   flex: 1 1 auto;
   min-height: 0;
-  height: calc(100dvh - 57px);
-  max-height: calc(100dvh - 57px);
-  overflow: hidden;
+  min-height: calc(100dvh - 57px);
 }
 
 @media (min-width: 1024px) {
+  html:has([data-auth-page]),
+  body:has([data-auth-page]) {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
   body:has([data-auth-page]) > main {
     height: calc(100dvh - 65px);
     max-height: calc(100dvh - 65px);
+    overflow: hidden;
   }
 }
 

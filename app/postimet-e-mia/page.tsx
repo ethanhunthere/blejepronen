@@ -57,8 +57,14 @@ function extractListingStoragePaths(images: (string | null)[] | null | undefined
 
 /** Human-readable lifecycle label without depending on the optional `status` column. */
 function listingStatusLabel(listing: Listing): string {
+  // `status` is the lifecycle column (migration 20260928_003); `condition`
+  // describes property state and must never drive lifecycle labels.
+  const status = (listing as unknown as { status?: string }).status
+  if (status === 'sold') return listing.type === 'qira' ? 'E dhënë me qira' : 'E shitur'
+  if (status === 'rented') return 'E dhënë me qira'
+  if (status === 'paused') return 'E ndaluar përkohësisht'
+  if (status === 'archived') return 'E arkivuar'
   if (listing.is_active) return 'Aktiv'
-  if (listing.condition === 'shitur') return listing.type === 'qira' ? 'E dhënë me qira' : 'E shitur'
   return 'Joaktiv'
 }
 
@@ -275,7 +281,7 @@ export default function PostimetEMiaPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('listings')
-      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
+      .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,status,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
       .eq('user_id', uid)
       .order('created_at', { ascending: false })
       .limit(500)
@@ -347,7 +353,7 @@ export default function PostimetEMiaPage() {
 
       const { data, error } = await supabase
         .from('listings')
-        .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
+        .select('id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,status,created_at,user_id,condition,floor,apartment_type,features,free_trial_until')
         .in('id', listing_ids)
 
       if (error) throw error

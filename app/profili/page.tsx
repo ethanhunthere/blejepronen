@@ -238,11 +238,11 @@ export default function ProfilePage() {
 
       // Update cached profile for instant navbar reactivity
       try {
-        const cached = localStorage.getItem('bp_profile_cache')
+        const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = publicUrl
-          localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+          localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${publicUrl}")`)
         }
       } catch {}
@@ -277,11 +277,11 @@ export default function ProfilePage() {
       setProfile((prev) => (prev ? { ...prev, avatar_url: selectedAvatarUrl } : prev))
 
       try {
-        const cached = localStorage.getItem('bp_profile_cache')
+        const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
         if (cached) {
           const parsed = JSON.parse(cached)
           parsed.avatarUrl = selectedAvatarUrl
-          localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+          localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
           document.documentElement.style.setProperty('--nav-avatar', `url("${selectedAvatarUrl}")`)
         }
       } catch {}
@@ -354,13 +354,13 @@ export default function ProfilePage() {
     )
 
     try {
-      const cached = localStorage.getItem('bp_profile_cache')
+      const cached = localStorage.getItem('blejepronen_cached_navbar_profile')
       if (cached) {
         const parsed = JSON.parse(cached)
         parsed.firstName = nextFirst
         parsed.lastName = nextLast
         parsed.isCompany = isCompany
-        localStorage.setItem('bp_profile_cache', JSON.stringify(parsed))
+        localStorage.setItem('blejepronen_cached_navbar_profile', JSON.stringify(parsed))
       }
     } catch {}
 
@@ -398,7 +398,7 @@ export default function ProfilePage() {
     } catch {}
     try {
       localStorage.removeItem('bp_user_cache')
-      localStorage.removeItem('bp_profile_cache')
+      localStorage.removeItem('blejepronen_cached_navbar_profile')
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('sb-')) localStorage.removeItem(key)
       })
