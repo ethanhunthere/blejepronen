@@ -620,7 +620,7 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Shkruaj mesazh..."
             rows={1}
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#101828] text-sm placeholder:text-gray-500 resize-none min-h-[40px] max-h-[100px] focus:border-[#00675B]/40 focus:outline-none transition-all duration-200"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-[#101828] text-base placeholder:text-gray-500 resize-none min-h-[40px] max-h-[100px] focus:border-[#00675B]/40 focus:outline-none transition-all duration-200"
             onInput={e => {
               const el = e.currentTarget
               el.style.height = 'auto'

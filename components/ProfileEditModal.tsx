@@ -230,7 +230,7 @@ export default function ProfileEditModal({
                   value={form.companyDescription}
                   onChange={set('companyDescription')}
                   placeholder="Shkruani një përshkrim për agjencinë tuaj..."
-                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-base font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                 />
               </div>
             </>
@@ -297,7 +297,7 @@ export default function ProfileEditModal({
                   value={form.individualBio}
                   onChange={set('individualBio')}
                   placeholder="Një përshkrim i shkurtër për veten ose pronat tuaja..."
-                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-base font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#00675B]/20 focus:border-[#00675B]"
                 />
               </div>
             </>

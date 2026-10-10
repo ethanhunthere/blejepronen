@@ -2391,7 +2391,7 @@ export default function PostoPronaPage() {
                       value={formData.city}
                       onChange={handleChange}
                       style={{ colorScheme: 'light' }}
-                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
+                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-base font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                       required
                     >
                       <option value="">Zgjidhni qytetin</option>
@@ -2415,7 +2415,7 @@ export default function PostoPronaPage() {
                       onChange={handleChange}
                       disabled={!formData.city}
                       style={{ colorScheme: 'light' }}
-                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-base font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <option value="">
                         {formData.city ? 'Zgjidhni lagjen...' : 'Zgjidhni qytetin së pari'}
@@ -2655,7 +2655,7 @@ export default function PostoPronaPage() {
                         value={formData.rooms}
                         onChange={handleChange}
                         style={{ colorScheme: 'light' }}
-                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-base font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                         required
                       >
                         {(activeCategory.roomOptions || [1, 2, 3, 4, 5, 6]).map((r) => (
@@ -2679,7 +2679,7 @@ export default function PostoPronaPage() {
                         value={formData.floor}
                         onChange={handleChange}
                         style={{ colorScheme: 'light' }}
-                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-sm font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-xl border border-gray-200 text-base font-medium bg-white text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#00675B]/50 transition-all cursor-pointer"
                       >
                         {(activeCategory.floors || ['P/D', '1', '2', '3', '4', '5+']).map((fl) => (
                           <option key={fl} value={fl}>
@@ -2848,7 +2848,7 @@ export default function PostoPronaPage() {
                     placeholder={activeCategory.descriptionPlaceholder}
                     maxLength={MAX_DESCRIPTION_LENGTH}
                     rows={6}
-                    className="w-full p-4 rounded-xl border border-gray-200 text-sm sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00675B]/40 focus:border-[#00675B] resize-y transition-all leading-relaxed"
+                    className="w-full p-4 rounded-xl border border-gray-200 text-base sm:text-base bg-white text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00675B]/40 focus:border-[#00675B] resize-y transition-all leading-relaxed"
                     required
                   />
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mt-1.5 text-xs text-gray-500">

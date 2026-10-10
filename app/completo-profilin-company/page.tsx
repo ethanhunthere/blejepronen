@@ -425,7 +425,7 @@ export default function CompletoProfilinCompanyPage() {
                   id="description"
                   rows={3}
                   placeholder="Kush jeni ju? Shkruani shkurtimisht përvojën tuaj në treg, zonat ku operoni dhe shërbimet e patundshmërisë..."
-                  className="w-full p-3 text-sm rounded-xl border border-gray-200 bg-gray-50 text-[#101828] placeholder:text-gray-400 focus:bg-white focus:border-[#00675B] outline-none transition-colors resize-none leading-relaxed"
+                  className="w-full p-3 text-base rounded-xl border border-gray-200 bg-gray-50 text-[#101828] placeholder:text-gray-400 focus:bg-white focus:border-[#00675B] outline-none transition-colors resize-none leading-relaxed"
                   value={description}
                   onChange={(e) => {
                     setDescription(e.target.value)
