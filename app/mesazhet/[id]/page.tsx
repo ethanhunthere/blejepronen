@@ -404,6 +404,8 @@ export default function ChatPage() {
 
   return (
     <div className="h-[calc(100dvh-3.5rem-env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-4rem)] flex flex-col bg-[#F2F7F7] overflow-hidden">
+      {/* The sidebar h1 is hidden while a chat is open; keep one for AT. */}
+      <h1 className="sr-only">Mesazhet</h1>
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
         {/* Back button — mobile only (desktop shows the two-pane layout) */}

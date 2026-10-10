@@ -82,11 +82,9 @@ export default async function HomePage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900 mb-1.5">Ende nuk ka listime</h3>
               <p className="text-slate-600 text-sm mb-6 max-w-sm mx-auto">Bëhu i pari që poston pronën tënde në platformë pa asnjë komision.</p>
-              <Link href="/posto-prona">
-                <Button className="h-11 px-6 bg-[#00675B] text-white text-sm rounded-xl font-medium hover:bg-[#004D43] transition-colors cursor-pointer">
+              <Link href="/posto-prona" className="h-11 px-6 bg-[#00675B] text-white text-sm rounded-xl font-medium hover:bg-[#004D43] transition-colors cursor-pointer inline-flex items-center justify-center min-h-[44px]">
                   Posto pronën falas
-                </Button>
-              </Link>
+                </Link>
             </div>
           )}
         </div>

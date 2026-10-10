@@ -586,11 +586,9 @@ export default function PostimetEMiaPage() {
               <p className="text-gray-500 max-w-md mb-8 text-sm sm:text-base">
                 Klikoni ikonën e zemrës në çdo pronë për ta ruajtur këtu
               </p>
-              <Link href="/listings">
-                <Button className="h-11 px-6 bg-[#00675B] hover:bg-[#004D43] text-white rounded-xl font-semibold shadow-sm hover:shadow-md transition-all">
+              <Link href="/listings" className="h-11 px-6 bg-[#00675B] hover:bg-[#004D43] text-white rounded-xl font-semibold shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center min-h-[44px]">
                   Eksploro pronat
-                </Button>
-              </Link>
+                </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -619,11 +617,9 @@ export default function PostimetEMiaPage() {
             <p className="text-gray-500 max-w-md mb-8 text-sm sm:text-base">
               Postoni pronën tuaj dhe arrini mijëra blerës dhe qiramarrës në Kosovë
             </p>
-            <Link href="/posto-prona">
-              <Button className="h-11 px-6 bg-[#00675B] text-white rounded-xl font-semibold hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out">
+            <Link href="/posto-prona" className="h-11 px-6 bg-[#00675B] text-white rounded-xl font-semibold hover:bg-[#004D43] hover:shadow-lg hover:shadow-[#00675B]/25 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition-all duration-200 ease-out inline-flex items-center justify-center min-h-[44px]">
                 Posto pronën tënde
-              </Button>
-            </Link>
+              </Link>
           </div>
         ) : (
           <>

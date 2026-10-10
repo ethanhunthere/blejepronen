@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -324,11 +325,11 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
               {filteredConvs.map(conv => {
                 const isActive = pathname === `/mesazhet/${conv.id}`
                 return (
-                  <button
-                    key={conv.id}
-                    type="button"
+                  <Link href={`/mesazhet/${conv.id}`}
+                    
+                   
                     onMouseEnter={() => router.prefetch(`/mesazhet/${conv.id}`)}
-                    onClick={() => router.push(`/mesazhet/${conv.id}`)}
+                    
                     className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all duration-200 ease-out group border-b border-gray-50 cursor-pointer ${
                       isActive
                         ? 'bg-[#00675B]/5 border-l-2 border-l-[#00675B]'
@@ -380,7 +381,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
                         )}
                       </div>
                     </div>
-                  </button>
+                  </Link>
                 )
               })}
             </div>
