@@ -1,4 +1,5 @@
 import { Platform, Vibration } from 'react-native'
+import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { supabase } from './supabase'
 
 /**
@@ -34,6 +35,15 @@ let webrtcLoadAttempted = false
 function loadWebRTC(): WebRTCModule | null {
   if (webrtcLoadAttempted) return webrtc
   webrtcLoadAttempted = true
+
+  const isExpoGo =
+    (Constants as any)?.executionEnvironment === ExecutionEnvironment.StoreClient ||
+    (Constants as any)?.appOwnership === 'expo'
+  if (isExpoGo) {
+    webrtc = null
+    return null
+  }
+
   try {
     // Lazy require — never at module scope, so Expo Go keeps working.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
