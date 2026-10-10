@@ -19,8 +19,8 @@ export default function ListingHeaderActions({
   city,
 }: ListingHeaderActionsProps) {
   const [copied, setCopied] = useState(false)
-  const { favoriteIds, toggleFavorite } = useFavorites()
-  const isFav = favoriteIds.includes(listingId)
+  const { favoriteIds, toggleFavorite, isLoggedIn } = useFavorites()
+  const isFav = isLoggedIn && favoriteIds.includes(listingId)
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : `https://blejepronen.com/listings/${listingId}`

@@ -358,22 +358,27 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const fetchUnreadCount = useCallback(async () => {
     const uid = userIdRef.current
     if (!uid) return
-    const { data: convs } = await supabaseRef.current
-      .from('conversations')
-      .select('id')
-      .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
-    if (!convs || convs.length === 0) {
-      setUnreadCount(0)
-      return
+    try {
+      const { data: convs } = await supabaseRef.current
+        .from('conversations')
+        .select('id')
+        .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+      if (!convs || convs.length === 0) {
+        setUnreadCount(0)
+        return
+      }
+      const convIds = convs.map(c => c.id)
+      const { count } = await supabaseRef.current
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .in('conversation_id', convIds)
+        .eq('is_read', false)
+        .neq('sender_id', uid)
+      setUnreadCount(count || 0)
+    } catch {
+      // A network failure must never render as "no unread messages" —
+      // keep the previous count.
     }
-    const convIds = convs.map(c => c.id)
-    const { count } = await supabaseRef.current
-      .from('messages')
-      .select('id', { count: 'exact', head: true })
-      .in('conversation_id', convIds)
-      .eq('is_read', false)
-      .neq('sender_id', uid)
-    setUnreadCount(count || 0)
   }, [])
 
   const loadProfile = useCallback(async (userId: string, userMeta?: Record<string, unknown>) => {
@@ -414,16 +419,26 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     }
 
     // ---- Set up Realtime channel ONCE per user session ----
-    const setupRealtimeChannel = () => {
+    const setupRealtimeChannel = async () => {
       if (realtimeChannelRef.current) {
         realtimeChannelRef.current.unsubscribe()
         realtimeChannelRef.current = null
       }
+      // Scope the INSERT watch to this user's conversations — an unfiltered
+      // table watch turns every message on the platform into a refetch.
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`buyer_id.eq.${currentUserId},seller_id.eq.${currentUserId}`)
+      const ids = (convs || []).map((c: { id: string }) => c.id)
+      const filter = ids.length
+        ? `conversation_id=in.(${ids.join(',')})`
+        : 'conversation_id=eq.00000000-0000-0000-0000-000000000000'
       const ch = supabase
         .channel('navbar-unread')
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages' },
+          { event: 'INSERT', schema: 'public', table: 'messages', filter },
           () => {
             debouncedFetch()
           }

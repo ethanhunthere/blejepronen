@@ -62,6 +62,7 @@ import { supabase, Listing } from '@/lib/supabase'
 import { apiResolveContacts } from '@/lib/api'
 import { useTrackListingView, trackListingFavorite, trackListingLead } from '@/lib/listing-analytics'
 import { MarketDeltaCard } from '@/components/MarketDeltaCard'
+import { heroImageSource } from '@/lib/image-transform'
 import { ReportListingSheet } from '@/components/ReportListingSheet'
 import { getAvatarSource } from '@/lib/avatars'
 import { useFavorites } from '@/lib/favorites'
@@ -1022,7 +1023,7 @@ export default function ListingDetailScreen() {
                 style={{ width: windowWidth, height: heroHeight }}
               >
                 <Image
-                  source={typeof img === 'string' ? { uri: img } : (img as any)}
+                  source={typeof img === 'string' ? { uri: heroImageSource(img) as string } : (img as any)}
                   recyclingKey={`gallery-${i}`}
                   style={[styles.heroImage, { width: windowWidth, height: heroHeight, backgroundColor: colors.surfaceSubtle }]}
                   contentFit="cover"

@@ -99,7 +99,7 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
 
   return (
     <div className="bg-[#F7FAF9] min-h-screen">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
         <nav aria-label="breadcrumb" className="text-xs text-gray-500 mb-4">
           <ol className="flex flex-wrap items-center gap-1.5">

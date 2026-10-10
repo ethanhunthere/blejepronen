@@ -456,7 +456,6 @@ export default function CompletoProfilinScreen() {
           accountType,
           avatarUrl: selectedAvatar,
           city: activeCity,
-          emailVerified: true,
           individualFirstName: isCompany ? undefined : firstName.trim(),
           individualLastName: isCompany ? undefined : lastName.trim(),
           individualPhone: isCompany ? undefined : individualPhone.trim(),

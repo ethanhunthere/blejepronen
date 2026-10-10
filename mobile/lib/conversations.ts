@@ -59,6 +59,7 @@ export interface ConversationSummary {
   counterpart_avatar?: string
   counterpart_phone?: string
   is_agency: boolean
+  counterpart_email_verified: boolean
   last_message: string
   last_time: string
   last_message_at?: string
@@ -108,6 +109,7 @@ interface MetaRow {
   counterpart_avatar?: string
   counterpart_phone?: string
   is_agency: boolean
+  counterpart_email_verified: boolean
 }
 
 interface LastMessageRow {
@@ -201,6 +203,7 @@ function compose(): ConversationSummary[] {
         counterpart_avatar: m.counterpart_avatar,
         counterpart_phone: m.counterpart_phone,
         is_agency: m.is_agency,
+        counterpart_email_verified: m.counterpart_email_verified,
         last_message: last?.content || 'Bisedë e re',
         last_time: formatLastTime(last?.created_at),
         last_message_at: last?.created_at,
@@ -307,6 +310,7 @@ async function fetchMeta(userId: string): Promise<MetaRow[] | null> {
       counterpart_avatar: pub?.avatar_url || '',
       counterpart_phone: priv?.phone || '',
       is_agency: isAgency,
+      counterpart_email_verified: emailVerified,
     } satisfies MetaRow
   })
 }
@@ -432,7 +436,7 @@ async function runLoad(parts: Required<ReloadParts>): Promise<void> {
     parts.unread ? fetchUnread(userId, ids) : Promise.resolve(unreadCache),
   ])
 
-  if (last !== null) lastCache = last
+      if (last !== null) lastCache = { ...lastCache, ...last }
   if (unread !== null) unreadCache = unread
 
   if (isLogoutInProgress()) {

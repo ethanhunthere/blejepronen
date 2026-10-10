@@ -100,7 +100,7 @@ export function accountAgeDays(createdAt?: string | null): number | null {
  * | level    | requirement                                                              |
  * |----------|--------------------------------------------------------------------------|
  * | trusted  | emailVerified AND phoneOnFile AND (establishedAccount OR listings_count>=3)|
- * | verified | emailVerified OR phoneOnFile                                              |
+ * | verified | emailVerified only                                                        |
  * | basic    | everything else (incl. unknown/missing data)                              |
  */
 export function deriveTrustSignals(
@@ -121,7 +121,9 @@ export function deriveTrustSignals(
   let level: TrustLevel = 'basic'
   if (emailVerified && phoneOnFile && (establishedAccount || listingsCount >= TRUST_THRESHOLDS.trustedListingsCount)) {
     level = 'trusted'
-  } else if (emailVerified || phoneOnFile) {
+  } else if (emailVerified) {
+    // Phone-on-file alone is contactability, not verification: there is no
+    // phone-OTP flow, so a self-typed number must never mint a trust tier.
     level = 'verified'
   }
 

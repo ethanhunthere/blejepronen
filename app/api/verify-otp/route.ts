@@ -230,7 +230,6 @@ export async function POST(request: Request) {
         if (!signInErr && signInData?.session) {
           const finalResponse = NextResponse.json({
             success: true,
-            session: signInData.session,
             message: AUTH_COPY.otpVerified,
           })
           response.cookies.getAll().forEach((cookie) => {

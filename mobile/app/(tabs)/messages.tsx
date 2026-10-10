@@ -183,7 +183,7 @@ export default function MessagesScreen() {
       listingTitle: item.listing_title,
       userId: item.counterpart_id ?? null,
       conversationId: item.id,
-      emailVerified: item.is_agency ? true : undefined,
+      emailVerified: item.counterpart_email_verified || undefined,
     })
   }
 

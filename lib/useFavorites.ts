@@ -36,10 +36,16 @@ function getInitialAuth(): boolean {
 }
 
 export function useFavorites() {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(getInitialFavorites)
-  const [isLoggedIn, setIsLoggedIn] = useState(getInitialAuth)
+  // Seed empty on first paint (SSR parity), hydrate from storage in an effect.
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => {
+    setFavoriteIds(getInitialFavorites())
+    setIsLoggedIn(getInitialAuth())
+  }, [])
 
   useEffect(() => {
     let cancelled = false

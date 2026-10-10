@@ -499,7 +499,6 @@ export default function SettingsScreen() {
           bio: existingMeta.bio || syncProfile?.bio,
           city: existingMeta.city || syncProfile?.city,
           avatarUrl: existingMeta.avatar_url || syncProfile?.avatar_url || avatarUrl,
-          emailVerified: isEmailVerified,
           notifications: currentNotifications,
           privacy: currentPrivacy,
           appPreferences: {

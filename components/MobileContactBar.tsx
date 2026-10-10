@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useFavorites } from '@/lib/useFavorites'
 import { normalizePhoneNumber } from '@/lib/phone'
 import { trackListingLead } from '@/lib/analytics'
-import { createPublicSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 
 interface MobileContactBarProps {
@@ -29,8 +29,8 @@ export default function MobileContactBar({
   listingTitle,
   listingCity,
 }: MobileContactBarProps) {
-  const { favoriteIds, toggleFavorite } = useFavorites()
-  const isFavorited = favoriteIds.includes(listingId)
+  const { favoriteIds, toggleFavorite, isLoggedIn } = useFavorites()
+  const isFavorited = isLoggedIn && favoriteIds.includes(listingId)
   const [contact, setContact] = useState<ContactState>({ status: 'loading' })
 
   // Contact details are never server-rendered: resolve them after login.
@@ -38,7 +38,7 @@ export default function MobileContactBar({
     let mounted = true
     ;(async () => {
       try {
-        const supabase = createPublicSupabaseClient()
+        const supabase = createClient()
         const { data } = await supabase.auth.getSession()
         if (!data.session) {
           if (mounted) setContact({ status: 'anon' })

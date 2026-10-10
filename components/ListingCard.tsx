@@ -67,7 +67,7 @@ const ListingCard = React.memo(function ListingCard({
 
           {/* Type badge - quiet, architectural */}
           <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-xs border border-black/5">
+            <span className="inline-flex items-center bg-white text-slate-800 text-[11px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-xs border border-black/5">
               {listing.type === 'shitje' ? 'Shitje' : 'Qira'}
             </span>
           </div>
@@ -83,7 +83,7 @@ const ListingCard = React.memo(function ListingCard({
                   e.stopPropagation()
                   onToggleFavorite?.(listing.id)
                 }}
-                className="relative z-20 bg-white/90 backdrop-blur-md rounded-full w-11 h-11 flex items-center justify-center shadow-xs border border-black/5 hover:bg-white active:scale-90 transition-all duration-150 cursor-pointer"
+                className="relative z-20 bg-white rounded-full w-11 h-11 flex items-center justify-center shadow-xs border border-black/5 hover:bg-white active:scale-90 transition-all duration-150 cursor-pointer"
               >
                 <Heart
                   className={`h-4 w-4 transition-colors ${

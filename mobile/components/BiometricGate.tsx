@@ -103,7 +103,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
             getDevicePosture(),
           ]),
           new Promise<[boolean, BiometricCapability | null, DevicePosture]>((resolve) =>
-            setTimeout(() => resolve([false, null, 'none']), 1500),
+            setTimeout(() => resolve([true, null, 'none']), 1500),
           ),
         ])
 

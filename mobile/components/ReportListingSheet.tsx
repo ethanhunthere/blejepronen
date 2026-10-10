@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scroll: { flexGrow: 0 },
+  scroll: { flexGrow: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 8 },
   sectionLabel: {
     fontFamily: Fonts.semiBold,

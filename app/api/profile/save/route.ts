@@ -137,7 +137,6 @@ export async function POST(request: Request) {
     // Determine if email is verified:
     // User remains verified permanently if already verified in profile, Google OAuth, or auth email confirmed
     const isGoogleUser = user.app_metadata?.provider === 'google'
-    let emailVerified = false
 
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
@@ -145,20 +144,13 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (typeof body?.emailVerified === 'boolean') {
-      emailVerified = body.emailVerified
-    } else {
-      emailVerified =
-        Boolean(existingProfile?.email_verified) ||
-        Boolean(user.email_confirmed_at) ||
-        Boolean(user.confirmed_at) ||
-        isGoogleUser
-    }
-
-    // Never downgrade email verification if user was already verified
-    if (existingProfile?.email_verified || user.email_confirmed_at || user.confirmed_at || isGoogleUser) {
-      emailVerified = true
-    }
+    // Trust is server-derived ONLY: a client-supplied emailVerified flag
+    // would let any session mint its own verification badge.
+    const emailVerified =
+      Boolean(existingProfile?.email_verified) ||
+      Boolean(user.email_confirmed_at) ||
+      Boolean(user.confirmed_at) ||
+      isGoogleUser
 
     const city = typeof body?.city === 'string' ? body.city.trim() : (user.user_metadata?.city || '')
     const nipt = typeof body?.nipt === 'string' ? body.nipt.trim() : (user.user_metadata?.nipt || '')

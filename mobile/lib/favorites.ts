@@ -50,7 +50,7 @@ export function subscribeFavorites(callback: (favs: Record<string, boolean>) => 
 }
 
 export function getFavoritesMap(): Record<string, boolean> {
-  return inMemoryFavorites ? { ...inMemoryFavorites } : {}
+  return { ...inMemoryFavorites }
 }
 
 export function isListingFavorite(listingId: string): boolean {
@@ -106,7 +106,7 @@ export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
         if (user) backgroundRevalidateFavorites(user.id)
       }).catch(() => {})
     }
-    return inMemoryFavorites
+    return { ...inMemoryFavorites }
   }
 
   // 2. Sub-5ms local storage cache return
@@ -123,7 +123,7 @@ export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
           if (user) backgroundRevalidateFavorites(user.id)
         }).catch(() => {})
       }
-      return inMemoryFavorites!
+      return { ...inMemoryFavorites }!
     }
   } catch {}
 
@@ -154,7 +154,7 @@ export async function fetchFavoriteIds(): Promise<Record<string, boolean>> {
   } catch (e) {
     inMemoryFavorites = inMemoryFavorites || {}
     notifySubscribers()
-    return inMemoryFavorites
+    return { ...inMemoryFavorites }
   }
 }
 

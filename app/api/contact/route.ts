@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { consumeRequestBudget } from '@/lib/auth-security'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -72,10 +73,17 @@ async function applyPrivacy(
  *   GET /api/contact?userId=<id>               → { phone }
  *   GET /api/contact?userIds=<id,id,…> (≤20)   → { phones: { [id]: phone|null } }
  */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function GET(request: Request) {
   const user = await resolveUser(request)
   if (!user) {
     return NextResponse.json({ error: 'unauthorized', message: 'Ju lutemi kyçuni.' }, { status: 401 })
+  }
+
+  // Bulk harvesting guard: a small per-user budget per minute.
+  if (!consumeRequestBudget(`contact:${user.id}`, 30)) {
+    return NextResponse.json({ error: 'shumë_kërkesa', message: 'Provoni përsëri pas pak.' }, { status: 429 })
   }
 
   const { searchParams } = new URL(request.url)
@@ -86,7 +94,7 @@ export async function GET(request: Request) {
   const supabase = getAdminClient()
 
   if (userIds) {
-    const ids = [...new Set(userIds.split(',').map((s) => s.trim()).filter(Boolean))].slice(0, 20)
+    const ids = [...new Set(userIds.split(',').map((s) => s.trim()).filter((v) => UUID_RE.test(v)))].slice(0, 20)
     if (ids.length === 0) {
       return NextResponse.json({ phones: {} })
     }
@@ -105,6 +113,10 @@ export async function GET(request: Request) {
       )
     }
     return NextResponse.json({ phones })
+  }
+
+  if (userId && !UUID_RE.test(userId)) {
+    return NextResponse.json({ error: 'invalid_id' }, { status: 400 })
   }
 
   if (userId) {

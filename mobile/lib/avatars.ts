@@ -3,6 +3,7 @@ import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import { supabase } from '@/lib/supabase'
+import { thumbImageSource } from '@/lib/image-transform'
 
 export const LOCAL_AVATAR_ASSETS: Record<number, any> = {
   1: require('@/assets/avatars/avatar-1.png'),
@@ -97,7 +98,7 @@ export function getAvatarSource(url?: string | null, cacheBuster?: string | numb
 
   // 3. Otherwise it's a remote custom avatar (Supabase Storage or external OAuth)
   const finalUri = getAvatarUri(url, cacheBuster)
-  return { uri: finalUri }
+  return { uri: thumbImageSource(finalUri) as string }
 }
 
 /**

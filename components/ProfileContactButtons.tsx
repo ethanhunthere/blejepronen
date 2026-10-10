@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Phone, MessageCircle, Lock } from 'lucide-react'
 
 import { normalizePhoneNumber, formatPhoneDisplay } from '@/lib/phone'
-import { createPublicSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 
 interface ProfileContactButtonsProps {
   userId: string
@@ -28,7 +28,7 @@ export default function ProfileContactButtons({
     let mounted = true
     ;(async () => {
       try {
-        const supabase = createPublicSupabaseClient()
+        const supabase = createClient()
         const { data } = await supabase.auth.getSession()
         if (!data.session) {
           if (mounted) setState('anon')

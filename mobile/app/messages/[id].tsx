@@ -57,6 +57,7 @@ import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { MediaLightbox } from '@/components/MediaLightbox'
 import * as ImageManipulator from 'expo-image-manipulator'
+import { thumbImageSource } from '@/lib/image-transform'
 import { DraggableBottomSheet } from '@/components/motion'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
@@ -691,7 +692,7 @@ export default function ChatConversationScreen() {
               >
                 <Image
                   source={{
-                    uri: item.content.replace('[Foto:', '').replace(']', '').trim(),
+                    uri: thumbImageSource(item.content.replace('[Foto:', '').replace(']', '').trim()) as string,
                   }}
                   style={styles.bubblePhoto}
                   contentFit="cover"

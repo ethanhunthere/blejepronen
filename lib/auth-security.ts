@@ -498,7 +498,8 @@ const ipBudget = new Map<string, { count: number; windowStart: number }>()
 
 export function clientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0].trim()
+  // Vercel prepends the client-supplied value; the LAST hop is the edge's.
+  if (forwarded) return forwarded.split(',').pop()?.trim() || 'unknown'
   return request.headers.get('x-real-ip') || 'unknown'
 }
 

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { unregisterPushToken } from './push-token'
 import {
   cacheDelete,
   cacheGet,
@@ -467,6 +468,10 @@ export async function performAtomicLogout(): Promise<void> {
   isLoggingOut = true
 
   try {
+    // 0. Best-effort push-token unregister so a signed-out device stops
+    //    receiving this account's notifications.
+    unregisterPushToken().catch(() => {})
+
     // 1. Synchronously nullify in-memory state
     clearSnapshot()
     isHydrated = true

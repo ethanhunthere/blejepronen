@@ -248,7 +248,6 @@ export interface ProfileSettingsPayload {
   bio?: string
   city?: string
   avatarUrl?: string
-  emailVerified?: boolean
 
   // Individual fields
   individualFirstName?: string

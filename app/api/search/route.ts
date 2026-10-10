@@ -343,7 +343,7 @@ export async function GET(request: Request) {
         entityType: isCompany ? ('agency' as const) : ('agent' as const),
         title: displayName,
         subtitle: isCompany
-          ? 'Agjenci e Licencuar e Patundshmërive'
+          ? 'Agjenci'
           : p.email_verified
             ? 'Pronar Privat • Llogari e Verifikuar'
             : 'Pronar Privat',
@@ -389,7 +389,8 @@ export async function GET(request: Request) {
         city: c.city || undefined,
         score,
         payload: {
-          email_verified: true,
+          // Legacy companies rows carry no verification state — never mint one.
+          email_verified: false,
           id: c.id,
           isCompany: true,
           account_type: 'company',

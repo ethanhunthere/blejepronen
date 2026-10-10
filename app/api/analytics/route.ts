@@ -272,7 +272,7 @@ export async function POST(request: Request) {
   }
 
   // Cheap dampener for anonymous view spam; keyed on the user when known.
-  const rateKey = user?.id ?? `ip:${request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'}`
+  const rateKey = user?.id ?? `ip:${request.headers.get('x-forwarded-for')?.split(',').pop()?.trim() ?? 'unknown'}`
   if (eventName === 'view' && !withinViewRateLimit(rateKey)) {
     return new NextResponse(null, { status: 204 })
   }

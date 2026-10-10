@@ -68,10 +68,12 @@ export function playHeartSound(withHaptics = false): void {
   playWebAudio('like')
   if (withHaptics) {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+
       setTimeout(() => {
         if (!soundEnabledInMemory) return
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
+
       }, 90)
     } catch {
       // Non-blocking
@@ -87,7 +89,8 @@ export function playUnlikeSound(withHaptics = false): void {
   playWebAudio('unlike')
   if (withHaptics) {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
+
     } catch {
       // Non-blocking
     }
@@ -102,7 +105,8 @@ export function playThemeSound(): void {
   if (!soundEnabledInMemory) return
   playWebAudio('theme')
   try {
-    Haptics.selectionAsync()
+    Haptics.selectionAsync().catch(() => {})
+
   } catch {
     // Non-blocking
   }
@@ -116,7 +120,8 @@ export function playSuccessSound(): void {
   if (!soundEnabledInMemory) return
   playWebAudio('success')
   try {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+
   } catch {
     // Non-blocking
   }
@@ -129,7 +134,8 @@ export function playDeleteSound(): void {
   if (!soundEnabledInMemory) return
   playWebAudio('delete')
   try {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {})
+
   } catch {
     // Non-blocking
   }
@@ -142,7 +148,8 @@ export function playTapSound(): void {
   if (!soundEnabledInMemory) return
   playWebAudio('tap')
   try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
+
   } catch {
     // Non-blocking
   }

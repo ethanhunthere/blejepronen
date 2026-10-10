@@ -57,7 +57,7 @@ const FEATURES_LIST = [
   { id: 'Ballkon', label: 'Ballkon' },
   { id: 'Ngrohje qendrore', label: 'Ngrohje qendrore' },
   { id: 'Klimë', label: 'Klimë' },
-  { id: 'Mobilie', label: 'Mobiluar' },
+  { id: 'Mobiluar', label: 'Mobiluar' },
   { id: 'Siguri 24h', label: 'Siguri 24h' },
   { id: 'Panoramë', label: 'Pamje panoramike' },
   { id: 'Kopësht', label: 'Kopësht' },
@@ -177,7 +177,7 @@ export function ListingsExplorer({
   const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const { favoriteIds, toggleFavorite } = useFavorites()
+  const { favoriteIds, toggleFavorite, isLoggedIn } = useFavorites()
 
   // ---- Filter State (seeded from server params for hydration parity) ----
   const [filters, setFilters] = useState<FilterState>({
@@ -1344,7 +1344,7 @@ export function ListingsExplorer({
                   key={listing.id}
                   listing={listing}
                   priority={index < 4}
-                  isFavorited={favoriteIds.includes(listing.id)}
+                  isFavorited={isLoggedIn && favoriteIds.includes(listing.id)}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}

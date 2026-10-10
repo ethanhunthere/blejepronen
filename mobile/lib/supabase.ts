@@ -182,14 +182,13 @@ const safeStorage = {
         await AsyncStorage.removeItem(key).catch(() => {})
         return
       } catch (e) {
-        console.warn('Secure storage write FAILED twice - falling back to AsyncStorage:', e)
+        console.warn('Secure storage write FAILED twice - staying memory-only:', e)
       }
     }
-    try {
-      await AsyncStorage.setItem(key, value)
-    } catch (e) {
-      console.warn('Session persistence failed entirely - memory-only until next write:', e)
-    }
+    // SecureStore failed twice: keep the session in memory only. This adapter
+    // only ever carries auth material, so a plaintext AsyncStorage fallback
+    // would write tokens to disk — never acceptable.
+    return
   },
   removeItem: async (key: string): Promise<void> => {
     memoryStorage.delete(key)

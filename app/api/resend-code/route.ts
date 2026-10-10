@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const delivered = await sendOtpEmail(
       email,
       code,
-      `Kodi juaj i ri i verifikimit: ${code} - Bleje Pronën`,
+      'Kodi juaj i ri i verifikimit - Bleje Pronën',
       otpEmailHtml(
         code,
         'Kodi i ri i verifikimit',

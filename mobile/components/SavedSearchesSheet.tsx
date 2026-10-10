@@ -165,7 +165,7 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
             ) : (
               <>
                 <Bookmark size={16} color="#FFFFFF" />
-                <Text style={styles.saveBtnText}>Ruaj kërkimin aktual</Text>
+                <Text style={[styles.saveBtnText, { color: colors.chipTextActive }]}>Ruaj kërkimin aktual</Text>
               </>
             )}
           </Pressable>

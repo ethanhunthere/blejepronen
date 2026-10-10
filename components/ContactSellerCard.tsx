@@ -105,7 +105,7 @@ export default function ContactSellerCard({
   const whatsAppUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waGreeting}` : '#'
 
   const isOwnListing = currentUserId === seller.userId
-  const isFav = favoriteIds.includes(listingId)
+  const isFav = isLoggedIn && favoriteIds.includes(listingId)
 
   // Badges may ONLY come from deriveTrustSignals() (lib/verification).
   const trustSignals =

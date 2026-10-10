@@ -473,7 +473,7 @@ export default async function ListingDetailPage({
       <ListingViewTracker listingId={listing.id} ownerId={listing.user_id} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
       {/* ====== HEADER NAVIGATION & BREADCRUMB ====== */}

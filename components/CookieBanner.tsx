@@ -42,7 +42,7 @@ function CookieBanner() {
   }, [])
 
   const accept = () => {
-    localStorage.setItem('cookie-consent', 'accepted')
+    try { localStorage.setItem('cookie-consent', 'accepted') } catch {}
     setConsentCookie('accepted')
     notifyConsentChanged()
     setShow(false)
@@ -50,7 +50,7 @@ function CookieBanner() {
   }
 
   const reject = () => {
-    localStorage.setItem('cookie-consent', 'rejected')
+    try { localStorage.setItem('cookie-consent', 'rejected') } catch {}
     setConsentCookie('rejected')
     notifyConsentChanged()
     setShow(false)
