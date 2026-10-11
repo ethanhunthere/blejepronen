@@ -38,6 +38,7 @@ import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { useTheme, Fonts } from '@/constants/theme'
 import { supabase } from '@/lib/supabase'
+import { base64ToUint8Array } from '@/lib/avatars'
 import { CATEGORIES, PropertyCategory } from '@/lib/categories'
 import {
   ALL_CITIES,
@@ -321,16 +322,18 @@ export default function PostPropertyScreen() {
 
   const pickImages = pickImagesFromGallery
 
-  const optimizeListingImage = async (uri: string): Promise<string> => {
+  const optimizeListingImage = async (
+    uri: string
+  ): Promise<{ uri: string; base64?: string | null }> => {
     try {
       const manip = await manipulateAsync(
         uri,
         [{ resize: { width: 1600 } }], // Keeps aspect ratio, max width 1600px
-        { compress: 0.80, format: SaveFormat.JPEG }
+        { compress: 0.80, format: SaveFormat.JPEG, base64: true }
       )
-      return manip.uri
+      return { uri: manip.uri, base64: manip.base64 || null }
     } catch {
-      return uri
+      return { uri, base64: null }
     }
   }
 
@@ -440,13 +443,21 @@ export default function PostPropertyScreen() {
             }
 
             try {
-              const optimizedUri = await optimizeListingImage(imgUri)
+              const optimized = await optimizeListingImage(imgUri)
               const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
               const path = `${user.id}/${filename}`
 
-              const response = await fetch(optimizedUri)
-              const arrayBuffer = await response.arrayBuffer()
-              const binaryData = new Uint8Array(arrayBuffer)
+              let binaryData: Uint8Array | ArrayBuffer | Blob
+              if (optimized.base64) {
+                binaryData = base64ToUint8Array(optimized.base64)
+              } else if (Platform.OS === 'web') {
+                const response = await fetch(optimized.uri)
+                binaryData = await response.blob()
+              } else {
+                const response = await fetch(optimized.uri)
+                const arrayBuffer = await response.arrayBuffer()
+                binaryData = new Uint8Array(arrayBuffer)
+              }
 
               const { error: uploadError } = await supabase.storage.from('listings').upload(path, binaryData, {
                 contentType: 'image/jpeg',

@@ -57,7 +57,7 @@ import {
   getConversationsSnapshot,
 } from '@/lib/conversations'
 import { setOpenConversation } from '@/lib/notifications'
-import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
+import { getAvatarUri, getAvatarSource, base64ToArrayBuffer } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
 import { MediaLightbox } from '@/components/MediaLightbox'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -601,12 +601,21 @@ export default function ChatConversationScreen() {
       const manipulated = await ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: 1600 } }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       )
-      const blob = await fetch(manipulated.uri).then((r) => r.blob())
+
+      let uploadBody: ArrayBuffer | Blob
+      if (manipulated.base64) {
+        uploadBody = base64ToArrayBuffer(manipulated.base64)
+      } else if (Platform.OS === 'web') {
+        uploadBody = await fetch(manipulated.uri).then((r) => r.blob())
+      } else {
+        uploadBody = await fetch(manipulated.uri).then((r) => r.arrayBuffer())
+      }
+
       const { error } = await supabase.storage
         .from('listings')
-        .upload(path, blob, { contentType: 'image/jpeg' })
+        .upload(path, uploadBody, { contentType: 'image/jpeg', upsert: true })
       if (error) {
         Alert.alert('Vërejtje', 'Ngarkimi i fotos dështoi: ' + error.message)
         return
