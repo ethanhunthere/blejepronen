@@ -33,11 +33,7 @@ import { BannerProvider } from '@/context/BannerContext'
 import { LogoutProvider } from '@/context/LogoutContext'
 import '@/lib/web-alert-polyfill'
 import { supabase } from '@/lib/supabase'
-// Deferred: react-native-webrtc + the call UI are heavy; evaluating them at
-// module scope costs startup latency for a feature most sessions never use.
-const CallScreen = lazy(() =>
-  import('@/components/CallScreen').then((m) => ({ default: m.CallScreen }))
-)
+import { CallScreen } from '@/components/CallScreen'
 import { Platform, View } from 'react-native'
 import * as SystemUI from 'expo-system-ui'
 import { waitForListingsCacheHydration } from '@/lib/listings-cache'
@@ -323,9 +319,5 @@ function CallGate() {
     }
   }, [])
 
-  return (
-    <Suspense fallback={null}>
-      <CallScreen />
-    </Suspense>
-  )
+  return <CallScreen />
 }

@@ -88,7 +88,11 @@ import {
 import { createSafeChannel } from '@/lib/realtime'
 import { openLoginScreen, openRegisterScreen } from '@/lib/navigation'
 import { useLogout } from '@/context/LogoutContext'
-import { fetchFollowStats } from '@/lib/social-graph'
+import {
+  fetchFollowStats,
+  subscribeSocialGraph,
+  getSocialMetrics,
+} from '@/lib/social-graph'
 import { FollowsModal } from '@/components/FollowsModal'
 
 let cachedProfileStats = {
@@ -246,6 +250,37 @@ export default function ProfileScreen() {
       unsubscribe()
     }
   }, [])
+
+  // Real-time synchronization for social graph stats (followers/following) across screens
+  useEffect(() => {
+    const currentId = currentUser?.id
+    if (!currentId) return
+    const initial = getSocialMetrics(currentId)
+    if (initial) {
+      setSocialStats((prev) => ({
+        ...prev,
+        followersCount: initial.followersCount,
+        followingCount: initial.followingCount,
+      }))
+    }
+    const unsubscribe = subscribeSocialGraph((evt) => {
+      if (evt.viewerUserId === currentId) {
+        setSocialStats((prev) => ({
+          ...prev,
+          followingCount: evt.viewerMetrics.followingCount,
+        }))
+      }
+      if (evt.targetUserId === currentId) {
+        setSocialStats((prev) => ({
+          ...prev,
+          followersCount: evt.targetMetrics.followersCount,
+        }))
+      }
+    })
+    return () => {
+      unsubscribe()
+    }
+  }, [currentUser?.id])
 
   // Account Verification Modal & OTP
   const [verifyModalVisible, setVerifyModalVisible] = useState(false)

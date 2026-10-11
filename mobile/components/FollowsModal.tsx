@@ -33,8 +33,9 @@ import { supabase } from '@/lib/supabase'
 import { getSyncAuthUser } from '@/lib/auth-cache'
 import {
   fetchFollowStats,
-  followUser,
-  unfollowUser,
+  toggleFollowUser,
+  subscribeSocialGraph,
+  getSocialMetrics,
   FollowUserItem,
 } from '@/lib/social-graph'
 import { openLoginScreen } from '@/lib/navigation'
@@ -123,6 +124,34 @@ export function FollowsModal({
     loadLists()
   }, [loadLists])
 
+  // Real-time synchronization with global social graph store
+  useEffect(() => {
+    if (!visible) return
+    const unsub = subscribeSocialGraph((evt) => {
+      // If target user is the profile whose modal is open
+      if (evt.targetUserId === userId) {
+        setFollowersCount(evt.targetMetrics.followersCount)
+      }
+      if (evt.viewerUserId === userId) {
+        setFollowingCount(evt.viewerMetrics.followingCount)
+      }
+
+      // If current viewer followed/unfollowed a user in this list
+      if (currentViewerId && evt.viewerUserId === currentViewerId) {
+        setViewerFollowingSet((prev) => {
+          const next = new Set(prev)
+          if (evt.action === 'follow') {
+            next.add(evt.targetUserId)
+          } else {
+            next.delete(evt.targetUserId)
+          }
+          return next
+        })
+      }
+    })
+    return unsub
+  }, [visible, userId, currentViewerId])
+
   // Filter list by search query
   const rawList = activeTab === 'followers' ? followers : following
   const filteredList = useMemo(() => {
@@ -152,17 +181,6 @@ export function FollowsModal({
 
     setActionLoadingMap((prev) => ({ ...prev, [targetItem.id]: true }))
 
-    // Optimistically update follow status
-    setViewerFollowingSet((prev) => {
-      const next = new Set(prev)
-      if (isCurrentlyFollowing) {
-        next.delete(targetItem.id)
-      } else {
-        next.add(targetItem.id)
-      }
-      return next
-    })
-
     // Optimistically update counts
     const prevFollowers = followersCount
     const prevFollowing = followingCount
@@ -180,49 +198,15 @@ export function FollowsModal({
     onStatsChange?.(nextFollowers, nextFollowing)
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token || ''
-
-      if (isCurrentlyFollowing) {
-        const res = await unfollowUser(targetItem.id, token)
-        if (!res.success) {
-          // Revert optimistic state and counts
-          setViewerFollowingSet((prev) => {
-            const next = new Set(prev)
-            next.add(targetItem.id)
-            return next
-          })
-          setFollowingCount(prevFollowing)
-          setFollowersCount(prevFollowers)
-          onStatsChange?.(prevFollowers, prevFollowing)
-        }
-      } else {
-        const res = await followUser(targetItem.id, token)
-        if (!res.success) {
-          // Revert optimistic state and counts
-          setViewerFollowingSet((prev) => {
-            const next = new Set(prev)
-            next.delete(targetItem.id)
-            return next
-          })
-          setFollowingCount(prevFollowing)
-          setFollowersCount(prevFollowers)
-          onStatsChange?.(prevFollowers, prevFollowing)
-        }
+      const res = await toggleFollowUser(targetItem.id, {
+        name: targetItem.name,
+      })
+      if (!res.success) {
+        setFollowingCount(prevFollowing)
+        setFollowersCount(prevFollowers)
+        onStatsChange?.(prevFollowers, prevFollowing)
       }
     } catch {
-      // Revert optimistic state and counts on network failure
-      setViewerFollowingSet((prev) => {
-        const next = new Set(prev)
-        if (isCurrentlyFollowing) {
-          next.add(targetItem.id)
-        } else {
-          next.delete(targetItem.id)
-        }
-        return next
-      })
       setFollowingCount(prevFollowing)
       setFollowersCount(prevFollowers)
       onStatsChange?.(prevFollowers, prevFollowing)
@@ -234,7 +218,16 @@ export function FollowsModal({
   const handleSelectUser = (item: FollowUserItem) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
     onClose()
-    router.push(`/profili/${item.id}` as any)
+    router.push({
+      pathname: '/profili/[id]',
+      params: {
+        id: item.id,
+        initialName: item.name,
+        initialAvatar: item.avatarUrl || '',
+        initialIsCompany: item.isCompany ? '1' : '0',
+        initialVerified: item.isVerified ? '1' : '0',
+      },
+    } as any)
   }
 
   const renderItem = ({ item }: { item: FollowUserItem }) => {

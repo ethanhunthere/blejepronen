@@ -1,4 +1,4 @@
-import { Platform, Vibration, Alert } from 'react-native'
+import { Platform, Vibration, Alert, NativeModules } from 'react-native'
 import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { supabase } from './supabase'
 import { getSyncAuthUser } from './auth-cache'
@@ -18,8 +18,8 @@ import { getSyncAuthUser } from './auth-cache'
  *
  * IMPORTANT: react-native-webrtc ships native code — it cannot run inside
  * Expo Go. We therefore load it lazily and gracefully: in Expo Go the call
- * UI is simply disabled ("Thirrjet kërkojnë versionin e plotë") while the
- * rest of the app is unaffected. In a development/store build it works fully.
+ * UI provides an informative notice while the rest of the app is unaffected.
+ * In a development/store build it works fully.
  */
 
 // ─── Lazy, crash-proof WebRTC loading ────────────────────────────────
@@ -53,7 +53,14 @@ function loadWebRTC(): WebRTCModule | null {
   const isExpoGo =
     (Constants as any)?.executionEnvironment === ExecutionEnvironment.StoreClient ||
     (Constants as any)?.appOwnership === 'expo'
-  if (isExpoGo) {
+
+  const hasNative = Boolean(
+    (NativeModules as any)?.WebRTCModule ||
+    (NativeModules as any)?.RNWebRTC ||
+    (globalThis as any)?.RTCPeerConnection
+  )
+
+  if (isExpoGo || !hasNative) {
     webrtc = null
     return null
   }
@@ -341,12 +348,10 @@ class CallEngine {
 
     // Expo Go / web: WebRTC native module is absent — show a graceful notice
     if (!isCallingSupported()) {
-      this.reset({ status: 'ended', role: 'caller', peer })
-      this.setState({ status: 'ended', endedReason: 'unsupported' })
-      this.timers.push(
-        setTimeout(() => {
-          this.setState({ status: 'idle', role: null, peer: null, endedReason: null })
-        }, 1800)
+      Alert.alert(
+        'Thirrjet në Aplikacion',
+        'Thirrjet direkte me zë në aplikacion kërkojnë versionin e pavarur të instalimit (Development Build / App Store). Mund të kontaktoni menjëherë përmes telefonit tradicional ose WhatsApp.',
+        [{ text: 'Në rregull', style: 'default' }]
       )
       return
     }

@@ -463,13 +463,6 @@ export default function ListingDetailScreen() {
   }
 
   const handleCall = () => {
-    if (!hasPhone) {
-      Alert.alert(
-        'Numri nuk është publik',
-        'Publikuesi nuk ka listuar numër telefoni për thirrje direkte. Mund ta kontaktoni menjëherë përmes bisedës në aplikacion.'
-      )
-      return
-    }
     setContactModalVisible(true)
     if (listing) void trackListingLead(listing.id, { ownerId: listing.user_id })
   }
@@ -2278,7 +2271,15 @@ export default function ListingDetailScreen() {
                 if (Platform.OS !== 'web') Haptics.selectionAsync()
                 router.push({
                   pathname: '/profili/[id]',
-                  params: { id: listing.user_id },
+                  params: {
+                    id: listing.user_id,
+                    initialName: sellerName,
+                    initialAvatar: seller?.avatar_url || '',
+                    initialIsCompany: isCompany ? '1' : '0',
+                    initialCity: listing.city || '',
+                    initialVerified: seller?.email_verified ? '1' : '0',
+                    initialPhone: effectiveCallNumber || '',
+                  },
                 })
               }
             }}

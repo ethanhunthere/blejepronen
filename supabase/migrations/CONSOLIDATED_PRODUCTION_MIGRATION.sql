@@ -12,6 +12,8 @@
 --   5. Anonymous telemetry buffer (telemetry_events)
 --   6. Pending profile columns (profiles.email, otp_fail_count, otp_locked_until)
 --   7. Profile sealing (owner-only access, profiles_public view, RLS defense)
+--   8. Social graph (follows table, bi-directional indexes, RLS policies, grants)
+--   9. Storage infrastructure (avatars and listings buckets, RLS policies, MIME limits)
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -237,6 +239,145 @@ grant all on public.saved_searches to service_role;
 grant all on public.listing_reports to service_role;
 grant all on public.listing_events to service_role;
 grant all on public.telemetry_events to service_role;
+
+-- ----------------------------------------------------------------------------
+-- 8. SOCIAL GRAPH (FOLLOWS SYSTEM)
+-- ----------------------------------------------------------------------------
+create table if not exists public.follows (
+  follower_id  uuid not null references public.profiles(id) on delete cascade,
+  following_id uuid not null references public.profiles(id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  check (follower_id <> following_id)
+);
+
+create index if not exists follows_follower_id_idx on public.follows (follower_id);
+create index if not exists follows_following_id_idx on public.follows (following_id);
+
+alter table public.follows enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where tablename = 'follows' and policyname = 'Follows are viewable by everyone') then
+    create policy "Follows are viewable by everyone"
+      on public.follows for select
+      using (true);
+  end if;
+  if not exists (select 1 from pg_policies where tablename = 'follows' and policyname = 'Users can follow others') then
+    create policy "Users can follow others"
+      on public.follows for insert
+      with check (auth.uid() = follower_id and follower_id <> following_id);
+  end if;
+  if not exists (select 1 from pg_policies where tablename = 'follows' and policyname = 'Users can unfollow') then
+    create policy "Users can unfollow"
+      on public.follows for delete
+      using (auth.uid() = follower_id);
+  end if;
+end $$;
+
+grant select on public.follows to anon, authenticated;
+grant insert, delete on public.follows to authenticated;
+grant all on public.follows to service_role;
+
+-- ----------------------------------------------------------------------------
+-- 9. STORAGE INFRASTRUCTURE (AVATARS & LISTINGS BUCKETS & RLS POLICIES)
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'avatars',
+  'avatars',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update set
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'listings',
+  'listings',
+  true,
+  20971520,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/avif']
+)
+on conflict (id) do update set
+  public = true,
+  file_size_limit = 20971520,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+-- Storage RLS: Avatars
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Avatar images are publicly accessible') then
+    create policy "Avatar images are publicly accessible"
+      on storage.objects for select
+      using (bucket_id = 'avatars');
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can upload their own avatar') then
+    create policy "Users can upload their own avatar"
+      on storage.objects for insert
+      with check (
+        bucket_id = 'avatars'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can update their own avatar') then
+    create policy "Users can update their own avatar"
+      on storage.objects for update
+      using (
+        bucket_id = 'avatars'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can delete their own avatar') then
+    create policy "Users can delete their own avatar"
+      on storage.objects for delete
+      using (
+        bucket_id = 'avatars'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+
+  -- Storage RLS: Listings
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Anyone can view listing images') then
+    create policy "Anyone can view listing images"
+      on storage.objects for select
+      using (bucket_id = 'listings');
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Authenticated users can upload listing images') then
+    create policy "Authenticated users can upload listing images"
+      on storage.objects for insert
+      with check (
+        bucket_id = 'listings'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can update their own listing images') then
+    create policy "Users can update their own listing images"
+      on storage.objects for update
+      using (
+        bucket_id = 'listings'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can delete their own listing images') then
+    create policy "Users can delete their own listing images"
+      on storage.objects for delete
+      using (
+        bucket_id = 'listings'
+        and auth.role() = 'authenticated'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+end $$;
 
 -- Reload Schema Cache in PostgREST
 notify pgrst, 'reload schema';

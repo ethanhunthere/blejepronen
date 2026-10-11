@@ -178,6 +178,10 @@ export function base64ToUint8Array(base64: string): Uint8Array {
   return bytes
 }
 
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  return base64ToUint8Array(base64).buffer as ArrayBuffer
+}
+
 /**
  * Cross-screen event bus for immediate real-time avatar synchronization.
  */
@@ -246,6 +250,7 @@ export interface OptimizedAvatarResult {
   uri: string
   width: number
   height: number
+  base64?: string | null
 }
 
 /**
@@ -289,12 +294,14 @@ export async function optimizeAvatarImage(
   const result = await manipulateAsync(uri, actions, {
     compress: 0.82,
     format: SaveFormat.JPEG,
+    base64: true,
   })
 
   return {
     uri: result.uri,
     width: result.width,
     height: result.height,
+    base64: result.base64 || null,
   }
 }
 
@@ -397,7 +404,6 @@ export async function persistUserAvatar({
 
 /**
  * Launch native photo library picker with 1:1 square crop & zero-copy bridge passing.
- * base64 is strictly disabled to prevent multi-megabyte JSON bridge serialization delays.
  */
 export async function pickAvatarFromGallery(): Promise<ImagePicker.ImagePickerAsset | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -417,7 +423,7 @@ export async function pickAvatarFromGallery(): Promise<ImagePicker.ImagePickerAs
     allowsEditing: true,
     aspect: [1, 1], // Strict 1:1 square aspect ratio for avatar
     quality: 0.9,   // High-fidelity capture before native downsampling
-    base64: false,  // CRITICAL: 0ms bridge serialization (replaces multi-megabyte base64 string)
+    base64: true,   // Ensure fallback base64 payload is available
     exif: false,    // Omit heavy EXIF metadata
   })
 
@@ -430,7 +436,6 @@ export async function pickAvatarFromGallery(): Promise<ImagePicker.ImagePickerAs
 
 /**
  * Launch native camera with 1:1 square crop & zero-copy bridge passing.
- * base64 is strictly disabled to prevent multi-megabyte JSON bridge serialization delays.
  */
 export async function takeAvatarWithCamera(): Promise<ImagePicker.ImagePickerAsset | null> {
   const { status } = await ImagePicker.requestCameraPermissionsAsync()
@@ -449,7 +454,7 @@ export async function takeAvatarWithCamera(): Promise<ImagePicker.ImagePickerAss
     allowsEditing: true,
     aspect: [1, 1], // Strict 1:1 square aspect ratio for avatar
     quality: 0.9,   // High-fidelity capture before native downsampling
-    base64: false,  // CRITICAL: 0ms bridge serialization (replaces multi-megabyte base64 string)
+    base64: true,   // Ensure fallback base64 payload is available
     exif: false,    // Omit heavy EXIF metadata
   })
 
@@ -478,45 +483,55 @@ export async function uploadCustomAvatar({
   userMetadata?: Record<string, any> | null
   existingProfile?: any
 }): Promise<{ success: boolean; avatarUrl: string }> {
-  if (!userId) {
+  // Verify authenticated session
+  const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
+  const activeUser = sessionData?.session?.user
+  const effectiveUserId = activeUser?.id || userId
+  if (!effectiveUserId) {
     throw new Error('Ju lutemi kyçuni në llogari para se të ngarkoni foto.')
   }
   if (!asset || !asset.uri) {
     throw new Error('Foto e zgjedhur nuk është e vlefshme.')
   }
 
-  // 1. Client-side native optimization: Downscale to 512x512 square JPEG (~35KB)
+  // 1. Client-side native optimization: Downscale to 512x512 square JPEG with base64 (<35KB)
   let targetUri = asset.uri
+  let b64: string | null = asset.base64 ?? null
   try {
     const optimized = await optimizeAvatarImage(asset.uri, asset.width, asset.height)
     targetUri = optimized.uri
+    if (optimized.base64) {
+      b64 = optimized.base64
+    }
   } catch (optErr) {
     console.warn('Native image optimization fallback to source uri:', optErr)
   }
 
-  // 2. Direct binary fetch (fast zero-copy from local filesystem into memory)
-  let binaryData: Uint8Array | ArrayBuffer | Blob
-  try {
+  // 2. Binary preparation for Supabase Storage (ArrayBuffer avoids React Native fetch('file://') bug)
+  let uploadData: ArrayBuffer | Blob
+  if (b64) {
+    uploadData = base64ToArrayBuffer(b64)
+  } else if (Platform.OS === 'web') {
     const res = await fetch(targetUri)
-    const arrayBuffer = await res.arrayBuffer()
-    binaryData = new Uint8Array(arrayBuffer)
-  } catch (fetchErr) {
-    if (asset.base64) {
-      binaryData = base64ToUint8Array(asset.base64)
-    } else {
-      throw new Error('Dështoi leximi i skedarit të fotos.')
+    uploadData = await res.blob()
+  } else {
+    try {
+      const res = await fetch(targetUri)
+      uploadData = await res.arrayBuffer()
+    } catch {
+      throw new Error('Dështoi përgatitja e fotos për ngarkim në server.')
     }
   }
 
-  // 3. Storage file path: MUST start with `${userId}/` to satisfy Supabase storage RLS policy:
+  // 3. Storage file path: MUST start with `${effectiveUserId}/` to satisfy Supabase storage RLS policy:
   //    (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1])
   const timestamp = Date.now()
   const randomSuffix = Math.random().toString(36).substring(2, 8)
-  const filePath = `${userId}/avatar-${timestamp}-${randomSuffix}.jpg`
+  const filePath = `${effectiveUserId}/avatar-${timestamp}-${randomSuffix}.jpg`
 
   const { error: uploadError } = await supabase.storage
     .from('avatars')
-    .upload(filePath, binaryData, {
+    .upload(filePath, uploadData, {
       contentType: 'image/jpeg',
       cacheControl: '31536000', // 1 year immutable cache
       upsert: true,
@@ -534,11 +549,13 @@ export async function uploadCustomAvatar({
 
   // 5. Persist to public.profiles & auth user metadata
   await persistUserAvatar({
-    userId,
+    userId: effectiveUserId,
     avatarUrl: cacheBustedUrl,
-    userMetadata,
+    userMetadata: userMetadata || activeUser?.user_metadata,
     existingProfile,
   })
+
+  await clearAvatarCache()
 
   return { success: true, avatarUrl: cacheBustedUrl }
 }

@@ -29,7 +29,9 @@ import { useTheme, Fonts } from '@/constants/theme'
 import { useRouter } from 'expo-router'
 import { getAvatarSource } from '@/lib/avatars'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
-import { callEngine } from '@/lib/calling'
+import { callEngine, isCallingSupported } from '@/lib/calling'
+import { getSyncAuthUser } from '@/lib/auth-cache'
+import { openLoginScreen } from '@/lib/navigation'
 import { normalizePhoneNumber } from '@/lib/phone'
 import { useBottomSheetGesture } from '@/lib/bottom-sheet-gesture'
 
@@ -137,17 +139,59 @@ export function CallModal({
       Alert.alert('Vërejtje', 'Përdoruesi nuk është i disponueshëm për thirrje në këtë moment.')
       return
     }
+
+    const currentViewer = getSyncAuthUser()
+    if (!currentViewer) {
+      handleClose()
+      openLoginScreen(router, { redirectTo: `/listings/${conversationId || ''}`, reason: 'call' })
+      return
+    }
+
     playTapSound()
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
     }
+
+    if (!isCallingSupported()) {
+      const buttons: any[] = []
+      if (cleanPhone) {
+        buttons.push({
+          text: `Telefono (${cleanPhone})`,
+          onPress: () => {
+            handleClose()
+            Linking.openURL(`tel:${cleanPhone}`).catch(() => {})
+          },
+        })
+      }
+      if (cleanPhoneDigits) {
+        buttons.push({
+          text: 'WhatsApp',
+          onPress: () => {
+            handleClose()
+            Linking.openURL(`https://wa.me/${cleanPhoneDigits}`).catch(() => {})
+          },
+        })
+      }
+      buttons.push({
+        text: 'Në rregull',
+        style: 'cancel',
+      })
+
+      Alert.alert(
+        'Thirrjet VoIP në Aplikacion',
+        'Thirrjet direkte përmes internetit kërkojnë versionin e pavarur të instalimit (App Store / APK). Mund të kontaktoni menjëherë përmes telefonit celular ose WhatsApp.',
+        buttons
+      )
+      return
+    }
+
+    handleClose()
     void callEngine.startCall({
       userId: counterpartUserId,
       name: counterpartName,
       avatarUrl: counterpartAvatar ?? null,
       conversationId: conversationId ?? null,
     })
-    handleClose()
   }
 
   // 2. Secondary: Direct Cellular Phone Call
