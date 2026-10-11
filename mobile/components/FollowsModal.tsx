@@ -11,6 +11,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   RefreshControl,
+  Alert,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
@@ -25,6 +26,10 @@ import {
   UserCheck,
   UserPlus,
   UserX,
+  MoreHorizontal,
+  User,
+  ShieldAlert,
+  ArrowRight,
 } from 'lucide-react-native'
 
 import { useTheme, Fonts } from '@/constants/theme'
@@ -34,13 +39,13 @@ import { getSyncAuthUser } from '@/lib/auth-cache'
 import {
   fetchFollowStats,
   toggleFollowUser,
+  removeFollowerUser,
   subscribeSocialGraph,
-  getSocialMetrics,
   FollowUserItem,
 } from '@/lib/social-graph'
 import { openLoginScreen } from '@/lib/navigation'
 
-interface FollowsModalProps {
+export interface FollowsModalProps {
   visible: boolean
   onClose: () => void
   userId: string
@@ -76,49 +81,57 @@ export function FollowsModal({
   const [followingCount, setFollowingCount] = useState(initialFollowingCount)
   const [actionLoadingMap, setActionLoadingMap] = useState<Record<string, boolean>>({})
 
+  // Contextual action menu state
+  const [selectedUserForMenu, setSelectedUserForMenu] = useState<FollowUserItem | null>(null)
+
   const currentViewer = getSyncAuthUser()
   const currentViewerId = currentViewer?.id || null
+  const isViewingSelf = Boolean(currentViewerId && currentViewerId === userId)
 
   useEffect(() => {
     if (visible) {
       setActiveTab(initialTab)
       setSearchQuery('')
+      setSelectedUserForMenu(null)
     }
   }, [visible, initialTab])
 
   // Load followers/following list
-  const loadLists = useCallback(async (isPullRefresh = false) => {
-    if (!visible || !userId) return
-    if (isPullRefresh) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token || null
-
-      const stats = await fetchFollowStats(userId, true, token)
-      setFollowers(stats.followers || [])
-      setFollowing(stats.following || [])
-      setFollowersCount(stats.followersCount)
-      setFollowingCount(stats.followingCount)
-
-      if (stats.viewerFollowingIds) {
-        setViewerFollowingSet(new Set(stats.viewerFollowingIds))
+  const loadLists = useCallback(
+    async (isPullRefresh = false) => {
+      if (!visible || !userId) return
+      if (isPullRefresh) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
       }
 
-      onStatsChange?.(stats.followersCount, stats.followingCount)
-    } catch (err) {
-      console.warn('Failed to load follows lists:', err)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [visible, userId, onStatsChange])
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        const token = session?.access_token || null
+
+        const stats = await fetchFollowStats(userId, true, token)
+        setFollowers(stats.followers || [])
+        setFollowing(stats.following || [])
+        setFollowersCount(stats.followersCount)
+        setFollowingCount(stats.followingCount)
+
+        if (stats.viewerFollowingIds) {
+          setViewerFollowingSet(new Set(stats.viewerFollowingIds))
+        }
+
+        onStatsChange?.(stats.followersCount, stats.followingCount)
+      } catch (err) {
+        console.warn('Failed to load follows lists:', err)
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    },
+    [visible, userId, onStatsChange]
+  )
 
   useEffect(() => {
     loadLists()
@@ -157,7 +170,11 @@ export function FollowsModal({
   const filteredList = useMemo(() => {
     if (!searchQuery.trim()) return rawList
     const q = searchQuery.toLowerCase().trim()
-    return rawList.filter((item) => (item.name || '').toLowerCase().includes(q))
+    return rawList.filter((item) => {
+      const nameMatch = (item.name || '').toLowerCase().includes(q)
+      const roleMatch = item.isCompany && 'agjenci'.includes(q)
+      return nameMatch || roleMatch
+    })
   }, [rawList, searchQuery])
 
   // Follow / Unfollow inline action with reliable optimistic count updates
@@ -176,10 +193,20 @@ export function FollowsModal({
     }
 
     const isCurrentlyFollowing = viewerFollowingSet.has(targetItem.id)
-    const isViewingSelf = userId === currentViewerId
     const isTargetProfileOwner = targetItem.id === userId
 
     setActionLoadingMap((prev) => ({ ...prev, [targetItem.id]: true }))
+
+    // Optimistically update viewer following set
+    setViewerFollowingSet((prev) => {
+      const next = new Set(prev)
+      if (isCurrentlyFollowing) {
+        next.delete(targetItem.id)
+      } else {
+        next.add(targetItem.id)
+      }
+      return next
+    })
 
     // Optimistically update counts
     const prevFollowers = followersCount
@@ -202,17 +229,92 @@ export function FollowsModal({
         name: targetItem.name,
       })
       if (!res.success) {
+        // Rollback
+        setViewerFollowingSet((prev) => {
+          const next = new Set(prev)
+          if (isCurrentlyFollowing) next.add(targetItem.id)
+          else next.delete(targetItem.id)
+          return next
+        })
         setFollowingCount(prevFollowing)
         setFollowersCount(prevFollowers)
         onStatsChange?.(prevFollowers, prevFollowing)
       }
     } catch {
+      // Rollback
+      setViewerFollowingSet((prev) => {
+        const next = new Set(prev)
+        if (isCurrentlyFollowing) next.add(targetItem.id)
+        else next.delete(targetItem.id)
+        return next
+      })
       setFollowingCount(prevFollowing)
       setFollowersCount(prevFollowers)
       onStatsChange?.(prevFollowers, prevFollowing)
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [targetItem.id]: false }))
     }
+  }
+
+  // Remove a follower (only available if viewing own profile followers)
+  const handleRemoveFollower = async (targetItem: FollowUserItem) => {
+    setSelectedUserForMenu(null)
+
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+    }
+
+    // 1. Optimistic list removal on frame zero
+    const previousFollowers = followers
+    const previousCount = followersCount
+
+    setFollowers((prev) => prev.filter((item) => item.id !== targetItem.id))
+    const nextCount = Math.max(0, followersCount - 1)
+    setFollowersCount(nextCount)
+    onStatsChange?.(nextCount, followingCount)
+
+    try {
+      const res = await removeFollowerUser(targetItem.id)
+      if (!res.success) {
+        // Rollback on failure
+        setFollowers(previousFollowers)
+        setFollowersCount(previousCount)
+        onStatsChange?.(previousCount, followingCount)
+        Alert.alert('Gabim', res.error || 'Nuk mund të hiqet ndjekësi.')
+      }
+    } catch {
+      setFollowers(previousFollowers)
+      setFollowersCount(previousCount)
+      onStatsChange?.(previousCount, followingCount)
+      Alert.alert('Gabim', 'Ndodhi një gabim gjatë heqjes së ndjekësit.')
+    }
+  }
+
+  // Block user action
+  const handleBlockUser = (targetItem: FollowUserItem) => {
+    setSelectedUserForMenu(null)
+    Alert.alert(
+      'Blloko Profilin',
+      `A jeni të sigurt që dëshironi të bllokoni ${targetItem.name}? Nuk do të mund të shihni më postimet apo njoftimet nga ky përdorues.`,
+      [
+        { text: 'Anulo', style: 'cancel' },
+        {
+          text: 'Blloko',
+          style: 'destructive',
+          onPress: async () => {
+            if (Platform.OS !== 'web') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
+            }
+            // Optimistically remove from both lists
+            setFollowers((prev) => prev.filter((u) => u.id !== targetItem.id))
+            setFollowing((prev) => prev.filter((u) => u.id !== targetItem.id))
+            if (viewerFollowingSet.has(targetItem.id)) {
+              handleToggleFollow(targetItem)
+            }
+          },
+        },
+      ]
+    )
   }
 
   const handleSelectUser = (item: FollowUserItem) => {
@@ -246,6 +348,7 @@ export function FollowsModal({
         ]}
         onPress={() => handleSelectUser(item)}
       >
+        {/* Avatar with optional Verified Badge */}
         <View style={styles.avatarWrap}>
           <Image
             source={getAvatarSource(item.avatarUrl)}
@@ -265,6 +368,7 @@ export function FollowsModal({
           )}
         </View>
 
+        {/* User Identity Info */}
         <View style={styles.userInfoCol}>
           <View style={styles.userNameRow}>
             <Text
@@ -280,7 +384,7 @@ export function FollowsModal({
                   {
                     backgroundColor:
                       theme === 'green'
-                        ? 'rgba(212, 175, 55, 0.14)'
+                        ? 'rgba(212, 175, 55, 0.12)'
                         : colors.primaryLight,
                   },
                 ]}
@@ -301,58 +405,85 @@ export function FollowsModal({
               </View>
             )}
           </View>
+          <Text style={[styles.userHandleText, { color: colors.textMuted }]} numberOfLines={1}>
+            {item.isCompany ? 'Agjenci imobiliare e certifikuar' : 'Përdorues i regjistruar'}
+          </Text>
         </View>
 
-        {!isViewer && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionBtn,
-              isFollowingThisUser
-                ? [
-                    styles.followingBtn,
-                    {
-                      backgroundColor: colors.surfaceSubtle,
-                      borderColor: colors.border,
-                    },
-                  ]
-                : [
-                    styles.followBtn,
-                    {
-                      backgroundColor: colors.primary,
-                      borderColor: colors.primaryDark,
-                    },
-                  ],
-              pressed && { opacity: 0.82, transform: [{ scale: 0.97 }] },
-            ]}
-            onPress={(e) => {
-              e.stopPropagation()
-              handleToggleFollow(item)
-            }}
-            disabled={isActionLoading}
-            hitSlop={8}
-          >
-            {isActionLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={isFollowingThisUser ? colors.textPrimary : '#FFFFFF'}
-              />
-            ) : isFollowingThisUser ? (
-              <>
-                <UserCheck size={13} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>
-                  Ndjekur
-                </Text>
-              </>
-            ) : (
-              <>
-                <UserPlus size={13} color="#FFFFFF" strokeWidth={2.4} />
-                <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>
-                  Ndjek
-                </Text>
-              </>
-            )}
-          </Pressable>
-        )}
+        {/* Action Buttons Column */}
+        <View style={styles.rightActionsRow}>
+          {!isViewer && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                isFollowingThisUser
+                  ? [
+                      styles.followingBtn,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: colors.border,
+                      },
+                    ]
+                  : [
+                      styles.followBtn,
+                      {
+                        backgroundColor: colors.primary,
+                        borderColor: colors.primaryDark,
+                      },
+                    ],
+                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+              ]}
+              onPress={(e) => {
+                e.stopPropagation()
+                handleToggleFollow(item)
+              }}
+              disabled={isActionLoading}
+              hitSlop={6}
+            >
+              {isActionLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={isFollowingThisUser ? colors.textPrimary : '#FFFFFF'}
+                />
+              ) : isFollowingThisUser ? (
+                <>
+                  <UserCheck size={12.5} color={colors.textPrimary} strokeWidth={2.2} />
+                  <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>
+                    Ndjekur
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <UserPlus size={12.5} color="#FFFFFF" strokeWidth={2.4} />
+                  <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>
+                    Ndjek
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          )}
+
+          {/* Contextual 3-Dot Management Button */}
+          {!isViewer && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.menuTriggerBtn,
+                { backgroundColor: colors.surfaceSubtle },
+                pressed && { opacity: 0.65 },
+              ]}
+              onPress={(e) => {
+                e.stopPropagation()
+                if (Platform.OS !== 'web') {
+                  Haptics.selectionAsync().catch(() => {})
+                }
+                setSelectedUserForMenu(item)
+              }}
+              hitSlop={8}
+            >
+              <MoreHorizontal size={17} color={colors.textSecondary} strokeWidth={2.2} />
+            </Pressable>
+          )}
+        </View>
       </Pressable>
     )
   }
@@ -361,152 +492,262 @@ export function FollowsModal({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-
+      <View
+        style={[
+          styles.fullScreenRoot,
+          {
+            backgroundColor: colors.background,
+            paddingTop: Platform.OS === 'ios' ? insets.top : Math.max(insets.top, 12),
+          },
+        ]}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[
-            styles.sheetContainer,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              paddingBottom: Math.max(insets.bottom, 16),
-            },
-          ]}
+          style={styles.flexFill}
         >
-          {/* Header Drag Handle */}
-          <View style={styles.dragHandleRow}>
-            <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-          </View>
-
-          {/* Modal Header */}
-          <View style={styles.headerRow}>
-            <Text
-              style={[styles.headerTitle, { color: colors.textPrimary }]}
-              numberOfLines={1}
-            >
-              {userName}
-            </Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.closeBtn,
-                { backgroundColor: colors.surfaceSubtle },
-                pressed && { opacity: 0.7 },
-              ]}
-              onPress={onClose}
-              hitSlop={12}
-            >
-              <X size={18} color={colors.textPrimary} strokeWidth={2.4} />
-            </Pressable>
-          </View>
-
-          {/* Tab Switcher */}
-          <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle }]}>
-            <Pressable
-              style={[
-                styles.tabBtn,
-                activeTab === 'followers' && [
-                  styles.tabBtnActive,
-                  { borderBottomColor: colors.primary },
-                ],
-              ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
-                setActiveTab('followers')
-              }}
-            >
-              <Text
-                style={[
-                  styles.tabBtnText,
-                  {
-                    color:
-                      activeTab === 'followers'
-                        ? colors.primary
-                        : colors.textSecondary,
-                    fontFamily:
-                      activeTab === 'followers' ? Fonts.bold : Fonts.medium,
-                  },
-                ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                Ndiqësit ({followersCount})
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.tabBtn,
-                activeTab === 'following' && [
-                  styles.tabBtnActive,
-                  { borderBottomColor: colors.primary },
-                ],
-              ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
-                setActiveTab('following')
-              }}
-            >
-              <Text
-                style={[
-                  styles.tabBtnText,
-                  {
-                    color:
-                      activeTab === 'following'
-                        ? colors.primary
-                        : colors.textSecondary,
-                    fontFamily:
-                      activeTab === 'following' ? Fonts.bold : Fonts.medium,
-                  },
-                ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                Duke ndjekur ({followingCount})
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Search Bar */}
+          {/* Top Edge-to-Edge Navigation Bar */}
           <View
             style={[
-              styles.searchBar,
+              styles.navHeader,
               {
-                backgroundColor: colors.surfaceSubtle,
-                borderColor: colors.borderSubtle,
+                borderBottomColor: colors.borderSubtle,
+                backgroundColor: colors.surface,
               },
             ]}
           >
-            <Search size={16} color={colors.textMuted} strokeWidth={2.2} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Kërko me emër..."
-              placeholderTextColor={colors.placeholder || colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              clearButtonMode="while-editing"
-            />
-            {Boolean(searchQuery) && Platform.OS === 'android' && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <X size={15} color={colors.textMuted} />
-              </Pressable>
-            )}
+            {/* Close Button ("X") */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.navCloseBtn,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+                pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                onClose()
+              }}
+              hitSlop={12}
+            >
+              <X size={19} color={colors.textPrimary} strokeWidth={2.4} />
+            </Pressable>
+
+            {/* Modal Title */}
+            <View style={styles.navTitleCenter}>
+              <Text
+                style={[styles.navTitleText, { color: colors.textPrimary }]}
+                numberOfLines={1}
+              >
+                {userName || 'Profili'}
+              </Text>
+              <Text
+                style={[styles.navSubtitleText, { color: colors.textMuted }]}
+                numberOfLines={1}
+              >
+                {activeTab === 'followers' ? 'Ndjekësit e profilit' : 'Profilet e ndjekura'}
+              </Text>
+            </View>
+
+            {/* Right Balancer Spacer */}
+            <View style={styles.navRightPlaceholder} />
           </View>
 
-          {/* Content List */}
+          {/* Segmented Dual-Tab Switcher */}
+          <View style={[styles.segmentContainer, { backgroundColor: colors.surface }]}>
+            <View
+              style={[
+                styles.segmentTrack,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              {/* Followers Tab */}
+              <Pressable
+                style={[
+                  styles.segmentTab,
+                  activeTab === 'followers' && [
+                    styles.segmentTabActive,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ],
+                ]}
+                onPress={() => {
+                  if (activeTab !== 'followers') {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                    setActiveTab('followers')
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    {
+                      color:
+                        activeTab === 'followers'
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                      fontFamily:
+                        activeTab === 'followers' ? Fonts.bold : Fonts.medium,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Ndjekësit
+                </Text>
+                <View
+                  style={[
+                    styles.countPill,
+                    {
+                      backgroundColor:
+                        activeTab === 'followers'
+                          ? theme === 'green'
+                            ? 'rgba(0, 103, 91, 0.12)'
+                            : colors.primaryLight
+                          : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.countPillText,
+                      {
+                        color:
+                          activeTab === 'followers'
+                            ? colors.primary
+                            : colors.textMuted,
+                        fontFamily: Fonts.bold,
+                      },
+                    ]}
+                  >
+                    {followersCount.toLocaleString('sq-AL')}
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Following Tab */}
+              <Pressable
+                style={[
+                  styles.segmentTab,
+                  activeTab === 'following' && [
+                    styles.segmentTabActive,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ],
+                ]}
+                onPress={() => {
+                  if (activeTab !== 'following') {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                    setActiveTab('following')
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    {
+                      color:
+                        activeTab === 'following'
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                      fontFamily:
+                        activeTab === 'following' ? Fonts.bold : Fonts.medium,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Të Ndjekurit
+                </Text>
+                <View
+                  style={[
+                    styles.countPill,
+                    {
+                      backgroundColor:
+                        activeTab === 'following'
+                          ? theme === 'green'
+                            ? 'rgba(0, 103, 91, 0.12)'
+                            : colors.primaryLight
+                          : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.countPillText,
+                      {
+                        color:
+                          activeTab === 'following'
+                            ? colors.primary
+                            : colors.textMuted,
+                        fontFamily: Fonts.bold,
+                      },
+                    ]}
+                  >
+                    {followingCount.toLocaleString('sq-AL')}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Integrated Instant Search Bar */}
+          <View
+            style={[
+              styles.searchWrap,
+              {
+                backgroundColor: colors.surface,
+                borderBottomColor: colors.borderSubtle,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.searchBox,
+                {
+                  backgroundColor: colors.surfaceSubtle,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Search size={16} color={colors.textMuted} strokeWidth={2.2} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholder={
+                  activeTab === 'followers'
+                    ? 'Kërko ndjekës me emër ose agjenci...'
+                    : 'Kërko profilet e ndjekura...'
+                }
+                placeholderTextColor={colors.placeholder || colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              {Boolean(searchQuery) && Platform.OS === 'android' && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <X size={15} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* Main User List & States */}
           {loading ? (
             <View style={styles.centerLoading}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                Duke ngarkuar listën...
+                Duke ngarkuar listën e plotë...
               </Text>
             </View>
           ) : filteredList.length === 0 ? (
@@ -514,28 +755,28 @@ export function FollowsModal({
               <View
                 style={[
                   styles.emptyIconBox,
-                  { backgroundColor: colors.surfaceSubtle },
+                  { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderSubtle },
                 ]}
               >
                 {searchQuery ? (
-                  <UserX size={30} color={colors.textMuted} strokeWidth={1.8} />
+                  <UserX size={32} color={colors.textMuted} strokeWidth={1.8} />
                 ) : (
-                  <Users size={30} color={colors.textMuted} strokeWidth={1.8} />
+                  <Users size={32} color={colors.textMuted} strokeWidth={1.8} />
                 )}
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                 {searchQuery
-                  ? 'Asnjë profil nuk përputhet'
+                  ? 'Asnjë profil nuk u gjet'
                   : activeTab === 'followers'
-                  ? 'Ende nuk ka ndjekës'
+                  ? 'Nuk ka ndjekës ende'
                   : 'Nuk ndjek asnjë profil ende'}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                 {searchQuery
-                  ? `Nuk u gjet asnjë përdorues me termin "${searchQuery}".`
+                  ? `Nuk u gjet asnjë profil që përputhet me kërkimin "${searchQuery}".`
                   : activeTab === 'followers'
-                  ? 'Ky profil nuk ka ende ndjekës të regjistruar në platformë.'
-                  : 'Ky profil nuk ka filluar ende të ndjekë përdorues apo agjenci të tjera.'}
+                  ? 'Ky profil nuk ka ende ndjekës aktivë të regjistruar në platformë.'
+                  : 'Ky profil nuk ka filluar ende të ndjekë agjenci apo profile të tjera.'}
               </Text>
             </View>
           ) : (
@@ -543,8 +784,12 @@ export function FollowsModal({
               data={filteredList}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[
+                styles.listContent,
+                { paddingBottom: Math.max(insets.bottom, 24) + 16 },
+              ]}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
@@ -557,93 +802,278 @@ export function FollowsModal({
             />
           )}
         </KeyboardAvoidingView>
+
+        {/* High-Craft Contextual Actions Sheet */}
+        {selectedUserForMenu && (
+          <Modal
+            transparent
+            animationType="fade"
+            visible={Boolean(selectedUserForMenu)}
+            onRequestClose={() => setSelectedUserForMenu(null)}
+          >
+            <Pressable
+              style={styles.sheetOverlay}
+              onPress={() => setSelectedUserForMenu(null)}
+            >
+              <View
+                style={[
+                  styles.sheetContent,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    paddingBottom: Math.max(insets.bottom, 20),
+                  },
+                ]}
+                onStartShouldSetResponder={() => true}
+              >
+                {/* User Header Preview */}
+                <View
+                  style={[
+                    styles.sheetHeader,
+                    { borderBottomColor: colors.borderSubtle },
+                  ]}
+                >
+                  <Image
+                    source={getAvatarSource(selectedUserForMenu.avatarUrl)}
+                    style={styles.sheetAvatar}
+                    contentFit="cover"
+                  />
+                  <View style={styles.sheetHeaderTextCol}>
+                    <Text
+                      style={[styles.sheetUserName, { color: colors.textPrimary }]}
+                      numberOfLines={1}
+                    >
+                      {selectedUserForMenu.name}
+                    </Text>
+                    <Text
+                      style={[styles.sheetUserRole, { color: colors.textMuted }]}
+                      numberOfLines={1}
+                    >
+                      {selectedUserForMenu.isCompany ? 'Agjenci Imobiliare' : 'Përdorues'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    style={styles.sheetCloseBtn}
+                    onPress={() => setSelectedUserForMenu(null)}
+                    hitSlop={8}
+                  >
+                    <X size={18} color={colors.textSecondary} />
+                  </Pressable>
+                </View>
+
+                {/* Actions List */}
+                <View style={styles.sheetActionsList}>
+                  {/* Action 1: Shiko Profilin */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.sheetActionItem,
+                      pressed && { backgroundColor: colors.surfaceSubtle },
+                    ]}
+                    onPress={() => {
+                      const user = selectedUserForMenu
+                      setSelectedUserForMenu(null)
+                      handleSelectUser(user)
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.sheetActionIcon,
+                        { backgroundColor: colors.surfaceSubtle },
+                      ]}
+                    >
+                      <User size={18} color={colors.textPrimary} strokeWidth={2.2} />
+                    </View>
+                    <Text
+                      style={[styles.sheetActionLabel, { color: colors.textPrimary }]}
+                    >
+                      Shiko Profilin
+                    </Text>
+                    <ArrowRight size={16} color={colors.textMuted} />
+                  </Pressable>
+
+                  {/* Action 2: Hiq Ndjekësin (If viewing own followers list) */}
+                  {isViewingSelf && activeTab === 'followers' && (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.sheetActionItem,
+                        pressed && { backgroundColor: colors.surfaceSubtle },
+                      ]}
+                      onPress={() => handleRemoveFollower(selectedUserForMenu)}
+                    >
+                      <View
+                        style={[
+                          styles.sheetActionIcon,
+                          { backgroundColor: 'rgba(239, 68, 68, 0.12)' },
+                        ]}
+                      >
+                        <UserX size={18} color="#EF4444" strokeWidth={2.2} />
+                      </View>
+                      <View style={styles.sheetActionTextWrap}>
+                        <Text style={[styles.sheetActionLabel, { color: '#EF4444' }]}>
+                          Hiq Ndjekësin
+                        </Text>
+                        <Text
+                          style={[
+                            styles.sheetActionDesc,
+                            { color: colors.textMuted },
+                          ]}
+                        >
+                          Nuk do t'ju ndjekë më dhe nuk do të njoftohet.
+                        </Text>
+                      </View>
+                    </Pressable>
+                  )}
+
+                  {/* Action 3: Blloko Profilin */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.sheetActionItem,
+                      pressed && { backgroundColor: colors.surfaceSubtle },
+                    ]}
+                    onPress={() => handleBlockUser(selectedUserForMenu)}
+                  >
+                    <View
+                      style={[
+                        styles.sheetActionIcon,
+                        { backgroundColor: 'rgba(239, 68, 68, 0.12)' },
+                      ]}
+                    >
+                      <ShieldAlert size={18} color="#EF4444" strokeWidth={2.2} />
+                    </View>
+                    <View style={styles.sheetActionTextWrap}>
+                      <Text style={[styles.sheetActionLabel, { color: '#EF4444' }]}>
+                        Blloko
+                      </Text>
+                      <Text
+                        style={[
+                          styles.sheetActionDesc,
+                          { color: colors.textMuted },
+                        ]}
+                      >
+                        Nuk do të mund të shohë postimet tuaja.
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
+
+                {/* Cancel Button */}
+                <Pressable
+                  style={[
+                    styles.sheetCancelBtn,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                  onPress={() => setSelectedUserForMenu(null)}
+                >
+                  <Text
+                    style={[styles.sheetCancelText, { color: colors.textPrimary }]}
+                  >
+                    Anulo
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Modal>
+        )}
       </View>
     </Modal>
   )
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  fullScreenRoot: {
     flex: 1,
-    justifyContent: Platform.OS === 'web' ? 'center' : 'flex-end',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.58)',
   },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
+  flexFill: {
+    flex: 1,
   },
-  sheetContainer: {
-    width: '100%',
-    maxWidth: 580,
-    maxHeight: Platform.OS === 'web' ? '86%' : '88%',
-    minHeight: Platform.OS === 'web' ? 520 : '58%',
-    borderRadius: Platform.OS === 'web' ? 24 : 0,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 20,
-  },
-  dragHandleRow: {
-    alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 6,
-  },
-  dragHandle: {
-    width: 38,
-    height: 4.5,
-    borderRadius: 3,
-  },
-  headerRow: {
+  navHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontFamily: Fonts.bold,
-    flex: 1,
-    marginRight: 12,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tabBtn: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 4,
-    paddingVertical: 12,
+  navCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
-    borderBottomWidth: 2.5,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  tabBtnActive: {
-    borderBottomWidth: 2.5,
+  navTitleCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
   },
-  tabBtnText: {
-    fontSize: 14,
+  navTitleText: {
+    fontSize: 16.5,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
   },
-  searchBar: {
+  navSubtitleText: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+    marginTop: 1,
+    textAlign: 'center',
+  },
+  navRightPlaceholder: {
+    width: 36,
+    height: 36,
+  },
+  segmentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  segmentTrack: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 18,
-    marginTop: 12,
-    marginBottom: 8,
+    padding: 3,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  segmentTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 11,
+    gap: 6,
+  },
+  segmentTabActive: {
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  segmentLabel: {
+    fontSize: 13.5,
+  },
+  countPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  countPillText: {
+    fontSize: 11.5,
+  },
+  searchWrap: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     height: 40,
     borderRadius: 12,
@@ -653,19 +1083,18 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     minWidth: 0,
-    fontSize: 14,
+    fontSize: 13.5,
     fontFamily: Fonts.regular,
     paddingVertical: 0,
   },
   listContent: {
-    paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 24,
+    paddingTop: 4,
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
@@ -673,18 +1102,18 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatarImg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#E2E8F0',
   },
   verifiedBadge: {
     position: 'absolute',
     bottom: -1,
     right: -1,
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -693,6 +1122,8 @@ const styles = StyleSheet.create({
   userInfoCol: {
     flex: 1,
     minWidth: 0,
+    justifyContent: 'center',
+    gap: 2,
   },
   userNameRow: {
     flexDirection: 'row',
@@ -701,7 +1132,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   userNameText: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontFamily: Fonts.semiBold,
   },
   companyTag: {
@@ -713,29 +1144,45 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   companyTagText: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontFamily: Fonts.bold,
+  },
+  userHandleText: {
+    fontSize: 12.5,
+    fontFamily: Fonts.regular,
+  },
+  rightActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 13,
-    height: 34,
-    borderRadius: 17,
+    paddingHorizontal: 12,
+    height: 33,
+    borderRadius: 16.5,
     borderWidth: 1,
     gap: 5,
-    minWidth: 84,
+    minWidth: 78,
   },
   followBtn: {},
   followingBtn: {},
   actionBtnText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontFamily: Fonts.bold,
+  },
+  menuTriggerBtn: {
+    width: 33,
+    height: 33,
+    borderRadius: 16.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centerLoading: {
     flex: 1,
-    minHeight: 200,
+    minHeight: 220,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
@@ -746,22 +1193,23 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     flex: 1,
-    minHeight: 220,
+    minHeight: 260,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: 32,
     gap: 8,
   },
   emptyIconBox: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+    borderWidth: 1,
   },
   emptyTitle: {
-    fontSize: 15.5,
+    fontSize: 16,
     fontFamily: Fonts.bold,
     textAlign: 'center',
   },
@@ -770,5 +1218,93 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  sheetContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  sheetAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E2E8F0',
+  },
+  sheetHeaderTextCol: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  sheetUserName: {
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+  },
+  sheetUserRole: {
+    fontSize: 12,
+    fontFamily: Fonts.regular,
+  },
+  sheetCloseBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetActionsList: {
+    paddingVertical: 8,
+    gap: 4,
+  },
+  sheetActionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    gap: 12,
+  },
+  sheetActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetActionTextWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  sheetActionLabel: {
+    fontSize: 14,
+    fontFamily: Fonts.semiBold,
+  },
+  sheetActionDesc: {
+    fontSize: 11.5,
+    fontFamily: Fonts.regular,
+  },
+  sheetCancelBtn: {
+    marginTop: 6,
+    paddingVertical: 13,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  sheetCancelText: {
+    fontSize: 14.5,
+    fontFamily: Fonts.semiBold,
   },
 })

@@ -310,10 +310,14 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url)
     let targetUserId = searchParams.get('targetUserId')
+    let isRemoveFollower = searchParams.get('mode') === 'remove_follower' || searchParams.get('action') === 'remove_follower'
 
     if (!targetUserId) {
       const body = await request.json().catch(() => null)
       targetUserId = body?.targetUserId
+      if (body?.mode === 'remove_follower' || body?.action === 'remove_follower') {
+        isRemoveFollower = true
+      }
     }
 
     if (!targetUserId) {
@@ -325,11 +329,14 @@ export async function DELETE(request: Request) {
     // 1. Try public.follows table
     let tableSuccess = false
     try {
+      const followerId = isRemoveFollower ? targetUserId : currentUser.id
+      const followingId = isRemoveFollower ? currentUser.id : targetUserId
+
       const { error: delErr } = await admin
         .from('follows')
         .delete()
-        .eq('follower_id', currentUser.id)
-        .eq('following_id', targetUserId)
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId)
       if (!delErr) tableSuccess = true
     } catch {}
 
@@ -343,33 +350,55 @@ export async function DELETE(request: Request) {
       const viewerMeta = viewerData?.user?.user_metadata || {}
       const targetMeta = targetData?.user?.user_metadata || {}
 
-      const currentFollowing: string[] = Array.isArray(viewerMeta.following) ? viewerMeta.following : []
-      const currentFollowers: string[] = Array.isArray(targetMeta.followers) ? targetMeta.followers : []
+      if (isRemoveFollower) {
+        // currentUser is removing targetUserId from their followers
+        const currentFollowers: string[] = Array.isArray(viewerMeta.followers) ? viewerMeta.followers : []
+        const targetFollowing: string[] = Array.isArray(targetMeta.following) ? targetMeta.following : []
 
-      await admin.auth.admin.updateUserById(currentUser.id, {
-        user_metadata: {
-          ...viewerMeta,
-          following: currentFollowing.filter((id) => id !== targetUserId),
-        },
-      })
+        await admin.auth.admin.updateUserById(currentUser.id, {
+          user_metadata: {
+            ...viewerMeta,
+            followers: currentFollowers.filter((id) => id !== targetUserId),
+          },
+        })
 
-      await admin.auth.admin.updateUserById(targetUserId, {
-        user_metadata: {
-          ...targetMeta,
-          followers: currentFollowers.filter((id) => id !== currentUser.id),
-        },
-      })
+        await admin.auth.admin.updateUserById(targetUserId, {
+          user_metadata: {
+            ...targetMeta,
+            following: targetFollowing.filter((id) => id !== currentUser.id),
+          },
+        })
+      } else {
+        // currentUser is unfollowing targetUserId
+        const currentFollowing: string[] = Array.isArray(viewerMeta.following) ? viewerMeta.following : []
+        const currentFollowers: string[] = Array.isArray(targetMeta.followers) ? targetMeta.followers : []
+
+        await admin.auth.admin.updateUserById(currentUser.id, {
+          user_metadata: {
+            ...viewerMeta,
+            following: currentFollowing.filter((id) => id !== targetUserId),
+          },
+        })
+
+        await admin.auth.admin.updateUserById(targetUserId, {
+          user_metadata: {
+            ...targetMeta,
+            followers: currentFollowers.filter((id) => id !== currentUser.id),
+          },
+        })
+      }
     } catch (e) {
       console.error('Metadata fallback sync error in DELETE /api/follow:', e)
     }
 
     // Get fresh count
     let followersCount = 0
+    const countTargetId = isRemoveFollower ? currentUser.id : targetUserId
     if (tableSuccess) {
-      const { count } = await admin.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', targetUserId)
+      const { count } = await admin.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', countTargetId)
       if (typeof count === 'number') followersCount = count
     } else {
-      const { data: targetData } = await admin.auth.admin.getUserById(targetUserId)
+      const { data: targetData } = await admin.auth.admin.getUserById(countTargetId)
       const list = targetData?.user?.user_metadata?.followers || []
       followersCount = Array.isArray(list) ? list.length : 0
     }

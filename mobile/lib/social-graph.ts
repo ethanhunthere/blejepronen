@@ -491,3 +491,93 @@ export async function unfollowUser(
     }
   }
 }
+
+/**
+ * Remove a follower from current viewer's followers list.
+ * Optimistically updates viewer's followers count on frame zero.
+ */
+export async function removeFollowerUser(
+  followerUserId: string
+): Promise<{ success: boolean; followersCount?: number; error?: string }> {
+  const currentViewer = getSyncAuthUser()
+  if (!currentViewer?.id) {
+    return { success: false, error: 'Kërkohet kyçja në llogari.' }
+  }
+
+  const viewerId = currentViewer.id
+  const prevMetrics = socialStore.getMetrics(viewerId) || { followersCount: 0, followingCount: 0 }
+  const nextFollowersCount = Math.max(0, prevMetrics.followersCount - 1)
+
+  // 1. Optimistic store update
+  socialStore.setMetrics(viewerId, {
+    ...prevMetrics,
+    followersCount: nextFollowersCount,
+  })
+
+  // 2. Broadcast event
+  socialStore.notify({
+    targetUserId: viewerId,
+    viewerUserId: followerUserId,
+    action: 'unfollow',
+    targetMetrics: { ...prevMetrics, followersCount: nextFollowersCount },
+    viewerMetrics: { followersCount: 0, followingCount: 0 },
+  })
+
+  try {
+    let operationSucceeded = false
+
+    // Direct Supabase deletion: follower_id = followerUserId, following_id = viewerId
+    try {
+      const { error: delErr } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', followerUserId)
+        .eq('following_id', viewerId)
+      if (!delErr) {
+        operationSucceeded = true
+      }
+    } catch {
+      operationSucceeded = false
+    }
+
+    if (!operationSucceeded) {
+      const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }))
+      const token = sessionData?.session?.access_token
+
+      const res = await resilientRequest(
+        `${API_BASE_URL}/api/follow?targetUserId=${encodeURIComponent(followerUserId)}&mode=remove_follower`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      )
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || 'Dështoi heqja e ndjekësit.')
+      }
+    }
+
+    return {
+      success: true,
+      followersCount: nextFollowersCount,
+    }
+  } catch (err: any) {
+    // Rollback
+    socialStore.setMetrics(viewerId, prevMetrics)
+    socialStore.notify({
+      targetUserId: viewerId,
+      viewerUserId: followerUserId,
+      action: 'follow',
+      targetMetrics: prevMetrics,
+      viewerMetrics: { followersCount: 0, followingCount: 0 },
+    })
+    return {
+      success: false,
+      error: err?.message || 'Dështoi heqja e ndjekësit.',
+    }
+  }
+}
+
