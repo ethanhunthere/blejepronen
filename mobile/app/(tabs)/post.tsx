@@ -620,7 +620,8 @@ export default function PostPropertyScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior="padding"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
       <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}
@@ -635,7 +636,10 @@ export default function PostPropertyScreen() {
         onScroll={tabBarScrollHandler}
         scrollEventThrottle={16}
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 110 + Math.max(insets.bottom, 16) },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -1230,7 +1234,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   catCard: {
-    width: '48%',
+    flexBasis: '47%',
+    flexGrow: 1,
+    minWidth: 120,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1.5,
@@ -1292,6 +1298,7 @@ const styles = StyleSheet.create({
   },
   halfInput: {
     flex: 1,
+    minWidth: 0,
     gap: 6,
   },
   pricePerM2Badge: {
@@ -1463,6 +1470,7 @@ const styles = StyleSheet.create({
   },
   uploadBtnChoice: {
     flex: 1,
+    minWidth: 0,
     height: 92,
     borderRadius: 16,
     borderWidth: 1,

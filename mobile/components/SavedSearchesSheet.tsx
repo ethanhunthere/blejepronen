@@ -181,6 +181,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -221,6 +224,7 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     flex: 1,
+    minWidth: 0,
     fontSize: 13,
     fontWeight: '600',
   },

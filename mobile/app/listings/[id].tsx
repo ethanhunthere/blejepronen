@@ -1036,6 +1036,9 @@ export default function ListingDetailScreen() {
       {/* ───────────────────────────────────────────────────────────── */}
       <Animated.ScrollView
         style={styles.scrollView}
+        contentContainerStyle={{
+          paddingBottom: 110 + Math.max(insets.bottom, 16),
+        }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -2467,6 +2470,7 @@ export default function ListingDetailScreen() {
                       style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
                       numberOfLines={1}
                       adjustsFontSizeToFit
+                      minimumFontScale={0.75}
                     >
                       Telefono
                     </Text>
@@ -2491,6 +2495,7 @@ export default function ListingDetailScreen() {
                       style={styles.actionWhatsAppBtnText}
                       numberOfLines={1}
                       adjustsFontSizeToFit
+                      minimumFontScale={0.75}
                     >
                       WhatsApp
                     </Text>
@@ -2518,6 +2523,7 @@ export default function ListingDetailScreen() {
                     style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
+                    minimumFontScale={0.75}
                   >
                     Thirr në App
                   </Text>
@@ -2554,6 +2560,7 @@ export default function ListingDetailScreen() {
                       ]}
                       numberOfLines={1}
                       adjustsFontSizeToFit
+                      minimumFontScale={0.75}
                     >
                       Bisedo
                     </Text>
@@ -3533,6 +3540,7 @@ const styles = StyleSheet.create({
   },
   actionCallBtn: {
     flex: 1,
+    minWidth: 0,
     height: 48,
     borderRadius: 14,
     borderCurve: 'continuous',
@@ -3550,6 +3558,7 @@ const styles = StyleSheet.create({
   },
   actionWhatsAppBtn: {
     flex: 1,
+    minWidth: 0,
     height: 48,
     backgroundColor: '#25D366',
     borderRadius: 14,
@@ -3573,6 +3582,7 @@ const styles = StyleSheet.create({
   },
   actionChatBtn: {
     flex: 1,
+    minWidth: 0,
     height: 48,
     borderRadius: 14,
     borderCurve: 'continuous',

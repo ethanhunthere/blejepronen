@@ -621,6 +621,7 @@ const styles = StyleSheet.create({
   },
   heroTextCol: {
     flex: 1,
+    minWidth: 0,
     gap: 1.5,
   },
   heroTitle: {
@@ -670,6 +671,7 @@ const styles = StyleSheet.create({
   },
   secondaryTextCol: {
     flex: 1,
+    minWidth: 0,
     gap: 1,
   },
   secondaryTitle: {

@@ -599,7 +599,7 @@ export default function CompletoProfilinScreen() {
     <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Navigation Bar */}
         <View style={[styles.navBar, { borderBottomColor: specularBorder }]}>
@@ -638,7 +638,10 @@ export default function CompletoProfilinScreen() {
 
         <ScrollView
           style={styles.container}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: Math.max(insets.bottom + 36, 60) },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -1436,6 +1439,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontFamily: Fonts.medium,
     opacity: 1,
+    minWidth: 0,
   },
   phoneInputWrap: {
     height: 52,
@@ -1449,6 +1453,7 @@ const styles = StyleSheet.create({
   },
   phoneTextInput: {
     flex: 1,
+    minWidth: 0,
     fontSize: 14,
     fontFamily: Fonts.medium,
     opacity: 1,

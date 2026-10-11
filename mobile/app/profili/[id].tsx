@@ -980,7 +980,14 @@ export default function PublicProfileScreen() {
                   >
                     <Phone size={18} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
-                      <Text style={styles.actionBtnTitle}>Telefono Agjencinë</Text>
+                      <Text
+                        style={styles.actionBtnTitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
+                        Telefono Agjencinë
+                      </Text>
                       <Text style={styles.actionBtnSubtitle} numberOfLines={1}>
                         {!contactAuthed
                           ? 'Kyçu për të parë kontaktin'
@@ -1004,8 +1011,17 @@ export default function PublicProfileScreen() {
                   >
                     <MessageCircle size={19} color="#FFFFFF" strokeWidth={2.4} />
                     <View style={styles.actionBtnTextCol}>
-                      <Text style={styles.actionBtnTitle}>WhatsApp Zyrtar</Text>
-                      <Text style={styles.actionBtnSubtitle}>Bisedë e drejtpërdrejtë</Text>
+                      <Text
+                        style={styles.actionBtnTitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
+                        WhatsApp Zyrtar
+                      </Text>
+                      <Text style={styles.actionBtnSubtitle} numberOfLines={1}>
+                        Bisedë e drejtpërdrejtë
+                      </Text>
                     </View>
                   </Pressable>
                 </View>
@@ -1510,7 +1526,12 @@ export default function PublicProfileScreen() {
                   ) : (
                     <MessageSquare size={16} color={theme === 'green' ? '#071C18' : '#FFFFFF'} strokeWidth={2.4} />
                   )}
-                  <Text style={[styles.personalActionBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}>
+                  <Text
+                    style={[styles.personalActionBtnText, { color: theme === 'green' ? '#071C18' : '#FFFFFF' }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     Bisedo
                   </Text>
                 </Pressable>
@@ -1532,7 +1553,12 @@ export default function PublicProfileScreen() {
                   disabled={!profile.phone && contactAuthed}
                 >
                   <Phone size={15} color={colors.textPrimary} strokeWidth={2.2} />
-                  <Text style={[styles.personalActionBtnText, { color: colors.textPrimary }]}>
+                  <Text
+                    style={[styles.personalActionBtnText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {!contactAuthed ? 'Kyçu për kontakt' : profile.phone ? 'Telefono' : 'Pa numër'}
                   </Text>
                 </Pressable>
@@ -1549,7 +1575,14 @@ export default function PublicProfileScreen() {
                   disabled={!(profile.whatsapp || profile.phone) && contactAuthed}
                 >
                   <MessageCircle size={16} color="#FFFFFF" strokeWidth={2.4} />
-                  <Text style={styles.personalActionBtnText}>WhatsApp</Text>
+                  <Text
+                    style={styles.personalActionBtnText}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
+                    WhatsApp
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -1947,6 +1980,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
+    minWidth: 0,
     minHeight: 52,
     borderRadius: 15,
     flexDirection: 'row',
@@ -1969,6 +2003,7 @@ const styles = StyleSheet.create({
   },
   actionBtnTextCol: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
   },
   actionBtnTitle: {
@@ -2078,6 +2113,7 @@ const styles = StyleSheet.create({
   },
   personalActionBtn: {
     flex: 1,
+    minWidth: 0,
     height: 44,
     borderRadius: 13,
     flexDirection: 'row',

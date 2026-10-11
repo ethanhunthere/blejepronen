@@ -409,7 +409,10 @@ export default function ListingsScreen() {
         removeClippedSubviews={Platform.OS !== 'web'}
         keyboardShouldPersistTaps="handled"
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 105 + Math.max(insets.bottom, 16) },
+        ]}
         showsVerticalScrollIndicator={false}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.6}
@@ -493,6 +496,7 @@ export default function ListingsScreen() {
             }}
             activeScale={0.94}
             haptic="selection"
+            hitSlop={6}
           >
             {Platform.OS === 'ios' && activeFiltersCount === 0 && (
               <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]}>
@@ -541,6 +545,7 @@ export default function ListingsScreen() {
             onPress={() => setShowSavedSearches(true)}
             activeScale={0.94}
             haptic="selection"
+            hitSlop={6}
           >
             <Bookmark size={18} color={colors.textPrimary} strokeWidth={2.2} />
           </TactilePressable>
@@ -596,8 +601,12 @@ export default function ListingsScreen() {
 
         {/* Section Header with Integrated Compact Expandable Sort Control */}
         <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <View style={[styles.sectionTitleRow, { minWidth: 0 }]}>
+            <Text
+              style={[styles.sectionTitle, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {filters.category === 'all'
                 ? 'Të gjitha pronat'
                 : CATEGORY_ITEMS.find((c) => c.id === filters.category)?.label || 'Prona'}
@@ -921,11 +930,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
     flexShrink: 1,
+    minWidth: 0,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: Fonts.extraBold,
     letterSpacing: -0.4,
+    flexShrink: 1,
+    minWidth: 0,
   },
   resultCountBadge: {
     paddingHorizontal: 7,

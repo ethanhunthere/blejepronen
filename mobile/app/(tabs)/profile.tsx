@@ -1509,7 +1509,12 @@ export default function ProfileScreen() {
               <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {stats.listingsCount}
               </Text>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.metricLabel, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 Shpalljet e Mia
               </Text>
               <Text style={[styles.metricSub, { color: colors.textMuted }]}>
@@ -1535,7 +1540,12 @@ export default function ProfileScreen() {
               <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {stats.savedCount}
               </Text>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.metricLabel, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 Të Ruajturat
               </Text>
               <Text style={[styles.metricSub, { color: colors.textMuted }]}>
@@ -1572,7 +1582,12 @@ export default function ProfileScreen() {
               <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {stats.messagesCount}
               </Text>
-              <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.metricLabel, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 Mesazhet
               </Text>
               <Text style={[styles.metricSub, { color: colors.textMuted }]}>
@@ -3101,6 +3116,7 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
+    minWidth: 0,
     paddingVertical: 14,
     paddingHorizontal: 8,
     borderRadius: 18,
@@ -3131,6 +3147,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
     textAlign: 'center',
     letterSpacing: -0.1,
+    minWidth: 0,
   },
   metricSub: {
     fontSize: 10,

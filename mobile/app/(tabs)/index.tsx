@@ -467,7 +467,10 @@ export default function HomeScreen() {
         removeClippedSubviews={Platform.OS !== 'web'}
         keyboardShouldPersistTaps="handled"
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 105 + Math.max(insets.bottom, 16) },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

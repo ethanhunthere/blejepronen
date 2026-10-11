@@ -221,6 +221,7 @@ export default function MessagesScreen() {
                   },
                 ],
               ]}
+              hitSlop={6}
               onPress={() => {
                 if (activeTab !== 'chats') {
                   playTapSound()
@@ -264,6 +265,7 @@ export default function MessagesScreen() {
                   },
                 ],
               ]}
+              hitSlop={6}
               onPress={() => {
                 if (activeTab !== 'contacts') {
                   playTapSound()
@@ -306,7 +308,10 @@ export default function MessagesScreen() {
         onScroll={tabBarScrollHandler}
         scrollEventThrottle={16}
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: 105 + Math.max(insets.bottom, 16) },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           currentUser ? (
@@ -803,6 +808,8 @@ const styles = StyleSheet.create({
   },
   segmentedTab: {
     flex: 1,
+    minWidth: 0,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -924,27 +931,32 @@ const styles = StyleSheet.create({
   },
   convoMain: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   convoTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   convoNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     flex: 1,
+    minWidth: 0,
   },
   convoName: {
     fontSize: 14,
     fontFamily: Fonts.bold,
     flexShrink: 1,
+    minWidth: 0,
   },
   convoTimeText: {
     fontSize: 11,
     fontFamily: Fonts.regular,
+    flexShrink: 0,
   },
   listingTag: {
     fontSize: 11,
@@ -954,17 +966,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    minWidth: 0,
   },
   checkWrapper: {
     marginTop: 1,
+    flexShrink: 0,
   },
   lastMessageText: {
     fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   cardActionsCol: {
     alignItems: 'flex-end',
     gap: 6,
+    flexShrink: 0,
   },
   quickCallIconBtn: {
     width: 32,
@@ -1013,20 +1029,24 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
+    flexShrink: 0,
   },
   contactInfoCol: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   contactNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    minWidth: 0,
   },
   contactName: {
     fontSize: 14,
     fontFamily: Fonts.bold,
     flexShrink: 1,
+    minWidth: 0,
   },
   contactPhoneText: {
     fontSize: 12,

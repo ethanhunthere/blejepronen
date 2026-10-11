@@ -57,10 +57,16 @@ export default function ResetPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior="padding"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: Math.max(insets.bottom + 28, 36) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <Pressable
           onPress={() => safeBack(router, '/login')}
           hitSlop={10}
@@ -153,7 +159,13 @@ export default function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { padding: 20, gap: 14 },
+  scroll: {
+    padding: 20,
+    gap: 14,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+  },
   backBtn: {
     width: 44,
     height: 44,
@@ -174,6 +186,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, lineHeight: 19 },
   input: {
     minHeight: 50,
+    minWidth: 0,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,

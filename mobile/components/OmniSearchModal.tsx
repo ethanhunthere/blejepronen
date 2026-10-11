@@ -1001,7 +1001,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 0.5,
-    width: '48%',
+    flexBasis: '47%',
+    flexGrow: 1,
+    minWidth: 130,
     gap: 6,
   },
   trendingText: {
@@ -1057,6 +1059,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontFamily: Fonts.bold,
     flexShrink: 1,
+    minWidth: 0,
   },
   itemSubtitle: {
     fontSize: 12.5,
@@ -1074,6 +1077,7 @@ const styles = StyleSheet.create({
   itemActionCol: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   itemPrice: {
     fontSize: 14,

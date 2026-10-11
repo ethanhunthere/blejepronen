@@ -155,6 +155,9 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                       : colors.primary,
                 },
               ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
             >
               {formatPrice(listing.price)}
             </Text>
@@ -475,6 +478,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: 4,
     flexShrink: 1,
+    minWidth: 0,
   },
   priceValue: {
     fontSize: 22,
@@ -511,12 +515,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     marginTop: 1,
+    minWidth: 0,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     flex: 1,
+    minWidth: 0,
   },
   locationText: {
     fontSize: 13,

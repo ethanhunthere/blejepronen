@@ -651,6 +651,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    minWidth: 0,
     fontSize: 14,
     fontFamily: Fonts.regular,
     paddingVertical: 0,
@@ -690,6 +691,7 @@ const styles = StyleSheet.create({
   },
   userInfoCol: {
     flex: 1,
+    minWidth: 0,
   },
   userNameRow: {
     flexDirection: 'row',

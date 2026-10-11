@@ -1939,7 +1939,7 @@ export default function ShpalljetEMiaScreen() {
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior="padding"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditPriceListing(null)}>
             <BlurView
@@ -2155,6 +2155,7 @@ const styles = StyleSheet.create({
   },
   topSegmentTab: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2427,6 +2428,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
+    minWidth: 0,
     height: 38,
     borderRadius: 12,
     flexDirection: 'row',
@@ -2437,11 +2439,13 @@ const styles = StyleSheet.create({
   },
   actionBtnWide: {
     flex: 1.55,
+    minWidth: 0,
   },
   actionBtnText: {
     fontSize: 12.5,
     fontFamily: Fonts.bold,
     flexShrink: 1,
+    minWidth: 0,
     textAlign: 'center',
   },
   actionSquareBtn: {

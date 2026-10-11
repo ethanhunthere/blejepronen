@@ -105,5 +105,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     flex: 1,
+    minWidth: 0,
   },
 })

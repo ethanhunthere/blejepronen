@@ -390,7 +390,13 @@ const IOSTabBar = React.memo(function IOSTabBar({
   const { width: screenWidth } = useWindowDimensions()
 
   const isLargeScreen = screenWidth > 500
-  const horizontalMargin = isLargeScreen ? Math.round((screenWidth - 420) / 2) : 20
+  const horizontalMargin = isLargeScreen
+    ? Math.round((screenWidth - 420) / 2)
+    : screenWidth < 360
+    ? 10
+    : screenWidth < 390
+    ? 14
+    : 20
 
   const collapsedExtra = isLargeScreen ? 26 : Math.min(38, Math.round(screenWidth * 0.095))
 

@@ -1368,6 +1368,7 @@ const styles = StyleSheet.create({
   },
   inputCol: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   inputSubLabel: {
@@ -1376,6 +1377,7 @@ const styles = StyleSheet.create({
   },
   numInput: {
     height: 44,
+    minWidth: 0,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,

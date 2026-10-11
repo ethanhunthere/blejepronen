@@ -925,7 +925,8 @@ export default function SettingsScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
         style={{ flex: 1 }}
       >
         {/* Apple-grade Segmented Tab Bar */}
@@ -1011,7 +1012,10 @@ export default function SettingsScreen() {
           key={activeTab}
           ref={scrollRef}
           style={styles.scrollArea}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: 60 + Math.max(insets.bottom, 24) },
+          ]}
           keyboardShouldPersistTaps="handled"
         >
 
@@ -2230,6 +2234,8 @@ const styles = StyleSheet.create({
   },
   switchTextWrap: {
     flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
     gap: 2,
   },
   switchTitle: {

@@ -538,7 +538,7 @@ export default function LoginScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={[
@@ -865,9 +865,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
@@ -877,11 +877,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navPlaceholder: {
-    width: 40,
+    width: 42,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   reasonCard: {
     padding: 14,
@@ -966,6 +969,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    minWidth: 0,
     height: '100%',
     fontSize: 15,
     fontFamily: Fonts.regular,

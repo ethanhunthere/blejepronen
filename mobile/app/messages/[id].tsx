@@ -939,7 +939,7 @@ export default function ChatConversationScreen() {
       {/* 3. Messages List Area */}
       <KeyboardAvoidingView
         style={styles.chatArea}
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
       >
         {loading ? (
@@ -1219,6 +1219,7 @@ const styles = StyleSheet.create({
   },
   headerProfile: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -1227,14 +1228,17 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
+    flexShrink: 0,
   },
   headerInfo: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   headerName: {
     fontSize: 15,
     fontFamily: Fonts.bold,
+    minWidth: 0,
   },
   verifiedRow: {
     flexDirection: 'row',
