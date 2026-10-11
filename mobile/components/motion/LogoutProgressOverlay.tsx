@@ -4,9 +4,10 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  useWindowDimensions,
   Platform,
 } from 'react-native'
+import { Image } from 'expo-image'
+import { StatusBar } from 'expo-status-bar'
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -17,10 +18,13 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { ShieldCheck, Trash2 } from 'lucide-react-native'
+import { Trash2 } from 'lucide-react-native'
 
 import { useTheme, Fonts } from '@/constants/theme'
-import { Logo } from '@/components/Logo'
+import {
+  LOGO_TEAL_DATA_URI,
+  LOGO_WHITE_DATA_URI,
+} from '@/assets/brand/logo-data'
 
 interface LogoutProgressOverlayProps {
   visible: boolean
@@ -30,12 +34,13 @@ interface LogoutProgressOverlayProps {
 }
 
 /**
- * Apple & Linear-tier full-screen transition overlay for the account logout lifecycle.
+ * Minimalist, world-class exit transition overlay for account logout and deletion.
  *
- * Physically separates and conceals underlying view mutations, cache purging,
- * and navigation hierarchy resets behind an intentional, branded transition platter.
- * Locks touch interaction atomically so user multi-taps or back gestures cannot cause
- * deadlocks or layout flashes during teardown.
+ * Designed with absolute aesthetic restraint inspired by Apple & Linear:
+ * - 100% seamless, flat canvas directly integrated into the background (zero panels or cards)
+ * - Pure typographic hierarchy with effortless contrast ratios across light and dark themes
+ * - Weightless, serene micro-interactions with zero clumsy circles or heavy geometry
+ * - Deterministic pointer and touch locking to conceal background navigation teardown
  */
 export function LogoutProgressOverlay({
   visible,
@@ -44,103 +49,99 @@ export function LogoutProgressOverlay({
   isDelete = false,
 }: LogoutProgressOverlayProps) {
   const { colors, theme } = useTheme()
-  const { width: screenWidth } = useWindowDimensions()
 
   const opacity = useSharedValue(0)
-  const scale = useSharedValue(0.95)
-  const logoPulse = useSharedValue(1)
-  const cardTranslateY = useSharedValue(12)
+  const contentTranslateY = useSharedValue(8)
+  const logoScale = useSharedValue(1)
 
   useEffect(() => {
     if (visible) {
-      // Snappy, organic Apple spring entrance
+      // Whisper-quiet Apple-smooth entrance
       opacity.value = withTiming(1, {
-        duration: 180,
-        easing: Easing.out(Easing.cubic),
+        duration: 200,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
       })
-      scale.value = withSpring(1, {
-        damping: 24,
-        stiffness: 300,
-        mass: 0.7,
-      })
-      cardTranslateY.value = withSpring(0, {
-        damping: 24,
-        stiffness: 320,
-        mass: 0.7,
+      contentTranslateY.value = withSpring(0, {
+        damping: 28,
+        stiffness: 280,
+        mass: 0.6,
       })
 
-      // Gentle organic breathing pulse on the brand icon
-      logoPulse.value = withRepeat(
+      // Silky, ethereal breathing cycle on the emblem
+      logoScale.value = withRepeat(
         withSequence(
-          withTiming(1.04, { duration: 800, easing: Easing.inOut(Easing.quad) }),
-          withTiming(0.98, { duration: 800, easing: Easing.inOut(Easing.quad) })
+          withTiming(0.965, { duration: 1100, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) })
         ),
         -1,
         true
       )
     } else {
-      cancelAnimation(logoPulse)
-      logoPulse.value = 1
+      cancelAnimation(logoScale)
+      logoScale.value = 1
 
-      // Organic exit: dissolves outward with subtle expansion
+      // Soft dissolve outward
       opacity.value = withTiming(0, {
-        duration: 220,
+        duration: 180,
         easing: Easing.inOut(Easing.quad),
       })
-      scale.value = withTiming(1.025, {
-        duration: 220,
-        easing: Easing.out(Easing.quad),
-      })
-      cardTranslateY.value = withTiming(-8, {
-        duration: 220,
+      contentTranslateY.value = withTiming(-6, {
+        duration: 180,
         easing: Easing.in(Easing.quad),
       })
     }
-  }, [visible, opacity, scale, logoPulse, cardTranslateY])
+  }, [visible, opacity, contentTranslateY, logoScale])
 
   const rootAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }))
 
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: scale.value },
-      { translateY: cardTranslateY.value },
+      { translateY: contentTranslateY.value },
     ],
   }))
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoPulse.value }],
+    transform: [{ scale: logoScale.value }],
   }))
 
-  // Theme-adaptive platter background and specular rim highlights
-  const platterBg =
+  // Theme-adaptive flat canvas background (pure and seamless, no borders or platter cards)
+  const canvasBg =
     theme === 'white'
-      ? 'rgba(255, 255, 255, 0.94)'
+      ? '#FFFFFF'
       : theme === 'green'
-      ? 'rgba(7, 28, 24, 0.92)'
-      : 'rgba(16, 21, 20, 0.92)'
+      ? '#071C18'
+      : '#000000'
 
-  const platterBorder =
+  // Contrast-dialed text colors across light and dark themes
+  const titleColor =
     theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(212, 175, 55, 0.25)'
-      : 'rgba(47, 191, 139, 0.22)'
+      ? '#0F172A'
+      : '#FFFFFF'
 
-  const brandAccent =
-    isDelete
-      ? '#EF4444'
-      : theme === 'green'
-      ? colors.gold
-      : colors.primary
-
-  const badgeBg =
+  const subtitleColor =
     theme === 'white'
-      ? 'rgba(0, 0, 0, 0.04)'
+      ? '#64748B'
       : theme === 'green'
-      ? 'rgba(212, 175, 55, 0.12)'
-      : 'rgba(255, 255, 255, 0.06)'
+      ? 'rgba(255, 255, 255, 0.70)'
+      : 'rgba(249, 250, 251, 0.65)'
+
+  // Accent & micro-indicator colors
+  const deleteAccent =
+    theme === 'white'
+      ? '#DC2626'
+      : '#F87171'
+
+  const indicatorColor = isDelete
+    ? deleteAccent
+    : theme === 'white'
+    ? colors.primary
+    : theme === 'green'
+    ? colors.gold
+    : colors.primary
+
+  const logoDataUri = theme === 'white' ? LOGO_TEAL_DATA_URI : LOGO_WHITE_DATA_URI
 
   return (
     <Animated.View
@@ -150,69 +151,47 @@ export function LogoutProgressOverlay({
         styles.overlayRoot,
         rootAnimatedStyle,
         {
-          backgroundColor: colors.background,
+          backgroundColor: canvasBg,
           zIndex: visible ? 99999 : -1,
           display: visible ? 'flex' : 'none',
         },
       ]}
     >
-      {/* Ambient background soft glow centered behind the platter */}
-      <View
-        style={[
-          styles.ambientGlow,
-          {
-            backgroundColor: brandAccent,
-            opacity: theme === 'white' ? 0.05 : 0.12,
-          },
-        ]}
-      />
+      <StatusBar style={theme === 'white' ? 'dark' : 'light'} animated={false} />
 
-      <Animated.View
-        style={[
-          styles.platterCard,
-          cardAnimatedStyle,
-          {
-            backgroundColor: platterBg,
-            borderColor: platterBorder,
-            maxWidth: Math.min(350, screenWidth - 48),
-          },
-        ]}
-      >
-        {/* Brand Icon or Delete Glyph with Organic Breathing Motion */}
-        <Animated.View style={[styles.iconContainer, logoAnimatedStyle]}>
+      <Animated.View style={[styles.contentContainer, contentAnimatedStyle]}>
+        {/* Minimalist Emblem or Delete Glyph with Ethereal Micro-motion */}
+        <Animated.View style={[styles.emblemWrapper, logoAnimatedStyle]}>
           {isDelete ? (
-            <View style={[styles.deleteIconCircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
-              <Trash2 size={28} color="#EF4444" strokeWidth={2.2} />
-            </View>
+            <Trash2 size={34} color={deleteAccent} strokeWidth={1.8} />
           ) : (
-            <Logo size={48} />
+            <Image
+              source={{ uri: logoDataUri }}
+              style={styles.emblemImage}
+              contentFit="contain"
+              priority="high"
+              cachePolicy="memory"
+              transition={0}
+            />
           )}
         </Animated.View>
 
-        {/* Text Block: Title and Microcopy */}
+        {/* Typographic Stack: High-contrast title and refined subcopy */}
         <View style={styles.textStack}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <Text style={[styles.title, { color: titleColor }]}>
             {title}
           </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          <Text style={[styles.subtitle, { color: subtitleColor }]}>
             {subtitle}
           </Text>
         </View>
 
-        {/* Tactile Kinetic Progress Indicator */}
-        <View style={styles.indicatorRow}>
+        {/* Whisper-quiet, weightless progress indicator */}
+        <View style={styles.indicatorContainer}>
           <ActivityIndicator
             size="small"
-            color={brandAccent}
+            color={indicatorColor}
           />
-        </View>
-
-        {/* Security & Verification Pill */}
-        <View style={[styles.securityBadge, { backgroundColor: badgeBg }]}>
-          <ShieldCheck size={12} color={brandAccent} strokeWidth={2.4} />
-          <Text style={[styles.securityBadgeText, { color: colors.textMuted }]}>
-            Sesion i mbrojtur • Bleje Pronën
-          </Text>
         </View>
       </Animated.View>
     </Animated.View>
@@ -223,86 +202,48 @@ const styles = StyleSheet.create({
   overlayRoot: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 28,
     elevation: Platform.OS === 'android' ? 999 : undefined,
   },
-  ambientGlow: {
-    position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    transform: [{ scale: 1.4 }],
-  },
-  platterCard: {
+  contentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
-    borderRadius: 28,
-    borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 32,
-    paddingHorizontal: 26,
-    alignItems: 'center',
-    gap: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 18 },
-        shadowOpacity: 0.18,
-        shadowRadius: 28,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
+    maxWidth: 340,
   },
-  iconContainer: {
+  emblemWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginBottom: 20,
+    height: 48,
   },
-  deleteIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+  emblemImage: {
+    width: 44,
+    height: 44,
   },
   textStack: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
+    gap: 6,
+    paddingHorizontal: 8,
   },
   title: {
-    fontSize: 17.5,
+    fontSize: 20,
     fontFamily: Fonts.bold,
     letterSpacing: -0.4,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
-    fontFamily: Fonts.medium,
+    fontSize: 14,
+    fontFamily: Fonts.regular,
     letterSpacing: -0.15,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
   },
-  indicatorRow: {
+  indicatorContainer: {
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-  },
-  securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderCurve: 'continuous',
-    marginTop: 2,
-  },
-  securityBadgeText: {
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-    letterSpacing: -0.1,
+    marginTop: 24,
   },
 })
