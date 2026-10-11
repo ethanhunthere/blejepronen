@@ -1,4 +1,4 @@
-import { createPublicSupabaseClient } from '@/lib/supabase'
+import { createPublicSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -148,40 +148,106 @@ interface ListingWithProfile extends Listing {
 
 const getListing = cache(async (id: string) => {
   const supabase = createPublicSupabaseClient()
-  return supabase
+  const primaryRes = await supabase
     .from('listings')
     .select(
-      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,latitude,longitude,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
     )
     .eq('id', id)
     .eq('is_active', true)
     .single()
+
+  if (!primaryRes.error) {
+    return primaryRes
+  }
+
+  // Resilient fallback in case of PostgREST relationship cache lag
+  const fallbackRes = await supabase
+    .from('listings')
+    .select(
+      'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until'
+    )
+    .eq('id', id)
+    .eq('is_active', true)
+    .single()
+
+  if (fallbackRes.error || !fallbackRes.data) {
+    return primaryRes
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles_public')
+    .select('first_name,last_name,avatar_url,email_verified')
+    .eq('id', fallbackRes.data.user_id)
+    .maybeSingle()
+
+  return {
+    ...fallbackRes,
+    data: {
+      ...fallbackRes.data,
+      profiles: profile || null,
+    },
+  }
 })
 
 const getSellerData = cache(async (userId: string) => {
   try {
-    const supabase = createPublicSupabaseClient()
-    const [{ data: profileData }, { count: fCount }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-      supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
-    ])
+    let profileData: any = null
+    let userMetadata: any = {}
+    let fCount: number | null = null
+
+    try {
+      const admin = await createAdminSupabaseClient()
+      const [{ data: prof }, { count }, userRes] = await Promise.all([
+        admin.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        admin.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+        admin.auth.admin.getUserById(userId).catch(() => ({ data: { user: null } })),
+      ])
+      profileData = prof
+      fCount = count
+      userMetadata = userRes?.data?.user?.user_metadata || {}
+    } catch {
+      const publicClient = createPublicSupabaseClient()
+      const [{ data: profPub }, { count }] = await Promise.all([
+        publicClient.from('profiles_public').select('*').eq('id', userId).maybeSingle(),
+        publicClient.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+      ])
+      profileData = profPub
+      fCount = count
+    }
+
     const prof = (profileData as Record<string, unknown>) || {}
+    const meta = userMetadata || {}
+    const isCompany =
+      prof.account_type === 'company' ||
+      meta.account_type === 'company' ||
+      Boolean(prof.company_name) ||
+      Boolean(meta.company_name) ||
+      prof.last_name === 'Kompani'
+
     const socials: SocialLinks = {
-      instagram: (prof.instagram as string) || null,
-      facebook: (prof.facebook as string) || null,
-      whatsapp: (prof.whatsapp as string) || null,
-      tiktok: (prof.tiktok as string) || null,
+      instagram: (prof.instagram as string) || (meta.instagram as string) || null,
+      facebook: (prof.facebook as string) || (meta.facebook as string) || null,
+      whatsapp: (prof.whatsapp as string) || (meta.whatsapp as string) || null,
+      tiktok: (prof.tiktok as string) || (meta.tiktok as string) || null,
     }
     const followersCount = typeof fCount === 'number' ? fCount : 0
     return {
       socials,
-      isCompany: prof.account_type === 'company' || Boolean(prof.company_name),
-      companyDescription: (prof.bio as string) || (prof.company_description as string) || null,
+      isCompany,
+      companyDescription:
+        (prof.company_description as string) ||
+        (prof.bio as string) ||
+        (meta.company_description as string) ||
+        (meta.bio as string) ||
+        null,
       followersCount,
-      // Server-owned row → canonical trust derivation (single source of truth).
       trust: deriveTrustSignals({
-        email_verified: typeof prof.email_verified === 'boolean' ? prof.email_verified : null,
-        phone: (prof.phone as string) || null,
+        email_verified:
+          typeof prof.email_verified === 'boolean'
+            ? prof.email_verified
+            : Boolean(meta.email_verified),
+        phone: (prof.phone as string) || (meta.phone as string) || null,
         created_at: (prof.created_at as string) || null,
         listings_count: typeof prof.listings_count === 'number' ? prof.listings_count : null,
       }),
