@@ -41,7 +41,7 @@ import { waitForAuthCacheHydration } from '@/lib/auth-cache'
 import { prewarmBrandAssets } from '@/assets/brand/logo-data'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { RouteErrorBoundary } from '@/components/RouteErrorBoundary'
-import { isLogoutInProgress, subscribeAuthEvents } from '@/lib/auth-cache'
+import { isLogoutInProgress, subscribeAuthEvents, getSyncAuthUser } from '@/lib/auth-cache'
 import { SplashHandover } from '@/components/motion'
 import { BiometricGate } from '@/components/BiometricGate'
 import { initPushNotifications } from '@/lib/notifications'
@@ -213,7 +213,6 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
             active={splashAnimDone}
             onColdStartResolved={() => setGateResolved(true)}
           />
-          {launchSettled ? <CallGate /> : null}
           <Stack
             unstable_screenErrorBoundary={RouteErrorBoundary as any}
             screenOptions={{
@@ -260,6 +259,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
             <Stack.Screen name="modal" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
             <Stack.Screen name="+not-found" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
           </Stack>
+          <CallGate />
         </NavigationThemeProvider>
       ) : (
         <View
@@ -294,13 +294,24 @@ function CallGate() {
         } catch {}
         return
       }
+
+      // 1. Instant synchronous wire from auth cache on frame zero
+      const cached = getSyncAuthUser()
+      if (cached?.id) {
+        try {
+          const { callEngine } = await import('@/lib/calling')
+          callEngine.listenForIncoming(cached.id)
+        } catch {}
+      }
+
+      // 2. Validate/refresh with active Supabase session
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser()
         if (!mounted || isLogoutInProgress()) return
         const { callEngine } = await import('@/lib/calling')
-        callEngine.listenForIncoming(user?.id ?? null)
+        callEngine.listenForIncoming(user?.id ?? cached?.id ?? null)
       } catch {
         // offline — retry happens on the next auth event
       }

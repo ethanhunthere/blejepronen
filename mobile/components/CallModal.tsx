@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Platform,
   Linking,
   Share,
-  Animated,
   Alert,
 } from 'react-native'
 import { Image } from 'expo-image'
@@ -19,9 +18,8 @@ import {
   ShieldCheck,
   Building2,
   PhoneCall,
-  ChevronRight,
   Check,
-  Sparkles,
+  X,
 } from 'lucide-react-native'
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -33,7 +31,6 @@ import { callEngine, isCallingSupported } from '@/lib/calling'
 import { getSyncAuthUser } from '@/lib/auth-cache'
 import { openLoginScreen } from '@/lib/navigation'
 import { normalizePhoneNumber } from '@/lib/phone'
-import { useBottomSheetGesture } from '@/lib/bottom-sheet-gesture'
 
 export interface CallModalProps {
   visible: boolean
@@ -48,12 +45,6 @@ export interface CallModalProps {
   conversationId?: string | null
   /** Whether the current user is signed in (in-app calls need auth) */
   isSignedIn?: boolean
-  /**
-   * Server-provided verification flag for the counterpart. When `true`, the
-   * "verified" badge is shown without relying on name-token heuristics.
-   * When `undefined`, falls back to a conservative name-token check that
-   * additionally requires the name to look corporate.
-   */
   counterpartEmailVerified?: boolean
 }
 
@@ -72,53 +63,10 @@ export function CallModal({
   const insets = useSafeAreaInsets()
   const { colors, theme } = useTheme()
 
-  const [rendered, setRendered] = useState(visible)
   const [copied, setCopied] = useState(false)
-  const isClosingRef = useRef(false)
-
-  const {
-    dragY,
-    backdropOpacity,
-    handlePanHandlers,
-    cardPanHandlers,
-    animateDismiss,
-    animateEntrance,
-  } = useBottomSheetGesture({
-    dismissDistance: 540,
-    dismissThreshold: 55,
-    velocityThreshold: 0.28,
-    onDismiss: () => {
-      setRendered(false)
-      isClosingRef.current = false
-      onClose()
-    },
-    enableHaptics: true,
-  })
-
-  const handleClose = useCallback(() => {
-    if (isClosingRef.current) return
-    isClosingRef.current = true
-    // onDismiss is the single exit path; a callback here would
-    // double-fire onClose on every programmatic dismissal.
-    animateDismiss()
-  }, [animateDismiss, onClose])
-
-  // Synchronize modal presentation lifecycle with zero unmount flicker
-  useEffect(() => {
-    if (visible) {
-      setRendered(true)
-      isClosingRef.current = false
-      animateEntrance()
-    } else if (rendered && !isClosingRef.current) {
-      handleClose()
-    }
-  }, [visible])
-
-  if (!rendered) return null
 
   // Verified-agency badge: prefer the server flag; otherwise require BOTH a
-  // corporate name token AND that the account looks established (name length
-  // + token match). Never mark a random user as a "verified agency".
+  // corporate name token AND that the account looks established.
   const looksCorporate = /agjenci|real estate|invest|patundshm|group|shpk/i.test(
     counterpartName || ''
   )
@@ -128,13 +76,19 @@ export function CallModal({
       : counterpartEmailVerified === false
       ? false
       : looksCorporate && (counterpartName || '').trim().length >= 4
+
   const cleanPhone = counterpartPhone ? normalizePhoneNumber(counterpartPhone) : null
   const cleanPhoneDigits = counterpartPhone
     ? normalizePhoneNumber(counterpartPhone).replace(/\D/g, '')
     : null
 
-  // 1. Primary Hero: In-App WebRTC Call
+  // 1. Primary Hero: In-App WebRTC VoIP Call
   const handleInAppCall = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+    }
+    playTapSound()
+
     if (!counterpartUserId) {
       Alert.alert('Vërejtje', 'Përdoruesi nuk është i disponueshëm për thirrje në këtë moment.')
       return
@@ -142,14 +96,9 @@ export function CallModal({
 
     const currentViewer = getSyncAuthUser()
     if (!currentViewer) {
-      handleClose()
+      onClose()
       openLoginScreen(router, { redirectTo: `/listings/${conversationId || ''}`, reason: 'call' })
       return
-    }
-
-    playTapSound()
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
     }
 
     if (!isCallingSupported()) {
@@ -158,7 +107,7 @@ export function CallModal({
         buttons.push({
           text: `Telefono (${cleanPhone})`,
           onPress: () => {
-            handleClose()
+            onClose()
             Linking.openURL(`tel:${cleanPhone}`).catch(() => {})
           },
         })
@@ -167,7 +116,7 @@ export function CallModal({
         buttons.push({
           text: 'WhatsApp',
           onPress: () => {
-            handleClose()
+            onClose()
             Linking.openURL(`https://wa.me/${cleanPhoneDigits}`).catch(() => {})
           },
         })
@@ -179,13 +128,13 @@ export function CallModal({
 
       Alert.alert(
         'Thirrjet VoIP në Aplikacion',
-        'Thirrjet direkte përmes internetit kërkojnë versionin e pavarur të instalimit (App Store / APK). Mund të kontaktoni menjëherë përmes telefonit celular ose WhatsApp.',
+        'Thirrjet direkte me internet kërkojnë versionin e plotë të instalimit (App Store / APK). Mund të kontaktoni menjëherë përmes telefonit celular ose WhatsApp.',
         buttons
       )
       return
     }
 
-    handleClose()
+    onClose()
     void callEngine.startCall({
       userId: counterpartUserId,
       name: counterpartName,
@@ -201,10 +150,10 @@ export function CallModal({
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync().catch(() => {})
     }
+    onClose()
     Linking.openURL(`tel:${cleanPhone}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të iniciohet thirrja telefonike.')
     })
-    handleClose()
   }
 
   // 3. Secondary: Direct WhatsApp Chat
@@ -214,10 +163,10 @@ export function CallModal({
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync().catch(() => {})
     }
+    onClose()
     Linking.openURL(`https://wa.me/${cleanPhoneDigits}`).catch(() => {
       Alert.alert('Gabim', 'Nuk mund të hapet aplikacioni WhatsApp.')
     })
-    handleClose()
   }
 
   // 4. Subordinate Tertiary: Copy Phone Number to Clipboard / Share
@@ -243,55 +192,45 @@ export function CallModal({
     }
   }
 
-  const specularBorder =
-    theme === 'white'
-      ? 'rgba(0, 0, 0, 0.08)'
-      : theme === 'green'
-      ? 'rgba(255, 255, 255, 0.12)'
-      : 'rgba(255, 255, 255, 0.10)'
-
   return (
     <Modal
-      visible={rendered}
-      animationType="none"
-      transparent={true}
-      statusBarTranslucent={true}
-      onRequestClose={handleClose}
-      hardwareAccelerated={true}
+      visible={visible}
+      animationType="slide"
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
     >
       <View style={styles.modalRoot}>
-        {/* Interpolated Dark Backdrop: Fades smoothly with gesture to prevent black flicker */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.backdropFill,
-            { opacity: backdropOpacity },
-          ]}
-        >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-        </Animated.View>
+        {/* Semi-transparent Backdrop: Tap to Dismiss */}
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.backdropFill]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.selectionAsync().catch(() => {})
+            }
+            onClose()
+          }}
+        />
 
         {/* Action Sheet Card */}
-        <Animated.View
+        <View
           style={[
             styles.card,
             {
               backgroundColor: colors.surface,
-              borderColor: specularBorder,
+              borderColor: colors.borderSubtle,
               paddingBottom: Math.max(insets.bottom + 12, 24),
-              transform: [{ translateY: dragY }],
             },
           ]}
-          {...cardPanHandlers}
         >
-          {/* Tactile Grabber Handle Area (Claims immediately on touch down) */}
-          <View style={styles.grabberZone} {...handlePanHandlers}>
+          {/* Top Grabber Indicator */}
+          <View style={styles.grabberZone}>
             <View style={[styles.grabber, { backgroundColor: colors.border }]} />
           </View>
 
           {/* Contact Identity Header */}
           <View style={styles.identitySection}>
-            <View style={[styles.avatarWrap, { borderColor: colors.border }]}>
+            <View style={[styles.avatarWrap, { borderColor: colors.borderSubtle }]}>
               <Image
                 source={getAvatarSource(counterpartAvatar)}
                 style={styles.avatar}
@@ -328,7 +267,7 @@ export function CallModal({
               <View
                 style={[
                   styles.listingTag,
-                  { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                  { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderSubtle },
                 ]}
               >
                 <Text
@@ -347,7 +286,7 @@ export function CallModal({
             ) : null}
           </View>
 
-          {/* 1. HERO ACTION: "Thirr në aplikacion" (Dominant, Branded Primary CTA) */}
+          {/* 1. HERO ACTION: "Thirr në aplikacion" (HD Audio VoIP Call) */}
           {counterpartUserId ? (
             <Pressable
               style={({ pressed }) => [
@@ -398,18 +337,18 @@ export function CallModal({
                     },
                   ]}
                 >
-                  HD Audio · Në rrjet
+                  HD Audio · Falas me internet
                 </Text>
               </View>
             </Pressable>
           ) : null}
 
-          {/* 2. SECONDARY ACTIONS: Clean Standard Action Rows (No SMS) */}
+          {/* 2. SECONDARY ACTIONS: Cellular & WhatsApp */}
           {cleanPhone ? (
             <View
               style={[
                 styles.secondaryGroup,
-                { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
+                { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderSubtle },
               ]}
             >
               {/* Row 1: Thirrje celulare */}
@@ -428,95 +367,57 @@ export function CallModal({
                 >
                   <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
                 </View>
+
                 <View style={styles.secondaryTextCol}>
-                  <Text
-                    style={[styles.secondaryTitle, { color: colors.textPrimary }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
-                  >
-                    Thirrje celulare
+                  <Text style={[styles.secondaryTitle, { color: colors.textPrimary }]}>
+                    Telefono
                   </Text>
-                  <Text style={[styles.secondarySub, { color: colors.textMuted }]} numberOfLines={1}>
+                  <Text style={[styles.secondarySubtitle, { color: colors.textMuted }]}>
                     {cleanPhone}
                   </Text>
                 </View>
-                <ChevronRight size={17} color={colors.textLight} strokeWidth={2} />
               </Pressable>
 
-              {/* Inset Divider */}
-              <View style={[styles.rowDivider, { backgroundColor: colors.border }]} />
-
-              {/* Row 2: WhatsApp */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.secondaryRow,
-                  pressed && { backgroundColor: colors.borderSubtle },
-                ]}
-                onPress={handleWhatsApp}
-              >
-                <View
-                  style={[
-                    styles.secondaryIconCircle,
-                    {
-                      backgroundColor: 'rgba(37, 211, 102, 0.12)',
-                      borderColor: 'rgba(37, 211, 102, 0.25)',
-                    },
-                  ]}
-                >
-                  <MessageCircle size={18} color="#25D366" strokeWidth={2.4} />
-                </View>
-                <View style={styles.secondaryTextCol}>
-                  <Text
-                    style={[styles.secondaryTitle, { color: colors.textPrimary }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
+              {/* Row 2: WhatsApp (nëse ka numër) */}
+              {cleanPhoneDigits ? (
+                <>
+                  <View
+                    style={[styles.secondaryDivider, { backgroundColor: colors.borderSubtle }]}
+                  />
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.secondaryRow,
+                      pressed && { backgroundColor: colors.borderSubtle },
+                    ]}
+                    onPress={handleWhatsApp}
                   >
-                    WhatsApp
-                  </Text>
-                  <Text style={[styles.secondarySub, { color: colors.textMuted }]} numberOfLines={1}>
-                    Bisedo drejtpërdrejt
-                  </Text>
-                </View>
-                <ChevronRight size={17} color={colors.textLight} strokeWidth={2} />
-              </Pressable>
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.noPhoneCard,
-                { backgroundColor: colors.surfaceSubtle, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.noPhoneTitle, { color: colors.textPrimary }]}>
-                Numri nuk është publik
-              </Text>
-              <Text style={[styles.noPhoneDesc, { color: colors.textMuted }]}>
-                Ky përdorues preferon të kontaktohet përmes mesazheve të drejtpërdrejta në platformë.
-              </Text>
-              <Pressable
-                style={[styles.chatBtn, { backgroundColor: colors.primary }]}
-                onPress={() => {
-                  handleClose()
-                  if (conversationId) {
-                    router.push(`/messages/${conversationId}` as any)
-                  }
-                }}
-              >
-                <Text
-                  style={[
-                    styles.chatBtnText,
-                    { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                  ]}
-                >
-                  Vazhdo në Bisedë
-                </Text>
-              </Pressable>
-            </View>
-          )}
+                    <View
+                      style={[
+                        styles.secondaryIconCircle,
+                        {
+                          backgroundColor: '#25D366',
+                          borderColor: 'rgba(37, 211, 102, 0.3)',
+                        },
+                      ]}
+                    >
+                      <MessageCircle size={17} color="#FFFFFF" strokeWidth={2.4} />
+                    </View>
 
-          {/* 3. SUBORDINATE ACTION: Compact, subtle "Kopjo numrin" */}
+                    <View style={styles.secondaryTextCol}>
+                      <Text style={[styles.secondaryTitle, { color: colors.textPrimary }]}>
+                        WhatsApp
+                      </Text>
+                      <Text style={[styles.secondarySubtitle, { color: colors.textMuted }]}>
+                        Bisedë e shpejtë
+                      </Text>
+                    </View>
+                  </Pressable>
+                </>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* 3. TERTIARY ACTION: Kopjo Numrin */}
           {counterpartPhone ? (
             <Pressable
               style={({ pressed }) => [
@@ -529,7 +430,7 @@ export function CallModal({
               {copied ? (
                 <>
                   <Check
-                    size={13}
+                    size={14}
                     color={theme === 'green' ? colors.gold : colors.primary}
                     strokeWidth={2.4}
                   />
@@ -544,7 +445,7 @@ export function CallModal({
                 </>
               ) : (
                 <>
-                  <Copy size={13} color={colors.textMuted} strokeWidth={2} />
+                  <Copy size={14} color={colors.textMuted} strokeWidth={2} />
                   <Text style={[styles.tertiaryCopyText, { color: colors.textMuted }]}>
                     Kopjo numrin e telefonit
                   </Text>
@@ -553,11 +454,28 @@ export function CallModal({
             </Pressable>
           ) : null}
 
-          {/* Privacy Footnote */}
-          <Text style={[styles.footerNotice, { color: colors.textLight }]}>
-            Bleje Pronën lidh drejtpërdrejt palët pa ndërmjetësim apo kosto të fshehura.
-          </Text>
-        </Animated.View>
+          {/* Cancel Dismiss Button */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.dismissBtn,
+              {
+                backgroundColor: colors.surfaceSubtle,
+                borderColor: colors.borderSubtle,
+              },
+              pressed && { opacity: 0.75 },
+            ]}
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.selectionAsync().catch(() => {})
+              }
+              onClose()
+            }}
+          >
+            <Text style={[styles.dismissBtnText, { color: colors.textPrimary }]}>
+              Anulo
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   )
@@ -569,27 +487,27 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdropFill: {
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.52)',
   },
   card: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderCurve: 'continuous',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 14,
+    paddingTop: 10,
+    gap: 12,
     maxWidth: 540,
     width: '100%',
     alignSelf: 'center',
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.16,
     shadowRadius: 20,
-    elevation: 16,
+    elevation: 20,
   },
   grabberZone: {
-    paddingTop: 6,
+    paddingTop: 4,
     paddingBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -599,20 +517,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 2.5,
-    alignSelf: 'center',
   },
   identitySection: {
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    gap: 4,
   },
   avatarWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 2,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    marginBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E2E8F0',
+    marginBottom: 4,
   },
   avatar: {
     width: '100%',
@@ -621,94 +541,77 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    flexShrink: 1,
-  },
-  nameText: {
-    fontSize: 17,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
-    flexShrink: 1,
-  },
-  roleBadge: {
-    fontSize: 12,
-    fontFamily: Fonts.medium,
-  },
-  listingTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 3.5,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    marginTop: 2,
     maxWidth: '90%',
   },
-  listingTagText: {
-    fontSize: 11,
+  nameText: {
+    fontSize: 18,
+    fontFamily: Fonts.bold,
+    textAlign: 'center',
+  },
+  roleBadge: {
+    fontSize: 12.5,
     fontFamily: Fonts.medium,
+    textAlign: 'center',
+  },
+  listingTag: {
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: '92%',
+  },
+  listingTagText: {
+    fontSize: 11.5,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
   },
   phoneNumberText: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
+    fontSize: 15,
+    fontFamily: Fonts.semiBold,
     marginTop: 2,
     letterSpacing: 0.3,
   },
-
-  /* 1. Hero CTA Styles */
   heroAppCallBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    paddingVertical: 13,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    shadowColor: '#000',
+    borderRadius: 18,
+    gap: 12,
+    marginTop: 4,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
   },
   heroIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroTextCol: {
     flex: 1,
     minWidth: 0,
-    gap: 1.5,
+    gap: 2,
   },
   heroTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: Fonts.bold,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   heroSubtitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontFamily: Fonts.medium,
   },
-  heroPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  heroPillText: {
-    fontSize: 10,
-    fontFamily: Fonts.extraBold,
-    letterSpacing: 0.5,
-  },
-
-  /* 2. Secondary Group Styles */
   secondaryGroup: {
     borderRadius: 18,
-    borderCurve: 'continuous',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   secondaryRow: {
@@ -719,12 +622,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   secondaryIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   secondaryTextCol: {
     flex: 1,
@@ -732,66 +635,38 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   secondaryTitle: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-    letterSpacing: -0.2,
+    fontSize: 14.5,
+    fontFamily: Fonts.semiBold,
   },
-  secondarySub: {
+  secondarySubtitle: {
     fontSize: 12,
     fontFamily: Fonts.regular,
   },
-  rowDivider: {
+  secondaryDivider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 62,
+    marginLeft: 64,
   },
-
-  /* 3. Subordinate Tertiary "Kopjo numrin" Styles */
   tertiaryCopyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
     gap: 6,
-    paddingVertical: 6,
-    alignSelf: 'center',
   },
   tertiaryCopyText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontFamily: Fonts.medium,
   },
-
-  noPhoneCard: {
+  dismissBtn: {
+    paddingVertical: 13,
+    borderRadius: 14,
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    gap: 8,
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 2,
   },
-  noPhoneTitle: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-  },
-  noPhoneDesc: {
-    fontSize: 12,
-    fontFamily: Fonts.regular,
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  chatBtn: {
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-  },
-  chatBtnText: {
-    fontSize: 13,
-    fontFamily: Fonts.bold,
-  },
-  footerNotice: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
-    textAlign: 'center',
-    lineHeight: 15,
+  dismissBtnText: {
+    fontSize: 14.5,
+    fontFamily: Fonts.semiBold,
   },
 })

@@ -30,6 +30,7 @@
         }
       },
       "infoPlist": {
+        "NSMicrophoneUsageDescription": "Bleje Pronën ju lejon të realizoni thirrje zanore me shitësin dhe blerësin direkt në aplikacion.",
         "NSFaceIDUsageDescription": "Bleje Pronën përdor Face ID për kyçje të sigurt dhe të shpejtë në llogarinë tuaj.",
         "ITSAppUsesNonExemptEncryption": false
       },

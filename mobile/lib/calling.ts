@@ -31,11 +31,36 @@ interface WebRTCModule {
 }
 
 let webrtc: WebRTCModule | null = null
-let webrtcLoadAttempted = false
+
+export async function requestMicrophonePermission(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    try {
+      const { PermissionsAndroid } = require('react-native')
+      const hasPermission = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+      )
+      if (hasPermission) return true
+
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Leja e Mikrofonit',
+          message: 'Bleje Pronën kërkon leje për mikrofon për të realizuar thirrjen zanore me internet.',
+          buttonPositive: 'Lejo',
+          buttonNegative: 'Anulo',
+        }
+      )
+      return granted === PermissionsAndroid.RESULTS.GRANTED
+    } catch (err) {
+      console.warn('[VoIP Calling] Android mic permission check failed:', err)
+      return false
+    }
+  }
+  return true
+}
 
 function loadWebRTC(): WebRTCModule | null {
-  if (webrtcLoadAttempted) return webrtc
-  webrtcLoadAttempted = true
+  if (webrtc) return webrtc
 
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && (window as any).RTCPeerConnection) {
@@ -54,32 +79,33 @@ function loadWebRTC(): WebRTCModule | null {
     (Constants as any)?.executionEnvironment === ExecutionEnvironment.StoreClient ||
     (Constants as any)?.appOwnership === 'expo'
 
-  const hasNative = Boolean(
-    (NativeModules as any)?.WebRTCModule ||
-    (NativeModules as any)?.RNWebRTC ||
-    (globalThis as any)?.RTCPeerConnection
-  )
-
-  if (isExpoGo || !hasNative) {
-    webrtc = null
+  if (isExpoGo) {
     return null
   }
 
   try {
+    const hasNative = Boolean(
+      (NativeModules as any)?.WebRTCModule ||
+      (NativeModules as any)?.RNWebRTC ||
+      (globalThis as any)?.RTCPeerConnection
+    )
+
     // Lazy require — never at module scope, so Expo Go keeps working.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const m = require('react-native-webrtc')
-    webrtc = {
-      RTCPeerConnection: m.RTCPeerConnection,
-      RTCSessionDescription: m.RTCSessionDescription,
-      RTCIceCandidate: m.RTCIceCandidate,
-      mediaDevices: m.mediaDevices ?? null,
+    if (m && (m.RTCPeerConnection || hasNative)) {
+      webrtc = {
+        RTCPeerConnection: m.RTCPeerConnection,
+        RTCSessionDescription: m.RTCSessionDescription,
+        RTCIceCandidate: m.RTCIceCandidate,
+        mediaDevices: m.mediaDevices ?? null,
+      }
+      return webrtc
     }
-  } catch {
-    // Expo Go without native WebRTC module — calls disabled, app keeps running
-    webrtc = null
+  } catch (err) {
+    console.log('[VoIP Calling] Native WebRTC module not linked in current runtime:', err)
   }
-  return webrtc
+  return null
 }
 
 /** Whether in-app calling is available in the current runtime. */
@@ -395,16 +421,25 @@ class CallEngine {
         }
       })
       .subscribe((status) => {
-        if (status !== 'SUBSCRIBED' || this.state.status !== 'outgoing') return
-        const incoming: IncomingPayload = {
-          type: 'incoming',
-          callId,
-          from: this.myUserId!,
-          name: this.callerName,
-          avatarUrl: this.callerAvatar,
-          conversationId: peer.conversationId ?? null,
+        console.log(`[VoIP Calling] Ring channel subscription for ${peer.userId}:`, status)
+        if (status === 'SUBSCRIBED') {
+          if (this.state.status !== 'outgoing') return
+          const incoming: IncomingPayload = {
+            type: 'incoming',
+            callId,
+            from: this.myUserId!,
+            name: this.callerName,
+            avatarUrl: this.callerAvatar,
+            conversationId: peer.conversationId ?? null,
+          }
+          console.log(`[VoIP Calling] Sending ring invite to callee ${peer.userId}`)
+          void this.ringChannel?.send({ type: 'broadcast', event: 'ring', payload: incoming })
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`[VoIP Calling] Ring channel subscription error: ${status}`)
+          if (this.state.status === 'outgoing') {
+            this.finish('failed')
+          }
         }
-        void this.ringChannel?.send({ type: 'broadcast', event: 'ring', payload: incoming })
       })
 
     this.timers.push(
@@ -545,12 +580,35 @@ class CallEngine {
   private async setupPeerConnection(): Promise<void> {
     const rtc = loadWebRTC()
     if (!rtc?.mediaDevices || !rtc.RTCPeerConnection) {
+      console.warn('[VoIP Calling] setupPeerConnection: WebRTC is unsupported')
       this.finish('unsupported')
       return
     }
 
-    this.localStream = (await rtc.mediaDevices.getUserMedia({ audio: true })) as any
-    this.localTrack = (this.localStream as any)?.getAudioTracks?.()[0] ?? null
+    const hasMic = await requestMicrophonePermission()
+    if (!hasMic) {
+      console.warn('[VoIP Calling] Microphone permission denied by user')
+      Alert.alert(
+        'Leja e Mikrofonit',
+        'Nuk u lejua qasja në mikrofon. Ju lutemi lejoni qasjen nga cilësimet e pajisjes për të kryer thirrjen.'
+      )
+      this.finish('failed')
+      return
+    }
+
+    try {
+      this.localStream = (await rtc.mediaDevices.getUserMedia({ audio: true })) as any
+      this.localTrack = (this.localStream as any)?.getAudioTracks?.()[0] ?? null
+      console.log('[VoIP Calling] Local microphone audio stream acquired')
+    } catch (streamErr) {
+      console.warn('[VoIP Calling] Failed to acquire audio stream:', streamErr)
+      Alert.alert(
+        'Gabim Audio',
+        'Nuk mund të aktivizohet mikrofoni. Ju lutemi kontrolloni lejet e pajisjes.'
+      )
+      this.finish('failed')
+      return
+    }
 
     const pc = new rtc.RTCPeerConnection({ iceServers: ICE_SERVERS })
     this.pc = pc as any
@@ -575,10 +633,26 @@ class CallEngine {
 
     ;(pc as any).addEventListener('connectionstatechange', () => {
       const cs = (this.pc as any)?.connectionState
+      console.log('[VoIP Calling] connectionstatechange:', cs)
       if (cs === 'connected') {
         this.clearTimers()
         this.setState({ status: 'connected', connectedAt: Date.now() })
       } else if (cs === 'failed') {
+        if (this.state.status === 'connected' || this.state.status === 'connecting') {
+          this.finish('failed')
+        }
+      }
+    })
+
+    ;(pc as any).addEventListener('iceconnectionstatechange', () => {
+      const ics = (this.pc as any)?.iceConnectionState
+      console.log('[VoIP Calling] iceconnectionstatechange:', ics)
+      if (ics === 'connected' || ics === 'completed') {
+        this.clearTimers()
+        if (this.state.status === 'connecting') {
+          this.setState({ status: 'connected', connectedAt: Date.now() })
+        }
+      } else if (ics === 'failed') {
         if (this.state.status === 'connected' || this.state.status === 'connecting') {
           this.finish('failed')
         }
