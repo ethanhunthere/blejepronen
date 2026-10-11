@@ -131,9 +131,12 @@ export function CallModal({
     ? normalizePhoneNumber(counterpartPhone).replace(/\D/g, '')
     : null
 
-  // 1. Primary Hero: Free In-App WebRTC Call
+  // 1. Primary Hero: In-App WebRTC Call
   const handleInAppCall = () => {
-    if (!counterpartUserId) return
+    if (!counterpartUserId) {
+      Alert.alert('Vërejtje', 'Përdoruesi nuk është i disponueshëm për thirrje në këtë moment.')
+      return
+    }
     playTapSound()
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
@@ -301,7 +304,7 @@ export function CallModal({
           </View>
 
           {/* 1. HERO ACTION: "Thirr në aplikacion" (Dominant, Branded Primary CTA) */}
-          {counterpartUserId && Platform.OS !== 'web' ? (
+          {counterpartUserId ? (
             <Pressable
               style={({ pressed }) => [
                 styles.heroAppCallBtn,
@@ -348,31 +351,7 @@ export function CallModal({
                     },
                   ]}
                 >
-                  Pa pagesë · Në rrjet (HD Audio)
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.heroPill,
-                  {
-                    backgroundColor:
-                      theme === 'green' ? 'rgba(7, 28, 24, 0.16)' : 'rgba(255, 255, 255, 0.24)',
-                  },
-                ]}
-              >
-                <Sparkles
-                  size={11}
-                  color={theme === 'green' ? '#071C18' : '#FFFFFF'}
-                  strokeWidth={2.2}
-                />
-                <Text
-                  style={[
-                    styles.heroPillText,
-                    { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
-                  ]}
-                >
-                  FALAS
+                  HD Audio · Në rrjet
                 </Text>
               </View>
             </Pressable>

@@ -508,7 +508,21 @@ export default function MessagesScreen() {
                       ]}
                       onPress={() => {
                         if (Platform.OS !== 'web') Haptics.selectionAsync()
-                        router.push(`/messages/${item.id}` as any)
+                        router.push({
+                          pathname: '/messages/[id]',
+                          params: {
+                            id: item.id,
+                            counterpartName: item.counterpart_name || '',
+                            counterpartAvatar: item.counterpart_avatar || '',
+                            counterpartId: item.counterpart_id || '',
+                            counterpartPhone: item.counterpart_phone || '',
+                            isAgency: item.is_agency ? '1' : '0',
+                            emailVerified: item.counterpart_email_verified ? '1' : '0',
+                            listingId: item.listing_id || '',
+                            listingTitle: item.listing_title || '',
+                            listingImage: item.listing_image || '',
+                          },
+                        } as any)
                       }}
                     >
                       {/* Avatar */}

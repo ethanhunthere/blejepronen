@@ -199,12 +199,12 @@ export function useBottomSheetGesture({
         onStartShouldSetPanResponder: () => false,
         onStartShouldSetPanResponderCapture: () => false,
         onMoveShouldSetPanResponder: (_, gestureState) => {
-          // Natural downward thumb swipe: dy > 4 and dy dominates horizontal deviation
-          return gestureState.dy > 4 && gestureState.dy > Math.abs(gestureState.dx) * 0.6
+          // Natural downward thumb swipe: dy > 12 and dy dominates horizontal deviation
+          return gestureState.dy > 12 && gestureState.dy > Math.abs(gestureState.dx) * 1.1
         },
         onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-          // Intercept from child buttons (Pressable/TouchableOpacity) so dragging anywhere dismisses
-          return gestureState.dy > 4 && gestureState.dy > Math.abs(gestureState.dx) * 0.6
+          // Intercept from child buttons only when user is genuinely dragging the sheet downward
+          return gestureState.dy > 14 && gestureState.dy > Math.abs(gestureState.dx) * 1.2
         },
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {

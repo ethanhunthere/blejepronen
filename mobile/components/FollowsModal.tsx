@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  RefreshControl,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
@@ -66,6 +67,7 @@ export function FollowsModal({
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab)
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [followers, setFollowers] = useState<FollowUserItem[]>([])
   const [following, setFollowing] = useState<FollowUserItem[]>([])
   const [viewerFollowingSet, setViewerFollowingSet] = useState<Set<string>>(new Set())
@@ -84,9 +86,13 @@ export function FollowsModal({
   }, [visible, initialTab])
 
   // Load followers/following list
-  const loadLists = useCallback(async () => {
+  const loadLists = useCallback(async (isPullRefresh = false) => {
     if (!visible || !userId) return
-    setLoading(true)
+    if (isPullRefresh) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
 
     try {
       const {
@@ -109,6 +115,7 @@ export function FollowsModal({
       console.warn('Failed to load follows lists:', err)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [visible, userId, onStatsChange])
 
@@ -124,7 +131,7 @@ export function FollowsModal({
     return rawList.filter((item) => (item.name || '').toLowerCase().includes(q))
   }, [rawList, searchQuery])
 
-  // Follow / Unfollow inline action
+  // Follow / Unfollow inline action with reliable optimistic count updates
   const handleToggleFollow = async (targetItem: FollowUserItem) => {
     if (!currentViewerId) {
       onClose()
@@ -140,9 +147,12 @@ export function FollowsModal({
     }
 
     const isCurrentlyFollowing = viewerFollowingSet.has(targetItem.id)
+    const isViewingSelf = userId === currentViewerId
+    const isTargetProfileOwner = targetItem.id === userId
+
     setActionLoadingMap((prev) => ({ ...prev, [targetItem.id]: true }))
 
-    // Optimistic update
+    // Optimistically update follow status
     setViewerFollowingSet((prev) => {
       const next = new Set(prev)
       if (isCurrentlyFollowing) {
@@ -153,6 +163,22 @@ export function FollowsModal({
       return next
     })
 
+    // Optimistically update counts
+    const prevFollowers = followersCount
+    const prevFollowing = followingCount
+    const delta = isCurrentlyFollowing ? -1 : 1
+
+    const nextFollowing = isViewingSelf
+      ? Math.max(0, followingCount + delta)
+      : followingCount
+    const nextFollowers = isTargetProfileOwner
+      ? Math.max(0, followersCount + delta)
+      : followersCount
+
+    setFollowingCount(nextFollowing)
+    setFollowersCount(nextFollowers)
+    onStatsChange?.(nextFollowers, nextFollowing)
+
     try {
       const {
         data: { session },
@@ -162,26 +188,32 @@ export function FollowsModal({
       if (isCurrentlyFollowing) {
         const res = await unfollowUser(targetItem.id, token)
         if (!res.success) {
-          // Revert optimistic
+          // Revert optimistic state and counts
           setViewerFollowingSet((prev) => {
             const next = new Set(prev)
             next.add(targetItem.id)
             return next
           })
+          setFollowingCount(prevFollowing)
+          setFollowersCount(prevFollowers)
+          onStatsChange?.(prevFollowers, prevFollowing)
         }
       } else {
         const res = await followUser(targetItem.id, token)
         if (!res.success) {
-          // Revert optimistic
+          // Revert optimistic state and counts
           setViewerFollowingSet((prev) => {
             const next = new Set(prev)
             next.delete(targetItem.id)
             return next
           })
+          setFollowingCount(prevFollowing)
+          setFollowersCount(prevFollowers)
+          onStatsChange?.(prevFollowers, prevFollowing)
         }
       }
     } catch {
-      // Revert optimistic on network failure
+      // Revert optimistic state and counts on network failure
       setViewerFollowingSet((prev) => {
         const next = new Set(prev)
         if (isCurrentlyFollowing) {
@@ -191,6 +223,9 @@ export function FollowsModal({
         }
         return next
       })
+      setFollowingCount(prevFollowing)
+      setFollowersCount(prevFollowers)
+      onStatsChange?.(prevFollowers, prevFollowing)
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [targetItem.id]: false }))
     }
@@ -512,6 +547,14 @@ export function FollowsModal({
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={() => loadLists(true)}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
             />
           )}
         </KeyboardAvoidingView>
@@ -523,19 +566,28 @@ export function FollowsModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.54)',
+    justifyContent: Platform.OS === 'web' ? 'center' : 'flex-end',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.58)',
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
   },
   sheetContainer: {
-    maxHeight: '86%',
-    minHeight: '52%',
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    width: '100%',
+    maxWidth: 580,
+    maxHeight: Platform.OS === 'web' ? '86%' : '88%',
+    minHeight: Platform.OS === 'web' ? 520 : '58%',
+    borderRadius: Platform.OS === 'web' ? 24 : 0,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 20,
   },
   dragHandleRow: {
     alignItems: 'center',

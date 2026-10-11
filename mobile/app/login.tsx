@@ -165,6 +165,7 @@ export default function LoginScreen() {
       const accessToken = hashParams.get('access_token') || queryParams.get('access_token')
       const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
       const authCode = queryParams.get('code') || hashParams.get('code')
+      const flowId = queryParams.get('sb_flow_id') || hashParams.get('sb_flow_id') || undefined
 
       if (!authCode && (accessToken || refreshToken)) {
         // Implicit-flow tokens in the redirect URL — refuse. PKCE is required.
@@ -183,7 +184,7 @@ export default function LoginScreen() {
         )
       }
 
-      const { error: exchangeError } = await safeExchangeCodeForSession(authCode)
+      const { error: exchangeError } = await safeExchangeCodeForSession(authCode, { flowId })
       if (exchangeError) {
         const {
           data: { user: existingUser },

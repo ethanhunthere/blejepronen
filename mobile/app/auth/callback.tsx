@@ -18,6 +18,7 @@ export default function AuthCallbackRoute() {
   const router = useRouter()
   const params = useLocalSearchParams<{
     code?: string
+    sb_flow_id?: string
     access_token?: string
     refresh_token?: string
     error?: string
@@ -35,7 +36,8 @@ export default function AuthCallbackRoute() {
     ;(async () => {
       try {
         if (params.code) {
-          const { error } = await safeExchangeCodeForSession(params.code)
+          const flowId = params.sb_flow_id || (params as any)['sb_flow_id']
+          const { error } = await safeExchangeCodeForSession(params.code, { flowId })
           if (error) {
             // Verify if session exists despite error
             const {

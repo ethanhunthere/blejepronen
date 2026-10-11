@@ -292,6 +292,7 @@ export interface ProfileSettingsPayload {
 
   // Privacy
   privacy?: {
+    isPrivate?: boolean
     showPhone?: boolean
     showSocials?: boolean
     showOnline?: boolean

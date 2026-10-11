@@ -30,6 +30,7 @@ import {
   BedDouble,
   Layers,
   Phone,
+  PhoneCall,
   MessageCircle,
   MessageSquare,
   ShieldCheck,
@@ -62,7 +63,7 @@ import { supabase, Listing } from '@/lib/supabase'
 import { apiResolveContacts } from '@/lib/api'
 import { useTrackListingView, trackListingFavorite, trackListingLead } from '@/lib/listing-analytics'
 import { MarketDeltaCard } from '@/components/MarketDeltaCard'
-import { heroImageSource } from '@/lib/image-transform'
+import { heroImageSource, cardImageSource, thumbImageSource } from '@/lib/image-transform'
 import { ReportListingSheet } from '@/components/ReportListingSheet'
 import { getAvatarSource } from '@/lib/avatars'
 import { useFavorites } from '@/lib/favorites'
@@ -81,6 +82,7 @@ import { normalizePhoneNumber } from '@/lib/phone'
 import { FavoriteButton } from '@/components/FavoriteButton'
 import { TactilePressable } from '@/components/motion'
 import { CallModal } from '@/components/CallModal'
+import { callEngine } from '@/lib/calling'
 import { MediaLightbox } from '@/components/MediaLightbox'
 
 const FALLBACK_GALLERY_IMAGE = require('@/assets/images/logo-icon.png')
@@ -437,6 +439,28 @@ export default function ListingDetailScreen() {
 
   const hasWhatsApp = Boolean(cleanWhatsAppDigits && cleanWhatsAppDigits.length >= 6)
   const hasPhone = Boolean(cleanCallDigits && cleanCallDigits.length >= 6)
+  const hasAnyPhone = hasPhone || hasWhatsApp
+
+  const handleInAppCall = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+    }
+    if (!currentUser) {
+      openLoginScreen(router, { redirectTo: `/listings/${listing?.id || id}`, reason: 'call' })
+      return
+    }
+    if (!listing?.user_id) {
+      Alert.alert('Vërejtje', 'Përdoruesi nuk është i disponueshëm për thirrje në këtë moment.')
+      return
+    }
+    void callEngine.startCall({
+      userId: listing.user_id,
+      name: sellerName,
+      avatarUrl: seller?.avatar_url ?? null,
+      conversationId: null,
+    })
+    if (listing) void trackListingLead(listing.id, { ownerId: listing.user_id })
+  }
 
   const handleCall = () => {
     if (!hasPhone) {
@@ -752,6 +776,18 @@ export default function ListingDetailScreen() {
       ? listing.images
       : [FALLBACK_GALLERY_IMAGE]
 
+  // Aggressive gallery prefetching for instant swipe & fullscreen viewing
+  useEffect(() => {
+    if (listing?.images && listing.images.length > 0) {
+      listing.images.slice(0, 5).forEach((img) => {
+        if (typeof img === 'string') {
+          const heroUri = heroImageSource(img)
+          if (typeof heroUri === 'string') Image.prefetch(heroUri)
+        }
+      })
+    }
+  }, [listing?.images])
+
   const handleGalleryScrollEnd = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const slide = Math.min(
       imagesList.length - 1,
@@ -1035,12 +1071,18 @@ export default function ListingDetailScreen() {
               >
                 <Image
                   source={typeof img === 'string' ? { uri: heroImageSource(img) as string } : (img as any)}
+                  placeholder={
+                    typeof img === 'string'
+                      ? { uri: (cardImageSource(img) || thumbImageSource(img)) as string }
+                      : undefined
+                  }
+                  placeholderContentFit="cover"
                   recyclingKey={`gallery-${i}`}
                   style={[styles.heroImage, { width: windowWidth, height: heroHeight, backgroundColor: colors.surfaceSubtle }]}
                   contentFit="cover"
                   priority={i === 0 ? 'high' : 'normal'}
                   cachePolicy="memory-disk"
-                  transition={200}
+                  transition={180}
                 />
               </Pressable>
             )}
@@ -2402,55 +2444,85 @@ export default function ListingDetailScreen() {
             </View>
           ) : (
             <View style={styles.buyerActionGrid}>
-              {/* 1. Direct Phone / Voice Call Action */}
-              <TactilePressable
-                activeScale={0.93}
-                haptic="medium"
-                style={[
-                  styles.actionCallBtn,
-                  {
-                    backgroundColor: colors.surfaceSubtle,
-                    borderColor: specularBorder,
-                  },
-                ]}
-                onPress={handleCall}
-                hitSlop={4}
-                accessibilityRole="button"
-                accessibilityLabel="Telefono shitësin"
-              >
-                <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text
-                  style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  Telefono
-                </Text>
-              </TactilePressable>
+              {hasAnyPhone ? (
+                <>
+                  {/* 1. Direct Phone / Voice Call Action */}
+                  <TactilePressable
+                    activeScale={0.93}
+                    haptic="medium"
+                    style={[
+                      styles.actionCallBtn,
+                      {
+                        backgroundColor: colors.surfaceSubtle,
+                        borderColor: specularBorder,
+                      },
+                    ]}
+                    onPress={handleCall}
+                    hitSlop={4}
+                    accessibilityRole="button"
+                    accessibilityLabel="Telefono shitësin"
+                  >
+                    <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
+                    <Text
+                      style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      Telefono
+                    </Text>
+                  </TactilePressable>
 
-              {/* 2. WhatsApp Direct Action */}
-              <TactilePressable
-                activeScale={0.93}
-                haptic="medium"
-                style={styles.actionWhatsAppBtn}
-                onPress={() => handleWhatsApp()}
-                hitSlop={4}
-                accessibilityRole="button"
-                accessibilityLabel="Bisedo në WhatsApp"
-              >
-                <MessageCircle
-                  size={17}
-                  color="#FFFFFF"
-                  strokeWidth={2.4}
-                />
-                <Text
-                  style={styles.actionWhatsAppBtnText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
+                  {/* 2. WhatsApp Direct Action */}
+                  <TactilePressable
+                    activeScale={0.93}
+                    haptic="medium"
+                    style={styles.actionWhatsAppBtn}
+                    onPress={() => handleWhatsApp()}
+                    hitSlop={4}
+                    accessibilityRole="button"
+                    accessibilityLabel="Bisedo në WhatsApp"
+                  >
+                    <MessageCircle
+                      size={17}
+                      color="#FFFFFF"
+                      strokeWidth={2.4}
+                    />
+                    <Text
+                      style={styles.actionWhatsAppBtnText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      WhatsApp
+                    </Text>
+                  </TactilePressable>
+                </>
+              ) : (
+                /* No phone number provided: show ONLY in-app voice call */
+                <TactilePressable
+                  activeScale={0.93}
+                  haptic="medium"
+                  style={[
+                    styles.actionCallBtn,
+                    {
+                      backgroundColor: colors.surfaceSubtle,
+                      borderColor: specularBorder,
+                    },
+                  ]}
+                  onPress={handleInAppCall}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityLabel="Thirr në aplikacion"
                 >
-                  WhatsApp
-                </Text>
-              </TactilePressable>
+                  <PhoneCall size={17} color={colors.textPrimary} strokeWidth={2.2} />
+                  <Text
+                    style={[styles.actionCallBtnText, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    Thirr në App
+                  </Text>
+                </TactilePressable>
+              )}
 
               {/* 3. In-App Direct Chat Primary Action ("Bisedo") */}
               <TactilePressable

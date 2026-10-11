@@ -589,7 +589,35 @@ function startChannel(): void {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => scheduleConversationsReload({ messages: true, unread: true })
+        (payload: any) => {
+          if (payload?.new) {
+            const row = payload.new
+            const convoId = row.conversation_id
+            if (convoId) {
+              lastCache[convoId] = {
+                id: row.id,
+                sender_id: row.sender_id,
+                content: row.content || '',
+                created_at: row.created_at || new Date().toISOString(),
+                is_read: Boolean(row.is_read),
+              }
+              if (loadedUserId && row.sender_id !== loadedUserId) {
+                unreadCache[convoId] = (unreadCache[convoId] || 0) + 1
+              }
+              const meta = metaCache.find((m) => m.id === convoId)
+              if (meta) {
+                meta.updated_at = row.created_at || new Date().toISOString()
+              }
+              emit({
+                items: compose(),
+                unreadById: { ...unreadCache },
+                totalUnread: totalOf(unreadCache),
+              })
+            }
+          }
+          const hasMeta = metaCache.some((m) => m.id === payload?.new?.conversation_id)
+          scheduleConversationsReload({ meta: !hasMeta, messages: true, unread: true })
+        }
       )
       .on(
         'postgres_changes',
@@ -810,12 +838,19 @@ export function noteOutgoingMessage(
   senderId: string
 ): void {
   if (!conversationId || !senderId) return
+  const now = new Date().toISOString()
   lastCache[conversationId] = {
     id: `local-${Date.now().toString(36)}`,
     sender_id: senderId,
     content,
-    created_at: new Date().toISOString(),
-    is_read: false,
+    created_at: now,
+    is_read: true,
+  }
+  const meta = metaCache.find((m) => m.id === conversationId)
+  if (meta) {
+    meta.updated_at = now
+  } else {
+    scheduleConversationsReload({ meta: true, messages: true, unread: true })
   }
   emit({ items: compose() })
 }

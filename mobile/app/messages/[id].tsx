@@ -51,7 +51,11 @@ import {
   fetchOlderMessages,
   type ChatMessage,
 } from '@/lib/chat'
-import { markConversationReadLocally, noteOutgoingMessage } from '@/lib/conversations'
+import {
+  markConversationReadLocally,
+  noteOutgoingMessage,
+  getConversationsSnapshot,
+} from '@/lib/conversations'
 import { setOpenConversation } from '@/lib/notifications'
 import { getAvatarUri, getAvatarSource } from '@/lib/avatars'
 import { CallModal } from '@/components/CallModal'
@@ -93,7 +97,31 @@ const QUICK_REPLIES = [
 ]
 
 export default function ChatConversationScreen() {
-  const { id, initialText } = useLocalSearchParams<{ id: string; initialText?: string }>()
+  const {
+    id,
+    initialText,
+    counterpartName,
+    counterpartAvatar: counterpartAvatarParam,
+    counterpartId,
+    counterpartPhone,
+    isAgency: isAgencyParam,
+    emailVerified: emailVerifiedParam,
+    listingId,
+    listingTitle,
+    listingImage,
+  } = useLocalSearchParams<{
+    id: string
+    initialText?: string
+    counterpartName?: string
+    counterpartAvatar?: string
+    counterpartId?: string
+    counterpartPhone?: string
+    isAgency?: string
+    emailVerified?: string
+    listingId?: string
+    listingTitle?: string
+    listingImage?: string
+  }>()
   const router = useRouter()
   const { colors, theme } = useTheme()
   const insets = useSafeAreaInsets()
@@ -118,8 +146,67 @@ export default function ChatConversationScreen() {
 
   const syncUser = getSyncAuthUser()
   const [currentUserId, setCurrentUserId] = useState<string | null>(() => syncUser?.id || null)
-  const [otherUser, setOtherUser] = useState<OtherUser | null>(null)
-  const [listing, setListing] = useState<ListingPreview | null>(null)
+
+  // Frame-0 Instant Hydration: Seed counterpart data from route params or in-memory snapshot
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(() => {
+    if (counterpartName || counterpartId) {
+      const nameParts = (counterpartName || '').trim().split(' ')
+      const firstName = nameParts[0] || 'Bisedë'
+      const lastName = nameParts.slice(1).join(' ')
+      return {
+        id: counterpartId || '',
+        first_name: firstName,
+        last_name: lastName,
+        avatar_url: counterpartAvatarParam || null,
+        phone: counterpartPhone || null,
+        is_agency: isAgencyParam === '1',
+        email_verified: emailVerifiedParam === '1',
+      }
+    }
+    const snapItem = getConversationsSnapshot().items.find((c) => c.id === id)
+    if (snapItem) {
+      const nameParts = (snapItem.counterpart_name || '').trim().split(' ')
+      const firstName = nameParts[0] || 'Bisedë'
+      const lastName = nameParts.slice(1).join(' ')
+      return {
+        id: snapItem.counterpart_id || '',
+        first_name: firstName,
+        last_name: lastName,
+        avatar_url: snapItem.counterpart_avatar || null,
+        phone: snapItem.counterpart_phone || null,
+        is_agency: snapItem.is_agency,
+        email_verified: snapItem.counterpart_email_verified,
+      }
+    }
+    return null
+  })
+
+  // Frame-0 Instant Hydration: Seed listing preview from route params or in-memory snapshot
+  const [listing, setListing] = useState<ListingPreview | null>(() => {
+    if (listingTitle || listingId) {
+      return {
+        id: listingId || '',
+        title: listingTitle || 'Pronë në Bleje Pronën',
+        price: 0,
+        city: 'Kosovë',
+        type: 'shitje',
+        images: listingImage ? [listingImage] : [],
+      }
+    }
+    const snapItem = getConversationsSnapshot().items.find((c) => c.id === id)
+    if (snapItem && snapItem.listing_title) {
+      return {
+        id: snapItem.listing_id || '',
+        title: snapItem.listing_title,
+        price: 0,
+        city: 'Kosovë',
+        type: 'shitje',
+        images: snapItem.listing_image ? [snapItem.listing_image] : [],
+      }
+    }
+    return null
+  })
+
   const [messages, setMessages] = useState<MessageItem[]>([])
   const [inputText, setInputText] = useState(initialText || '')
 
@@ -203,52 +290,43 @@ export default function ChatConversationScreen() {
     if (!id) return
     try {
       if (isMountedRef.current) setLoading(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
 
-      if (!isMountedRef.current) return
+      // Start fetching messages IMMEDIATELY in parallel with conversation metadata
+      const messagesPromise = fetchLatestMessages(id, CHAT_PAGE_SIZE)
 
-      if (!user) {
-        setLoading(false)
-        openLoginScreen(router, { redirectTo: `/messages/${id}` })
-        return
-      }
+      const metaPromise = (async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-      // Stable identity: avoids tearing down/rebuilding the realtime channel
-      // once per conversation open when the id was already synced.
-      setCurrentUserId((prev) => (prev === user.id ? prev : user.id))
+        if (!isMountedRef.current) return null
+        if (!user) {
+          openLoginScreen(router, { redirectTo: `/messages/${id}` })
+          return null
+        }
 
-      // 1. Fetch conversation details
-      const { data: convData, error: convErr } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          listing_id,
-          buyer_id,
-          seller_id,
-          listings ( id, title, price, city, type, images )
-        `)
-        .eq('id', id)
-        .single()
+        setCurrentUserId((prev) => (prev === user.id ? prev : user.id))
 
-      if (!isMountedRef.current) return
+        const { data: convData, error: convErr } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            listing_id,
+            buyer_id,
+            seller_id,
+            listings ( id, title, price, city, type, images )
+          `)
+          .eq('id', id)
+          .single()
 
-      if (convErr) {
-        console.warn('Load conversation error:', convErr.message)
-        return
-      }
+        if (!isMountedRef.current || convErr || !convData) return null
 
-      if (convData && isMountedRef.current) {
         const isBuyer = user.id === convData.buyer_id
         const counterpartId: string | undefined = isBuyer
           ? convData.seller_id
           : convData.buyer_id
 
-        let counterpart: any = null
         if (counterpartId) {
-          // Identity from profiles_public (RLS-safe for other users); phone
-          // resolves through the gated web route (profiles is owner-only).
           const [pubRes, session] = await Promise.all([
             supabase
               .from('profiles_public')
@@ -257,41 +335,29 @@ export default function ChatConversationScreen() {
               .maybeSingle(),
             supabase.auth.getSession(),
           ])
-          if (!isMountedRef.current) return
+          if (!isMountedRef.current) return null
           const pub = pubRes.data
           const contacts = await apiResolveContacts(
             session.data.session?.access_token ?? null,
             `userId=${encodeURIComponent(counterpartId)}`
           )
-          if (!isMountedRef.current) return
+          if (!isMountedRef.current) return null
           const priv = contacts?.phone ? { phone: contacts.phone } : null
           if (pub) {
-            counterpart = {
+            const fullName = `${pub.first_name || ''} ${pub.last_name || ''}`.trim()
+            const emailVerified = Boolean(pub.email_verified)
+            const isAgency =
+              emailVerified && /agjenci|real estate|invest|patundshm|group|shpk/i.test(fullName)
+            setOtherUser({
               id: pub.id,
-              first_name: pub.first_name,
-              last_name: pub.last_name,
-              avatar_url: pub.avatar_url,
-              email_verified: pub.email_verified,
+              first_name: pub.first_name || (isBuyer ? 'Shitësi' : 'Blerësi'),
+              last_name: pub.last_name || '',
               phone: priv?.phone ?? null,
-            }
+              avatar_url: pub.avatar_url,
+              is_agency: isAgency,
+              email_verified: emailVerified,
+            })
           }
-        }
-
-        if (counterpart) {
-          const fullName = `${counterpart.first_name || ''} ${counterpart.last_name || ''}`.trim()
-          const emailVerified = Boolean(counterpart.email_verified)
-          // Name-token agency detection only on verified accounts.
-          const isAgency =
-            emailVerified && /agjenci|real estate|invest|patundshm|group|shpk/i.test(fullName)
-          setOtherUser({
-            id: counterpart.id,
-            first_name: counterpart.first_name || (isBuyer ? 'Shitësi' : 'Blerësi'),
-            last_name: counterpart.last_name || '',
-            phone: counterpart.phone,
-            avatar_url: counterpart.avatar_url,
-            is_agency: isAgency,
-            email_verified: emailVerified,
-          })
         }
 
         if (convData.listings) {
@@ -305,25 +371,22 @@ export default function ChatConversationScreen() {
             images: Array.isArray(l.images) && l.images.length > 0 ? l.images : [],
           })
         }
+        return true
+      })()
+
+      // Await newest window of history and paint immediately
+      const page = await messagesPromise
+      if (isMountedRef.current && page) {
+        knownIdsRef.current = new Set(page.messages.map((m) => m.id))
+        cursorRef.current = page.cursor
+        setHasMoreHistory(page.hasMore)
+        setMessages(page.messages)
+        setLoading(false)
+        markConversationReadLocally(id)
+        readFlusherRef.current?.markSeen()
       }
 
-      // 2. Fetch ONLY the newest window of history (audit §4.1). This used to be
-      //    `select('*').order('created_at')` with no limit — a full download of
-      //    the thread on every open, growing without bound with its length.
-      const page = await fetchLatestMessages(id, CHAT_PAGE_SIZE)
-
-      if (!isMountedRef.current) return
-
-      knownIdsRef.current = new Set(page.messages.map((m) => m.id))
-      cursorRef.current = page.cursor
-      setHasMoreHistory(page.hasMore)
-      setMessages(page.messages)
-
-      // 3. Clear unread through the batched flusher: ONE coalesced bulk update
-      //    per burst, never one write per message (audit §4.3). The badge is
-      //    zeroed locally first so the list/tab react without waiting on it.
-      markConversationReadLocally(id)
-      readFlusherRef.current?.markSeen()
+      await metaPromise
     } catch (err: any) {
       console.warn('Error loading conversation:', err?.message || err)
     } finally {
@@ -331,7 +394,7 @@ export default function ChatConversationScreen() {
         setLoading(false)
       }
     }
-  }, [id])
+  }, [id, router])
 
   useEffect(() => {
     loadConversationData()

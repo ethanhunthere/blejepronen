@@ -249,6 +249,7 @@ export default function SettingsScreen() {
 
   // Privacy Settings
   const [privacy, setPrivacy] = useState({
+    isPrivate: false,
     showPhone: true,
     showSocials: true,
     showOnline: true,
@@ -410,7 +411,18 @@ export default function SettingsScreen() {
           setNotifications((prev) => ({ ...prev, ...meta.notifications }))
         }
         if (meta.privacy) {
-          setPrivacy((prev) => ({ ...prev, ...meta.privacy }))
+          setPrivacy((prev) => ({
+            ...prev,
+            ...meta.privacy,
+            isPrivate:
+              typeof meta.privacy.isPrivate === 'boolean'
+                ? meta.privacy.isPrivate
+                : typeof (meta as any).is_private === 'boolean'
+                ? (meta as any).is_private
+                : false,
+          }))
+        } else if (typeof (meta as any).is_private === 'boolean') {
+          setPrivacy((prev) => ({ ...prev, isPrivate: (meta as any).is_private }))
         }
 
         // Biometrics & Sound Preferences
@@ -485,6 +497,7 @@ export default function SettingsScreen() {
       // 2. Authoritative Supabase Auth Metadata Update - preserve existing user profile data
       const updatedMetadata = {
         ...existingMeta,
+        is_private: currentPrivacy.isPrivate,
         notifications: currentNotifications,
         privacy: currentPrivacy,
         biometric_lock: biometricLock,
@@ -511,6 +524,7 @@ export default function SettingsScreen() {
       }
       const freshProfile = {
         ...(syncProfile || {}),
+        is_private: currentPrivacy.isPrivate,
         notifications: currentNotifications,
         privacy: currentPrivacy,
       }
@@ -1584,6 +1598,32 @@ export default function SettingsScreen() {
                 </View>
 
                 <View style={styles.switchGroup}>
+                  {/* Public / Private Profile Toggle */}
+                  <View style={styles.switchRow}>
+                    <View style={styles.switchTextWrap}>
+                      <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>
+                        Profil Privat
+                      </Text>
+                      <Text style={[styles.switchDesc, { color: colors.textMuted }]}>
+                        {privacy.isPrivate
+                          ? 'Profili juaj është i fshehur nga kërkimi publik dhe shihet vetëm nga personat e autorizuar'
+                          : 'Profili juaj është publik dhe i dukshëm për të gjithë blerësit dhe agjentët'}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={privacy.isPrivate}
+                      onValueChange={(val) => {
+                        if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {})
+                        setPrivacy((p) => ({ ...p, isPrivate: val }))
+                        setHasUnsavedChanges(true)
+                      }}
+                      trackColor={{ false: colors.border, true: brandHighlight }}
+                      ios_backgroundColor={colors.border}
+                    />
+                  </View>
+
+                  <View style={[styles.switchDivider, { backgroundColor: specularBorder }]} />
+
                   <View style={styles.switchRow}>
                     <View style={styles.switchTextWrap}>
                       <Text style={[styles.switchTitle, { color: colors.textPrimary }]}>

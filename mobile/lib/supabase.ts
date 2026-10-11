@@ -240,7 +240,8 @@ let lastExchangedAt = 0
  * and in-app browser promises (openAuthSessionAsync in login.tsx / register.tsx).
  */
 export async function safeExchangeCodeForSession(
-  code: string
+  code: string,
+  options?: { flowId?: string }
 ): Promise<{ data: any; error: any }> {
   if (!code || typeof code !== 'string') {
     return { data: null, error: new Error('Kodi i autorizimit mungon.') }
@@ -276,11 +277,48 @@ export async function safeExchangeCodeForSession(
 
   const promise = (async () => {
     try {
-      const result = await supabase.auth.exchangeCodeForSession(code)
+      // Auto-discover flowId if not explicitly provided
+      let targetFlowId = options?.flowId
+      if (!targetFlowId) {
+        try {
+          const allKeys = await AsyncStorage.getAllKeys()
+          const flowSlotKey = allKeys.find(
+            (k) => k.includes('-flow-') && k.endsWith('-code-verifier')
+          )
+          if (flowSlotKey) {
+            const match = flowSlotKey.match(/-flow-([a-zA-Z0-9_-]+)-code-verifier$/)
+            if (match && match[1]) {
+              targetFlowId = match[1]
+            }
+          }
+        } catch {}
+      }
+
+      let result: any = null
+      if (targetFlowId) {
+        result = await (supabase.auth as any).exchangeCodeForSession(code, {
+          flowId: targetFlowId,
+        })
+      } else {
+        result = await supabase.auth.exchangeCodeForSession(code)
+      }
+
       if (!result.error) {
         lastExchangedCode = code
         lastExchangedAt = Date.now()
         return result
+      }
+
+      // If slotted exchange failed with invalid flow state, retry with standard legacy call
+      if (targetFlowId && result.error) {
+        try {
+          const fallback = await supabase.auth.exchangeCodeForSession(code)
+          if (!fallback.error) {
+            lastExchangedCode = code
+            lastExchangedAt = Date.now()
+            return fallback
+          }
+        } catch {}
       }
 
       // If Supabase returns "invalid flow state" or code expired/already used,

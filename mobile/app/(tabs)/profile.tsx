@@ -91,6 +91,16 @@ import { useLogout } from '@/context/LogoutContext'
 import { fetchFollowStats } from '@/lib/social-graph'
 import { FollowsModal } from '@/components/FollowsModal'
 
+let cachedProfileStats = {
+  listingsCount: 0,
+  savedCount: 0,
+  messagesCount: 0,
+}
+let cachedSocialStats = {
+  followersCount: 0,
+  followingCount: 0,
+}
+
 export default function ProfileScreen() {
 
   const router = useRouter()
@@ -108,7 +118,8 @@ export default function ProfileScreen() {
     }
     return null
   })
-  const [loading, setLoading] = useState(() => !isAuthCacheHydrated())
+  // Frame-0 instant paint: If syncUser is already present in cache, resolve immediately without blank skeleton
+  const [loading, setLoading] = useState(() => (syncUser ? false : !isAuthCacheHydrated()))
   const [deleting, setDeleting] = useState(false)
 
   // Imperative ScrollView reference and reset coordination
@@ -161,18 +172,11 @@ export default function ProfileScreen() {
     return unsubscribeAuth
   }, [resetViewportToTop])
 
-  // Live account metrics (active listings, saved favorites, open conversations)
-  const [stats, setStats] = useState({
-    listingsCount: 0,
-    savedCount: 0,
-    messagesCount: 0,
-  })
+  // Live account metrics seeded on frame 0 from cache
+  const [stats, setStats] = useState(() => cachedProfileStats)
 
-  // Social graph metrics (followers & following)
-  const [socialStats, setSocialStats] = useState({
-    followersCount: 0,
-    followingCount: 0,
-  })
+  // Social graph metrics seeded on frame 0 from cache
+  const [socialStats, setSocialStats] = useState(() => cachedSocialStats)
   const [followsModalVisible, setFollowsModalVisible] = useState(false)
   const [followsModalTab, setFollowsModalTab] = useState<'followers' | 'following'>('followers')
 
@@ -294,12 +298,16 @@ export default function ProfileScreen() {
       const savedCount = Object.keys(favs).filter((k) => favs[k]).length
       const messagesCount = convosRes.count || 0
 
-      setStats({ listingsCount, savedCount, messagesCount })
+      const nextStats = { listingsCount, savedCount, messagesCount }
+      cachedProfileStats = nextStats
+      setStats(nextStats)
       if (followRes) {
-        setSocialStats({
+        const nextSocial = {
           followersCount: followRes.followersCount ?? 0,
           followingCount: followRes.followingCount ?? 0,
-        })
+        }
+        cachedSocialStats = nextSocial
+        setSocialStats(nextSocial)
       }
     } catch (err) {
       console.warn('Fetch user stats notice:', err)
@@ -1381,8 +1389,9 @@ export default function ProfileScreen() {
                     style={[styles.heroEditBtnText, { color: colors.textPrimary }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
+                    minimumFontScale={0.85}
                   >
-                    Ndrysho Profilin & të Dhënat
+                    Ndrysho Profilin
                   </Text>
                 </View>
                 <ChevronRight size={15} color={colors.textMuted} />
@@ -2977,16 +2986,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 11,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 0.5,
+    minWidth: 0,
   },
   heroEditBtnLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
     flexShrink: 1,
+    minWidth: 0,
   },
   heroEditBtnText: {
     fontSize: 13,
@@ -2995,9 +3006,9 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   heroAvatarQuickBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     borderWidth: 0.5,
     alignItems: 'center',
     justifyContent: 'center',

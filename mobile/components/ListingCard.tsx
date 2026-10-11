@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics'
 import { useTheme, Fonts } from '@/constants/theme'
 import { Listing } from '@/lib/supabase'
 import { FavoriteButton } from '@/components/FavoriteButton'
-import { cardImageSource } from '@/lib/image-transform'
+import { cardImageSource, heroImageSource } from '@/lib/image-transform'
 
 interface ListingCardProps {
   listing: Listing
@@ -57,6 +57,12 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
       ]}
       onPress={() => {
         if (Platform.OS !== 'web') Haptics.selectionAsync()
+        if (listing.images && listing.images.length > 0) {
+          const heroUri = heroImageSource(listing.images[0])
+          if (typeof heroUri === 'string') {
+            Image.prefetch(heroUri)
+          }
+        }
         router.push(`/listings/${listing.id}` as any)
       }}
     >

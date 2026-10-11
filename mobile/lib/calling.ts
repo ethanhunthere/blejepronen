@@ -1,6 +1,7 @@
-import { Platform, Vibration } from 'react-native'
+import { Platform, Vibration, Alert } from 'react-native'
 import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { supabase } from './supabase'
+import { getSyncAuthUser } from './auth-cache'
 
 /**
  * Bleje Pronën — In-App Calling Engine (100% free, zero vendor lock-in)
@@ -36,6 +37,19 @@ function loadWebRTC(): WebRTCModule | null {
   if (webrtcLoadAttempted) return webrtc
   webrtcLoadAttempted = true
 
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && (window as any).RTCPeerConnection) {
+      webrtc = {
+        RTCPeerConnection: (window as any).RTCPeerConnection,
+        RTCSessionDescription: (window as any).RTCSessionDescription,
+        RTCIceCandidate: (window as any).RTCIceCandidate,
+        mediaDevices: (navigator as any)?.mediaDevices ?? null,
+      }
+      return webrtc
+    }
+    return null
+  }
+
   const isExpoGo =
     (Constants as any)?.executionEnvironment === ExecutionEnvironment.StoreClient ||
     (Constants as any)?.appOwnership === 'expo'
@@ -55,7 +69,7 @@ function loadWebRTC(): WebRTCModule | null {
       mediaDevices: m.mediaDevices ?? null,
     }
   } catch {
-    // Expo Go / web without support — calls disabled, app keeps running
+    // Expo Go without native WebRTC module — calls disabled, app keeps running
     webrtc = null
   }
   return webrtc
@@ -63,7 +77,6 @@ function loadWebRTC(): WebRTCModule | null {
 
 /** Whether in-app calling is available in the current runtime. */
 export function isCallingSupported(): boolean {
-  if (Platform.OS === 'web') return false
   return loadWebRTC() !== null
 }
 
@@ -305,7 +318,26 @@ class CallEngine {
 
   async startCall(peer: CallPeerInfo): Promise<void> {
     if (this.state.status !== 'idle' && this.state.status !== 'ended') return
-    if (!this.myUserId || !peer?.userId) return
+
+    if (!this.myUserId) {
+      this.myUserId = getSyncAuthUser()?.id ?? null
+      if (!this.myUserId) {
+        try {
+          const { data } = await supabase.auth.getSession()
+          this.myUserId = data.session?.user?.id ?? null
+        } catch {}
+      }
+    }
+
+    if (!this.myUserId) {
+      Alert.alert('Kyçja Kërkohet', 'Ju lutemi kyçuni në llogari për të realizuar thirrje.')
+      return
+    }
+
+    if (!peer?.userId) {
+      Alert.alert('Vërejtje', 'Përdoruesi nuk është i disponueshëm për thirrje në këtë moment.')
+      return
+    }
 
     // Expo Go / web: WebRTC native module is absent — show a graceful notice
     if (!isCallingSupported()) {

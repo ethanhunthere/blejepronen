@@ -218,6 +218,7 @@ export async function POST(request: Request) {
           twitter,
           notifications,
           privacy,
+          is_private: typeof privacy?.isPrivate === 'boolean' ? privacy.isPrivate : Boolean(user.user_metadata?.is_private),
         },
       })
     } catch (e) {
