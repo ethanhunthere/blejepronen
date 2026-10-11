@@ -85,6 +85,9 @@ export function PropertyFilterBar({
                   { color: isActive ? colors.textPrimary : colors.textMuted },
                   isActive && { fontFamily: Fonts.bold },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {label}
               </Text>
@@ -107,6 +110,7 @@ export function PropertyFilterBar({
           return (
             <Pressable
               key={item.id}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               style={[
                 styles.categoryPill,
                 {
@@ -173,7 +177,9 @@ const styles = StyleSheet.create({
   },
   transactionTab: {
     flex: 1,
+    minWidth: 0,
     paddingVertical: 9,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 11,
@@ -191,6 +197,8 @@ const styles = StyleSheet.create({
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
     gap: 7,
     paddingHorizontal: 13,
     paddingVertical: 8.5,

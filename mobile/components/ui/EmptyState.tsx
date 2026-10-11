@@ -151,7 +151,12 @@ function EmptyStateComponent({
             pressed && styles.actionPressed,
           ]}
         >
-          <Text style={[styles.actionLabel, { color: semantic.textInverse }]} numberOfLines={1}>
+          <Text
+            style={[styles.actionLabel, { color: semantic.textInverse }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {actionLabel}
           </Text>
         </Pressable>
@@ -203,6 +208,8 @@ const styles = StyleSheet.create({
   },
   action: {
     marginTop: Spacing.s8,
+    minHeight: 44,
+    minWidth: 120,
     paddingHorizontal: Spacing.s18,
     paddingVertical: Spacing.s10,
     alignItems: 'center',

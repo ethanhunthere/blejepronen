@@ -120,7 +120,7 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
             accessibilityRole="button"
           >
             <Lock size={16} color={colors.primary} />
-            <Text style={[styles.loginText, { color: colors.primary }]}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.loginText, { color: colors.primary }]}>
               Kyçuni për të ruajtur kërkimet
             </Text>
           </Pressable>
@@ -165,7 +165,7 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
             ) : (
               <>
                 <Bookmark size={16} color="#FFFFFF" />
-                <Text style={[styles.saveBtnText, { color: colors.chipTextActive }]}>Ruaj kërkimin aktual</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.saveBtnText, { color: colors.chipTextActive }]}>Ruaj kërkimin aktual</Text>
               </>
             )}
           </Pressable>
@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     minHeight: 48,
+    paddingHorizontal: 16,
     borderRadius: 14,
     marginTop: 4,
   },

@@ -1460,6 +1460,7 @@ export default function ProfileScreen() {
                   style={[styles.guestPrimaryBtnText, { color: primaryBtnText }]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                 >
                   Kyçu
                 </Text>
@@ -1480,6 +1481,7 @@ export default function ProfileScreen() {
                   style={[styles.guestSecondaryBtnText, { color: colors.textPrimary }]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                 >
                   Regjistrohu
                 </Text>

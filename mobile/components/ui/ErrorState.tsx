@@ -149,7 +149,12 @@ function ErrorStateComponent({
             pressed && styles.retryPressed,
           ]}
         >
-          <Text style={[styles.retryLabel, { color: semantic.text }]} numberOfLines={1}>
+          <Text
+            style={[styles.retryLabel, { color: semantic.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {retryLabel}
           </Text>
         </Pressable>
@@ -205,6 +210,8 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(FontSizes.subhead * 1.35),
   },
   retry: {
+    minHeight: 44,
+    minWidth: 120,
     paddingHorizontal: Spacing.s18,
     paddingVertical: Spacing.s10,
     alignItems: 'center',

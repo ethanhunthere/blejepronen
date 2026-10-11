@@ -1165,6 +1165,8 @@ export default function ShpalljetEMiaScreen() {
                 <Text
                   style={[styles.actionBtnText, isCompact && { fontSize: 11.5 }, { color: '#EF4444' }]}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                 >
                   {isCompact ? 'Hiq Ruajtjen' : 'Hiq nga Të Ruajturat'}
                 </Text>
@@ -1383,6 +1385,8 @@ export default function ShpalljetEMiaScreen() {
                             { color: '#6B7280' },
                           ]}
                           numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           {isCompact ? 'Ndalo' : 'Ndalo përkohësisht'}
                         </Text>
@@ -1412,6 +1416,8 @@ export default function ShpalljetEMiaScreen() {
                         { color: '#EF4444' },
                       ]}
                       numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
                     >
                       {item.type === 'qira'
                         ? isCompact
@@ -1450,6 +1456,8 @@ export default function ShpalljetEMiaScreen() {
                           { color: '#10B981' },
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
                       >
                         {isSold ? 'Rikthe në Treg' : 'Rikthe Aktive'}
                       </Text>

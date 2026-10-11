@@ -707,6 +707,7 @@ export default function CompletoProfilinScreen() {
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Individual
               </Text>
@@ -747,6 +748,7 @@ export default function CompletoProfilinScreen() {
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Kompani / Agjenci
               </Text>
@@ -1374,10 +1376,12 @@ const styles = StyleSheet.create({
   },
   segmentItem: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
+    paddingHorizontal: 4,
     borderRadius: 12,
     gap: 8,
   },

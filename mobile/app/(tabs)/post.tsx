@@ -593,7 +593,7 @@ export default function PostPropertyScreen() {
                 onPress={() => openLoginScreen(router, { redirectTo: '/(tabs)/post', reason: 'post' })}
               >
                 <LogIn size={18} color={gateBtnText} strokeWidth={2.2} />
-                <Text style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.gatePrimaryBtnText, { color: gateBtnText }]}>
                   Kyçu
                 </Text>
               </Pressable>
@@ -606,7 +606,7 @@ export default function PostPropertyScreen() {
                 onPress={() => openRegisterScreen(router, { redirectTo: '/(tabs)/post', reason: 'post' })}
               >
                 <UserPlus size={18} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.gateSecondaryBtnText, { color: colors.textPrimary }]}>
                   Regjistrohu
                 </Text>
               </Pressable>
@@ -1169,6 +1169,9 @@ export default function PostPropertyScreen() {
             <ActivityIndicator color={theme === 'green' ? '#071C18' : '#FFFFFF'} />
           ) : (
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
               style={[
                 styles.submitButtonText,
                 { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
@@ -1488,6 +1491,9 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
   },
   submitButton: {
+    minHeight: 52,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
     borderRadius: 18,
     paddingVertical: 17,
     alignItems: 'center',
@@ -1552,6 +1558,7 @@ const styles = StyleSheet.create({
   gatePrimaryBtn: {
     height: 52,
     borderRadius: 16,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1568,6 +1575,7 @@ const styles = StyleSheet.create({
   gateSecondaryBtn: {
     height: 52,
     borderRadius: 16,
+    paddingHorizontal: 16,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',

@@ -170,6 +170,8 @@ export function SlidingTabSwitcher<T extends string>({
                     },
                   ]}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.78}
                 >
                   {tab.label}
                 </Text>
@@ -212,6 +214,7 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
@@ -222,7 +225,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
+    minWidth: 0,
+    width: '100%',
   },
   iconBox: {
     alignItems: 'center',

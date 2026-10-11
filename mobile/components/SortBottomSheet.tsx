@@ -178,11 +178,11 @@ export function SortBottomSheet({
               >
                 <ArrowDownUp size={16} color={activeAccent} strokeWidth={2.4} />
               </View>
-              <View>
-                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                   Renditja e pronave
                 </Text>
-                <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                <Text style={[styles.headerSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
                   Zgjidhni mënyrën se si dëshironi të shfaqen listimet
                 </Text>
               </View>
@@ -213,6 +213,7 @@ export function SortBottomSheet({
                     onPress={() => handleSelect(opt.id)}
                     activeScale={0.94}
                     haptic="selection"
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                   >
                     <Text
                       style={[
@@ -290,6 +291,7 @@ export function SortBottomSheet({
                           fontFamily: isSelected ? Fonts.bold : Fonts.semiBold,
                         },
                       ]}
+                      numberOfLines={1}
                     >
                       {opt.label}
                     </Text>
@@ -414,6 +416,8 @@ const styles = StyleSheet.create({
   quickChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+    minHeight: 34,
+    justifyContent: 'center',
     borderRadius: 10,
     borderWidth: 0.5,
   },

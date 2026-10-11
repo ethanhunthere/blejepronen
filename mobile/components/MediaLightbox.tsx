@@ -258,7 +258,7 @@ function LightboxChrome({
       accessibilityLabel={counterLabel}
     >
       {/* Header */}
-      <View style={[styles.chromeHeader, { paddingTop: insets.top + 10 }]} pointerEvents="box-none">
+      <View style={[styles.chromeHeader, { paddingTop: Math.max(insets.top, 16) + 10 }]} pointerEvents="box-none">
         <LinearGradient
           colors={['rgba(0, 0, 0, 0.62)', 'rgba(0, 0, 0, 0)']}
           style={styles.chromeGradient}
@@ -307,11 +307,11 @@ function LightboxChrome({
           pointerEvents="none"
         />
         {zoomCapable ? (
-          <Text style={styles.hintText} numberOfLines={1}>
+          <Text style={styles.hintText} numberOfLines={2}>
             Prek dy herë ose zmadho me dy gishta · Rrëshqit poshtë për ta mbyllur
           </Text>
         ) : (
-          <Text style={styles.hintText} numberOfLines={1}>
+          <Text style={styles.hintText} numberOfLines={2}>
             Rrëshqit majtas–djathtas për të ndërruar foton · Poshtë për ta mbyllur
           </Text>
         )}

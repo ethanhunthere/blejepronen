@@ -2429,7 +2429,12 @@ export default function ListingDetailScreen() {
             <View style={styles.ownerBarContent}>
               <View style={styles.ownerBarLeft}>
                 <ShieldCheck size={18} color={brandHighlight} strokeWidth={2.4} />
-                <Text style={[styles.ownerBarTitle, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.ownerBarTitle, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
                   Kjo është prona juaj
                 </Text>
               </View>
@@ -3612,10 +3617,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
   },
   ownerBarTitle: {
     fontSize: 14,
     fontFamily: Fonts.bold,
+    flexShrink: 1,
   },
   ownerShareBtn: {
     flexDirection: 'row',

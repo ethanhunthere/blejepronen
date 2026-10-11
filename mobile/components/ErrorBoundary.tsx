@@ -99,12 +99,26 @@ export class ErrorBoundary extends Component<Props, State> {
             <View style={styles.buttonRow}>
               <Pressable style={styles.primaryBtn} onPress={this.handleRetry}>
                 <RefreshCw size={16} color="#071C18" strokeWidth={2.4} />
-                <Text style={styles.primaryBtnText}>Provo përsëri</Text>
+                <Text
+                  style={styles.primaryBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Provo përsëri
+                </Text>
               </Pressable>
 
               <Pressable style={styles.secondaryBtn} onPress={this.handleGoHome}>
                 <Home size={16} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.secondaryBtnText}>Kthehu në Kryefaqe</Text>
+                <Text
+                  style={styles.secondaryBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Kthehu në Kryefaqe
+                </Text>
               </Pressable>
             </View>
 
@@ -213,6 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     gap: 8,
   },
   primaryBtnText: {
@@ -230,6 +245,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     gap: 8,
   },
   secondaryBtnText: {

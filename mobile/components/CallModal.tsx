@@ -337,6 +337,9 @@ export function CallModal({
                     styles.heroTitle,
                     { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
                 >
                   Thirr në aplikacion
                 </Text>
@@ -382,10 +385,15 @@ export function CallModal({
                   <Phone size={17} color={colors.textPrimary} strokeWidth={2.2} />
                 </View>
                 <View style={styles.secondaryTextCol}>
-                  <Text style={[styles.secondaryTitle, { color: colors.textPrimary }]}>
+                  <Text
+                    style={[styles.secondaryTitle, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
                     Thirrje celulare
                   </Text>
-                  <Text style={[styles.secondarySub, { color: colors.textMuted }]}>
+                  <Text style={[styles.secondarySub, { color: colors.textMuted }]} numberOfLines={1}>
                     {cleanPhone}
                   </Text>
                 </View>
@@ -415,10 +423,15 @@ export function CallModal({
                   <MessageCircle size={18} color="#25D366" strokeWidth={2.4} />
                 </View>
                 <View style={styles.secondaryTextCol}>
-                  <Text style={[styles.secondaryTitle, { color: colors.textPrimary }]}>
+                  <Text
+                    style={[styles.secondaryTitle, { color: colors.textPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
                     WhatsApp
                   </Text>
-                  <Text style={[styles.secondarySub, { color: colors.textMuted }]}>
+                  <Text style={[styles.secondarySub, { color: colors.textMuted }]} numberOfLines={1}>
                     Bisedo drejtpërdrejt
                   </Text>
                 </View>

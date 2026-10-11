@@ -284,7 +284,12 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
           ) : (
             <>
               {renderIcon(20, '#FFFFFF')}
-              <Text style={styles.unlockButtonText}>
+              <Text
+                style={styles.unlockButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 Zhblloko me {verifyName}
               </Text>
             </>
@@ -347,6 +352,7 @@ const styles = StyleSheet.create({
     gap: 10,
     width: '100%',
     height: 52,
+    paddingHorizontal: 16,
     borderRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -368,5 +374,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Fonts.medium,
     textDecorationLine: 'underline',
+    textAlign: 'center',
   },
 })

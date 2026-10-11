@@ -706,6 +706,7 @@ export default function HomeScreen() {
                       strokeWidth={2.4}
                     />
                     <Text
+                      numberOfLines={1}
                       style={[
                         styles.sectionTitle,
                         { color: colors.textPrimary, marginBottom: 0 },
@@ -768,7 +769,7 @@ export default function HomeScreen() {
             {/* 5. Section Header & Dynamic Results Count */}
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                <Text numberOfLines={1} style={[styles.sectionTitle, { color: colors.textPrimary }]}>
                   {filters.city
                     ? `Prona në ${filters.city}`
                     : filters.category === 'all'
@@ -855,7 +856,7 @@ export default function HomeScreen() {
                     setFilters(DEFAULT_FILTER_STATE)
                   }}
                 >
-                  <Text style={[styles.resetButtonText, { color: colors.primary }]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.resetButtonText, { color: colors.primary }]}>
                     Pastro të gjithë filtrat
                   </Text>
                 </TactilePressable>
@@ -1000,9 +1001,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 12,
   },
   featuredTitleRow: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -1133,10 +1137,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     marginTop: 12,
     marginBottom: 12,
   },
   sectionTitleRow: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1145,6 +1152,7 @@ const styles = StyleSheet.create({
     fontSize: 16.5,
     fontFamily: Fonts.bold,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   activeCategoryBadge: {
     paddingHorizontal: 8,
@@ -1179,6 +1187,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   resetButton: {
+    minHeight: 44,
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 12,

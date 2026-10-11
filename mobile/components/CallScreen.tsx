@@ -167,7 +167,12 @@ export function CallScreen() {
                 priority="high"
                 transition={0}
               />
-              <Text style={styles.name} numberOfLines={2}>
+              <Text
+                style={styles.name}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 {peer.name}
               </Text>
               <Text style={[styles.status, ended && styles.statusEnded]}>{statusText}</Text>
@@ -228,7 +233,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 64 : 44,
+    paddingTop: Platform.OS === 'ios' ? 24 : 16,
     paddingBottom: 28,
     maxWidth: 540,
     width: '100%',

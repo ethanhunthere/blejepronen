@@ -166,6 +166,8 @@ function BadgeComponent({
 
       <Text
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
         style={[
           styles.label,
           { fontSize: metrics.fontSize, color: tone.text },
@@ -194,5 +196,6 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: Typography.caption.fontFamily,
     letterSpacing: Tracking.t1,
+    flexShrink: 1,
   },
 })

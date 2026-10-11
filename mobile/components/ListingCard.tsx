@@ -287,7 +287,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 color={theme === 'green' ? colors.gold : colors.primary}
                 strokeWidth={2.2}
               />
-              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+              <Text numberOfLines={1} style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 {listing.area_m2} m²
               </Text>
             </View>
@@ -308,7 +308,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 color={theme === 'green' ? colors.gold : colors.primary}
                 strokeWidth={2.2}
               />
-              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+              <Text numberOfLines={1} style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 {listing.rooms} dhoma
               </Text>
             </View>
@@ -329,7 +329,7 @@ function ListingCardComponent({ listing, isFavorite = false, onToggleFavorite }:
                 color={theme === 'green' ? colors.gold : colors.primary}
                 strokeWidth={2.2}
               />
-              <Text style={[styles.specModuleText, { color: colors.textPrimary }]}>
+              <Text numberOfLines={1} style={[styles.specModuleText, { color: colors.textPrimary }]}>
                 Kati {listing.floor}
               </Text>
             </View>
@@ -558,6 +558,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 10,
     borderWidth: 0.5,
+    flexShrink: 1,
   },
   specModuleText: {
     fontSize: 11.5,

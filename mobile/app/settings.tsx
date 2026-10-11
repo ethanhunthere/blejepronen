@@ -895,8 +895,8 @@ export default function SettingsScreen() {
         </Pressable>
 
         <View style={styles.headerTitleWrap}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Cilësimet</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.headerTitle, { color: colors.textPrimary }]}>Cilësimet</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.headerSubtitle, { color: colors.textMuted }]}>
             {isCompany ? '🏢 Llogari Kompanie' : '👤 Llogari Individuale'}
           </Text>
         </View>
@@ -951,6 +951,9 @@ export default function SettingsScreen() {
               strokeWidth={activeTab === 'notifications' ? 2.4 : 2}
             />
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
               style={[
                 styles.tabButtonText,
                 {
@@ -973,6 +976,9 @@ export default function SettingsScreen() {
               strokeWidth={activeTab === 'security' ? 2.4 : 2}
             />
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
               style={[
                 styles.tabButtonText,
                 {
@@ -995,6 +1001,9 @@ export default function SettingsScreen() {
               strokeWidth={activeTab === 'app' ? 2.4 : 2}
             />
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
               style={[
                 styles.tabButtonText,
                 {
@@ -2092,6 +2101,8 @@ const styles = StyleSheet.create({
   },
   headerTitleWrap: {
     flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 6,
     alignItems: 'center',
   },
   headerTitle: {
@@ -2129,11 +2140,13 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 11,
   },
   tabButtonActive: {

@@ -11,7 +11,7 @@ export default function NotFoundScreen() {
   const router = useRouter()
 
   return (
-    <View style={[styles.safe, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View style={[styles.safe, { backgroundColor: colors.background, paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 16) }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View
@@ -68,6 +68,7 @@ export default function NotFoundScreen() {
               ]}
               numberOfLines={1}
               adjustsFontSizeToFit
+              minimumFontScale={0.8}
             >
               Kthehu në Kryefaqe
             </Text>
@@ -128,6 +129,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 48,
     borderRadius: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -141,5 +143,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontSize: 14.5,
     fontFamily: Fonts.bold,
+    flexShrink: 1,
   },
 })

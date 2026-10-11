@@ -847,7 +847,12 @@ export default function ChatConversationScreen() {
             />
 
             <View style={styles.headerInfo}>
-              <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
+              <Text
+                style={[styles.headerName, { color: colors.textPrimary }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {otherUser ? `${otherUser.first_name} ${otherUser.last_name}`.trim() : 'Bisedë'}
               </Text>
               {otherUser?.email_verified ? (
@@ -857,7 +862,12 @@ export default function ChatConversationScreen() {
                   ) : (
                     <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
                   )}
-                  <Text style={[styles.verifiedText, { color: colors.primary }]}>
+                  <Text
+                    style={[styles.verifiedText, { color: colors.primary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
                     {otherUser?.is_agency ? 'Agjenci e Konfirmuar' : 'Profil i Konfirmuar'}
                   </Text>
                 </View>
@@ -922,10 +932,11 @@ export default function ChatConversationScreen() {
                     styles.listingPrice,
                     { color: theme === 'green' ? colors.gold : colors.primary },
                   ]}
+                  numberOfLines={1}
                 >
                   {formatPrice(listing.price)}
                 </Text>
-                <Text style={[styles.listingCity, { color: colors.textMuted }]}>• {listing.city}</Text>
+                <Text style={[styles.listingCity, { color: colors.textMuted }]} numberOfLines={1}>• {listing.city}</Text>
               </View>
             </View>
             <View style={[styles.listingViewPill, { backgroundColor: colors.primaryLight }]}>
@@ -1016,9 +1027,12 @@ export default function ChatConversationScreen() {
                   styles.quickReplyChip,
                   { backgroundColor: colors.surface, borderColor: colors.border },
                 ]}
+                hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                 onPress={() => handleSendMessage(text)}
               >
-                <Text style={[styles.quickReplyText, { color: colors.textPrimary }]}>{text}</Text>
+                <Text style={[styles.quickReplyText, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {text}
+                </Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -1127,32 +1141,60 @@ export default function ChatConversationScreen() {
         </View>
 
         <View style={styles.sheetGrid}>
-          <Pressable style={styles.sheetOption} onPress={handleTakePhoto}>
+          <Pressable style={styles.sheetOption} onPress={handleTakePhoto} hitSlop={6}>
             <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
               <Camera size={22} color="#3B82F6" strokeWidth={2.2} />
             </View>
-            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Kamerë</Text>
+            <Text
+              style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Kamerë
+            </Text>
           </Pressable>
 
-          <Pressable style={styles.sheetOption} onPress={handlePickImage}>
+          <Pressable style={styles.sheetOption} onPress={handlePickImage} hitSlop={6}>
             <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
               <ImageIcon size={22} color="#10B981" strokeWidth={2.2} />
             </View>
-            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Galeri</Text>
+            <Text
+              style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Galeri
+            </Text>
           </Pressable>
 
-          <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt}>
+          <Pressable style={styles.sheetOption} onPress={handleSendOfferPrompt} hitSlop={6}>
             <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(234, 179, 8, 0.12)' }]}>
               <DollarSign size={22} color="#EAB308" strokeWidth={2.2} />
             </View>
-            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Ofertë</Text>
+            <Text
+              style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Ofertë
+            </Text>
           </Pressable>
 
-          <Pressable style={styles.sheetOption} onPress={handleSendTourRequest}>
+          <Pressable style={styles.sheetOption} onPress={handleSendTourRequest} hitSlop={6}>
             <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(168, 85, 247, 0.12)' }]}>
               <Calendar size={22} color="#A855F7" strokeWidth={2.2} />
             </View>
-            <Text style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}>Vizitë</Text>
+            <Text
+              style={[styles.sheetOptionLabel, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Vizitë
+            </Text>
           </Pressable>
         </View>
       </DraggableBottomSheet>
@@ -1278,6 +1320,7 @@ const styles = StyleSheet.create({
   },
   listingDetails: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   listingTitle: {
@@ -1287,6 +1330,7 @@ const styles = StyleSheet.create({
   listingSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
     gap: 6,
   },
   listingPrice: {
@@ -1422,6 +1466,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 34,
+    justifyContent: 'center',
   },
   quickReplyText: {
     fontSize: 12,
@@ -1497,6 +1543,7 @@ const styles = StyleSheet.create({
   },
   sheetOption: {
     alignItems: 'center',
+    minWidth: 0,
     gap: 8,
   },
   sheetOptionIcon: {

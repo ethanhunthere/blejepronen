@@ -97,6 +97,8 @@ const TabBarItemContent = React.memo(function TabBarItemContent({
           },
         ]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
       >
         {title}
       </Text>
@@ -136,6 +138,8 @@ const PostTabBarItem = React.memo(function PostTabBarItem({ focused }: { focused
           },
         ]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
       >
         Posto
       </Text>

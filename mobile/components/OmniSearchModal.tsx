@@ -381,6 +381,7 @@ export function OmniSearchContent({
             if (Platform.OS !== 'web') Haptics.selectionAsync()
             setActiveTab(item.key as any)
           }}
+          hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
           style={[
             styles.tabPill,
             {
@@ -390,6 +391,7 @@ export function OmniSearchContent({
           ]}
         >
           <Text
+            numberOfLines={1}
             style={[
               styles.tabPillText,
               {
@@ -625,7 +627,7 @@ export function OmniSearchContent({
             hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
             style={styles.cancelBtn}
           >
-            <Text style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.cancelText, { color: colors.primary }]}>Anulo</Text>
           </Pressable>
         </View>
       </View>
@@ -927,6 +929,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 12,
     borderWidth: 0.5,
+    minHeight: 34,
+    justifyContent: 'center',
   },
   tabPillText: {
     fontSize: 12.5,

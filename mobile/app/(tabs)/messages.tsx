@@ -245,6 +245,7 @@ export default function MessagesScreen() {
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Bisedat
               </Text>
@@ -289,6 +290,7 @@ export default function MessagesScreen() {
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Kontaktet
               </Text>
@@ -361,7 +363,7 @@ export default function MessagesScreen() {
                 onPress={() => openLoginScreen(router, { redirectTo: '/(tabs)/messages', reason: 'chat' })}
               >
                 <LogIn size={16} color={primaryBtnText} strokeWidth={2.2} />
-                <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit>
+                <Text style={[styles.loginBtnText, { color: primaryBtnText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   Kyçu
                 </Text>
               </Pressable>
@@ -374,7 +376,7 @@ export default function MessagesScreen() {
                 onPress={() => openRegisterScreen(router, { redirectTo: '/(tabs)/messages', reason: 'chat' })}
               >
                 <UserPlus size={16} color={colors.textPrimary} strokeWidth={2.2} />
-                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+                <Text style={[styles.registerBtnText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                   Regjistrohu
                 </Text>
               </Pressable>
@@ -814,6 +816,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 7,
+    paddingHorizontal: 4,
     borderRadius: 10,
     gap: 6,
   },

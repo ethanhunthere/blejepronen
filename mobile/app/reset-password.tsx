@@ -91,7 +91,7 @@ export default function ResetPasswordScreen() {
               onPress={() => router.replace('/login')}
               accessibilityRole="button"
             >
-              <Text style={[styles.ctaText, { color: colors.chipTextActive }]}>Vazhdo te Hyrja</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.ctaText, { color: colors.chipTextActive }]}>Vazhdo te Hyrja</Text>
             </Pressable>
           </View>
         ) : (
@@ -146,7 +146,7 @@ export default function ResetPasswordScreen() {
               disabled={saving}
               accessibilityRole="button"
             >
-              <Text style={[styles.ctaText, { color: colors.chipTextActive }]}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.ctaText, { color: colors.chipTextActive }]}>
                 {saving ? 'Duke ruajtur…' : 'Ruaj fjalëkalimin'}
               </Text>
             </Pressable>
@@ -196,6 +196,7 @@ const styles = StyleSheet.create({
   cta: {
     minHeight: 52,
     borderRadius: 16,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

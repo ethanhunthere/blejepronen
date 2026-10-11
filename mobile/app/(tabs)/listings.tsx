@@ -779,7 +779,7 @@ export default function ListingsScreen() {
                 setFilters(DEFAULT_FILTER_STATE)
               }}
             >
-              <Text style={[styles.resetButtonText, { color: colors.primary }]}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.resetButtonText, { color: colors.primary }]}>
                 Pastro të gjithë filtrat
               </Text>
             </TactilePressable>
@@ -1011,6 +1011,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   resetButton: {
+    minHeight: 44,
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 12,

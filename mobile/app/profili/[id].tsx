@@ -541,11 +541,21 @@ export default function PublicProfileScreen() {
         </Pressable>
 
         <View style={styles.headerTitleCenter}>
-          <Text style={[styles.headerTitleText, { color: colors.textPrimary }]} numberOfLines={1}>
+          <Text
+            style={[styles.headerTitleText, { color: colors.textPrimary }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {loading ? 'Profili' : displayName}
           </Text>
           {!loading && (
-            <Text style={[styles.headerSubtitleText, { color: colors.textMuted }]} numberOfLines={1}>
+            <Text
+              style={[styles.headerSubtitleText, { color: colors.textMuted }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {isCompany ? 'Agjenci Imobiliare' : 'Llogari Personale'}
             </Text>
           )}
@@ -711,6 +721,8 @@ export default function PublicProfileScreen() {
                   <Text
                     style={[styles.companyNameText, { color: colors.textPrimary }]}
                     numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
                   >
                     {displayName}
                   </Text>
@@ -1118,6 +1130,7 @@ export default function PublicProfileScreen() {
                           },
                         ],
                       ]}
+                      hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                       onPress={() => {
                         if (Platform.OS !== 'web') Haptics.selectionAsync()
                         setActiveFilter('all')
@@ -1135,6 +1148,9 @@ export default function PublicProfileScreen() {
                               activeFilter === 'all' ? Fonts.bold : Fonts.medium,
                           },
                         ]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
                       >
                         Të gjitha ({listings.length})
                       </Text>
@@ -1152,6 +1168,7 @@ export default function PublicProfileScreen() {
                             },
                           ],
                         ]}
+                        hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                         onPress={() => {
                           if (Platform.OS !== 'web') Haptics.selectionAsync()
                           setActiveFilter('shitje')
@@ -1169,6 +1186,9 @@ export default function PublicProfileScreen() {
                                 activeFilter === 'shitje' ? Fonts.bold : Fonts.medium,
                             },
                           ]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           Shitje ({countSales})
                         </Text>
@@ -1187,6 +1207,7 @@ export default function PublicProfileScreen() {
                             },
                           ],
                         ]}
+                        hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                         onPress={() => {
                           if (Platform.OS !== 'web') Haptics.selectionAsync()
                           setActiveFilter('qira')
@@ -1204,6 +1225,9 @@ export default function PublicProfileScreen() {
                                 activeFilter === 'qira' ? Fonts.bold : Fonts.medium,
                             },
                           ]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           Qira ({countRentals})
                         </Text>
@@ -1322,6 +1346,8 @@ export default function PublicProfileScreen() {
                   <Text
                     style={[styles.personalNameText, { color: colors.textPrimary }]}
                     numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
                   >
                     {displayName}
                   </Text>
@@ -1629,6 +1655,7 @@ export default function PublicProfileScreen() {
                           },
                         ],
                       ]}
+                      hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                       onPress={() => setActiveFilter('all')}
                     >
                       <Text
@@ -1639,6 +1666,9 @@ export default function PublicProfileScreen() {
                             fontFamily: activeFilter === 'all' ? Fonts.bold : Fonts.medium,
                           },
                         ]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
                       >
                         Të gjitha
                       </Text>
@@ -1656,6 +1686,7 @@ export default function PublicProfileScreen() {
                             },
                           ],
                         ]}
+                        hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                         onPress={() => setActiveFilter('shitje')}
                       >
                         <Text
@@ -1666,6 +1697,9 @@ export default function PublicProfileScreen() {
                               fontFamily: activeFilter === 'shitje' ? Fonts.bold : Fonts.medium,
                             },
                           ]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           Shitje ({countSales})
                         </Text>
@@ -1684,6 +1718,7 @@ export default function PublicProfileScreen() {
                             },
                           ],
                         ]}
+                        hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
                         onPress={() => setActiveFilter('qira')}
                       >
                         <Text
@@ -1694,6 +1729,9 @@ export default function PublicProfileScreen() {
                               fontFamily: activeFilter === 'qira' ? Fonts.bold : Fonts.medium,
                             },
                           ]}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
                         >
                           Qira ({countRentals})
                         </Text>
@@ -1793,6 +1831,7 @@ const styles = StyleSheet.create({
   },
   headerTitleCenter: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
@@ -1880,6 +1919,7 @@ const styles = StyleSheet.create({
   },
   identityDetails: {
     flex: 1,
+    minWidth: 0,
     gap: 6,
   },
   companyNameText: {
@@ -2170,11 +2210,15 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     padding: 2.5,
     gap: 2,
+    minWidth: 0,
   },
   filterSegmentBtn: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    minWidth: 0,
+    minHeight: 34,
+    justifyContent: 'center',
   },
   filterSegmentActive: {
     borderWidth: 0.5,

@@ -739,7 +739,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <LogIn size={18} color={primaryBtnText} strokeWidth={2.4} />
-                  <Text style={[styles.primarySubmitText, { color: primaryBtnText }]}>Kyçu</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.primarySubmitText, { color: primaryBtnText }]}>Kyçu</Text>
                 </>
               )}
             </TactilePressable>
@@ -772,7 +772,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <GoogleLogo size={19} />
-                  <Text style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
                     Vazhdo me Google
                   </Text>
                 </>
@@ -801,7 +801,7 @@ export default function LoginScreen() {
                       size={18}
                       color={isDark ? '#FFFFFF' : '#000000'}
                     />
-                    <Text style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
                       Vazhdo me Apple
                     </Text>
                   </>
@@ -827,7 +827,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <FacebookLogo size={19} />
-                  <Text style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.oauthBtnText, { color: colors.textPrimary }]}>
                     Vazhdo me Facebook
                   </Text>
                 </>
@@ -1017,6 +1017,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     gap: 11,
     height: 50,
     borderRadius: 14,
@@ -1026,6 +1027,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontFamily: Fonts.semiBold,
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
   switchAuthRow: {
     flexDirection: 'row',

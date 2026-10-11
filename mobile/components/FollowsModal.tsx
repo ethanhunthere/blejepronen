@@ -438,6 +438,9 @@ export function FollowsModal({
                       activeTab === 'followers' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Ndiqësit ({followersCount})
               </Text>
@@ -468,6 +471,9 @@ export function FollowsModal({
                       activeTab === 'following' ? Fonts.bold : Fonts.medium,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 Duke ndjekur ({followingCount})
               </Text>
@@ -626,6 +632,8 @@ const styles = StyleSheet.create({
   },
   tabBtn: {
     flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 4,
     paddingVertical: 12,
     alignItems: 'center',
     borderBottomWidth: 2.5,

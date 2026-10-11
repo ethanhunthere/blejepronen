@@ -1061,6 +1061,9 @@ export function PropertyFilterModal({
                   styles.applyBtnText,
                   { color: theme === 'green' ? '#071C18' : '#FFFFFF' },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {previewCount !== null
                   ? `Shiko ${previewCount} ${previewCount === 1 ? 'rezultat' : 'rezultate'}`
@@ -1466,6 +1469,7 @@ const styles = StyleSheet.create({
   applyBtn: {
     height: 50,
     borderRadius: 16,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

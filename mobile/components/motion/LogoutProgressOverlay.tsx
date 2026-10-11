@@ -178,10 +178,20 @@ export function LogoutProgressOverlay({
 
         {/* Typographic Stack: High-contrast title and refined subcopy */}
         <View style={styles.textStack}>
-          <Text style={[styles.title, { color: titleColor }]}>
+          <Text
+            style={[styles.title, { color: titleColor }]}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
             {title}
           </Text>
-          <Text style={[styles.subtitle, { color: subtitleColor }]}>
+          <Text
+            style={[styles.subtitle, { color: subtitleColor }]}
+            numberOfLines={3}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
             {subtitle}
           </Text>
         </View>

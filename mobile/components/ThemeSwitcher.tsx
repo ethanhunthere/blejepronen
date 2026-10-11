@@ -28,6 +28,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
           return (
             <Pressable
               key={m.id}
+              hitSlop={8}
               style={[
                 styles.compactBtn,
                 isActive && { backgroundColor: colors.chipActiveBg, shadowColor: '#000', shadowOpacity: 0.15 },
@@ -65,16 +66,17 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
               color={isActive ? colors.chipTextActive : colors.textMuted}
               strokeWidth={2.2}
             />
-            <Text
-              style={[
-                styles.optionLabel,
-                { color: isActive ? colors.chipTextActive : colors.textSecondary },
-              ]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {m.label}
-            </Text>
+              <Text
+                style={[
+                  styles.optionLabel,
+                  { color: isActive ? colors.chipTextActive : colors.textSecondary },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {m.label}
+              </Text>
           </Pressable>
         )
       })}
@@ -92,11 +94,13 @@ const styles = StyleSheet.create({
   },
   optionBtn: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 9,
+    paddingHorizontal: 4,
     borderRadius: 10,
   },
   optionLabel: {

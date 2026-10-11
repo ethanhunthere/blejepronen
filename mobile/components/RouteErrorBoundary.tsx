@@ -174,7 +174,12 @@ export function ErrorState({
               accessibilityLabel={retryLabel}
             >
               <RefreshCw size={16} color={onAccent} strokeWidth={2.4} />
-              <Text style={[styles.primaryBtnText, { color: onAccent, fontFamily: Fonts.bold }]}>
+              <Text
+                style={[styles.primaryBtnText, { color: onAccent, fontFamily: Fonts.bold }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {retryLabel}
               </Text>
             </Pressable>
@@ -196,6 +201,9 @@ export function ErrorState({
             <Home size={16} color={colors.textSecondary} strokeWidth={2.2} />
             <Text
               style={[styles.secondaryBtnText, { color: colors.textSecondary, fontFamily: Fonts.semiBold }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
             >
               {resetLabel}
             </Text>
@@ -492,6 +500,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -510,6 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
     gap: 8,
   },
   secondaryBtnText: {

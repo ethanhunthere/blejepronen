@@ -496,7 +496,7 @@ export function ReportListingSheet({
                   onPress={handleDismiss}
                   disabled={phase === 'sending'}
                 >
-                  <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>Anulo</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.cancelBtnText, { color: colors.textSecondary }]}>Anulo</Text>
                 </Pressable>
 
                 <Pressable
@@ -517,6 +517,9 @@ export function ReportListingSheet({
                         styles.submitBtnText,
                         { color: canSubmit ? '#FFFFFF' : colors.textMuted },
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
                     >
                       Dërgo raportin
                     </Text>
@@ -669,6 +672,8 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 4,
     height: 46,
     borderRadius: 14,
     alignItems: 'center',
@@ -677,6 +682,8 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
   submitBtn: {
     flex: 1.4,
+    minWidth: 0,
+    paddingHorizontal: 4,
     height: 46,
     borderRadius: 14,
     alignItems: 'center',
