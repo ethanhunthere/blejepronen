@@ -134,7 +134,7 @@ export function DraggableBottomSheet({
             backgroundColor: colors.surface,
             borderColor: colors.border,
             maxHeight,
-            paddingBottom: Math.max(insets.bottom + 8, 20),
+            paddingBottom: Math.max(insets.bottom + 16, 24),
             transform: [{ translateY: dragY }],
           },
           sheetStyle,

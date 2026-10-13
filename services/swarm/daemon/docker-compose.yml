@@ -1,0 +1,40 @@
+# ============================================================================
+# BLEJE PRONËN — DOCKER COMPOSE SWARM (PHASE 4)
+# File: services/swarm/daemon/docker-compose.yml
+#
+# Launches Supreme Commander Thanos and the 10 Marvel agents 24/7 with
+# isolated memory limits, log rotation, and restart policies.
+# ============================================================================
+
+version: '3.8'
+
+services:
+  thanos-swarm:
+    build:
+      context: ../../
+      dockerfile: services/swarm/daemon/Dockerfile
+    container_name: blejepronen-thanos-swarm
+    restart: unless-stopped
+    env_file:
+      - ../../.env.swarm
+    environment:
+      - NODE_ENV=production
+      - SWARM_ENVIRONMENT=production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2048M
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    volumes:
+      - swarm-logs:/app/var/logs
+
+volumes:
+  swarm-logs:
+    name: blejepronen-swarm-logs

@@ -90,72 +90,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="w-full bg-slate-50/70 px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20">
-        <div className="mx-auto max-w-[1400px]">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">
-              Si funksionon
-            </h2>
-            <p className="text-slate-600 text-[15px] sm:text-[16px] mt-2 font-normal">
-              Proces i drejtpërdrejtë dhe transparent midis blerësve dhe shitësve
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="relative bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200">
-              <div className="flex items-center justify-between mb-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-900 font-semibold text-sm">
-                  01
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
-                  Kërkim
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Kërko me saktësi
-              </h3>
-              <p className="text-[14px] leading-relaxed text-slate-600 font-normal">
-                Eksploro mijëra prona me filtra sipas qytetit, çmimit, sipërfaqes dhe tipologjisë në Kosovë, Shqipëri e Diasporë.
-              </p>
-            </div>
-
-            <div className="relative bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200">
-              <div className="flex items-center justify-between mb-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-900 font-semibold text-sm">
-                  02
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
-                  Komunikim
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Kontakto pa ndërmjetës
-              </h3>
-              <p className="text-[14px] leading-relaxed text-slate-600 font-normal">
-                Bisedo drejtpërdrejt me pronarin ose agjencinë përmes telefonatës ose mesazheve direkte pa komisione të fshehura.
-              </p>
-            </div>
-
-            <div className="relative bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200">
-              <div className="flex items-center justify-between mb-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-900 font-semibold text-sm">
-                  03
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
-                  Përfundim
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Mbyll marrëveshjen
-              </h3>
-              <p className="text-[14px] leading-relaxed text-slate-600 font-normal">
-                Cakto vizitën në pronë dhe negocio me kushte transparente dhe marrëveshje të qartë midis palëve.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Call to action */}
       <section className="relative overflow-hidden bg-[#004D43] px-4 sm:px-6 lg:px-8 2xl:px-12 py-16 sm:py-20 text-center">

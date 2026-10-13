@@ -404,10 +404,6 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
           from { opacity: 0; transform: translateX(-8px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 999px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
       `}</style>
     </div>
   )

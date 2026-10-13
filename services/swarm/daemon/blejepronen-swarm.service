@@ -1,0 +1,29 @@
+[Unit]
+Description=Bleje Pronën — Thanos Autonomous 24/7 Multi-Agent Swarm
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=f0id
+WorkingDirectory=/home/f0id/Downloads/blejepronen
+ExecStart=/usr/bin/npm run swarm
+Restart=always
+RestartSec=5s
+Environment=NODE_ENV=production
+Environment=SWARM_ENVIRONMENT=production
+EnvironmentFile=-/home/f0id/Downloads/blejepronen/.env.swarm
+
+# Resource Limits & Isolation
+MemoryMax=2.5G
+MemoryHigh=2.0G
+CPUQuota=150%
+LimitNOFILE=65535
+
+# Logging to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=blejepronen-swarm
+
+[Install]
+WantedBy=multi-user.target

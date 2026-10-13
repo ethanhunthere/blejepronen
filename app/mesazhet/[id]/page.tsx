@@ -660,11 +660,6 @@ export default function ChatPage() {
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 999px; }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
         .animate-fade-in { animation: fadeSlideUp 0.3s ease-out; }
       `}</style>
     </div>

@@ -551,6 +551,7 @@ export default function HomeScreen() {
                 }}
                 activeScale={0.94}
                 haptic="selection"
+                hitSlop={6}
               >
                 {Platform.OS === 'ios' && activeFiltersCount === 0 && (
                   <View style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }]}>
@@ -599,6 +600,7 @@ export default function HomeScreen() {
                 return (
                   <TactilePressable
                     key={city.id || 'all'}
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                     style={[
                       styles.cityChip,
                       {
@@ -985,8 +987,11 @@ const styles = StyleSheet.create({
   },
   cityChip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 12,
+    paddingVertical: 8,
+    minHeight: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 14,
     borderWidth: 0.5,
   },
   cityChipText: {

@@ -320,7 +320,7 @@ export function ReportListingSheet({
             styles.sheet,
             {
               backgroundColor: colors.surface,
-              paddingBottom: Math.max(insets.bottom, 16),
+              paddingBottom: Math.max(20, insets.bottom + 16),
               transform: [{ translateY: dragY }],
             },
           ]}

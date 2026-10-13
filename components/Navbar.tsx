@@ -21,7 +21,6 @@ import {
   Menu,
   Settings,
   ShieldCheck,
-  Search,
 } from 'lucide-react'
 import { MAJOR_CITIES } from '@/lib/cities'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -268,33 +267,6 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
    * are intentionally left unmarked.
    */
   const isActivePath = useCallback((href: string) => pathname === href.split('?')[0], [pathname])
-
-  // Scroll-aware search handoff: on the homepage the hero's inline SearchBar
-  // owns search while it's in view — the navbar trigger fades in only after
-  // the hero has scrolled past (Airbnb-style). Every other page keeps the
-  // trigger permanently visible. ⌘K / "/" shortcuts work either way.
-  const [heroOwnsSearch, setHeroOwnsSearch] = useState<boolean>(() => pathname === '/')
-
-  useEffect(() => {
-    if (pathname !== '/') {
-      setHeroOwnsSearch(false)
-      return
-    }
-    const hero = document.getElementById('home-hero')
-    if (!hero || typeof IntersectionObserver === 'undefined') {
-      setHeroOwnsSearch(false)
-      return
-    }
-    setHeroOwnsSearch(true)
-    const observer = new IntersectionObserver(
-      ([entry]) => setHeroOwnsSearch(entry.isIntersecting),
-      // Shrink the viewport top by the lg navbar height (h-16 = 64px) so the
-      // trigger reveals exactly when the hero's bottom clears the header.
-      { rootMargin: '-64px 0px 0px 0px', threshold: 0 }
-    )
-    observer.observe(hero)
-    return () => observer.disconnect()
-  }, [pathname])
   const unreadChannelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
 
   // Global Command+K and '/' shortcut listener
@@ -932,41 +904,8 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
             />
           </Link>
 
-          {/* Desktop Centered Search Trigger — hidden while the hero owns search */}
-          <div
-            className={`hidden lg:flex-1 lg:flex justify-center transition-all duration-300 ease-out ${
-              heroOwnsSearch ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => setIsOmniSearchOpen(true)}
-              className="relative inline-flex items-center justify-between gap-3 w-full max-w-xl h-10 sm:h-10.5 px-4 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/15 text-[#cceae8] hover:text-white border border-white/20 hover:border-white/30 transition-all duration-200 cursor-pointer text-[13.5px] font-medium group shadow-sm focus:outline-none focus:ring-2 focus:ring-[#C8B882]/50 focus:ring-offset-2 focus:ring-offset-[#00675B]"
-              aria-label="Kërko në Bleje Pronën"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <Search className="h-4 w-4 text-[#C8B882] group-hover:scale-105 transition-transform group-hover:text-white flex-shrink-0" />
-                <span className="hidden sm:inline truncate">Kërko prona, qytet, postkod…</span>
-              </div>
-              <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide bg-white/12 text-white/80 rounded-md border border-white/15 select-none pointer-events-none group-hover:text-white group-hover:bg-white/20 transition-colors">
-                ⌘K
-              </kbd>
-            </button>
-          </div>
-
           {/* Right nav section */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            {/* Mobile Search Button — hidden while the hero owns search */}
-            <button
-              type="button"
-              onClick={() => setIsOmniSearchOpen(true)}
-              className={`lg:hidden relative inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/35 border border-white/20 text-white shadow-sm transition-all cursor-pointer ${
-                heroOwnsSearch ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible'
-              }`}
-              aria-label="Kërko prona (⌘K / /)"
-            >
-              <Search className="h-4 w-4 text-white" />
-            </button>
 
             {/* Desktop Nav Links */}
             <div className="hidden lg:flex items-center gap-2">

@@ -99,7 +99,7 @@ export function SavedSearchesSheet({ visible, onClose, current, router }: SavedS
           styles.sheet,
           {
             backgroundColor: colors.surface,
-            paddingBottom: Math.max(16, insets.bottom),
+            paddingBottom: Math.max(20, insets.bottom + 16),
           },
         ]}
       >
