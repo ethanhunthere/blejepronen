@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { submitToIndexNow } from '@/lib/indexnow'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -56,6 +57,11 @@ export async function toggleListingStatus(listingId: string, nextActive: boolean
   revalidatePath('/admin')
   revalidatePath(`/listings/${listingId}`)
   revalidatePath('/')
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blejepronen.com'
+  submitToIndexNow([`${siteUrl}/listings/${listingId}`, `${siteUrl}/`]).catch((err) => {
+    console.warn('[IndexNow] Admin toggle notice:', err)
+  })
 }
 
 /**

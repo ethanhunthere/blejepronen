@@ -36,6 +36,7 @@ import {
   Trees,
   Warehouse,
   Check,
+  AlertCircle,
 } from 'lucide-react'
 import ListingImageGallery from '@/components/ListingImageGallery'
 import ExpandableText from '@/components/ExpandableText'
@@ -155,7 +156,6 @@ const getListing = cache(async (id: string) => {
       'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until,profiles:profiles_public(first_name,last_name,avatar_url,email_verified)'
     )
     .eq('id', id)
-    .eq('is_active', true)
     .single()
 
   if (!primaryRes.error) {
@@ -169,7 +169,6 @@ const getListing = cache(async (id: string) => {
       'id,title,description,price,city,neighborhood,address,rooms,area_m2,type,condition,floor,apartment_type,features,images,is_active,is_featured,created_at,user_id,updated_at,free_trial_until'
     )
     .eq('id', id)
-    .eq('is_active', true)
     .single()
 
   if (fallbackRes.error || !fallbackRes.data) {
@@ -267,19 +266,34 @@ const getSellerData = cache(async (userId: string) => {
 
 async function getSimilarListings(
   city: string,
-  excludeId: string
+  excludeId: string,
+  neighborhood?: string | null
 ): Promise<Listing[]> {
   const supabase = createPublicSupabaseClient()
+  if (neighborhood) {
+    const { data: hoodData } = await supabase
+      .from('listings')
+      .select('id,title,price,city,neighborhood,address,rooms,area_m2,type,images,is_featured')
+      .eq('city', city)
+      .eq('neighborhood', neighborhood)
+      .eq('is_active', true)
+      .neq('id', excludeId)
+      .order('created_at', { ascending: false })
+      .limit(6)
+
+    if (hoodData && hoodData.length >= 3) {
+      return (hoodData as Listing[]) || []
+    }
+  }
+
   const { data } = await supabase
     .from('listings')
-    .select(
-      'id,title,price,city,address,rooms,area_m2,type,images,is_featured'
-    )
+    .select('id,title,price,city,neighborhood,address,rooms,area_m2,type,images,is_featured')
     .eq('city', city)
     .eq('is_active', true)
     .neq('id', excludeId)
     .order('created_at', { ascending: false })
-    .limit(3)
+    .limit(6)
 
   return (data as Listing[]) || []
 }
@@ -364,11 +378,13 @@ const conditionLabels: Record<string, string> = {
 async function SimilarListingsSection({
   city,
   excludeId,
+  neighborhood,
 }: {
   city: string
   excludeId: string
+  neighborhood?: string | null
 }) {
-  const listings = await getSimilarListings(city, excludeId)
+  const listings = await getSimilarListings(city, excludeId, neighborhood)
 
   if (!listings || listings.length === 0) return null
 
@@ -387,7 +403,7 @@ function SimilarListingsSkeleton() {
   return (
     <section>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <ListingCardSkeleton key={i} />
         ))}
       </div>
@@ -483,6 +499,8 @@ export default async function ListingDetailPage({
       : null,
   })
 
+  const isInactive = listing.is_active === false
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-28 lg:pb-16">
       <ListingViewTracker listingId={listing.id} ownerId={listing.user_id} />
@@ -490,6 +508,28 @@ export default async function ListingDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
+
+      {isInactive && (
+        <div className="w-full bg-amber-50 border-b border-amber-200 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-amber-900">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <p className="text-sm font-semibold">
+                Kjo pronë është shitur ose është joaktive.
+                <span className="font-normal text-amber-800 ml-1">
+                  Shikoni më poshtë pronat aktive të ngjashme në {listing.neighborhood ? `${listing.neighborhood}, ` : ''}{listing.city}.
+                </span>
+              </p>
+            </div>
+            <Link
+              href={`/listings?city=${encodeURIComponent(listing.city)}`}
+              className="text-xs font-bold text-amber-900 underline hover:text-amber-950 shrink-0"
+            >
+              Eksploro të ngjashme
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ====== HEADER NAVIGATION & BREADCRUMB ====== */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-3">
@@ -885,25 +925,54 @@ export default async function ListingDetailPage({
 
           {/* ---- Right Column: Sticky Contact Sidebar (Desktop) ---- */}
           <aside className="hidden lg:block sticky top-20 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain scroll-mt-24">
-            <ContactSellerCard
-              price={priceStr}
-              pricePerSqm={pricePerSqm}
-              type={listing.type}
-              listingId={listing.id}
-              listingTitle={listing.title}
-              listingCity={listing.city}
-              socials={effectiveSocials}
-              trust={sellerTrust}
-              seller={{
-                firstName: listing.profiles?.first_name || '',
-                lastName: listing.profiles?.last_name || '',
-                avatarUrl: listing.profiles?.avatar_url || null,
-                emailVerified: listing.profiles?.email_verified || false,
-                userId: listing.user_id,
-                socials: effectiveSocials,
-                followersCount: sellerData.followersCount,
-              }}
-            />
+            {isInactive ? (
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex items-center gap-2 text-amber-800 bg-amber-50 rounded-xl px-3.5 py-2.5 border border-amber-200">
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span className="text-xs font-semibold">Pronë e Shitur / Joaktive</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Nuk e gjete pronën e duhur?
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Kërko me porosi në zonën e {listing.neighborhood ? `${listing.neighborhood}, ` : ''}{listing.city} dhe stafi ynë ju njofton sapo të shfaqet një opsion i ngjashëm.
+                  </p>
+                </div>
+                <Link
+                  href={`/kontakti?zone=${encodeURIComponent(listing.neighborhood || listing.city)}`}
+                  className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#005249] text-white text-xs font-semibold shadow-xs transition-colors"
+                >
+                  Kërko me porosi
+                </Link>
+                <Link
+                  href={`/listings?city=${encodeURIComponent(listing.city)}`}
+                  className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                >
+                  Shiko prona të tjera në {listing.city}
+                </Link>
+              </div>
+            ) : (
+              <ContactSellerCard
+                price={priceStr}
+                pricePerSqm={pricePerSqm}
+                type={listing.type}
+                listingId={listing.id}
+                listingTitle={listing.title}
+                listingCity={listing.city}
+                socials={effectiveSocials}
+                trust={sellerTrust}
+                seller={{
+                  firstName: listing.profiles?.first_name || '',
+                  lastName: listing.profiles?.last_name || '',
+                  avatarUrl: listing.profiles?.avatar_url || null,
+                  emailVerified: listing.profiles?.email_verified || false,
+                  userId: listing.user_id,
+                  socials: effectiveSocials,
+                  followersCount: sellerData.followersCount,
+                }}
+              />
+            )}
           </aside>
         </div>
       </div>
@@ -931,18 +1000,42 @@ export default async function ListingDetailPage({
         </div>
 
         <Suspense fallback={<SimilarListingsSkeleton />}>
-          <SimilarListingsSection city={listing.city} excludeId={listing.id} />
+          <SimilarListingsSection
+            city={listing.city}
+            excludeId={listing.id}
+            neighborhood={listing.neighborhood}
+          />
         </Suspense>
+
+        {/* High-Intent Lead Capture Card */}
+        <div className="mt-8 bg-gradient-to-r from-teal-50/80 to-emerald-50/80 border border-teal-200/80 rounded-2xl p-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between gap-6">
+          <div>
+            <h3 className="text-base font-bold text-slate-900">
+              Nuk e gjete pronën e duhur? Kërko me porosi në {listing.neighborhood || listing.city}
+            </h3>
+            <p className="text-xs text-slate-600 mt-1 max-w-xl">
+              Na trego çfarë banese ose toke kërkon dhe të njoftojmë sapo të postohet një pronë që plotëson kriteret e tua.
+            </p>
+          </div>
+          <Link
+            href={`/kontakti?zone=${encodeURIComponent(listing.neighborhood || listing.city)}`}
+            className="mt-4 sm:mt-0 shrink-0 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-[#00675B] hover:bg-[#005249] text-white text-xs font-semibold shadow-xs transition-colors"
+          >
+            Kërko me porosi
+          </Link>
+        </div>
       </div>
 
       {/* ====== MOBILE DOCK CONTACT BAR ====== */}
-      <MobileContactBar
-        price={priceStr}
-        pricePerSqm={pricePerSqm}
-        listingId={listing.id}
-        listingTitle={listing.title}
-        listingCity={listing.city}
-      />
+      {!isInactive && (
+        <MobileContactBar
+          price={priceStr}
+          pricePerSqm={pricePerSqm}
+          listingId={listing.id}
+          listingTitle={listing.title}
+          listingCity={listing.city}
+        />
+      )}
     </div>
   )
 }

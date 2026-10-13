@@ -57,9 +57,6 @@ export default async function CityTypeHub({ params }: PageProps) {
   if (!city || (type !== 'shitje' && type !== 'qira')) notFound()
 
   const { rows, total } = await fetchListingsServer({ city, type, limit: 24 })
-  // Thin-content governance: facets without real inventory are not landing pages.
-  if (total < 3) notFound()
-
   const stats = await fetchMarketStats(city)
 
   return (

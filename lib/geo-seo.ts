@@ -413,7 +413,7 @@ export function mapAmenityFeatures(features?: string[] | null) {
 }
 
 /**
- * Platform Schema: RealEstateAgent & Organization.
+ * Platform Schema: RealEstateAgent, Organization, WebSite, DefinedTermSet, and FAQPage.
  */
 export function buildPlatformSchema() {
   return [
@@ -450,6 +450,82 @@ export function buildPlatformSchema() {
         target: `${SITE_URL}/listings?search={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'DefinedTermSet',
+      '@id': `${SITE_URL}/#lexicon`,
+      name: 'Fjalori i Pasurive të Paluajtshme në Kosovë dhe Shqipëri',
+      description: 'Termat thelbësorë juridikë, kadastralë dhe teknikë për patundshmëritë në Kosovë dhe Shqipëri.',
+      hasDefinedTerm: [
+        {
+          '@type': 'DefinedTerm',
+          name: 'Termokos',
+          termCode: 'termokos',
+          description: 'Sistemi i ngrohjes qendrore të qytetit në Prishtinë, me kosto fikse të ulët operative dhe efikasitet të lartë gjatë dimrit.',
+          inDefinedTermSet: `${SITE_URL}/#lexicon`,
+        },
+        {
+          '@type': 'DefinedTerm',
+          name: 'Fletë Poseduese',
+          termCode: 'flete-poseduese',
+          description: 'Certifikatë zyrtare kadastrale në Kosovë që vërteton pronësinë juridike mbi patundshmërinë dhe mungesën e barrëve hipotekare.',
+          inDefinedTermSet: `${SITE_URL}/#lexicon`,
+        },
+        {
+          '@type': 'DefinedTerm',
+          name: 'Kontratë Noteriale',
+          termCode: 'kontrate-noteriale',
+          description: 'Marrëveshje ligjërisht e detyrueshme e përpiluar dhe e vërtetuar para noterit publik për shitblerjen ose qiranë e pronës.',
+          inDefinedTermSet: `${SITE_URL}/#lexicon`,
+        },
+        {
+          '@type': 'DefinedTerm',
+          name: 'Kati Përdhesë / Suterren',
+          termCode: 'kati-perdhese-suterren',
+          description: 'Klasifikime arkitekturore për njësitë në nivelin e tokës ose gjysmë-nëntokësore, të përshtatshme për banim ose veprimtari afariste.',
+          inDefinedTermSet: `${SITE_URL}/#lexicon`,
+        },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      '@id': `${SITE_URL}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Çfarë është ngrohja me Termokos në Prishtinë?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Termokos është sistemi publik i ngrohjes qendrore në Prishtinë. Banesat e lidhura me Termokos kanë ngrohje të vazhdueshme dimërore me kosto mujore të përballueshme dhe efiçiencë të lartë.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Pse është e rëndësishme fleta poseduese gjatë blerjes së pronës?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Fleta poseduese e lëshuar nga Agjencia Kadastrale e Kosovës është dëshmia e vetme ligjore e pronësisë. Ajo konfirmon që shitësi është pronar i ligjshëm dhe tregon nëse prona ka barrë hipotekare.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'A është e detyrueshme kontrata noteriale për blerje banese?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Po, sipas ligjeve në Kosovë dhe Shqipëri, çdo kalim i pronësisë së patundshmërive duhet të vërtetohet para noterit publik për të qenë ligjërisht i vlefshëm dhe i regjistrueshëm në kadastër.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'A paguhet provizion apo komision nga blerësi në Bleje Pronën?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Jo. Bleje Pronën mundëson lidhje të drejtpërdrejtë midis blerësit dhe pronarit ose ndërtuesit, me 0% komision dhe pa ndërmjetës të fshehur.',
+          },
+        },
+      ],
     },
   ]
 }

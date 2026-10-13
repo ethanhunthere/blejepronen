@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 
 import { createServerSupabaseClient } from '@/lib/supabase'
 import { hubPathEn, hubPathSq, marketPathEn, marketPathSq } from '@/lib/seo-slugs'
+import { submitToIndexNow } from '@/lib/indexnow'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,6 +70,13 @@ export async function POST(request: Request) {
       console.error('revalidatePath failed for', path, err)
     }
   }
+
+  // Dispatch real-time IndexNow push for all modified canonical URLs
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blejepronen.com'
+  const fullUrls = Array.from(paths).map((p) => `${siteUrl}${p}`)
+  submitToIndexNow(fullUrls).catch((err) => {
+    console.warn('[IndexNow] Revalidation push notice:', err)
+  })
 
   return NextResponse.json({ revalidated })
 }

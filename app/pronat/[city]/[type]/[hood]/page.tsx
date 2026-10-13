@@ -61,8 +61,6 @@ export default async function NeighborhoodHub({ params }: PageProps) {
   const hood = hoodFromSlug(hoodSlug)
 
   const { rows, total } = await fetchListingsServer({ city, type, neighborhood: hood, limit: 24 })
-  if (total < 3) notFound()
-
   const stats = await fetchMarketStats(city)
 
   return (

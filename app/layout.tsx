@@ -76,7 +76,18 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   verification: {
-    google: "fmg4szjqM2r1nQAdzx9jqzOl_ZNdpgh600vFpkIf9ag",
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+      "fmg4szjqM2r1nQAdzx9jqzOl_ZNdpgh600vFpkIf9ag",
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    other: {
+      ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+        ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION
+        ? { "p:domain_verify": process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION }
+        : {}),
+    },
   },
 };
 
@@ -102,8 +113,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#00675B" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="google-site-verification" content="fmg4szjqM2r1nQAdzx9jqzOl_ZNdpgh600vFpkIf9ag" />
         <link rel="help" type="text/plain" href="/llms.txt" title="LLM Context" />
+        <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLM Full Knowledge Graph" />
         <link rel="preload" as="image" href="/hero-bg.jpg" fetchPriority="high" />
         {supabaseUrl && (
           <>

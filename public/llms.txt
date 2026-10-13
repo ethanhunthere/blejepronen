@@ -15,7 +15,7 @@ Bleje Pronën (https://blejepronen.com) mundëson blerjen, shitjen dhe qiradhën
 - Currency / Valuta: Euro (EUR, €) for all prices
 - Content languages / Gjuhët: Albanian (primary, sq), English (en, mirrored hubs at /en/...)
 - Listing detail pages / Faqet e listimeve: https://blejepronen.com/listings/{id}
-- Seller profiles / Profilet e shitësve: https://blejepronen.com/profli/{id}
+- Seller profiles / Profilet e shitësve: https://blejepronen.com/profili/{id}
 
 ## URL-të Kryesore / Primary Links
 - Ballina / Home: https://blejepronen.com
@@ -40,7 +40,7 @@ Bleje Pronën (https://blejepronen.com) mundëson blerjen, shitjen dhe qiradhën
 - Fushë Kosovë: https://blejepronen.com/listings?city=Fush%C3%AB%20Kosov%C3%AB
 
 ## Hub-et e Tregut / Market Hubs (canonical, indexable)
-Formati: https://blejepronen.com/pronat/{qyteti}/{shitje|qira}[/lagjja] — pasqyra anglisht: https://blejepronen.com/en/property/{city}/{shitje|qira}[/neighborhood]
+Formati: https://blejepronen.com/pronat/{qyteti}/{shitje|qira}[/lagjja] | pasqyra anglisht: https://blejepronen.com/en/property/{city}/{shitje|qira}[/neighborhood]
 - Prishtinë shitje / Prishtina for sale: https://blejepronen.com/pronat/prishtine/shitje
 - Prishtinë qira / Prishtina for rent: https://blejepronen.com/pronat/prishtine/qira
 - Prizren shitje / Prizren for sale: https://blejepronen.com/pronat/prizren/shitje
