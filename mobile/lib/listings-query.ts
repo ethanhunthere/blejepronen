@@ -82,6 +82,39 @@ export function sanitizeSearchText(raw: string): string {
  * which is why subtypes are reduced to distinctive stems ("Hapësirë" instead of
  * "Hapësirë e hapur (Open Space)").
  */
+export function getSearchVariants(text: string): string[] {
+  const safe = (text || '').trim()
+  if (!safe) return []
+  const variants = new Set<string>()
+  variants.add(safe)
+  const commonMap: Record<string, string> = {
+    shtepi: 'shtëpi',
+    shtëpi: 'shtepi',
+    banese: 'banesë',
+    banesë: 'banese',
+    vile: 'vilë',
+    vilë: 'vile',
+    toke: 'tokë',
+    tokë: 'toke',
+    lokal: 'lokal',
+    prishtine: 'prishtinë',
+    prishtinë: 'prishtine',
+    peje: 'pejë',
+    pejë: 'peje',
+  }
+  const lower = safe.toLowerCase()
+  if (commonMap[lower]) variants.add(commonMap[lower])
+  const stripped = safe
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[ëË]/g, 'e')
+    .replace(/[çÇ]/g, 'c')
+  if (stripped) variants.add(stripped)
+  if (safe.includes('e') || safe.includes('E')) variants.add(safe.replace(/e/gi, 'ë'))
+  if (safe.includes('c') || safe.includes('C')) variants.add(safe.replace(/c/gi, 'ç'))
+  return Array.from(variants).filter(Boolean).slice(0, 4)
+}
+
 export const CATEGORY_FILTER_TOKENS: Record<string, string[]> = {
   banese: ['Banes', 'Apart', 'Garson', 'Studio', '1+1', '2+1', '3+1', '4+1', 'Duplex', 'Penthouse'],
   shtepi: ['Shtëpi', 'Shtepi'],
@@ -135,9 +168,16 @@ export function applyListingsFilters(query: FilterableQuery, p: ListingsQueryPar
 
   const sanitized = sanitizeSearchText(p.search || '')
   if (sanitized) {
-    q = q.or(
-      `title.ilike.%${sanitized}%,address.ilike.%${sanitized}%,city.ilike.%${sanitized}%,neighborhood.ilike.%${sanitized}%,description.ilike.%${sanitized}%`
-    )
+    const variants = getSearchVariants(sanitized)
+    if (variants.length > 0) {
+      const orClauses: string[] = []
+      for (const v of variants) {
+        orClauses.push(
+          `title.ilike.%${v}%,address.ilike.%${v}%,city.ilike.%${v}%,neighborhood.ilike.%${v}%,description.ilike.%${v}%,apartment_type.ilike.%${v}%`
+        )
+      }
+      q = q.or(orClauses.join(','))
+    }
   }
 
   const sort = p.sort || 'newest'

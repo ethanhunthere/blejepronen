@@ -21,9 +21,12 @@ import {
   Building2,
   Check,
   ArrowUpDown,
+  User,
 } from 'lucide-react'
 import type { Listing, Profile } from '@/lib/supabase'
 import { ALL_CITIES, POPULAR_CITIES, getNeighborhoods } from '@/lib/kosovo-locations'
+import { getSearchVariants } from '@/lib/search-sanitize'
+import type { MatchedProfile } from '@/lib/listings-query'
 
 const PAGE_SIZE = 12
 
@@ -168,12 +171,14 @@ export interface ListingsExplorerProps {
   initialRows?: Listing[]
   initialTotal?: number
   initialParams?: Record<string, string>
+  initialMatchedProfiles?: MatchedProfile[]
 }
 
 export function ListingsExplorer({
   initialRows = [],
   initialTotal = 0,
   initialParams = {},
+  initialMatchedProfiles = [],
 }: ListingsExplorerProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -205,6 +210,7 @@ export function ListingsExplorer({
 
   // ---- Data State ----
   const [listings, setListings] = useState<Listing[]>(initialRows)
+  const [matchedProfiles, setMatchedProfiles] = useState<MatchedProfile[]>(initialMatchedProfiles)
   // 0-based page index, seeded from the 1-based URL `page` param (?page=1 → 0)
   const [page, setPage] = useState(() =>
     Math.max(0, (Number(initialParams.page) || 1) - 1)
@@ -347,18 +353,53 @@ export function ListingsExplorer({
         listingQuery = listingQuery.eq('user_id', filters.agentId)
       }
 
-      // Keyword Search Sanitization
+      // Keyword Search Sanitization & Diacritic/Property Types Expansion
       const rawSearch = filters.search.trim()
       if (rawSearch) {
-        const sanitized = rawSearch
-          .replace(/[,()]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-        if (sanitized) {
-          listingQuery = listingQuery.or(
-            `title.ilike.%${sanitized}%,address.ilike.%${sanitized}%,city.ilike.%${sanitized}%,neighborhood.ilike.%${sanitized}%,description.ilike.%${sanitized}%`
-          )
+        const variants = getSearchVariants(rawSearch)
+        if (variants.length > 0) {
+          const orClauses: string[] = []
+          for (const v of variants) {
+            orClauses.push(
+              `title.ilike.%${v}%,address.ilike.%${v}%,city.ilike.%${v}%,neighborhood.ilike.%${v}%,description.ilike.%${v}%,apartment_type.ilike.%${v}%`
+            )
+          }
+          listingQuery = listingQuery.or(orClauses.join(','))
         }
+
+        // Also query matching profiles (people/agencies)
+        if (rawSearch.length >= 2) {
+          const safeQ = rawSearch.replace(/[^A-Za-z0-9\u00C0-\u024F\s+-]/g, ' ').replace(/\s+/g, ' ').trim()
+            Promise.resolve(
+              supabase
+                .from('profiles_public')
+                .select('id, first_name, last_name, avatar_url, email_verified')
+                .or(`first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%`)
+                .limit(6)
+            )
+              .then(({ data: profs }) => {
+                if (profs && profs.length > 0) {
+                  setMatchedProfiles(
+                    (profs as any[]).map((prof) => ({
+                      id: prof.id,
+                      first_name: prof.first_name || '',
+                      last_name: prof.last_name || '',
+                      avatar_url: prof.avatar_url || null,
+                      email_verified: Boolean(prof.email_verified),
+                      isCompany:
+                        prof.last_name === 'Kompani' ||
+                        (prof.first_name || '').toLowerCase().includes('agjenci') ||
+                        (prof.last_name || '').toLowerCase().includes('agjenci'),
+                    }))
+                  )
+                } else {
+                  setMatchedProfiles([])
+                }
+              })
+              .catch(() => setMatchedProfiles([]))
+        }
+      } else {
+        setMatchedProfiles([])
       }
 
       // Sorting
@@ -732,7 +773,7 @@ export function ListingsExplorer({
               <Search className="h-4 w-4 text-gray-400 ml-3 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Kërko me lagje, rrugë, qytet..."
+                placeholder="Kërko prona, shtëpi, banesa, profile, agjenci..."
                 value={searchInput}
                 onChange={e => handleSearchChange(e.target.value)}
                 className="w-full h-9 pl-2.5 pr-8 text-xs sm:text-sm text-[#101828] placeholder:text-gray-400 bg-transparent outline-none font-medium"
@@ -1293,6 +1334,65 @@ export function ListingsExplorer({
           </div>
         )}
         </div>
+
+        {/* Matched Profiles / People / Agencies Banner */}
+        {!fetchState.loading && matchedProfiles.length > 0 && (
+          <div className="mb-5 bg-white border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-emerald-100/60 text-[#00675B]">
+                  <User className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Profile & Agjenci të gjetura ({matchedProfiles.length})
+                </h3>
+              </div>
+              <span className="text-xs text-slate-500 hidden sm:inline">Përputhje me emër ose kompani</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {matchedProfiles.map((prof) => (
+                <div
+                  key={prof.id}
+                  className="bg-slate-50/70 hover:bg-white rounded-xl p-2.5 border border-slate-200/80 hover:border-emerald-300 transition-all flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                      <Image
+                        src={prof.avatar_url || '/avatars/avatar-1.png'}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[13px] font-semibold text-slate-900 truncate">
+                          {prof.first_name} {prof.last_name}
+                        </span>
+                        {prof.email_verified && (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#00675B] flex-shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        {prof.isCompany ? 'Agjenci Imobiliare' : 'Pronar Privat'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Link
+                      href={`/profili/${prof.id}`}
+                      className="px-2.5 py-1 bg-white hover:bg-[#00675B] text-slate-700 hover:text-white border border-slate-200 hover:border-[#00675B] text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      Profili
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* =========================================================================
             LISTINGS GRID

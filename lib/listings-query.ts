@@ -1,6 +1,16 @@
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 import { hoodFromSlug, slugify, type HubType } from '@/lib/seo-slugs'
+import { getSearchVariants } from '@/lib/search-sanitize'
+
+export interface MatchedProfile {
+  id: string
+  first_name: string
+  last_name: string
+  avatar_url: string | null
+  email_verified: boolean
+  isCompany?: boolean
+}
 
 export const LISTING_CARD_COLUMNS =
   'id,title,price,city,neighborhood,address,type,images,rooms,area_m2,is_featured,is_active,created_at,user_id,condition,floor,apartment_type,features'
@@ -61,11 +71,15 @@ export function applyListingsFilters(query: FilterableQuery, p: ListingsQueryPar
 
   const rawSearch = (p.search || '').trim()
   if (rawSearch) {
-    const sanitized = rawSearch.replace(/[,()]/g, ' ').replace(/\s+/g, ' ').trim()
-    if (sanitized) {
-      q = q.or(
-        `title.ilike.%${sanitized}%,address.ilike.%${sanitized}%,city.ilike.%${sanitized}%,neighborhood.ilike.%${sanitized}%,description.ilike.%${sanitized}%`
-      )
+    const variants = getSearchVariants(rawSearch)
+    if (variants.length > 0) {
+      const orClauses: string[] = []
+      for (const v of variants) {
+        orClauses.push(
+          `title.ilike.%${v}%,address.ilike.%${v}%,city.ilike.%${v}%,neighborhood.ilike.%${v}%,description.ilike.%${v}%,apartment_type.ilike.%${v}%`
+        )
+      }
+      q = q.or(orClauses.join(','))
     }
   }
 
@@ -81,10 +95,40 @@ export function applyListingsFilters(query: FilterableQuery, p: ListingsQueryPar
 
 export async function fetchListingsServer(
   p: ListingsQueryParams
-): Promise<{ rows: Listing[]; total: number }> {
+): Promise<{ rows: Listing[]; total: number; matchedProfiles?: MatchedProfile[] }> {
   const supabase = createPublicSupabaseClient()
   const page = p.page ?? 0
   const limit = p.limit ?? 12
+
+  let matchedProfiles: MatchedProfile[] = []
+  const rawSearch = (p.search || '').trim()
+  if (rawSearch && rawSearch.length >= 2) {
+    const safeQ = rawSearch.replace(/[^A-Za-z0-9\u00C0-\u024F\s+-]/g, ' ').replace(/\s+/g, ' ').trim()
+    if (safeQ) {
+      try {
+        const { data: profs } = await supabase
+          .from('profiles_public')
+          .select('id, first_name, last_name, avatar_url, email_verified')
+          .or(`first_name.ilike.%${safeQ}%,last_name.ilike.%${safeQ}%`)
+          .limit(6)
+        if (profs && profs.length > 0) {
+          matchedProfiles = (profs as any[]).map((prof) => ({
+            id: prof.id,
+            first_name: prof.first_name || '',
+            last_name: prof.last_name || '',
+            avatar_url: prof.avatar_url || null,
+            email_verified: Boolean(prof.email_verified),
+            isCompany:
+              prof.last_name === 'Kompani' ||
+              (prof.first_name || '').toLowerCase().includes('agjenci') ||
+              (prof.last_name || '').toLowerCase().includes('agjenci'),
+          }))
+        }
+      } catch {
+        // Fallback silently if profiles_public is unavailable
+      }
+    }
+  }
 
   let query = supabase
     .from('listings')
@@ -102,9 +146,9 @@ export async function fetchListingsServer(
 
   if (error) {
     console.error('fetchListingsServer error:', error.message)
-    return { rows: [], total: 0 }
+    return { rows: [], total: 0, matchedProfiles }
   }
-  return { rows: (data || []) as Listing[], total: count ?? 0 }
+  return { rows: (data || []) as Listing[], total: count ?? 0, matchedProfiles }
 }
 
 /** Municipality-level market statistics computed from live inventory (GEO entity data). */

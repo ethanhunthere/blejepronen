@@ -514,7 +514,7 @@ export default function HomeScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {filters.searchQuery || 'Qyteti, lagjja, agjencia ose prona...'}
+                  {filters.searchQuery || 'Kërko prona, shtëpi, banesa, profile, agjenci...'}
                 </Text>
                 {filters.searchQuery.length > 0 && (
                   <Pressable

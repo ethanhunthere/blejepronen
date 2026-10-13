@@ -93,7 +93,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 export default async function ListingsPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const params = toQueryParams(sp)
-  const { rows, total } = await fetchListingsServer(params)
+  const { rows, total, matchedProfiles } = await fetchListingsServer(params)
 
   const initialParams: Record<string, string> = {}
   for (const [k, v] of Object.entries(sp)) {
@@ -120,7 +120,12 @@ export default async function ListingsPage({ searchParams }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
       />
-      <ListingsExplorer initialRows={rows} initialTotal={total} initialParams={initialParams} />
+      <ListingsExplorer
+        initialRows={rows}
+        initialTotal={total}
+        initialParams={initialParams}
+        initialMatchedProfiles={matchedProfiles}
+      />
     </>
   )
 }

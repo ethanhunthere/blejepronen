@@ -31,7 +31,7 @@ export default function HomeHero() {
         {/* Central Search Interaction */}
         <div className="mt-8 sm:mt-10">
           <SearchBar
-            placeholder="Kërko sipas qytetit, lagjes ose fjalëve kyçe..."
+            placeholder="Kërko prona, shtëpi, banesa, profile, agjenci ose qytete..."
             buttonText="Kërko"
             className="shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)]"
           />

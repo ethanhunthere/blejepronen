@@ -77,14 +77,91 @@ export function buildOrFilter(conditions: readonly string[]): string {
 }
 
 /**
+ * Common Albanian real estate vocabulary and diacritic normalization mappings.
+ * Allows queries like "shtepi" to find "Shtëpi", "banese" to find "Banesë", etc.
+ */
+const ALBANIAN_TERMS_MAP: Record<string, string> = {
+  shtepi: 'shtëpi',
+  shtëpi: 'shtepi',
+  banese: 'banesë',
+  banesë: 'banese',
+  vile: 'vilë',
+  vilë: 'vile',
+  toke: 'tokë',
+  tokë: 'toke',
+  lokal: 'lokal',
+  dyqan: 'dyqan',
+  penthouse: 'penthouse',
+  garazhe: 'garazhë',
+  garazhë: 'garazh',
+  prishtine: 'prishtinë',
+  prishtinë: 'prishtine',
+  peje: 'pejë',
+  pejë: 'peje',
+  gjakove: 'gjakovë',
+  gjakovë: 'gjakove',
+  mitrovice: 'mitrovicë',
+  mitrovicë: 'mitrovice',
+  kline: 'klinë',
+  klinë: 'kline',
+  suhareke: 'suharekë',
+  suharekë: 'suhareke',
+  decan: 'deçan',
+  deçan: 'decan',
+}
+
+export function getSearchVariants(term: unknown): string[] {
+  const safe = sanitizeSearchTerm(term)
+  if (!safe) return []
+  const variants = new Set<string>()
+  variants.add(safe)
+
+  const lower = safe.toLowerCase()
+  if (ALBANIAN_TERMS_MAP[lower]) {
+    variants.add(ALBANIAN_TERMS_MAP[lower])
+  }
+
+  // Add diacritic stripped form
+  const stripped = safe
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[ëË]/g, 'e')
+    .replace(/[çÇ]/g, 'c')
+  if (stripped) variants.add(stripped)
+
+  // If term has "e", try "ë"
+  if (safe.includes('e') || safe.includes('E')) {
+    variants.add(safe.replace(/e/gi, 'ë'))
+  }
+  // If term has "c", try "ç"
+  if (safe.includes('c') || safe.includes('C')) {
+    variants.add(safe.replace(/c/gi, 'ç'))
+  }
+
+  return Array.from(variants).filter(Boolean).slice(0, 4)
+}
+
+/**
  * Convenience builder for the common "match this term across these columns"
  * case. Sanitizes the term itself, so callers cannot forget.
  *
  * Returns `null` when the term sanitizes to empty — the caller must then skip
  * the query rather than issue an unfiltered (full-table) one.
  */
-export function buildIlikeOr(term: unknown, columns: readonly string[]): string | null {
+export function buildIlikeOr(
+  term: unknown,
+  columns: readonly string[],
+  includeVariants = true
+): string | null {
   const safe = sanitizeSearchTerm(term)
   if (!safe || columns.length === 0) return null
-  return buildOrFilter(columns.map((column) => `${column}.ilike.%${safe}%`))
+  const terms = includeVariants ? getSearchVariants(safe) : [safe]
+  const conditions: string[] = []
+  for (const t of terms) {
+    for (const column of columns) {
+      conditions.push(`${column}.ilike.%${t}%`)
+    }
+  }
+  return buildOrFilter(conditions)
 }
+

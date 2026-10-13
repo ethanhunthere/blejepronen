@@ -360,7 +360,7 @@ export default function OmniSearchModal({
               setSelectedIndex(-1)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Kërko pronë, agjenci, qytet ose agjent..."
+            placeholder="Kërko prona, shtëpi, banesa, profile, agjenci ose qytete..."
             className="flex-1 min-w-0 bg-transparent text-[16px] sm:text-[17px] font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/40 outline-none border-none py-1"
           />
 

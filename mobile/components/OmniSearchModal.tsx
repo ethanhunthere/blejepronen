@@ -586,7 +586,7 @@ export function OmniSearchContent({
                   color: colors.textPrimary,
                 },
               ]}
-              placeholder="Kërko prona, agjenci, llogari, qytet..."
+              placeholder="Kërko prona, shtëpi, banesa, profile, agjenci ose qytete..."
               placeholderTextColor={colors.textLight}
               value={query}
               onChangeText={handleQueryChange}

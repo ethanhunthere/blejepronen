@@ -257,11 +257,15 @@ export async function executeMobileOmniSearch(query: string): Promise<OmniSearch
       const normTitle = normalizeSearchString(item.title || '')
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
+      const normType = normalizeSearchString(item.apartment_type || '')
 
       let score = 40
       if (normTitle === normQ) score += 60
       else if (normTitle.startsWith(normQ)) score += 40
       else if (normTitle.includes(normQ)) score += 25
+
+      if (normType === normQ) score += 45
+      else if (normType && (normType.includes(normQ) || normQ.includes(normType))) score += 30
 
       if (normCity === normQ) score += 25
       if (normHood.includes(normQ)) score += 20

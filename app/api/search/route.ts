@@ -189,6 +189,7 @@ export async function GET(request: Request) {
       'neighborhood',
       'address',
       'description',
+      'apartment_type',
     ])
 
     const companyFilter = buildIlikeOr(safeQuery, ['name', 'title', 'city'])
@@ -263,10 +264,15 @@ export async function GET(request: Request) {
       const normCity = normalizeSearchString(item.city || '')
       const normHood = normalizeSearchString(item.neighborhood || '')
 
+      const normType = normalizeSearchString(item.apartment_type || '')
+
       let score = 40
       if (normTitle === normQ) score += 60
       else if (normTitle.startsWith(normQ)) score += 40
       else if (normTitle.includes(normQ)) score += 25
+
+      if (normType === normQ) score += 55
+      else if (normType.includes(normQ)) score += 35
 
       if (normCity === normQ) score += 25
       else if (normCity.startsWith(normQ)) score += 15
