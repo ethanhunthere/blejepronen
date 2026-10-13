@@ -38,6 +38,32 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/llms.txt",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+          {
+            key: "Content-Type",
+            value: "text/plain; charset=utf-8",
+          },
+        ],
+      },
+      {
+        source: "/llms-full.txt",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+          {
+            key: "Content-Type",
+            value: "text/plain; charset=utf-8",
+          },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           {
@@ -152,6 +178,34 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/zyre-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/zyre-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/lokale-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/lokale-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/shtepi-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/truall-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/shitje/:category/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/qira/:category/:city',
         destination: '/pronat/:city/qira',
       },
     ];

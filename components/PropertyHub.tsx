@@ -63,6 +63,47 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
     ...(hood ? [{ name: hood, url: lang === 'sq' ? hubPathSq(city, type, hood) : hubPathEn(city, type, hood) }] : []),
   ]
 
+  const hubFaqs =
+    lang === 'sq'
+      ? [
+          {
+            q: `Si mund të kontaktoj pronarin e një prone në ${where}?`,
+            a: `Në Bleje Pronën, të gjitha listimet mundësojnë kontakt direkt me pronarin ose agjencinë përmes telefonit, WhatsApp ose mesazheve direkte pa komisione ndërmjetësimi.`,
+          },
+          {
+            q: `Cilat janë dokumentet e nevojshme për blerjen e një prone në ${city}?`,
+            a: `Blerja e sigurt kërkon fletën poseduese pa barrë hipotekare nga kadastri, vërtetimin e shlyerjes së tatimit në pronë nga komuna dhe nënshkrimin e kontratës para noterit publik.`,
+          },
+          {
+            q: `A ka dallim në çmim midis lagjeve në ${city}?`,
+            a: `Po, çmimet për metër katror ndryshojnë sipas lokacionit, afërsisë me qendrën, infrastrukturës rrugore dhe lidhjes me shërbimet publike si ngrohja qendrore.`,
+          },
+          {
+            q: `A mund të kërkoj pronë me porosi nëse nuk e gjej në faqe?`,
+            a: `Po. Përdorni shërbimin 'Kërko me porosi' duke specifikuar buxhetin dhe tipologjinë e dëshiruar dhe do të njoftoheni automatikisht sapo të regjistrohet një pronë e përshtatshme.`,
+          },
+        ]
+      : [
+          {
+            q: `How can I contact property owners in ${where}?`,
+            a: `On Bleje Pronën, all listings connect you directly with owners or authorized agents via phone, WhatsApp, or instant messaging, with 0% buyer commission.`,
+          },
+          {
+            q: `What legal documents are required to purchase property in ${city}?`,
+            a: `A secure purchase requires an encumbrance-free title deed (fletë poseduese) from the Cadastral Agency, municipal property tax clearance, and a notarized sales contract.`,
+          },
+          {
+            q: `Do property prices vary significantly across neighborhoods in ${city}?`,
+            a: `Yes, price per square meter depends on location, urban infrastructure, accessibility, and year of construction. Central neighborhoods typically command a premium.`,
+          },
+          {
+            q: `Can I submit an on-demand property request if no listings match?`,
+            a: `Yes, submit an on-demand request with your target criteria and budget, and you will be alerted as soon as a matching property is listed.`,
+          },
+        ]
+
+  const otherType: HubType = type === 'shitje' ? 'qira' : 'shitje'
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -95,6 +136,17 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
           addressCountry: 'XK',
         },
       },
+      {
+        '@type': 'FAQPage',
+        mainEntity: hubFaqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: f.a,
+          },
+        })),
+      },
       ...(median
         ? [
             {
@@ -116,8 +168,6 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
         : []),
     ],
   }
-
-  const otherType: HubType = type === 'shitje' ? 'qira' : 'shitje'
 
   return (
     <div className="bg-[#F7FAF9] min-h-screen">
@@ -228,6 +278,24 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
             </div>
           )}
         </div>
+
+        {/* AEO / GEO Entity FAQ Section */}
+        <section className="mt-12 bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+          <h2 className="text-xl font-bold text-[#101828] mb-4">
+            {lang === 'sq' ? `Pyetje të shpeshta për pronat në ${where}` : `Frequently asked questions about properties in ${where}`}
+          </h2>
+          <div className="space-y-4">
+            {hubFaqs.map((faq, i) => (
+              <details key={i} className="group border-b border-gray-100 pb-3 last:border-0 last:pb-0" open={i === 0}>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-900 list-none flex items-center justify-between gap-3 select-none">
+                  <span>{faq.q}</span>
+                  <span className="text-[#00675B] text-base font-bold transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-2 text-xs sm:text-sm text-gray-600 leading-relaxed pr-6">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
 
         {/* Cross-link mesh: sibling facets + neighborhood hubs + market page */}
         <div className="mt-10 flex flex-wrap gap-2">

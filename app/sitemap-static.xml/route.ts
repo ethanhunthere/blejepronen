@@ -16,6 +16,8 @@ export async function GET() {
     { path: '/tregu', priority: '0.8', changefreq: 'weekly' },
     { path: '/en/property', priority: '0.7', changefreq: 'weekly' },
     { path: '/en/market', priority: '0.7', changefreq: 'weekly' },
+    { path: '/investo/nga-diaspora', priority: '0.85', changefreq: 'weekly' },
+    { path: '/udhezues/terminologjia', priority: '0.85', changefreq: 'weekly' },
     { path: '/kontakti', priority: '0.5', changefreq: 'monthly' },
     { path: '/kushtet', priority: '0.3', changefreq: 'yearly' },
     { path: '/privatesia', priority: '0.3', changefreq: 'yearly' },

@@ -48,6 +48,8 @@ export default function robots(): MetadataRoute.Robots {
           'Applebot-Extended',
           'Bytespider',
           'cohere-ai',
+          'CCBot',
+          'Diffbot',
         ],
         allow: '/',
         disallow: PRIVATE_PATHS,
@@ -56,6 +58,7 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: [
       `${siteUrl}/sitemap.xml`,
       `${siteUrl}/sitemap-index.xml`,
+      `${siteUrl}/feed.xml`,
     ],
   }
 }

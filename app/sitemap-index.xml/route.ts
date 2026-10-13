@@ -23,6 +23,10 @@ export async function GET() {
     <loc>${siteUrl}/sitemap-properties.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>${siteUrl}/sitemap-categories.xml</loc>
+    <lastmod>${now}</lastmod>
+  </sitemap>
 </sitemapindex>`
 
   return new NextResponse(xml, {

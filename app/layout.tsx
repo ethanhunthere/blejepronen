@@ -79,13 +79,19 @@ export const metadata: Metadata = {
     google:
       process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
       "fmg4szjqM2r1nQAdzx9jqzOl_ZNdpgh600vFpkIf9ag",
-    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    yandex:
+      process.env.NEXT_PUBLIC_YANDEX_SITE_VERIFICATION ||
+      process.env.NEXT_PUBLIC_YANDEX_VERIFICATION ||
+      undefined,
     other: {
       ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
         ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
         : {}),
       ...(process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION
         ? { "p:domain_verify": process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_APPLE_DOMAIN_VERIFICATION
+        ? { "apple-domain-verification": process.env.NEXT_PUBLIC_APPLE_DOMAIN_VERIFICATION }
         : {}),
     },
   },

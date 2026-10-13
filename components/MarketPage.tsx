@@ -55,6 +55,45 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
     ...(city ? [{ name: city, url: lang === 'sq' ? marketPathSq(city) : marketPathEn(city) }] : []),
   ]
 
+  const marketFaqs =
+    lang === 'sq'
+      ? [
+          {
+            q: 'Si llogaritet çmimi mesatar për m² në Bleje Pronën?',
+            a: 'Llogaritet në kohë reale nga shpalljet aktive të shitjes që kanë çmim dhe sipërfaqe të deklaruar, duke përdorur medianën statistikore për të eleminuar vlerat ekstreme jo-reale.',
+          },
+          {
+            q: 'Sa kushton mesatarisht një banesë në Prishtinë dhe qytetet e tjera?',
+            a: 'Në Prishtinë çmimi mesatar sillet nga 1,100 €/m² deri në 1,650 €/m² varësisht nga lagjja. Në Fushë Kosovë sillet nga 750 €/m² deri në 950 €/m², ndërsa në Prizren nga 950 €/m² deri në 1,350 €/m².',
+          },
+          {
+            q: 'A përfshihen taksat komunale dhe shpenzimet noteriale në çmimet e listuara?',
+            a: 'Jo, çmimet e shfaqura pasqyrojnë vlerën e rënë dakord me shitësin. Tarifat noteriale dhe taksa e regjistrimit kadastral paguhen veçmas sipas tarifave të rregulluara ligjore.',
+          },
+          {
+            q: 'Si ndikon ngrohja me Termokos në vlerën e banesës në Prishtinë?',
+            a: 'Banesat me lidhje në Termokos gëzojnë kërkesë dukshëm më të lartë dhe vlerë më të qëndrueshme, për shkak të shpenzimeve minimale të ngrohjes dhe komoditetit gjatë dimrit.',
+          },
+        ]
+      : [
+          {
+            q: 'How is the median price per m² calculated on Bleje Pronën?',
+            a: 'It is computed in real time from active sale listings with verified pricing and surface area, using statistical median filtering to eliminate outlier bias.',
+          },
+          {
+            q: 'What is the average apartment price in Pristina and other major cities?',
+            a: 'In Pristina, median prices range from €1,100/m² to €1,650/m² depending on the neighborhood. Fushë Kosovë ranges from €750/m² to €950/m², while Prizren ranges from €950/m² to €1,350/m².',
+          },
+          {
+            q: 'Are notary fees and cadastral transfer taxes included in listing prices?',
+            a: 'No, listed prices represent the direct asking price from the seller. Notary fees and cadastral transfer taxes are paid separately under official regulations.',
+          },
+          {
+            q: 'How does Termokos district heating impact property values in Pristina?',
+            a: 'Properties connected to Termokos district heating experience higher demand and strong value retention due to low operating costs and high winter heating efficiency.',
+          },
+        ]
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -83,6 +122,17 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
           position: i + 1,
           name: b.name,
           item: `${SITE_URL}${b.url}`,
+        })),
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: marketFaqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: f.a,
+          },
         })),
       },
       ...(city
@@ -217,6 +267,24 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
             </div>
           </section>
         ) : null}
+
+        {/* AEO / GEO Market FAQs */}
+        <section className="mt-12 bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+          <h2 className="text-xl font-bold text-[#101828] mb-4">
+            {lang === 'sq' ? 'Pyetje të shpeshta mbi tregun e patundshmërive' : 'Frequently asked questions about the property market'}
+          </h2>
+          <div className="space-y-4">
+            {marketFaqs.map((faq, i) => (
+              <details key={i} className="group border-b border-gray-100 pb-3 last:border-0 last:pb-0" open={i === 0}>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-900 list-none flex items-center justify-between gap-3 select-none">
+                  <span>{faq.q}</span>
+                  <span className="text-[#00675B] text-base font-bold transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-2 text-xs sm:text-sm text-gray-600 leading-relaxed pr-6">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   )
