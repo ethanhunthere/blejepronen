@@ -68,7 +68,7 @@ export default function MessagesScreen() {
 
   // One subscription to the module-level store. It owns the single multiplexed
   // realtime channel and the 250ms coalescer, so a burst of message events
-  // produces exactly one new snapshot object and one render of this screen —
+  // produces exactly one new snapshot object and one render of this screen -
   // and the channel is released when the last subscriber unmounts.
   const store = useSyncExternalStore(subscribeConversations, getConversationsSnapshot)
   const conversations = store.items
@@ -150,7 +150,7 @@ export default function MessagesScreen() {
     })
   }, [conversations, searchQuery, selectedFilter])
 
-  // Total unread — read straight from the store's aggregated map, NOT recomputed
+  // Total unread : read straight from the store's aggregated map, NOT recomputed
   // from the rows, so this badge and any other consumer (e.g. the tab bar) can
   // never disagree about the same number.
   const totalUnread = store.totalUnread

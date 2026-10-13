@@ -14,16 +14,16 @@ import {
 } from '@/lib/omni-search'
 
 /**
- * GET /api/search — federated omni-search.
+ * GET /api/search : federated omni-search.
  *
  * Hardened for audit findings C5 (PostgREST injection) and C6 (privacy):
  *
- *  C5 — every user-supplied term passes through `sanitizeSearchTerm()` before it
+ *  C5 : every user-supplied term passes through `sanitizeSearchTerm()` before it
  *  is interpolated into a `.or(...)` / `ilike` filter. The old code embedded the
  *  raw `q` parameter, so `?q=prishtine,price.gt.0` appended conditions and
  *  `?q=%` turned the endpoint into a full-table scanner.
  *
- *  C6 — the endpoint now runs on the anon/public client instead of the service
+ *  C6 : the endpoint now runs on the anon/public client instead of the service
  *  role, so Postgres RLS is the access boundary rather than a comment in this
  *  file. No phone number is selected, scored or returned for any entity:
  *  listings keep `seller_name` only, and searching by phone fragment (which let
@@ -75,7 +75,7 @@ function emptyResponse(query: string): OmniSearchResponse {
 
 /**
  * Listing columns for search results. `description` and `address` stay out of
- * the projection (they are only needed as filter targets) — they are long, they
+ * the projection (they are only needed as filter targets) : they are long, they
  * are not rendered by the search UI, and every byte here is cached.
  *
  * NOTE: no `phone` anywhere. The seller embed deliberately selects name/avatar
@@ -210,7 +210,7 @@ export async function GET(request: Request) {
         if (!withSeller.error) return withSeller
 
         // The embedded profiles resource is not readable for anon until the
-        // public-profile migration is applied — retry without it so listing
+        // public-profile migration is applied : retry without it so listing
         // results survive.
         return supabase
           .from('listings')
@@ -301,7 +301,7 @@ export async function GET(request: Request) {
         city: item.city || undefined,
         score,
         payload: {
-          // Supabase returns `type` as string|null — normalize to the payload union
+          // Supabase returns `type` as string|null : normalize to the payload union
           type: item.type === 'shitje' || item.type === 'qira' ? item.type : undefined,
           rooms: item.rooms ?? undefined,
           area_m2: item.area_m2 ?? undefined,
@@ -395,7 +395,7 @@ export async function GET(request: Request) {
         city: c.city || undefined,
         score,
         payload: {
-          // Legacy companies rows carry no verification state — never mint one.
+          // Legacy companies rows carry no verification state : never mint one.
           email_verified: false,
           id: c.id,
           isCompany: true,

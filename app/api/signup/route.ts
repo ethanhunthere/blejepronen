@@ -35,7 +35,7 @@ import {
  *    verification (`profiles.email_verified` / `user_metadata.email_verified`,
  *    which is what OTP verification and OAuth set). Re-submitting the register
  *    form for such an address returns the same generic "blocked" response as
- *    every other non-completing case — it never says whether the address exists
+ *    every other non-completing case : it never says whether the address exists
  *    or is verified.
  *  - Genuinely incomplete registrations still reuse their auth row (so the OTP
  *    screen's resend flow keeps working), but password reuse is budgeted per
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     const existing = await findAuthUserByEmail(admin, email)
 
     let userId: string
-    /** Auth user as returned by create/update — carries fresh `user_metadata`. */
+    /** Auth user as returned by create/update : carries fresh `user_metadata`. */
     let authUser: User
     let profile: ProfileRow | null = null
 
@@ -254,7 +254,7 @@ export async function POST(request: Request) {
 
       if (createError || !createData?.user) {
         // A miss in our lookup (stale cache, unbuilt index) surfaces here as
-        // "already registered" — map it to the uniform blocked response rather
+        // "already registered" : map it to the uniform blocked response rather
         // than leaking GoTrue's message.
         const alreadyRegistered = /already been registered|already registered/i.test(
           createError?.message || ''

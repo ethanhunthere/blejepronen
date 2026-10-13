@@ -20,7 +20,7 @@ import { callEngine, type CallState } from '@/lib/calling'
 
 /**
  * Full-screen in-app call experience (WhatsApp-grade, Apple-calibrated).
- * Rendered once at the root — overlays every screen when a call is active.
+ * Rendered once at the root : overlays every screen when a call is active.
  * Always dark (like iOS Phone / WhatsApp calls) regardless of app theme.
  */
 
@@ -61,7 +61,7 @@ export function CallScreen() {
   const ringing = state.status === 'outgoing' || state.status === 'incoming'
   const connecting = state.status === 'connecting'
 
-  // Hairline ripple ring while ringing — no filled glow halo
+  // Hairline ripple ring while ringing : no filled glow halo
   useEffect(() => {
     if (!ringing) {
       pulse.setValue(1)
@@ -131,7 +131,7 @@ export function CallScreen() {
       statusBarTranslucent
       onRequestClose={() => {
         // Android hardware/gesture back: decline a ringing call, otherwise
-        // end the active one — never trap the user inside the call Modal.
+        // end the active one : never trap the user inside the call Modal.
         if (status === 'incoming') decline()
         else hangup()
       }}

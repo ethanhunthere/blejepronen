@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — AUTONOMOUS SWARM SMOKE VERIFICATION TEST
+ * BLEJE PRONËN : AUTONOMOUS SWARM SMOKE VERIFICATION TEST
  * File: services/swarm/test-verification.ts
  *
  * Verifies that Thanos:

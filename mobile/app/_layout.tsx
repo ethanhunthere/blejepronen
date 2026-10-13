@@ -125,7 +125,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     })
   }, [])
 
-  // Push rail starts only after launch settles — never competes with splash frames.
+  // Push rail starts only after launch settles : never competes with splash frames.
   useEffect(() => {
     if (!launchSettled) return
     initPushNotifications()
@@ -145,7 +145,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     return () => clearTimeout(timer)
   }, [isAppReady, hasLaidOut])
 
-  // Hard exit — brand canvas is always mounted, so hiding native splash is safe.
+  // Hard exit : brand canvas is always mounted, so hiding native splash is safe.
   // Failsafe F1: force the native hide only. Animation + gates still run their
   // own course under the opaque veil; never flip app-facing state mid-animation.
   useEffect(() => {
@@ -156,7 +156,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     return () => clearTimeout(timer)
   }, [])
 
-  // Failsafe F3: ultimate force — assume choreography + gate dead, land the app.
+  // Failsafe F3: ultimate force : assume choreography + gate dead, land the app.
   useEffect(() => {
     const timer = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {})
@@ -281,7 +281,7 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
 /**
  * Global in-app calling: listens for incoming calls for the signed-in user
  * and renders the full-screen call experience above every screen.
- * Requires a development build — react-native-webrtc cannot run in Expo Go.
+ * Requires a development build : react-native-webrtc cannot run in Expo Go.
  */
 function CallGate() {
   useEffect(() => {
@@ -313,12 +313,12 @@ function CallGate() {
         const { callEngine } = await import('@/lib/calling')
         callEngine.listenForIncoming(user?.id ?? cached?.id ?? null)
       } catch {
-        // offline — retry happens on the next auth event
+        // offline : retry happens on the next auth event
       }
     }
     void wire()
 
-    // Single consolidated auth bus — never open a second raw onAuthStateChange
+    // Single consolidated auth bus : never open a second raw onAuthStateChange
     // subscription from a layout effect.
     const unsubscribeAuth = subscribeAuthEvents(() => void wire())
     return () => {

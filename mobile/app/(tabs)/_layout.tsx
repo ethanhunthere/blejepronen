@@ -160,7 +160,7 @@ const TAB_CONFIG: Record<string, { icon: any; label: string; isPost?: boolean }>
 }
 
 // ==========================================
-// iOS FLOATING TAB BAR — LIQUID GLASS RECIPE
+// iOS FLOATING TAB BAR : LIQUID GLASS RECIPE
 // Apple Liquid Glass emulation: maximum frost (intensity 100) on Apple
 // UltraThin materials; near-clear tint veils so background content truly
 // refracts through; a top-lit specular gradient with an inner bottom-edge
@@ -637,7 +637,7 @@ export default function TabLayout() {
   useEffect(() => {
     let isMounted = true
 
-    // Unread badge comes from the conversations store — the single source of
+    // Unread badge comes from the conversations store : the single source of
     // truth for unread counts. The store owns the multiplexed realtime channel
     // and coalesces bursts; the tab bar just reads `totalUnread`.
     const storeUnsubscribe = subscribeConversations(() => {

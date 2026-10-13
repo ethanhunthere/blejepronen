@@ -325,7 +325,7 @@ const CATEGORIES: Record<PropertyCategory, CategoryConfig> = {
   },
 }
 
-// Same defaults applied by handleCategorySelect when a category is picked —
+// Same defaults applied by handleCategorySelect when a category is picked -
 // used as fallback when prefilling the edit form for a row with no
 // `apartment_type`.
 const DEFAULT_SUBTYPE: Record<PropertyCategory, string> = {
@@ -337,13 +337,13 @@ const DEFAULT_SUBTYPE: Record<PropertyCategory, string> = {
   garazh: 'Garazhë e mbyllur',
 }
 
-// The listings table has no `category` column — the post form persists the
+// The listings table has no `category` column : the post form persists the
 // category only through `apartment_type` (= subtype || category.titleShort).
 // These distinctive stems mirror CATEGORY_FILTER_TOKENS in the mobile client
 // and are matched (case-insensitively) to recover the category for edit mode.
 // Order matters: more specific categories first (e.g. "Vilë duplex" must match
 // `vile` before the generic "duplex" stem would match `banese`). Matched only
-// against `apartment_type` — never the free-text title, whose words ("parkim",
+// against `apartment_type` : never the free-text title, whose words ("parkim",
 // "lokal"…) would misclassify listings.
 const CATEGORY_TOKEN_MATCHERS: { id: PropertyCategory; tokens: string[] }[] = [
   { id: 'shtepi', tokens: ['shtëpi', 'shtepi'] },
@@ -590,7 +590,7 @@ Përparësitë kryesore:
 // Reads the `?edit=` query param. Kept in its own tiny component inside a
 // Suspense boundary (same pattern as the login page) because Next requires a
 // boundary around any component calling useSearchParams on a prerendered
-// route — the boundary renders null, so the statically generated HTML of the
+// route : the boundary renders null, so the statically generated HTML of the
 // page stays identical to what it was before edit mode existed.
 function EditSearchParamSync({ onEditId }: { onEditId: (id: string | null) => void }) {
   const searchParams = useSearchParams()
@@ -715,7 +715,7 @@ export default function PostoPronaPage() {
         })
 
         // Existing remote image URLs live in `previews` alongside the blob:
-        // previews of newly selected files — see removeImage/submit for how
+        // previews of newly selected files : see removeImage/submit for how
         // the two kinds are told apart.
         const rowImages: unknown[] = Array.isArray(row.images) ? row.images : []
         const existing = Array.from(
@@ -724,7 +724,7 @@ export default function PostoPronaPage() {
         setPreviews(existing)
         setEditReady(true)
         // Layout metadata is server-rendered and layout cannot read
-        // searchParams — reflect the edit mode in the document title here.
+        // searchParams : reflect the edit mode in the document title here.
         document.title = 'Ndrysho pronën tënde | Bleje Pronën'
       } catch (err) {
         console.error('Edit prefill failed:', err)
@@ -888,7 +888,7 @@ export default function PostoPronaPage() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
       // previews counts every photo in the gallery (already uploaded URLs in
-      // edit mode + newly selected files) — identical to images.length when
+      // edit mode + newly selected files) : identical to images.length when
       // creating a listing, where every preview is a local blob URL.
       if (previews.length + files.length > 10) {
         setError('Maksimumi 10 foto lejohen.')
@@ -941,7 +941,7 @@ export default function PostoPronaPage() {
   // `previews` holds two kinds of entries: `blob:` URLs of files not yet
   // uploaded and remote URLs of images already stored on the listing. The
   // `images` File[] stays parallel to the blob entries only, in the same
-  // relative order — this helper maps a gallery index to that file index.
+  // relative order : this helper maps a gallery index to that file index.
   const fileIndexOfPreview = (index: number) =>
     previews.slice(0, index).filter(isNewFilePreview).length
 
@@ -1302,7 +1302,7 @@ export default function PostoPronaPage() {
   }
 
   // Edit mode: the listing is being fetched/prefilled (or a redirect is
-  // pending because it was not found) — never show a blank creation form for
+  // pending because it was not found) : never show a blank creation form for
   // an `?edit=` link.
   if (isEdit && !editReady) {
     return (
@@ -1320,7 +1320,7 @@ export default function PostoPronaPage() {
 
   return (
     <div className="min-h-screen bg-[#F2F7F7] pb-24">
-      {/* ?edit= param reader — Suspense-wrapped, see EditSearchParamSync */}
+      {/* ?edit= param reader : Suspense-wrapped, see EditSearchParamSync */}
       <Suspense fallback={null}>
         <EditSearchParamSync onEditId={setEditId} />
       </Suspense>
@@ -3081,12 +3081,12 @@ export default function PostoPronaPage() {
                       {activeCategory.hasRooms && (
                         <div className="flex items-center gap-1">
                           <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-                          <span>{formData.rooms ? `${formData.rooms} dhoma` : '— dhoma'}</span>
+                          <span>{formData.rooms ? `${formData.rooms} dhoma` : '- dhoma'}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
                         <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{formData.area_m2 ? `${formData.area_m2} m²` : '— m²'}</span>
+                        <span>{formData.area_m2 ? `${formData.area_m2} m²` : '- m²'}</span>
                       </div>
                     </div>
 
@@ -3188,12 +3188,12 @@ export default function PostoPronaPage() {
                   {activeCategory.hasRooms && (
                     <div className="flex items-center gap-1">
                       <BedDouble className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{formData.rooms ? `${formData.rooms} dhoma` : '— dhoma'}</span>
+                      <span>{formData.rooms ? `${formData.rooms} dhoma` : '- dhoma'}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{formData.area_m2 ? `${formData.area_m2} m²` : '— m²'}</span>
+                    <span>{formData.area_m2 ? `${formData.area_m2} m²` : '- m²'}</span>
                   </div>
                 </div>
 

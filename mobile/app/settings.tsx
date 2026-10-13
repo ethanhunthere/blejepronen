@@ -808,7 +808,7 @@ export default function SettingsScreen() {
                   // skipping the server call and reporting success would lie
                   // about an irreversible destructive action.
                   if (!session?.access_token) {
-                    throw new Error('Sesioni ka skaduar — kyçuni përsëri për të fshirë llogarinë.')
+                    throw new Error('Sesioni ka skaduar; kyçuni përsëri për të fshirë llogarinë.')
                   }
                   const res = await apiDeleteAccount(session.access_token)
                   if (!res.success) {
@@ -855,7 +855,7 @@ export default function SettingsScreen() {
   if (loading) {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        {/* Keep the back affordance visible while loading — a dead network
+        {/* Keep the back affordance visible while loading : a dead network
             must never trap the user on a bare spinner. */}
         <View style={[styles.headerBar, { borderBottomColor: specularBorder }]}>
           <Pressable

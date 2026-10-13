@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og'
 import { createPublicSupabaseClient } from '@/lib/supabase'
 import type { Listing } from '@/lib/supabase'
 
-export const alt = 'Bleje Pronën — shpallje pronë në Kosovë'
+export const alt = 'Bleje Pronën | Shpallje pronash në Kosovë'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 3600

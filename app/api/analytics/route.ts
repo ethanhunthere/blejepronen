@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient, type User } from '@supabase/supabase
 import { createServerSupabaseClient } from '@/lib/supabase'
 
 /**
- * POST/GET /api/analytics — per-listing funnel counters (audit §6).
+ * POST/GET /api/analytics : per-listing funnel counters (audit §6).
  *
  * This is the *listing-attributed* analytics table (`listing_events`), i.e. the
  * numbers a host sees on "Postimet e Mia" (views / favourites / leads per
@@ -19,22 +19,22 @@ import { createServerSupabaseClient } from '@/lib/supabase'
  *  - `ownerId`  : optional noise filter. When the authenticated caller IS the
  *                 listing owner the event is dropped (204) so hosts browsing
  *                 their own property do not inflate their funnel. Never a
- *                 security control — ownership is re-checked against the
+ *                 security control : ownership is re-checked against the
  *                 `listings` row for authenticated callers.
  *
  * Responses
- *  204 (empty)   — recorded, or intentionally skipped: `listing_events` not
+ *  204 (empty)   : recorded, or intentionally skipped: `listing_events` not
  *                  migrated yet (Postgres 42P01), listing gone, self-event,
  *                  or rate-limited. Analytics must never break a page, so
  *                  every "nothing stored" outcome is a 204, not an error.
- *  400 `{error}` — malformed body / unknown event / bad listingId
- *  401 `{error}` — auth required for this event and no session was presented
- *  503 `{error}` — service-role key not configured
+ *  400 `{error}` : malformed body / unknown event / bad listingId
+ *  401 `{error}` : auth required for this event and no session was presented
+ *  503 `{error}` : service-role key not configured
  *
  * ── GET contract ─────────────────────────────────────────────────────────────
  * `?listingIds=<uuid>,<uuid>` (max 50, auth REQUIRED, owner-scoped)
  *  200 `{ available: boolean, stats: { [listingId]: {views, favorites, leads} }, counted, partial }`
- *      `available:false` when `listing_events` does not exist yet — the client
+ *      `available:false` when `listing_events` does not exist yet : the client
  *      then renders no counters at all instead of dishonest zeros.
  *  400 bad ids · 401 unauthenticated
  *
@@ -50,9 +50,9 @@ export const dynamic = 'force-dynamic'
 const EVENTS_TABLE = 'listing_events'
 const LISTINGS_TABLE = 'listings'
 
-/** Postgres `undefined_table` — table not created yet. */
+/** Postgres `undefined_table` : table not created yet. */
 const UNDEFINED_TABLE = '42P01'
-/** Postgres `undefined_column` — table exists, column name differs. */
+/** Postgres `undefined_column` : table exists, column name differs. */
 const UNDEFINED_COLUMN = '42703'
 
 const ALLOWED_EVENTS = ['view', 'favorite', 'lead'] as const
@@ -73,7 +73,7 @@ const DEV = process.env.NODE_ENV !== 'production'
 
 // ── lightweight in-memory abuse guard ────────────────────────────────────────
 // Serverless instances are short-lived, so this is a best-effort dampener
-// against a single client hammering the endpoint in a loop — not a durable
+// against a single client hammering the endpoint in a loop : not a durable
 // quota. Exceeding it is a silent 204 (same as "skipped"), never an error.
 const VIEW_RATE_LIMIT_PER_MINUTE = 60
 const viewBuckets = new Map<string, { windowStart: number; count: number }>()
@@ -127,7 +127,7 @@ async function resolveUser(
     } = await serverSupabase.auth.getUser()
     if (user) return user
   } catch {
-    // cookies unavailable (edge/build) — fall through to the bearer path
+    // cookies unavailable (edge/build) : fall through to the bearer path
   }
 
   const authHeader = request.headers.get('authorization')
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
 
     if (!listingError && !listingRow) return new NextResponse(null, { status: 204 })
     if (!listingError && listingRow && user && listingRow.user_id === user.id) {
-      // Host looking at their own listing — not demand.
+      // Host looking at their own listing : not demand.
       return new NextResponse(null, { status: 204 })
     }
     // A drift/permission error on this read must not lose the event: fall
@@ -307,7 +307,7 @@ export async function POST(request: Request) {
   })
 
   if (outcome === 'missing_table') {
-    if (DEV) console.warn(`[analytics] ${EVENTS_TABLE} missing — dropped ${eventName} for ${listingId}`)
+    if (DEV) console.warn(`[analytics] ${EVENTS_TABLE} missing, dropped ${eventName} for ${listingId}`)
     return new NextResponse(null, { status: 204 })
   }
   // 'failed' is still a 204: the caller did nothing wrong and no UI should break.
@@ -387,7 +387,7 @@ export async function GET(request: Request) {
   } else if (isMissingTable(first.error)) {
     return NextResponse.json({ available: false, stats: {}, counted: 0, partial: false })
   } else if (isMissingColumn(first.error)) {
-    // No `created_at` column — drop the time window rather than lose the data.
+    // No `created_at` column : drop the time window rather than lose the data.
     const second = await baseQuery().limit(MAX_AGGREGATE_ROWS)
     if (second.error) {
       if (isMissingTable(second.error)) {

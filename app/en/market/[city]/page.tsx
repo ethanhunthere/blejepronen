@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { MarketPage } from '@/components/MarketPage'
 import { fetchHubStaticParams, fetchMarketStats } from '@/lib/listings-query'
 import { SITE_URL, cityFromSlug, fmtInt, marketPathEn, marketPathSq, slugify } from '@/lib/seo-slugs'
+import { generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
 
 export const revalidate = 3600
 
@@ -23,18 +24,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const stats = await fetchMarketStats(city)
   if (!stats || stats.total === 0) return {}
   const median = stats.medianSalePpm2 ? ` Median €${fmtInt(stats.medianSalePpm2)}/m².` : ''
-  const sq = marketPathSq(city)
   const en = marketPathEn(city)
   const description = `${stats.total} active listings in ${city}, Kosovo: ${stats.forSale} for sale, ${stats.forRent} for rent.${median} Live market statistics by Bleje Pronën.`
   return {
-    title: `${city} Property Market — ${stats.total} Active Listings | Bleje Pronën`,
+    title: `${city} Property Market | ${stats.total} Active Listings | Bleje Pronën`,
     description,
-    alternates: {
-      canonical: `${SITE_URL}${en}`,
-      languages: { sq: `${SITE_URL}${sq}`, en: `${SITE_URL}${en}`, 'x-default': `${SITE_URL}${sq}` },
-    },
+    alternates: generateHreflangAlternates(en),
+    other: getGeoMeta(city),
     openGraph: {
-      title: `${city} property market — live statistics`,
+      title: `${city} Property Market | Live Statistics`,
       description,
       url: `${SITE_URL}${en}`,
       siteName: 'Bleje Pronën',

@@ -55,7 +55,7 @@ import { ALL_CITIES } from '@/lib/kosovo-locations'
 const CITIES = ALL_CITIES
 
 const DUMMY_SAMPLES = new Set([
-  // Placeholder-shaped values only. Real names/years must NEVER be blanked —
+  // Placeholder-shaped values only. Real names/years must NEVER be blanked -
   // a seller genuinely named "Alban Kelmendi" or founded in 2018 would
   // otherwise lose their data on every load and save.
   'p.sh. alban',

@@ -152,7 +152,7 @@ export default function ListingsScreen() {
     const all = getCachedListings()
     return all.length === 0
   })
-  // Honest server total for the active filter set — `null` until the first
+  // Honest server total for the active filter set : `null` until the first
   // counted response lands, so no counter ever renders a windowed guess.
   const [total, setTotal] = useState<number | null>(null)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -253,7 +253,7 @@ export default function ListingsScreen() {
       }
 
       try {
-        // Server-side filtering, sorting and exact counting in one query —
+        // Server-side filtering, sorting and exact counting in one query -
         // card columns only, is_active enforced by the shared query layer.
         const { rows, total: serverTotal, error } = await fetchListingsPage({
           ...request,
@@ -261,7 +261,7 @@ export default function ListingsScreen() {
           limit: size,
         })
 
-        // A newer request already superseded this one — drop the stale payload.
+        // A newer request already superseded this one : drop the stale payload.
         if (rid !== reqIdRef.current) return
 
         if (error) {
@@ -310,7 +310,7 @@ export default function ListingsScreen() {
   )
 
   // Every filter, category, search or sort change rewinds to page 0 and re-queries
-  // the server — `fetchListings` is re-created whenever the query params change.
+  // the server : `fetchListings` is re-created whenever the query params change.
   useEffect(() => {
     fetchListings(true)
   }, [fetchListings])
@@ -630,7 +630,7 @@ export default function ListingsScreen() {
                 },
               ]}
             >
-              {/* Exact server total for the active filters — never the window size. */}
+              {/* Exact server total for the active filters : never the window size. */}
               <Text
                 style={[
                   styles.resultCountText,

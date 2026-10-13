@@ -1,9 +1,9 @@
 /**
  * Supabase Storage image transformation helpers (web).
  *
- * Listing photos are stored as full-resolution originals (3–5 MP, 150 KB – 2 MB).
+ * Listing photos are stored as full-resolution originals (3-5 MP, 150 KB - 2 MB).
  * Even behind `next/image`, the optimizer has to pull that original from
- * Supabase on a cold cache before it can downscale it — slow first paint and
+ * Supabase on a cold cache before it can downscale it : slow first paint and
  * avoidable egress. Asking Storage for a pre-sized `/render/image/` variant
  * means the optimizer (and the browser, when `unoptimized` ever applies) only
  * ever touches a small file:
@@ -24,13 +24,13 @@ export type ImageResizeMode = 'cover' | 'contain' | 'fill'
 export type ImageFormat = 'origin' | 'webp' | 'avif'
 
 export interface ImageTransformOptions {
-  /** Target width in px. Clamped to Supabase's 1–4096 range. */
+  /** Target width in px. Clamped to Supabase's 1-4096 range. */
   width?: number
   /** Optional target height. Only meaningful together with `resize`. */
   height?: number
   /** How to fit when both width and height are given. Defaults to `cover`. */
   resize?: ImageResizeMode
-  /** 20–100. Supabase defaults to 80; cards ship 75. */
+  /** 20-100. Supabase defaults to 80; cards ship 75. */
   quality?: number
   /** Re-encode format. `webp` is universally supported by our browsers. */
   format?: ImageFormat
@@ -116,7 +116,7 @@ export function cardImageSrc(
   })
 }
 
-/** Big gallery frames — desktop mosaic hero cell and the fullscreen viewer. */
+/** Big gallery frames : desktop mosaic hero cell and the fullscreen viewer. */
 export function galleryImageSrc(src: string | null | undefined): string {
   return transformStorageImage(src, {
     width: GALLERY_IMAGE_WIDTH,

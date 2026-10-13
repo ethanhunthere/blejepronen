@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — THANOS: SUPREME COMMANDER & MASTER ORCHESTRATOR
+ * BLEJE PRONËN : THANOS: SUPREME COMMANDER & MASTER ORCHESTRATOR
  * File: services/swarm/core/thanos.ts
  *
  * Agent 0: Thanos coordinates, supervises, and commands the entire 10-agent

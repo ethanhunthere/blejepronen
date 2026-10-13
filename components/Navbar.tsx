@@ -246,7 +246,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
   const userMenuTriggerRef = useRef<HTMLButtonElement>(null)
   const menuToggleRef = useRef<HTMLButtonElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
-  /** Element that had focus before a popover opened — restored on close. */
+  /** Element that had focus before a popover opened : restored on close. */
   const lastFocusedRef = useRef<HTMLElement | null>(null)
   /**
    * Only restore focus when the user dismissed the sheet (Escape / toggle).
@@ -348,7 +348,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         .neq('sender_id', uid)
       setUnreadCount(count || 0)
     } catch {
-      // A network failure must never render as "no unread messages" —
+      // A network failure must never render as "no unread messages" -
       // keep the previous count.
     }
   }, [])
@@ -396,7 +396,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
         realtimeChannelRef.current.unsubscribe()
         realtimeChannelRef.current = null
       }
-      // Scope the INSERT watch to this user's conversations — an unfiltered
+      // Scope the INSERT watch to this user's conversations : an unfiltered
       // table watch turns every message on the platform into a refetch.
       const { data: convs } = await supabase
         .from('conversations')
@@ -599,7 +599,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       setDropdownOpen(false)
-      // Focus was inside the panel that is about to unmount — hand it back to
+      // Focus was inside the panel that is about to unmount : hand it back to
       // the disclosure button instead of letting it fall through to <body>.
       userMenuTriggerRef.current?.focus({ preventScroll: true })
     }
@@ -1017,7 +1017,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
                           tabIndex={-1}
                           className="absolute right-0 top-full mt-2.5 w-80 sm:w-84 bg-white rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,100,89,0.22),0_10px_25px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,100,89,0.08)] border border-gray-100/90 p-2.5 z-50 text-[#101828] animate-in fade-in-0 zoom-in-95 duration-150 ease-out origin-top-right focus:outline-none"
                         >
-                          {/* User info header card — a real link (it navigates to
+                          {/* User info header card : a real link (it navigates to
                               /profili). Previously a <div onClick>, which was not
                               focusable and had no keyboard activation. <a> has a
                               transparent content model, so the nested block
@@ -1280,7 +1280,7 @@ export default function Navbar({ variant = 'fixed', className }: NavbarProps) {
       </div>
 
       {/* -------------------------------------------------------------- *
-       * Mobile menu — full-screen sheet positioned directly below the
+       * Mobile menu : full-screen sheet positioned directly below the
        * permanent header bar (which holds the static logo and toggle).
        * -------------------------------------------------------------- */}
       <div

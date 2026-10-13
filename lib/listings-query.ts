@@ -51,7 +51,7 @@ type FilterableQuery = {
 /**
  * Single source of truth for catalog filtering/sorting, shared by the
  * server-rendered catalog page, programmatic hubs, and (semantically) the
- * client explorer — one query shape, one index story, no drift.
+ * client explorer : one query shape, one index story, no drift.
  */
 export function applyListingsFilters(query: FilterableQuery, p: ListingsQueryParams): FilterableQuery {
   let q = query

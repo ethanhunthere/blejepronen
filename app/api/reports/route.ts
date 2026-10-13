@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient, type User } from '@supabase/supabase
 import { createServerSupabaseClient } from '@/lib/supabase'
 
 /**
- * POST /api/reports — listing abuse reports (audit §6, marketplace integrity).
+ * POST /api/reports : listing abuse reports (audit §6, marketplace integrity).
  *
  * Contract
  * --------
@@ -13,22 +13,22 @@ import { createServerSupabaseClient } from '@/lib/supabase'
  *            max 1000 chars.
  *
  * Responses
- *  201 `{ success: true, duplicate?: true }` — report stored (or the same user
+ *  201 `{ success: true, duplicate?: true }` : report stored (or the same user
  *            already reported this listing, which is idempotent by design)
- *  400 `{ error, message }` — malformed body / unknown reason / missing note
- *  401 `{ error, message }` — no session (cookie or Bearer)
- *  403 `{ error, message }` — reporting your own listing
- *  404 `{ error, message }` — listing does not exist
- *  429 `{ error, message, retryAfterMinutes }` — rate limit (5 reports/user/hour)
- *  503 `{ error, message }` — service role missing, OR `listing_reports` has not
+ *  400 `{ error, message }` : malformed body / unknown reason / missing note
+ *  401 `{ error, message }` : no session (cookie or Bearer)
+ *  403 `{ error, message }` : reporting your own listing
+ *  404 `{ error, message }` : listing does not exist
+ *  429 `{ error, message, retryAfterMinutes }` : rate limit (5 reports/user/hour)
+ *  503 `{ error, message }` : service role missing, OR `listing_reports` has not
  *            been migrated yet (Postgres 42P01). The message is user-facing
  *            Albanian: the UI shows it verbatim, so keep it friendly.
  *
  * Rules enforced here (never trust the client components):
- *  • auth required — anonymous reports are not accepted;
+ *  • auth required : anonymous reports are not accepted;
  *  • self-reports rejected (owner moderation is a lifecycle action, not a report);
  *  • per-user hourly quota, in-memory. Serverless instances are short-lived so
- *    this is a dampener against loops/spam, not a durable quota — the durable
+ *    this is a dampener against loops/spam, not a durable quota : the durable
  *    guard is a unique index + the moderation queue (see migration
  *    20260928_host_lifecycle.sql).
  *
@@ -50,7 +50,7 @@ const UNDEFINED_COLUMN = '42703'
 const ALLOWED_REASONS = ['spam', 'fraudulent', 'duplicate', 'offensive', 'other'] as const
 type ReportReason = (typeof ALLOWED_REASONS)[number]
 
-/** Albanian labels — mirrored in the report UI components. */
+/** Albanian labels : mirrored in the report UI components. */
 const REASON_LABELS: Record<ReportReason, string> = {
   spam: 'Spam',
   fraudulent: 'Mashtrim / mashtrues',
@@ -69,7 +69,7 @@ const RATE_LIMIT_PER_HOUR = 5
 const RATE_WINDOW_MS = 60 * 60 * 1000
 
 const REPORTS_UNAVAILABLE_MESSAGE =
-  'Sistemi i raportimit është përkohësisht jashtë funksionit. Ju lutemi provoni përsëri më vonë — nëse është urgjente, na shkruani te faqja e kontaktit.'
+  'Sistemi i raportimit është përkohësisht jashtë funksionit. Ju lutemi provoni përsëri më vonë; nëse është urgjente, na shkruani te faqja e kontaktit.'
 
 const DEV = process.env.NODE_ENV !== 'production'
 
@@ -124,7 +124,7 @@ async function resolveUser(request: Request, admin: SupabaseClient | null): Prom
     } = await serverSupabase.auth.getUser()
     if (user) return user
   } catch {
-    // no cookies available — fall through to bearer
+    // no cookies available : fall through to bearer
   }
 
   const authHeader = request.headers.get('authorization')
@@ -318,7 +318,7 @@ export async function POST(request: Request) {
     return json(201, {
       success: true,
       duplicate: true,
-      message: 'Faleminderit — këtë shpallje e keni raportuar më parë. Ekipi ynë po e shqyrton atë.',
+      message: 'Faleminderit, këtë shpallje e keni raportuar më parë. Ekipi ynë po e shqyrton atë.',
     })
   }
 
@@ -330,7 +330,7 @@ export async function POST(request: Request) {
   })
 
   if (outcome === 'missing_table') {
-    console.error(`[reports] ${REPORTS_TABLE} does not exist yet — apply the migration`)
+    console.error(`[reports] ${REPORTS_TABLE} does not exist yet, apply the migration`)
     return json(503, { error: 'reports_unavailable', message: REPORTS_UNAVAILABLE_MESSAGE })
   }
   if (outcome === 'failed') {

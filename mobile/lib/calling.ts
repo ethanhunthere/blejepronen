@@ -4,11 +4,11 @@ import { supabase } from './supabase'
 import { getSyncAuthUser } from './auth-cache'
 
 /**
- * Bleje Pronën — In-App Calling Engine (100% free, zero vendor lock-in)
+ * Bleje Pronën : In-App Calling Engine (100% free, zero vendor lock-in)
  * ─────────────────────────────────────────────────────────────────────
  * Real WhatsApp-style voice calls over WebRTC with:
  *   • Transport:  react-native-webrtc (open source)
- *   • Signaling:  Supabase Realtime broadcast (already in the app — free tier)
+ *   • Signaling:  Supabase Realtime broadcast (already in the app : free tier)
  *   • NAT travel: Google STUN + openrelay.metered.ca free public TURN
  * Cost: $0/month. No SDK keys, no per-minute billing.
  *
@@ -16,7 +16,7 @@ import { getSyncAuthUser } from './auth-cache'
  *   bp_call_ring_<userId>  → incoming-call notifications + accept/decline/busy
  *   bp_call_<callId>       → offer / answer / ICE candidates / hangup control
  *
- * IMPORTANT: react-native-webrtc ships native code — it cannot run inside
+ * IMPORTANT: react-native-webrtc ships native code : it cannot run inside
  * Expo Go. We therefore load it lazily and gracefully: in Expo Go the call
  * UI provides an informative notice while the rest of the app is unaffected.
  * In a development/store build it works fully.
@@ -90,7 +90,7 @@ function loadWebRTC(): WebRTCModule | null {
       (globalThis as any)?.RTCPeerConnection
     )
 
-    // Lazy require — never at module scope, so Expo Go keeps working.
+    // Lazy require : never at module scope, so Expo Go keeps working.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const m = require('react-native-webrtc')
     if (m && (m.RTCPeerConnection || hasNative)) {
@@ -131,7 +131,7 @@ const ICE_SERVERS = [
 // ─── Types ───────────────────────────────────────────────────────────
 export type CallStatus =
   | 'idle'
-  | 'outgoing' // ringing — waiting for the other side to accept
+  | 'outgoing' // ringing, waiting for the other side to accept
   | 'incoming' // our phone is ringing
   | 'connecting' // accepted, negotiating WebRTC
   | 'connected'
@@ -174,7 +174,7 @@ interface CallSignal {
   callId: string
   sdp?: unknown
   candidate?: unknown
-  /** Sender's user ID — lets each side ignore its own broadcast echoes */
+  /** Sender's user ID : lets each side ignore its own broadcast echoes */
   by?: string
 }
 
@@ -205,7 +205,7 @@ class CallEngine {
 
   private ringChannel: AnyChannel | null = null
   private callChannel: AnyChannel | null = null
-  /** Call channel created but still joining — tracked so hangup can drop it. */
+  /** Call channel created but still joining : tracked so hangup can drop it. */
   private joiningChannel: AnyChannel | null = null
   /** ICE candidates that arrived before the remote description was applied */
   private pendingIce: unknown[] = []
@@ -216,7 +216,7 @@ class CallEngine {
   private callId: string | null = null
   private timers: ReturnType<typeof setTimeout>[] = []
   private lastOfferSdp: unknown = null
-  /** Permanent ring listener channel owned by listenForIncoming — never remove elsewhere */
+  /** Permanent ring listener channel owned by listenForIncoming : never remove elsewhere */
   private incomingChannel: AnyChannel | null = null
 
   // Caller display info (set before starting a call)
@@ -265,7 +265,7 @@ class CallEngine {
         const inc = payload
         if (inc?.type !== 'incoming' || !inc.callId) return
         if (this.state.status !== 'idle' && this.state.status !== 'ended') {
-          // Already on a call — politely answer "busy"
+          // Already on a call : politely answer "busy"
           void channel?.send({
             type: 'broadcast',
             event: 'ring-reply',
@@ -326,7 +326,7 @@ class CallEngine {
   /**
    * Sends a ring-reply on the permanent ring listener channel.
    * supabase.channel(topic) returns the EXISTING channel for a topic, and
-   * subscribe() is a no-op on an already-joined channel — so the reply must be
+   * subscribe() is a no-op on an already-joined channel : so the reply must be
    * sent directly on the stored reference, and that reference must NEVER be
    * removed here (listenForIncoming owns its lifecycle).
    */
@@ -372,7 +372,7 @@ class CallEngine {
       return
     }
 
-    // Expo Go / web: WebRTC native module is absent — show a graceful notice
+    // Expo Go / web: WebRTC native module is absent : show a graceful notice
     if (!isCallingSupported()) {
       Alert.alert(
         'Thirrjet në Aplikacion',
@@ -383,7 +383,7 @@ class CallEngine {
     }
 
     // Resolve the CALLER's own display identity from the profiles table so the
-    // callee sees who is calling (self-contained — works from any screen).
+    // callee sees who is calling (self-contained : works from any screen).
     // Explicit column list: profiles has drifted before (email / account_type /
     // company_name / whatsapp are gone), so never `select('*')` and read fields
     // that may no longer exist.
@@ -464,7 +464,7 @@ class CallEngine {
     if (this.state.status !== 'incoming' || !this.callId) return
     this.stopRingback()
     // Reply on the ring channel the call arrived on (callee side has no
-    // this.ringChannel — that belongs to the caller only).
+    // this.ringChannel : that belongs to the caller only).
     this.sendRingReply('declined')
     this.cleanupMedia()
     this.finish('declined')
@@ -544,7 +544,7 @@ class CallEngine {
         }, CONNECT_TIMEOUT_MS)
       )
     } catch (e) {
-      // Already finished elsewhere — do not overwrite its endedReason.
+      // Already finished elsewhere : do not overwrite its endedReason.
       if (this.isAbandoned(e)) return
       console.warn('Caller negotiation failed:', e)
       this.finish('failed')
@@ -557,7 +557,7 @@ class CallEngine {
       // CRITICAL: create the peer connection and mic BEFORE the offer arrives,
       // otherwise the offer would be silently dropped and the call would fail.
       await this.setupPeerConnection()
-      // Tell the caller we are listening — it (re)sends the offer on this signal,
+      // Tell the caller we are listening : it (re)sends the offer on this signal,
       // closing the subscribe-order race between the two devices.
       void this.callChannel?.send({
         type: 'broadcast',
@@ -570,7 +570,7 @@ class CallEngine {
         }, CONNECT_TIMEOUT_MS)
       )
     } catch (e) {
-      // The callee hung up before the channel joined — already cleaned up.
+      // The callee hung up before the channel joined : already cleaned up.
       if (this.isAbandoned(e)) return
       console.warn('Callee negotiation failed:', e)
       this.finish('failed')
@@ -664,7 +664,7 @@ class CallEngine {
    * Joins the per-call signalling channel.
    *
    * Leak-safe on every exit path: a channel that errors, times out, or finishes
-   * joining AFTER the call was abandoned is removed here rather than adopted —
+   * joining AFTER the call was abandoned is removed here rather than adopted -
    * previously it stayed joined forever because `this.callChannel` was still
    * null when `leaveChannels()` ran.
    */
@@ -722,12 +722,12 @@ class CallEngine {
 
   private async handleSignal(signal: CallSignal): Promise<void> {
     if (signal?.callId !== this.callId) return
-    // Supabase echoes broadcasts back to the sender — never process our own signals
+    // Supabase echoes broadcasts back to the sender : never process our own signals
     if (signal.by && signal.by === this.myUserId) return
 
     switch (signal.type) {
       case 'ready':
-        // Callee just joined the call channel — (re)send our offer to close
+        // Callee just joined the call channel : (re)send our offer to close
         // the subscribe-order race. Duplicates are ignored by the callee.
         if (this.state.role === 'caller' && this.lastOfferSdp) {
           void this.callChannel?.send({
@@ -793,7 +793,7 @@ class CallEngine {
 
       case 'ice':
         if (this.pc && signal.candidate) {
-          // If the remote description isn't set yet, queue — never drop.
+          // If the remote description isn't set yet, queue : never drop.
           if (!this.pc.remoteDescription) {
             this.pendingIce.push(signal.candidate)
             break
@@ -801,7 +801,7 @@ class CallEngine {
           try {
             await this.pc.addIceCandidate(new (loadWebRTC()!.RTCIceCandidate)(signal.candidate))
           } catch {
-            // Malformed candidate — non-fatal
+            // Malformed candidate : non-fatal
           }
         }
         break
@@ -829,7 +829,7 @@ class CallEngine {
       // Android supports repeating patterns natively
       Vibration.vibrate([600, 900, 600, 1400], true)
     } else {
-      // iOS Vibration ignores patterns/repeat — pulse with haptics instead
+      // iOS Vibration ignores patterns/repeat : pulse with haptics instead
       const buzz = () => {
         if (this.state.status !== 'incoming') return
         import('expo-haptics')
@@ -907,7 +907,7 @@ class CallEngine {
    * Leaves every channel owned by the CURRENT call.
    *
    * The permanent incoming-call listener (`incomingChannel`) is deliberately
-   * NOT touched here — it outlives individual calls so the user keeps receiving
+   * NOT touched here : it outlives individual calls so the user keeps receiving
    * rings after hangup. It is owned exclusively by listenForIncoming /
    * teardownIncoming.
    */

@@ -22,6 +22,8 @@ export async function generateStaticParams() {
   return hoods.map(({ city, type, hood }) => ({ city: slugify(city), type, hood: slugify(hood) }))
 }
 
+import { generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
+
 interface PageProps {
   params: Promise<{ city: string; type: string; hood: string }>
 }
@@ -35,14 +37,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const stats = await fetchMarketStats(city)
   const copy = { city, type: type as HubType, hood, total, medianPpm2: stats?.medianSalePpm2 ?? null }
   const sq = hubPathSq(city, type as HubType, hood)
-  const en = hubPathEn(city, type as HubType, hood)
   return {
     title: hubTitleSq(copy),
     description: hubDescriptionSq(copy),
-    alternates: {
-      canonical: `${SITE_URL}${sq}`,
-      languages: { sq: `${SITE_URL}${sq}`, en: `${SITE_URL}${en}`, 'x-default': `${SITE_URL}${sq}` },
-    },
+    alternates: generateHreflangAlternates(sq),
+    other: getGeoMeta(city),
     openGraph: {
       title: hubTitleSq(copy),
       description: hubDescriptionSq(copy),

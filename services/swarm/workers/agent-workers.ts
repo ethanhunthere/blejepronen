@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — THE 10 SPECIALIZED MARVEL WORKERS (PHASE 3)
+ * BLEJE PRONËN : THE 10 SPECIALIZED MARVEL WORKERS (PHASE 3)
  * File: services/swarm/workers/agent-workers.ts
  *
  * Full, production-grade inspection logics supervised by Thanos:

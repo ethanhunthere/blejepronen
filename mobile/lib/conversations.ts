@@ -5,12 +5,12 @@ import { createSafeChannel } from './realtime'
 import { isLogoutInProgress, subscribeAuthEvents } from './auth-cache'
 
 /**
- * Bleje Pronën — conversation list store (single source of truth).
+ * Bleje Pronën : conversation list store (single source of truth).
  * ─────────────────────────────────────────────────────────────────────
  * Why this module exists (audit §4.2 / §4.3 / §4.4):
  *
  *   • The messages tab used to `select('…, messages(id, content, sender_id,
- *     created_at, is_read)')` for EVERY conversation — i.e. it downloaded the
+ *     created_at, is_read)')` for EVERY conversation : i.e. it downloaded the
  *     whole corpus of the user's chats just to render a one-line preview and a
  *     badge. Payload grew without bound with conversation length.
  *   • Every realtime event (an INSERT, the `conversations.updated_at` touch
@@ -24,11 +24,11 @@ import { isLogoutInProgress, subscribeAuthEvents } from './auth-cache'
  *
  *   1. Conversations are fetched WITHOUT the messages embed. The last message
  *      comes from ONE bounded `.in('conversation_id', ids)` query ordered by
- *      `created_at desc`, reduced client-side (no RPC exists in this database —
+ *      `created_at desc`, reduced client-side (no RPC exists in this database -
  *      see supabase/schema.sql, which only defines handle_new_user /
  *      handle_updated_at). Ids are capped at CONVERSATION_LIST_LIMIT.
  *   2. Unread counts come from ONE bounded `.select('conversation_id')` probe
- *      reduced into a per-conversation map. Badges everywhere read that map —
+ *      reduced into a per-conversation map. Badges everywhere read that map -
  *      there is no second counter to drift.
  *   3. ALL realtime filters for this feature live on ONE supabase channel
  *      (`bp_messages_mux`), reference-counted across screens, and every burst
@@ -38,7 +38,7 @@ import { isLogoutInProgress, subscribeAuthEvents } from './auth-cache'
  */
 
 // ─── Tunables ────────────────────────────────────────────────────────
-/** Coalescing window for realtime bursts — one state write per window. */
+/** Coalescing window for realtime bursts : one state write per window. */
 export const COALESCE_WINDOW_MS = 250
 /** Hard cap on how many conversations (and therefore ids) we ever pull. */
 export const CONVERSATION_LIST_LIMIT = 60
@@ -70,7 +70,7 @@ export interface ConversationSummary {
 
 export interface ConversationsSnapshot {
   items: ConversationSummary[]
-  /** Per-conversation unread counts — the ONLY badge source in the app. */
+  /** Per-conversation unread counts : the ONLY badge source in the app. */
   unreadById: Record<string, number>
   totalUnread: number
   /** True only until the first load for the current user settles. */
@@ -78,7 +78,7 @@ export interface ConversationsSnapshot {
   refreshing: boolean
   /**
    * False until the user has been resolved and the first load attempt has
-   * settled — lets screens distinguish "still bootstrapping" from "signed in
+   * settled : lets screens distinguish "still bootstrapping" from "signed in
    * with genuinely no conversations" without a second local flag.
    */
   ready: boolean
@@ -485,7 +485,7 @@ async function drain(): Promise<void> {
       await runLoad(full)
     } catch (err: any) {
       console.warn('Conversations store load notice:', err?.message || err)
-      // ready must flip on failure too — otherwise the tab renders its
+      // ready must flip on failure too : otherwise the tab renders its
       // skeleton forever with no error card and no retry path.
       emit({ loading: false, refreshing: false, ready: true, error: String(err?.message || err) })
     } finally {
@@ -541,7 +541,7 @@ function resetForLogout(): void {
   unreadCache = {}
   loadedUserId = null
 
-  // Already in the signed-out shape — skip the write so subscribers (and the
+  // Already in the signed-out shape : skip the write so subscribers (and the
   // `onAuthStateChange` storm that accompanies a logout) do not re-render.
   const alreadyEmpty =
     snapshot.items.length === 0 &&
@@ -701,7 +701,7 @@ async function adoptUser(userId: string | null): Promise<void> {
     return
   }
 
-  // Identity switch — check for persisted conversations cache for frame-0 paint
+  // Identity switch : check for persisted conversations cache for frame-0 paint
   metaCache = []
   lastCache = {}
   unreadCache = {}
@@ -740,7 +740,7 @@ async function adoptUser(userId: string | null): Promise<void> {
     })
   }
   await runLoad({ meta: true, messages: true, unread: true })
-  // runLoad bails out early on logout/network abort — never leave a subscriber
+  // runLoad bails out early on logout/network abort : never leave a subscriber
   // hanging on the skeleton in that case.
   if (!snapshot.ready) emit({ ready: true, loading: false, refreshing: false })
 }
@@ -767,7 +767,7 @@ export function subscribeConversations(fn: SnapshotListener): () => void {
   if (refCount === 1) {
     startChannel()
     try {
-      // Single consolidated auth bus — never open a second raw onAuthStateChange.
+      // Single consolidated auth bus : never open a second raw onAuthStateChange.
       authSubscription = subscribeAuthEvents((event) => {
         void adoptUser(
           event.isLoggingOut ? null : (event.session?.user?.id ?? null)
@@ -855,7 +855,7 @@ export function noteOutgoingMessage(
   emit({ items: compose() })
 }
 
-/** Test/diagnostic helper — reports how many channels this store owns. */
+/** Test/diagnostic helper : reports how many channels this store owns. */
 export function __conversationsChannelCount(): number {
   return channel ? 1 : 0
 }

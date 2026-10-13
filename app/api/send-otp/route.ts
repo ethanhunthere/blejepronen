@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     let targetEmail = user?.email || ''
 
     if (!targetUserId && bodyEmail) {
-      // Cached, indexed lookup — never a full directory scan.
+      // Cached, indexed lookup : never a full directory scan.
       const found = await findAuthUserByEmail(supabaseAdmin, bodyEmail)
       if (found) {
         targetUserId = found.id
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         from: 'Bleje Pronën <noreply@blejepronen.com>',
         to: targetEmail,
-        // The code lives in the body only — subjects are indexed, previewed
+        // The code lives in the body only : subjects are indexed, previewed
         // and logged by mail infrastructure.
         subject: 'Kodi juaj i verifikimit - Bleje Pronën',
         html,

@@ -1,17 +1,17 @@
 /**
- * Trust-signal derivation — SINGLE SOURCE OF TRUTH for host/seller badges.
+ * Trust-signal derivation : SINGLE SOURCE OF TRUTH for host/seller badges.
  *
  * ⚠️ This file is mirrored byte-for-byte at `mobile/lib/verification.ts`.
  *    Change one, change both (the two platforms must never disagree about who
  *    looks "verified", or the same seller shows a badge in the browser and no
  *    badge in the app).
  *
- * SECURITY RULE — badges must ONLY ever come from this function.
+ * SECURITY RULE : badges must ONLY ever come from this function.
  *   • It is pure: no I/O, no auth context, no client state, no self-grant.
  *   • Every input is a *server-owned* column (profiles.email_verified is set by
  *     the OTP verification flow, profiles.phone by the account owner,
  *     profiles.created_at by Postgres). A client cannot promote itself by
- *     passing different numbers in — the caller must feed the row it read.
+ *     passing different numbers in : the caller must feed the row it read.
  *   • Never render a badge from a client-side flag, a query string, localStorage,
  *     a user_metadata blob, or an "isVerified" prop somebody invented. If the
  *     value did not come out of deriveTrustSignals(), it is not a badge.
@@ -26,7 +26,7 @@ export type TrustLevel = 'basic' | 'verified' | 'trusted'
 /**
  * The only shape this module accepts. Deliberately loose (all optional) so a
  * `select('*')` row, a nested PostgREST join, or a hand-built object all work
- * without casting — named column selects are what break on schema drift.
+ * without casting : named column selects are what break on schema drift.
  */
 export interface TrustProfileInput {
   email_verified?: boolean | null
@@ -59,7 +59,7 @@ export const TRUST_THRESHOLDS = {
   minPhoneDigits: 6,
 } as const
 
-/** Albanian labels — the only strings the UI should show for a level. */
+/** Albanian labels : the only strings the UI should show for a level. */
 export const TRUST_LEVEL_LABELS: Record<TrustLevel, string> = {
   basic: 'Bazë',
   verified: 'I verifikuar',
@@ -68,7 +68,7 @@ export const TRUST_LEVEL_LABELS: Record<TrustLevel, string> = {
 
 /** Short helper copy explaining what a level means (tooltips, report dialogs). */
 export const TRUST_LEVEL_DESCRIPTIONS: Record<TrustLevel, string> = {
-  basic: 'Llogari e re — ende pa sinjale identiteti.',
+  basic: 'Llogari e re: ende pa sinjale identiteti.',
   verified: 'Email ose numër telefoni i konfirmuar.',
   trusted: 'Email + telefon i konfirmuar dhe llogari e vjetër ose shitës aktiv.',
 }
@@ -82,7 +82,7 @@ export function hasPhoneOnFile(phone?: string | null): boolean {
 
 /**
  * Account age in whole days, or null when created_at is missing/unparseable.
- * A null age is *not* treated as established — unknown never upgrades a badge.
+ * A null age is *not* treated as established : unknown never upgrades a badge.
  */
 export function accountAgeDays(createdAt?: string | null): number | null {
   if (!createdAt) return null

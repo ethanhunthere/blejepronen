@@ -168,7 +168,7 @@ export default function LoginScreen() {
       const flowId = queryParams.get('sb_flow_id') || hashParams.get('sb_flow_id') || undefined
 
       if (!authCode && (accessToken || refreshToken)) {
-        // Implicit-flow tokens in the redirect URL — refuse. PKCE is required.
+        // Implicit-flow tokens in the redirect URL : refuse. PKCE is required.
         oauthHandledRef.current = false
         setOauthLoading(null)
         throw new Error(

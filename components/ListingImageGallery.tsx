@@ -58,7 +58,7 @@ export default function ListingImageGallery({
   return (
     <>
       <div id="listing-gallery" className="relative">
-        {/* Desktop grid — adaptive bento mosaic (1 / 2 / 3 / 4 / 5+ photos) */}
+        {/* Desktop grid : adaptive bento mosaic (1 / 2 / 3 / 4 / 5+ photos) */}
         <div
           className={`hidden md:grid h-[340px] md:h-[390px] lg:h-[430px] gap-2.5 rounded-3xl overflow-hidden bg-gray-100 shadow-xs ${
             total === 1 ? 'grid-cols-1 grid-rows-1' : 'grid-cols-[1.5fr_1fr] grid-rows-2'

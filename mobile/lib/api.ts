@@ -130,7 +130,7 @@ export async function apiSignUp(params: SignupParams): Promise<ApiResponse> {
 /**
  * Verify the 6-digit email OTP verification code.
  * Upon success, Supabase confirms email_confirm = true.
- * NOTE: password is intentionally NOT sent — the server treats it as optional
+ * NOTE: password is intentionally NOT sent : the server treats it as optional
  * (see web app/api/verify-otp/route.ts) and mobile completes the session via
  * signInWithPassword after a successful verify.
  */

@@ -1,4 +1,4 @@
-# Bleje Pronën — iOS & Android Mobile App (Expo / React Native)
+# Bleje Pronën | iOS & Android Mobile App (Expo / React Native)
 
 Aplikacioni zyrtar celular për **Bleje Pronën** (iOS dhe Android), i ndërtuar me **React Native (Expo SDK 57)** dhe **TypeScript**. 
 

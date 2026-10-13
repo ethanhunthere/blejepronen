@@ -79,7 +79,7 @@ export const FavoriteButton = memo(function FavoriteButton({
       if (now - lastPressRef.current < 260) return
       lastPressRef.current = now
 
-      // Guard: Strict guest authorization check — unauthenticated users cannot favorite
+      // Guard: Strict guest authorization check : unauthenticated users cannot favorite
       const user = getSyncAuthUser()
       if (!user || (canToggle && !canToggle())) {
         if (Platform.OS !== 'web') {

@@ -8,7 +8,7 @@ export function normalizePhoneNumber(raw: string): string {
     clean = '+' + clean.slice(2)
   }
 
-  // Kosovo mobiles 044–049 + 6 digits, and Kosovo landlines 028/029.
+  // Kosovo mobiles 044-049 + 6 digits, and Kosovo landlines 028/029.
   if (/^0(4[4-9])\d{6}$/.test(clean) || /^0(28|29)\d{5,6}$/.test(clean)) {
     clean = '+383' + clean.slice(1)
   }

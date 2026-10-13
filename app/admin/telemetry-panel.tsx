@@ -16,7 +16,7 @@ function formatTime(iso: string): string {
 
 /**
  * Live telemetry inspection for the admin dashboard.
- * Polls the service-role-backed server action — `telemetry_events` has RLS
+ * Polls the service-role-backed server action : `telemetry_events` has RLS
  * with zero policies, so a client-side realtime subscription would receive
  * nothing. Pauses while the tab is hidden.
  */

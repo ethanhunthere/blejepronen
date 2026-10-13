@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * POST /api/telemetry — ingest for the batched event loggers in
+ * POST /api/telemetry : ingest for the batched event loggers in
  * `lib/telemetry.ts` (web) and `mobile/lib/telemetry.ts` (Expo).
  *
  * Contract
@@ -17,14 +17,14 @@ import { createClient } from '@supabase/supabase-js'
  *
  * Responses
  * ---------
- *  200 `{ accepted, rejected }` — inserted
- *  204 (empty)                  — `telemetry_events` does not exist yet
+ *  200 `{ accepted, rejected }` : inserted
+ *  204 (empty)                  : `telemetry_events` does not exist yet
  *                                 (Postgres 42P01): the batch is dropped, not
  *                                 an error, so the migration can lag the deploy
- *  400 `{ error }`              — malformed / unknown event / oversized props
- *  413 `{ error }`              — body over 32 KB
- *  503 `{ error }`              — service-role key not configured
- *  500 `{ error }`              — unexpected database failure
+ *  400 `{ error }`              : malformed / unknown event / oversized props
+ *  413 `{ error }`              : body over 32 KB
+ *  503 `{ error }`              : service-role key not configured
+ *  500 `{ error }`              : unexpected database failure
  *
  * Writes go through the service-role client only: `telemetry_events` has RLS
  * enabled with zero policies, so anon/authenticated can neither read nor write
@@ -36,7 +36,7 @@ export const dynamic = 'force-dynamic'
 
 const TABLE = 'telemetry_events'
 
-/** Postgres `undefined_table` — table not created yet. */
+/** Postgres `undefined_table` : table not created yet. */
 const UNDEFINED_TABLE = '42P01'
 
 /** Hard body cap: 32 KB. */
@@ -96,7 +96,7 @@ function byteLength(value: string): number {
   return new TextEncoder().encode(value).length
 }
 
-/** True for `{}`-style plain objects only — rejects arrays, null and class-ish values. */
+/** True for `{}`-style plain objects only : rejects arrays, null and class-ish values. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
       /relation .* does not exist|Could not find the table/i.test(error.message ?? '')
 
     if (missingTable) {
-      // Migration not applied yet — acknowledge and drop, never error the client.
+      // Migration not applied yet : acknowledge and drop, never error the client.
       if (DEV) console.warn(`[telemetry] ${TABLE} missing, dropped ${rows.length} event(s)`)
       return new NextResponse(null, { status: 204 })
     }

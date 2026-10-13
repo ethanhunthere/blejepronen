@@ -77,7 +77,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     }
   }, [])
 
-  // Cold Start verification — runs at mount, under the opaque splash veil, so
+  // Cold Start verification : runs at mount, under the opaque splash veil, so
   // the lock state is known before the handoff finishes. SecureStore/posture
   // reads are raced with a timeout: fail-open rather than hang launch behind F3.
   //
@@ -134,7 +134,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
   }, [])
 
   // Auth attempt is derived state: fires only once the veil is gone
-  // (active) and a lock is requested — cold start or any later relock.
+  // (active) and a lock is requested : cold start or any later relock.
   useEffect(() => {
     if (!active || !isLocked) return
     if (hasAttemptedColdStart.current) return
@@ -183,7 +183,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
   }, [])
 
   // Emergency safety unlock. Requires a fresh verification (biometric or
-  // device credential, per current posture) BEFORE disabling the lock —
+  // device credential, per current posture) BEFORE disabling the lock -
   // otherwise the "emergency" path is a permanent, frictionless bypass that
   // anyone with the unlocked phone can use.
   const handleEmergencyDisable = () => {
@@ -215,7 +215,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
     )
   }
 
-  // Lock UI mounts in the same commit the veil unmounts (active flips) —
+  // Lock UI mounts in the same commit the veil unmounts (active flips) -
   // no frame of app visible before the gate covers it.
   if (!(active && isLocked)) return null
 
@@ -244,7 +244,7 @@ export function BiometricGate({ active = true, onColdStartResolved }: BiometricG
         { backgroundColor: colors.background },
       ]}
       // The overlay blocks all pointer events to the screens underneath while
-      // locked — otherwise a stack behind the gate stays tappable.
+      // locked : otherwise a stack behind the gate stays tappable.
       pointerEvents="auto"
     >
       <View style={styles.contentWrap} pointerEvents="auto">

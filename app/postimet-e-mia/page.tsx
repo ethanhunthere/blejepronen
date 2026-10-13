@@ -106,7 +106,7 @@ function MyListingCard({ listing, now, onDelete, onToggleStatus, statusBusy }: M
 
   return (
     <div className="group h-full flex flex-col rounded-2xl overflow-hidden bg-white ring-1 ring-black/5 shadow-[0_1px_3px_rgba(16,24,40,0.08)] hover:shadow-md transition-all duration-200">
-      {/* Clickable Image Section — clean single thumbnail (no hover cycling) */}
+      {/* Clickable Image Section : clean single thumbnail (no hover cycling) */}
       <Link
         href={`/listings/${listing.id}`}
         className="block relative aspect-[4/3] bg-gray-100 flex-shrink-0 overflow-hidden"
@@ -381,7 +381,7 @@ export default function PostimetEMiaPage() {
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
   // The `status` lifecycle column ships in migration 20260928_003. Probe once
   // and degrade to `is_active` alone if the live table has not applied it yet
-  // (Postgres 42703) — mirrors the mobile client's fallback.
+  // (Postgres 42703) : mirrors the mobile client's fallback.
   const statusColumnSupportedRef = useRef(true)
 
   const handleToggleStatus = async (listing: Listing) => {

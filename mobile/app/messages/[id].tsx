@@ -66,7 +66,7 @@ import { DraggableBottomSheet } from '@/components/motion'
 import { playTapSound, playSuccessSound } from '@/lib/sound'
 import { safeBack } from '@/lib/navigation'
 
-/** A single row of the thread — see lib/chat.ts for the paging contract. */
+/** A single row of the thread : see lib/chat.ts for the paging contract. */
 type MessageItem = ChatMessage
 
 interface OtherUser {
@@ -226,7 +226,7 @@ export default function ChatConversationScreen() {
   // are walked backwards on demand from the top of the list.
   const [hasMoreHistory, setHasMoreHistory] = useState(false)
   const [loadingOlder, setLoadingOlder] = useState(false)
-  /** `created_at` of the oldest loaded row — the keyset cursor. */
+  /** `created_at` of the oldest loaded row : the keyset cursor. */
   const cursorRef = useRef<string | null>(null)
   /** Ids already rendered, so the `.lte` cursor probe cannot duplicate rows. */
   const knownIdsRef = useRef<Set<string>>(new Set())
@@ -258,7 +258,7 @@ export default function ChatConversationScreen() {
 
   /**
    * One batched read-receipt writer per conversation. Every "there are unread
-   * inbound messages here" signal — the initial open and each realtime INSERT —
+   * inbound messages here" signal : the initial open and each realtime INSERT -
    * funnels through it and becomes a single coalesced bulk UPDATE.
    */
   const readFlusherRef = useRef<ReturnType<typeof createReadReceiptFlusher> | null>(null)
@@ -276,7 +276,7 @@ export default function ChatConversationScreen() {
 
   /**
    * Foreground push suppression (audit §4.6): while this thread is the visible
-   * conversation, a banner for its own incoming messages is pure noise — the row
+   * conversation, a banner for its own incoming messages is pure noise : the row
    * is already appending live over realtime. Cleared on unmount so pushes for
    * this thread resume the moment the user leaves.
    */
@@ -427,7 +427,7 @@ export default function ChatConversationScreen() {
               return [...prev, newMsg]
             })
 
-            // Our own insert echoes back — nothing to acknowledge.
+            // Our own insert echoes back : nothing to acknowledge.
             if (newMsg.sender_id === currentUserIdRef.current) return
 
             if (Platform.OS !== 'web') {
@@ -470,7 +470,7 @@ export default function ChatConversationScreen() {
     }
 
     return () => {
-      // Deterministic teardown — no listener survives navigation away.
+      // Deterministic teardown : no listener survives navigation away.
       if (channel) supabase.removeChannel(channel)
       channel = null
     }
@@ -497,7 +497,7 @@ export default function ChatConversationScreen() {
         cursorRef.current = page.cursor
         setMessages((prev) => [...page.messages, ...prev])
       } else if (page.cursor && page.cursor !== cursorRef.current) {
-        // Whole window was rows we already had — advance the cursor so the next
+        // Whole window was rows we already had : advance the cursor so the next
         // tap continues the walk instead of stalling.
         cursorRef.current = page.cursor
       }
@@ -596,7 +596,7 @@ export default function ChatConversationScreen() {
     setSending(true)
     try {
       const path = `${currentUserId}/messages/${id}/${Date.now()}.jpg`
-      // Compress client-side before upload — a 12MP capture must never go
+      // Compress client-side before upload : a 12MP capture must never go
       // to storage (or JS memory) at full size.
       const manipulated = await ImageManipulator.manipulateAsync(
         uri,

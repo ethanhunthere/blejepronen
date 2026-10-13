@@ -2,7 +2,7 @@
  * Supabase Storage image transformation helpers (mobile).
  *
  * Listing photos are uploaded as full-resolution WebP/JPEG originals (often
- * 3–5 MP, 150 KB – 2 MB each). Decoding those inside a scrolling feed is the
+ * 3-5 MP, 150 KB - 2 MB each). Decoding those inside a scrolling feed is the
  * single biggest jank + memory source on mid-range Android devices, so every
  * list/grid/gallery surface must ask Storage for a *resized* variant instead.
  *
@@ -29,13 +29,13 @@ export type ImageResizeMode = 'cover' | 'contain' | 'fill'
 export type ImageFormat = 'origin' | 'webp' | 'avif'
 
 export interface ImageTransformOptions {
-  /** Target width in px. Clamped to Supabase's 1–4096 range. */
+  /** Target width in px. Clamped to Supabase's 1-4096 range. */
   width?: number
   /** Optional target height. Only meaningful together with `resize`. */
   height?: number
   /** How to fit when both width and height are given. Defaults to `cover`. */
   resize?: ImageResizeMode
-  /** 20–100. Supabase defaults to 80; cards ship 75. */
+  /** 20-100. Supabase defaults to 80; cards ship 75. */
   quality?: number
   /** Re-encode format. `webp` is safe on iOS 14+ / Android 4+. */
   format?: ImageFormat
@@ -95,7 +95,7 @@ export function isTransformableStorageUrl(src: ImageSourceish): src is string {
 /**
  * Rewrite a public Storage object URL into its transformed `/render/image/`
  * equivalent. Non-Supabase sources (and non-string sources) come back exactly
- * as they went in — callers never need a fallback branch.
+ * as they went in : callers never need a fallback branch.
  */
 export function transformStorageImage(
   src: ImageSourceish,
@@ -135,7 +135,7 @@ export function heroImageSource(src: ImageSourceish): ImageSourceish {
   })
 }
 
-/** Fullscreen lightbox frame — big enough to stay sharp while pinch-zoomed. */
+/** Fullscreen lightbox frame : big enough to stay sharp while pinch-zoomed. */
 export function lightboxImageSource(src: ImageSourceish): ImageSourceish {
   return transformStorageImage(src, {
     width: LIGHTBOX_IMAGE_WIDTH,

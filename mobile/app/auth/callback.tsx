@@ -11,7 +11,7 @@ import { safeBack, isSafeInternalRedirect } from '@/lib/navigation'
  * Native OAuth callback route (blejepronen://auth/callback).
  *
  * PKCE only: the provider redirect must carry a `code`. Tokens in the URL
- * (`access_token` / `refresh_token`) are REJECTED — accepting them would
+ * (`access_token` / `refresh_token`) are REJECTED : accepting them would
  * re-open the implicit-flow hole this route exists to close.
  */
 export default function AuthCallbackRoute() {
@@ -46,7 +46,7 @@ export default function AuthCallbackRoute() {
             if (!session?.user) throw error
           }
         } else if (params.access_token || params.refresh_token) {
-          // Implicit-flow tokens in the deep-link URL — refuse. PKCE is required.
+          // Implicit-flow tokens in the deep-link URL : refuse. PKCE is required.
           console.warn('AuthCallback: rejected URL-borne tokens (PKCE required)')
           throw new Error('pkce_required')
         } else {

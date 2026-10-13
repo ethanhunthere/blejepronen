@@ -48,7 +48,7 @@ const SPRING_CONFIG = {
   mass: 0.85,
 }
 
-/** Opacity dip while a tab is held — no colour swap, so it works in all themes. */
+/** Opacity dip while a tab is held : no colour swap, so it works in all themes. */
 const PRESSED_OPACITY = 0.75
 /** Small glyphs need a heavier stroke to survive the downscale. */
 const TAB_ICON_STROKE_WIDTH = 2.4

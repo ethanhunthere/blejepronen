@@ -14,6 +14,8 @@ import {
   type HubType,
 } from '@/lib/seo-slugs'
 
+import { generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
+
 export const revalidate = 3600
 
 export async function generateStaticParams() {
@@ -32,14 +34,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const stats = await fetchMarketStats(city)
   const copy = { city, type: type as HubType, total: stats?.total ?? 0, medianPpm2: stats?.medianSalePpm2 ?? null }
   const sq = hubPathSq(city, type as HubType)
-  const en = hubPathEn(city, type as HubType)
   return {
     title: hubTitleSq(copy),
     description: hubDescriptionSq(copy),
-    alternates: {
-      canonical: `${SITE_URL}${sq}`,
-      languages: { sq: `${SITE_URL}${sq}`, en: `${SITE_URL}${en}`, 'x-default': `${SITE_URL}${sq}` },
-    },
+    alternates: generateHreflangAlternates(sq),
+    other: getGeoMeta(city),
     openGraph: {
       title: hubTitleSq(copy),
       description: hubDescriptionSq(copy),

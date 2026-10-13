@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — ALERT DISPATCHER (PHASE 4)
+ * BLEJE PRONËN : ALERT DISPATCHER (PHASE 4)
  * File: services/swarm/alerts/alert-dispatcher.ts
  *
  * Dispatches high-priority incidents (P1_CRITICAL & P2_HIGH) to Telegram

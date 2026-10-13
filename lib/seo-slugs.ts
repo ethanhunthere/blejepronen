@@ -76,7 +76,7 @@ export function hubTitleSq({ city, type, hood, total }: HubCopyInput): string {
   const t = TYPE_META[type].sq
   const where = hood ? `${hood}, ${city}` : city
   return total > 0
-    ? `${t.category} në ${where} — ${total} shpallje aktive | Bleje Pronën`
+    ? `${t.category} në ${where} | ${total} shpallje aktive | Bleje Pronën`
     : `${t.category} në ${where} | Bleje Pronën`
 }
 
@@ -90,7 +90,7 @@ export function hubDescriptionSq({ city, type, hood, total, medianPpm2 }: HubCop
 export function hubTitleEn({ city, type, hood, total }: HubCopyInput): string {
   const t = TYPE_META[type].en
   const where = hood ? `${hood}, ${city}` : city
-  return `${t.category} in ${where}, Kosovo — ${total} active listings | Bleje Pronën`
+  return `${t.category} in ${where}, Kosovo | ${total} active listings | Bleje Pronën`
 }
 
 export function hubDescriptionEn({ city, type, hood, total, medianPpm2 }: HubCopyInput): string {

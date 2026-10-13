@@ -37,7 +37,7 @@ function summarize(s: SavedSearchSnapshot): string {
   if (s.type === 'qira') parts.push('me qira')
   if (s.search) parts.push(`"${s.search}"`)
   if (s.minPrice || s.maxPrice) {
-    parts.push(`${s.minPrice || '0'}–${s.maxPrice || '∞'} €`)
+    parts.push(`${s.minPrice || '0'}-${s.maxPrice || '∞'} €`)
   }
   if (s.rooms) parts.push(`${s.rooms}+ dhoma`)
   return parts.length ? parts.join(' • ') : 'Të gjitha pronat'
@@ -115,7 +115,7 @@ export default function SavedSearchesMenu({ current }: SavedSearchesMenuProps) {
         const json = (await res.json()) as { savedSearch?: SavedSearchRow }
         if (json.savedSearch) setItems((prev) => [json.savedSearch as SavedSearchRow, ...prev])
       } else if (res.status === 503) {
-        toast.info('Shërbimi i njoftimeve po përgatitet — provoni sërish së shpejti.')
+        toast.info('Shërbimi i njoftimeve po përgatitet; provoni sërish së shpejti.')
       } else {
         toast.error('Nuk u ruajt dot kërkimi. Provoni përsëri.')
       }

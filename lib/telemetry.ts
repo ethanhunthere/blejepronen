@@ -1,5 +1,5 @@
 /**
- * blejepronen — web telemetry client (wave-1 scaffold).
+ * blejepronen : web telemetry client (wave-1 scaffold).
  *
  * Tiny, dependency-free event logger. Call `track(event, props)` from client
  * components; events are buffered and POSTed to `/api/telemetry` in batches of
@@ -23,7 +23,7 @@
  *   search_submit, filter_apply, share_listing, app_error,
  *   telemetry_selftest
  *
- * Nothing is instrumented yet — that happens in a later wave.
+ * Nothing is instrumented yet : that happens in a later wave.
  */
 
 /** JSON-safe property bag attached to an event. */
@@ -147,7 +147,7 @@ function sanitizeProps(props: TelemetryProps | undefined): TelemetryProps {
     }
 
     if (typeof value === 'number') {
-      // NaN/Infinity are not representable in JSON — normalize to null.
+      // NaN/Infinity are not representable in JSON : normalize to null.
       out[key] = Number.isFinite(value) ? value : null
       keys++
       continue
@@ -263,7 +263,7 @@ export function track(event: string, props?: TelemetryProps): void {
  * Send the buffered batch now. Resolves with the number of events that were
  * handed to the endpoint (0 when nothing was queued or a flush is in flight).
  *
- * Failures are swallowed and counted — a rejected batch is dropped, not
+ * Failures are swallowed and counted : a rejected batch is dropped, not
  * retried, so telemetry can never become a request loop.
  */
 export async function flushTelemetry(): Promise<number> {
@@ -320,7 +320,7 @@ export async function flushTelemetry(): Promise<number> {
   return batch.length
 }
 
-/** Snapshot of the client counters — safe to call anywhere, has no side effects. */
+/** Snapshot of the client counters : safe to call anywhere, has no side effects. */
 export function getTelemetryStats(): TelemetryStats {
   return {
     dev: DEV,
@@ -345,7 +345,7 @@ export interface TelemetrySelfTestResult extends TelemetryStats {
 }
 
 /**
- * Self-test for the telemetry pipeline. Not wired into any UI — call it from the
+ * Self-test for the telemetry pipeline. Not wired into any UI : call it from the
  * browser console (`await (await import('@/lib/telemetry')).runTelemetrySelfTest()`)
  * or from a temporary dev button when instrumenting screens in a later wave.
  *
@@ -366,7 +366,7 @@ export async function runTelemetrySelfTest(): Promise<TelemetrySelfTestResult> {
       ok: false,
       skipped: true,
       verdict:
-        'skipped — telemetry only batches and POSTs in the browser; server-side track() just dev-logs.',
+        'skipped, telemetry only batches and POSTs in the browser; server-side track() just dev-logs.',
     }
   }
 
@@ -379,7 +379,7 @@ export async function runTelemetrySelfTest(): Promise<TelemetrySelfTestResult> {
     ok,
     skipped: false,
     verdict: ok
-      ? `ok — ${stats.sent} event(s) accepted by ${stats.endpoint}.`
-      : `failed — ${stats.dropped} event(s) dropped; last error: ${stats.lastError ?? 'unknown'}.`,
+      ? `ok, ${stats.sent} event(s) accepted by ${stats.endpoint}.`
+      : `failed, ${stats.dropped} event(s) dropped; last error: ${stats.lastError ?? 'unknown'}.`,
   }
 }

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — SUPABASE PERSISTENCE ADAPTER
+ * BLEJE PRONËN : SUPABASE PERSISTENCE ADAPTER
  * File: services/swarm/persistence/supabase-adapter.ts
  *
  * Persists swarm incidents and heartbeats to Supabase PostgreSQL with

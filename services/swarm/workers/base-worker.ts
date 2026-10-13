@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — BASE SWARM WORKER
+ * BLEJE PRONËN : BASE SWARM WORKER
  * File: services/swarm/workers/base-worker.ts
  *
  * Abstract foundation for all 10 specialized Marvel child agents.

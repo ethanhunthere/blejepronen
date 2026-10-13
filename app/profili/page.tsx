@@ -306,13 +306,13 @@ export default function ProfilePage() {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: `${displayName} — Bleje Pronën`,
+          title: `${displayName} | Bleje Pronën`,
           text: `Shiko profilin dhe pronat e ${displayName} në Bleje Pronën`,
           url: publicUrl,
         })
         return
       } catch (err) {
-        // Cancelled native share sheet: silently abort — never fall through to
+        // Cancelled native share sheet: silently abort : never fall through to
         // the clipboard path, otherwise users see a false "u kopjua" toast.
         const name = err instanceof Error ? err.name : ''
         if (name === 'AbortError') return
@@ -614,7 +614,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Description Section — rendered for individuals AND companies */}
+          {/* Description Section : rendered for individuals AND companies */}
           {(() => {
             const activeBio = isCompany ? companyDescription : individualBio
             return (
@@ -840,7 +840,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Inline Profile Edit Modal — saves straight to /api/profile/save */}
+        {/* Inline Profile Edit Modal : saves straight to /api/profile/save */}
         <ProfileEditModal
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}

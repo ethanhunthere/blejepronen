@@ -360,7 +360,7 @@ body,
   }
 
   /* Inline keyframe animations applied via style attributes in the chat
-     surfaces — the only selector hook available to disable them. */
+     surfaces, the only selector hook available to disable them. */
   [style*='msgSlideIn'],
   [style*='typingWave'],
   [style*='fadeSlideUp'],

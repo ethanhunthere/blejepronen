@@ -6,7 +6,7 @@ import { subscribeAuthEvents } from './auth-cache'
 import { uploadPushToken } from './push-token'
 
 /**
- * Bleje Pronën — push notification rail (audit §4.6).
+ * Bleje Pronën : push notification rail (audit §4.6).
  * ─────────────────────────────────────────────────────────────────────
  * STATUS: `expo-notifications` is NOT in mobile/package.json, and this task is
  * not allowed to add dependencies. The whole rail therefore sits behind a
@@ -15,7 +15,7 @@ import { uploadPushToken } from './push-token'
  *
  * USER'S NEXT STEP to switch the rail on:
  *   1. cd mobile && npx expo install expo-notifications expo-device
- *   2. Configure push credentials — either
+ *   2. Configure push credentials : either
  *        eas credentials            (managed FCM/APNs keys), or
  *        eas build --profile preview (dev build with the native module)
  *      and set `expo.android.googleServicesFile` / `expo.ios.bundleIdentifier`
@@ -24,14 +24,14 @@ import { uploadPushToken } from './push-token'
  * Nothing else changes: `isPushSupported()` starts returning true, the token is
  * uploaded through /api/push-token, and deep links begin routing.
  *
- * WIRING — add these 3 lines to mobile/app/_layout.tsx (owned by another agent):
+ * WIRING : add these 3 lines to mobile/app/_layout.tsx (owned by another agent):
  *
  *   import { initPushNotifications } from '@/lib/notifications'
  *   // inside RootLayoutNav, next to the other top-level effects:
  *   useEffect(() => initPushNotifications(), [])
  *
  * Foreground presentation policy: a notification is SILENTLY dropped when its
- * target is already on screen — i.e. the conversation it belongs to is the open
+ * target is already on screen : i.e. the conversation it belongs to is the open
  * chat (set by messages/[id].tsx via setOpenConversation), or it is an incoming
  * call while the in-app call UI is already ringing (set via setCallActive).
  * Everything else is shown as a banner.
@@ -68,7 +68,7 @@ function loadNotifications(): NotificationsModule | null {
     notificationsModule = (m?.default ?? m) as NotificationsModule
     if (!notificationsModule?.setNotificationHandler) notificationsModule = null
   } catch {
-    // Package not installed (Expo Go / web / pre-install build) — rail inert.
+    // Package not installed (Expo Go / web / pre-install build) : rail inert.
     notificationsModule = null
   }
   return notificationsModule
@@ -111,7 +111,7 @@ let callUiActive = false
 
 /**
  * Set by messages/[id].tsx while a conversation is on screen. Notifications
- * addressed to that conversation are suppressed in the foreground — the message
+ * addressed to that conversation are suppressed in the foreground : the message
  * is already rendering live via realtime, so a banner would be noise.
  */
 export function setOpenConversation(conversationId: string | null): void {
@@ -161,9 +161,9 @@ function routeFromData(data: PushData): string | null {
 }
 
 /**
- * Notification tap (warm or cold). A call notification needs no navigation —
+ * Notification tap (warm or cold). A call notification needs no navigation -
  * the module-level call engine already rings and CallScreen overlays every
- * route — but we still surface the conversation it belongs to, if any.
+ * route : but we still surface the conversation it belongs to, if any.
  */
 function handleResponse(response: any): void {
   if (!response) return
@@ -180,7 +180,7 @@ function handleResponse(response: any): void {
     try {
       router.push('/(tabs)/messages' as any)
     } catch {
-      // Navigation not ready yet — drop silently.
+      // Navigation not ready yet : drop silently.
     }
   }
 }
@@ -196,7 +196,7 @@ export function getPushToken(): string | null {
 /**
  * Requests permission, mints the Expo push token and registers it with the
  * backend. Idempotent and safe to call repeatedly (app foreground, login,
- * retry after a network failure) — concurrent callers share one promise.
+ * retry after a network failure) : concurrent callers share one promise.
  */
 export function ensurePushToken(): Promise<string | null> {
   if (tokenPromise) return tokenPromise
@@ -205,7 +205,7 @@ export function ensurePushToken(): Promise<string | null> {
       const Notifications = loadNotifications()
       if (!Notifications) return null
       if (isExpoGoClient()) {
-        // No EAS project id in Expo Go — asking would only throw.
+        // No EAS project id in Expo Go : asking would only throw.
         return null
       }
 
@@ -233,7 +233,7 @@ export function ensurePushToken(): Promise<string | null> {
         )
         token = typeof res?.data === 'string' ? res.data : null
       } catch {
-        // Expo Go / missing credentials — fall through to the device token.
+        // Expo Go / missing credentials : fall through to the device token.
         token = null
       }
 
@@ -288,7 +288,7 @@ export function initPushNotifications(): () => void {
 
   const Notifications = loadNotifications()
   if (!Notifications) {
-    // Rail inert — re-check on the next init attempt (e.g. after a JS reload
+    // Rail inert : re-check on the next init attempt (e.g. after a JS reload
     // following `npx expo install expo-notifications`).
     initialized = false
     return () => {}
@@ -329,7 +329,7 @@ export function initPushNotifications(): () => void {
   try {
     const received = Notifications.addNotificationReceivedListener((notification: any) => {
       const data = readData(notification)
-      // A call push is a heads-up only — the module-level engine rings on its
+      // A call push is a heads-up only : the module-level engine rings on its
       // own realtime channel, so never start a second call from here.
       if (data.type === 'call' || data.callId) return
       if (!shouldPresent(data)) return
@@ -353,7 +353,7 @@ export function initPushNotifications(): () => void {
   // Token registration now, on sign-in, and whenever the session refreshes.
   void ensurePushToken()
   try {
-    // Single consolidated auth bus — never open a second raw onAuthStateChange.
+    // Single consolidated auth bus : never open a second raw onAuthStateChange.
     const unsubscribeAuth = subscribeAuthEvents((event) => {
       if (!event.session?.user) return
       if (

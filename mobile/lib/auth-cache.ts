@@ -17,7 +17,7 @@ const AUTH_CACHE_KEY = '@blejepronen_auth_cache_v2'
  * `sticky: true` and no group: the snapshot is exempt from LRU eviction, from
  * TTL expiry and from every group sweep, so a cache purge or a
  * `cacheInvalidateGroup('profile')` can never make a signed-in user look signed
- * out. Only `cacheDelete(SESSION_KEY)` — i.e. an explicit logout — removes it.
+ * out. Only `cacheDelete(SESSION_KEY)` : i.e. an explicit logout : removes it.
  */
 const SESSION_KEY = 'auth:session'
 const SESSION_CACHE_OPTIONS = { sticky: true } as const
@@ -64,10 +64,10 @@ function notifySubscribers() {
 }
 
 /** Persist the snapshot to the durable layer. Never throws, never awaited by
- *  a render path — a failed write only costs the next cold start its seed.
+ *  a render path : a failed write only costs the next cold start its seed.
  *  PII-minimized: only the fields screens actually need are stored; the full
  *  `user` object (with access/refresh tokens inside `session`) is NOT written
- *  to AsyncStorage — tokens live exclusively in SecureStore via the supabase
+ *  to AsyncStorage : tokens live exclusively in SecureStore via the supabase
  *  client's storage adapter. */
 function persistSnapshot(): void {
   const { user, profile } = readSnapshot()
@@ -144,7 +144,7 @@ export function waitForAuthCacheHydration(): Promise<CachedAuthState | null> {
       ])
       // If the 100ms cap elapsed while a cached snapshot claims a signed-in user,
       // give the in-flight session read a bounded grace window before committing
-      // guest state — prevents a guest→authed flash on slow boots.
+      // guest state : prevents a guest→authed flash on slow boots.
       if (sessionResult === timeoutMarker && cachedUser) {
         sessionResult = await Promise.race([
           sessionPromise,
@@ -251,7 +251,7 @@ export interface AuthEvent {
   event: AuthEventName
   /** Session attached to the event, or `null` for a signed-out state. */
   session: Session | null
-  /** Convenience accessor — `null` when the event carries no user. */
+  /** Convenience accessor : `null` when the event carries no user. */
   userId: string | null
   /** `true` while an atomic logout owns the session lifecycle. Handlers that
    *  would resurrect UI state from a session must bail on this flag. */
@@ -269,7 +269,7 @@ export interface AuthEvent {
  *
  * Handlers are NOT replayed on subscribe. The global bus registers its single
  * Supabase listener at module-evaluation time, so `INITIAL_SESSION` has usually
- * already fired by the time a screen mounts — seed your own state on mount and
+ * already fired by the time a screen mounts : seed your own state on mount and
  * use this subscription for transitions only.
  */
 export type AuthEventHandler = (event: AuthEvent) => void
@@ -323,7 +323,7 @@ function ensureAuthBus(): AuthBus {
 }
 
 /** Own bookkeeping first, so handlers always observe a consistent snapshot.
- *  Synchronous by design — see the `AuthEventHandler` contract above. */
+ *  Synchronous by design : see the `AuthEventHandler` contract above. */
 function applyAuthEventToCache(event: AuthEventName, session: Session | null): void {
   if (isLoggingOut) return
   if (session?.user) {
@@ -335,7 +335,7 @@ function applyAuthEventToCache(event: AuthEventName, session: Session | null): v
   } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
     // INITIAL_SESSION with a null session means the session store is gone
     // (keystore wipe, backup restore, failed removeItem) while a cached
-    // snapshot may still claim a signed-in user — clear instead of trusting it.
+    // snapshot may still claim a signed-in user : clear instead of trusting it.
     clearSnapshot()
     notifySubscribers()
     AsyncStorage.removeItem(AUTH_CACHE_KEY).catch(() => {})
@@ -369,7 +369,7 @@ function dispatchAuthEvent(event: AuthEventName, session: Session | null): void 
 
 /**
  * Subscribe to the single consolidated auth event stream.
- * Returns an idempotent unsubscribe — safe to return straight from a
+ * Returns an idempotent unsubscribe : safe to return straight from a
  * `useEffect` cleanup, and safe to call twice.
  */
 export function subscribeAuthEvents(handler: AuthEventHandler): () => void {
@@ -388,7 +388,7 @@ export function unsubscribeAuthEvents(handler: AuthEventHandler): void {
   readBus().handlers.delete(handler)
 }
 
-/** Live handler count — used to assert there are no listener leaks. */
+/** Live handler count : used to assert there are no listener leaks. */
 export function authEventSubscriberCount(): number {
   return readBus().handlers.size
 }

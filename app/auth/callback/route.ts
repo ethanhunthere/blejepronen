@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   // Mobile hand-off: the native app sends OAuth redirects here (this origin is
   // in the Supabase allowlist) with mobile=1. Bounce everything straight back
-  // to the app scheme WITHOUT exchanging the code — the code is single-use and
+  // to the app scheme WITHOUT exchanging the code : the code is single-use and
   // belongs to the mobile client's PKCE verifier.
   const isMobileBounce = requestUrl.searchParams.get('mobile') === '1'
   if (isMobileBounce) {

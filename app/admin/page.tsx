@@ -134,7 +134,7 @@ export default async function AdminPage() {
       <div className="w-full px-4 sm:px-6 py-10">
         <h1 className="text-2xl font-bold text-[#101828] mb-8">Paneli i Administrimit</h1>
 
-        {/* Stats — exact head counts from the database */}
+        {/* Stats : exact head counts from the database */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           {stats.map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
@@ -256,10 +256,10 @@ export default async function AdminPage() {
                         )}
                       </td>
                       <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600 max-w-[220px] truncate">
-                        {listingTitleMap.get(report.listing_id) || '—'}
+                        {listingTitleMap.get(report.listing_id) || '-'}
                       </td>
                       <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">
-                        {reporterNameMap.get(report.reporter_id) || '—'}
+                        {reporterNameMap.get(report.reporter_id) || '-'}
                       </td>
                       <td className="px-3 py-3 md:px-6 md:py-4 text-gray-600">
                         {new Date(report.created_at).toLocaleDateString('sq-AL')}

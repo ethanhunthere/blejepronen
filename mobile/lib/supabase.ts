@@ -17,7 +17,7 @@ const memoryStorage = new Map<string, string>()
 
 // Sessions (incl. refresh tokens) live in the encrypted keystore/keychain on
 // device. AsyncStorage is kept only as (a) the web backend and (b) a fallback
-// when SecureStore itself fails — never as the primary path for tokens.
+// when SecureStore itself fails : never as the primary path for tokens.
 const USE_SECURE = Platform.OS === 'ios' || Platform.OS === 'android'
 const SECURE_MAX = 2040
 const CHUNK_SIZE = 1800
@@ -70,7 +70,7 @@ async function secureSet(key: string, value: string): Promise<void> {
   for (let i = 0; i < chunks.length; i++) {
     await SecureStore.setItemAsync(key + CHUNK_INDEX_SUFFIX + i, chunks[i])
   }
-  // Count last — acts as the commit marker.
+  // Count last : acts as the commit marker.
   await SecureStore.setItemAsync(key + CHUNK_COUNT_SUFFIX, String(chunks.length))
 }
 
@@ -140,7 +140,7 @@ const isServerSSR = Platform.OS === 'web' && typeof window === 'undefined'
  * Storage adapter for Supabase auth sessions.
  *
  * SecureStore is the source of truth on native; a failed write retries once,
- * then degrades to AsyncStorage, then to memory — never silently dropping the
+ * then degrades to AsyncStorage, then to memory : never silently dropping the
  * session (which would log the user out on next launch).
  * Oversized values are chunked into SecureStore rather than stored plaintext.
  * In SSR / Node.js build environments, memory storage is used to prevent

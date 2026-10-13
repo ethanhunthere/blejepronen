@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const email = normalizeEmail(body?.email)
     const password = typeof body?.password === 'string' ? body.password : ''
 
-    // Input shape only — reveals nothing about any account.
+    // Input shape only : reveals nothing about any account.
     if (!SIX_DIGITS_RE.test(code)) {
       return NextResponse.json(
         { error: 'invalid', message: 'Kodi duhet të ketë saktësisht 6 shifra.' },
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
 
     // Confirm in auth, flag the product-level verification and clear the OTP
     // counters in a single write. Existing metadata is spread in first because
-    // GoTrue replaces `user_metadata` wholesale on some versions — a bare patch
+    // GoTrue replaces `user_metadata` wholesale on some versions : a bare patch
     // would drop `account_type` / `company_name` / `onboarding_completed`.
     const { error: confirmAuthError } = await admin.auth.admin.updateUserById(user.id, {
       email_confirm: true,

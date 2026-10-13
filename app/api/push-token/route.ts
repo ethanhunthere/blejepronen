@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * /api/push-token — device push-token registry.
+ * /api/push-token : device push-token registry.
  * ─────────────────────────────────────────────────────────────────────
  * Stores the mobile app's Expo/APNs/FCM tokens on the AUTH USER, in
  * `raw_user_meta_data.push_tokens`. No new table, no migration, and the value
@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic'
  * Auth: cookie session (web) OR `Authorization: Bearer <access_token>`
  * (mobile), matching /api/profile/save and /api/account/delete.
  *
- * Shape of `user_metadata.push_tokens` — newest first, max MAX_TOKENS:
+ * Shape of `user_metadata.push_tokens` : newest first, max MAX_TOKENS:
  *   [{ token, type, platform, updatedAt }]
  */
 
@@ -59,7 +59,7 @@ async function resolveUser(request: Request, admin: SupabaseClient): Promise<Use
     } = await serverSupabase.auth.getUser()
     if (user) return user
   } catch {
-    // No cookie context — fall through to the Bearer path.
+    // No cookie context : fall through to the Bearer path.
   }
 
   const header = request.headers.get('authorization')
@@ -233,7 +233,7 @@ export async function DELETE(request: Request) {
     }
 
     const body = await bodyOf(request)
-    // A missing token means "remove whatever this call registered" — the client
+    // A missing token means "remove whatever this call registered" : the client
     // may have lost its local copy on sign-out.
     const token = validateToken(body?.token)
 

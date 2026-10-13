@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 
 /**
- * EmptyState — the "nothing here (yet)" placeholder.
+ * EmptyState : the "nothing here (yet)" placeholder.
  * Mirrors the mobile EmptyState API: icon / title / message / action.
  */
 
@@ -36,7 +36,7 @@ export function renderStateIcon(
   className: string
 ): ReactNode {
   if (icon === null || icon === undefined || icon === false) return null
-  // Already an element — render exactly what the caller built.
+  // Already an element : render exactly what the caller built.
   if (isValidElement(icon)) return icon
   // Function component, host tag ('svg'), or forwardRef/memo object (lucide-react).
   if (typeof icon === 'string' || typeof icon === 'function') {
@@ -63,7 +63,7 @@ export interface EmptyStateProps {
   bordered?: boolean
   /**
    * Element for the title. Defaults to `<p>` so the primitive does not inject
-   * an unexpected level into the page heading outline — pass `'h2'`/`'h3'` when
+   * an unexpected level into the page heading outline : pass `'h2'`/`'h3'` when
    * the empty state really is a section heading.
    */
   titleAs?: ElementType

@@ -68,7 +68,7 @@ async function backgroundRevalidateFavorites(userId: string) {
       .eq('user_id', userId)
 
     // A newer revalidate or a local toggle started while this request was in
-    // flight — discard the stale server map rather than clobber optimistic UI.
+    // flight : discard the stale server map rather than clobber optimistic UI.
     if (generation !== revalidateGeneration) return
 
     if (!error && data) {
@@ -241,7 +241,7 @@ export async function persistFavoriteToggle(
   if (!inMemoryFavorites) inMemoryFavorites = {}
 
   // Prefer the LIVE in-memory state over the caller's stale `wasFavorite`
-  // snapshot — a concurrent toggle or a revalidate in flight must not be
+  // snapshot : a concurrent toggle or a revalidate in flight must not be
   // reversed by a late-arriving optimistic write.
   const currentlyFavorited = Boolean(inMemoryFavorites[listingId])
   const nextFavorited = !currentlyFavorited
@@ -387,7 +387,7 @@ export async function fetchFavoriteListings(): Promise<any[]> {
       .map((row) => row.listings)
       .filter(Boolean)
 
-    // Replace the in-memory map with the authoritative server set — never
+    // Replace the in-memory map with the authoritative server set : never
     // merge (a merge would keep deleted favorites stuck as `true` forever).
     const freshMap: Record<string, boolean> = {}
     items.forEach((item: any) => {

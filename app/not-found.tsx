@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { Compass, Home, Search } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: '404 — Faqja nuk u gjet | Bleje Pronën',
+  title: '404 | Faqja nuk u gjet | Bleje Pronën',
   robots: { index: false, follow: false },
 }
 

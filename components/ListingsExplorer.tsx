@@ -70,25 +70,25 @@ const FEATURES_LIST = [
 
 const PRICE_PRESETS_SALE = [
   { label: '< 50,000 €', min: '', max: '50000' },
-  { label: '50k – 100k €', min: '50000', max: '100000' },
-  { label: '100k – 150k €', min: '100000', max: '150000' },
-  { label: '150k – 250k €', min: '150000', max: '250000' },
+  { label: '50k-100k €', min: '50000', max: '100000' },
+  { label: '100k-150k €', min: '100000', max: '150000' },
+  { label: '150k-250k €', min: '150000', max: '250000' },
   { label: '> 250,000 €', min: '250000', max: '' },
 ]
 
 const PRICE_PRESETS_RENT = [
   { label: '< 250 €', min: '', max: '250' },
-  { label: '250 – 400 €', min: '250', max: '400' },
-  { label: '400 – 600 €', min: '400', max: '600' },
-  { label: '600 – 1,000 €', min: '600', max: '1000' },
+  { label: '250-400 €', min: '250', max: '400' },
+  { label: '400-600 €', min: '400', max: '600' },
+  { label: '600-1,000 €', min: '600', max: '1000' },
   { label: '> 1,000 €', min: '1000', max: '' },
 ]
 
 const AREA_PRESETS = [
   { label: '< 50 m²', min: '', max: '50' },
-  { label: '50 – 80 m²', min: '50', max: '80' },
-  { label: '80 – 120 m²', min: '80', max: '120' },
-  { label: '120 – 200 m²', min: '120', max: '200' },
+  { label: '50-80 m²', min: '50', max: '80' },
+  { label: '80-120 m²', min: '80', max: '120' },
+  { label: '120-200 m²', min: '120', max: '200' },
   { label: '> 200 m²', min: '200', max: '' },
 ]
 
@@ -140,7 +140,7 @@ function filtersEqual(a: FilterState, b: FilterState): boolean {
 }
 
 /**
- * Single serializer for /listings URLs — shared by the filter→URL sync, the
+ * Single serializer for /listings URLs : shared by the filter→URL sync, the
  * crawlable pagination links, and router.replace so every writer produces the
  * exact same query string (keeps the lastAppliedSearchRef guard in sync).
  * `pageIndex` is 0-based internally, the URL `page` param is 1-based.
@@ -255,7 +255,7 @@ export function ListingsExplorer({
   const lastAppliedSearchRef = useRef<string | null>(null)
 
 
-  // Sync to URL — Next.js App Router navigation (browser back/forward keeps
+  // Sync to URL : Next.js App Router navigation (browser back/forward keeps
   // working); scroll stays put because filter edits shouldn't jump the page.
   const updateUrlParams = useCallback(
     (newFilters: FilterState, newSort: SortOption, pageIndex = 0) => {
@@ -554,7 +554,7 @@ export function ListingsExplorer({
     // The server already rendered the requested page for these exact params;
     // skip the duplicate round-trip on mount and fetch only on subsequent
     // filter/sort changes (which reset to page 1 unless a navigation asked
-    // for a specific page — see targetPageRef).
+    // for a specific page : see targetPageRef).
     if (seededFetchRef.current) {
       seededFetchRef.current = false
       return
@@ -711,7 +711,7 @@ export function ListingsExplorer({
   return (
     <div className="min-h-screen bg-[#F2F7F7] pb-24">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-20 sm:pt-22">
-        {/* Tier 1 — Title + count badge on left, segmented type pills on right */}
+        {/* Tier 1 : Title + count badge on left, segmented type pills on right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#101828]">
@@ -764,7 +764,7 @@ export function ListingsExplorer({
           </div>
         </div>
 
-        {/* Tier 2 — one unified control card (search, menus, sort, quick pills,
+        {/* Tier 2 : one unified control card (search, menus, sort, quick pills,
             active chips, agent context) instead of stacked sub-header bars */}
         <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-2 sm:p-2.5 mb-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 items-center">
@@ -1467,7 +1467,7 @@ export function ListingsExplorer({
               </div>
             )}
 
-            {/* Crawlable pagination — real <a href> links for crawlers/SEO */}
+            {/* Crawlable pagination : real <a href> links for crawlers/SEO */}
             {pageCount > 1 && (
               <nav
                 aria-label="Paginimi i katalogut"

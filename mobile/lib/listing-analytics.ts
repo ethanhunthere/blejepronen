@@ -1,5 +1,5 @@
 /**
- * Listing analytics — Expo mirror of `lib/analytics.ts` (web).
+ * Listing analytics : Expo mirror of `lib/analytics.ts` (web).
  *
  * Same wire contract, same endpoint, same event names; the only difference is
  * transport auth: the app has no cookies, so every call sends the Supabase
@@ -8,13 +8,13 @@
  *
  *   POST {API_BASE_URL}/api/analytics  { listingId, event, ownerId? }
  *        event ∈ 'view' | 'favorite' | 'lead'   (view: auth optional,
- *        favorite/lead: auth required — the route answers 401 otherwise)
+ *        favorite/lead: auth required : the route answers 401 otherwise)
  *   GET  {API_BASE_URL}/api/analytics?listingIds=a,b,c
  *        → { available, stats: { [id]: { views, favorites, leads } } }
  *
  * Design rules (identical to web):
  *  • Fire-and-forget: never throws, never blocks navigation, never retried.
- *  • `listing_events` may not be migrated yet — the route answers 204 and this
+ *  • `listing_events` may not be migrated yet : the route answers 204 and this
  *    module treats that as success, so the app works today on the live schema.
  *  • Counters shown to a host always come from the GET aggregate, never from
  *    optimistic local math.
@@ -90,7 +90,7 @@ export interface TrackEventOptions {
   /**
    * Listing owner id when already known. The route drops events from the
    * owner so a host browsing their own property does not inflate the funnel.
-   * Noise filter only — never a trust decision.
+   * Noise filter only : never a trust decision.
    */
   ownerId?: string | null
 }
@@ -210,7 +210,7 @@ interface StatsResponse {
 /**
  * Funnel counts for the caller's OWN listings (the route re-checks ownership;
  * somebody else's ids are simply omitted). Returns `available:false` when the
- * events table does not exist yet — render nothing in that case, never zeros.
+ * events table does not exist yet : render nothing in that case, never zeros.
  */
 export async function fetchMyListingStats(
   listingIds: string[]

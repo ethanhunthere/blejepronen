@@ -15,7 +15,7 @@ interface MarketPageProps {
 /**
  * Market-intelligence entity page: computed, extractable statistics over live
  * inventory (counts, median €/m², price span, neighborhood distribution) plus
- * the freshest listings — the GEO grounding surface for AI search engines.
+ * the freshest listings : the GEO grounding surface for AI search engines.
  */
 export async function MarketPage({ city, lang }: MarketPageProps) {
   const supabase = createPublicSupabaseClient()
@@ -60,7 +60,7 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
     '@graph': [
       {
         '@type': 'Dataset',
-        name: `${title} — ${lang === 'sq' ? 'statistika live' : 'live statistics'}`,
+        name: `${title} | ${lang === 'sq' ? 'statistika live' : 'live statistics'}`,
         description:
           lang === 'sq'
             ? 'Statistika të llogaritura nga inventari live i shpalljeve në Bleje Pronën.'
@@ -142,12 +142,12 @@ export async function MarketPage({ city, lang }: MarketPageProps) {
           {statCard(lang === 'sq' ? 'Me qira' : 'For rent', fmtInt(stats.forRent))}
           {statCard(
             lang === 'sq' ? 'Mesatarja €/m²' : 'Median €/m²',
-            stats.medianSalePpm2 ? fmtInt(stats.medianSalePpm2) : '—',
+            stats.medianSalePpm2 ? fmtInt(stats.medianSalePpm2) : '-',
             true
           )}
           {statCard(
             lang === 'sq' ? 'Spanja e çmimeve' : 'Price span',
-            stats.minSale && stats.maxSale ? `${fmtInt(stats.minSale)}–${fmtInt(stats.maxSale)} €` : '—'
+            stats.minSale && stats.maxSale ? `${fmtInt(stats.minSale)}-${fmtInt(stats.maxSale)} €` : '-'
           )}
         </dl>
 

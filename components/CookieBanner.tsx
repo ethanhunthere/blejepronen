@@ -63,7 +63,7 @@ function CookieBanner() {
         /* A consent banner blocks nothing, so it is a labelled region rather
          * than a dialog: role="dialog" + aria-modal would claim the rest of the
          * page is inert when it is not. For the same reason there is no
-         * Escape-to-dismiss — silently closing it would record no choice, so
+         * Escape-to-dismiss : silently closing it would record no choice, so
          * consent has to come from an explicit button. */
         <div
           role="region"
@@ -86,7 +86,7 @@ function CookieBanner() {
               <a
                 href="/privatesia"
                 className="text-[#101828] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00675B]"
-                aria-label="Mëso më shumë për cookies — politika e privatësisë"
+                aria-label="Mëso më shumë për cookies: politika e privatësisë"
               >
                 Mëso më shumë
               </a>
@@ -115,7 +115,7 @@ function CookieBanner() {
       )}
 
       {/* Always mounted (even while the banner is open) so the container exists
-          in the tree before its text changes — a live region inserted together
+          in the tree before its text changes, a live region inserted together
           with its own message is unreliable across screen readers. */}
       <div role="status" aria-live="polite" className="sr-only">
         {announcement}

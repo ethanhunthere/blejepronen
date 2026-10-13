@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { COALESCE_WINDOW_MS } from './conversations'
 
 /**
- * Bleje Pronën — chat history paging + read-receipt batching (audit §4.1 / §4.3).
+ * Bleje Pronën : chat history paging + read-receipt batching (audit §4.1 / §4.3).
  * ─────────────────────────────────────────────────────────────────────
  * `messages/[id].tsx` used to `select('*').order('created_at')` with NO limit,
  * downloading the entire conversation on every open, and then fired one
@@ -34,7 +34,7 @@ export interface ChatMessage {
 }
 
 export interface MessagePage {
-  /** Ascending by created_at — ready to render/prepend. */
+  /** Ascending by created_at : ready to render/prepend. */
   messages: ChatMessage[]
   /** False once the walk reaches the beginning of the thread. */
   hasMore: boolean
@@ -129,7 +129,7 @@ export async function fetchOlderMessages(
  *
  * Deliberately id-free: the bulk statement is
  * `update messages set is_read where conversation_id = X and sender_id != me`,
- * which is a single round trip for 1 message or 50. It is also self-healing —
+ * which is a single round trip for 1 message or 50. It is also self-healing -
  * anything that landed while the update was in flight is caught by the next
  * window or by `flush()`.
  */

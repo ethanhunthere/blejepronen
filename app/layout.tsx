@@ -16,6 +16,8 @@ const albertSans = Albert_Sans({
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
+import { buildPlatformSchema, generateHreflangAlternates, getGeoMeta } from "@/lib/geo-seo";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -26,13 +28,15 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Bleje Pronën - Prona në Kosovë",
+  title: "Bleje Pronën | Prona në Kosovë, Shqipëri dhe Rajon",
   description:
-    "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni.",
+    "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni direkt nga pronarët dhe agjencitë e verifikuara.",
+  alternates: generateHreflangAlternates('/'),
+  other: getGeoMeta('prishtine'),
   openGraph: {
-    title: "Bleje Pronën - Prona në Kosovë",
+    title: "Bleje Pronën | Prona në Kosovë, Shqipëri dhe Rajon",
     description:
-      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni.",
+      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni direkt nga pronarët dhe agjencitë e verifikuara.",
     url: siteUrl,
     siteName: "Bleje Pronën",
     images: [
@@ -40,7 +44,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Bleje Pronën - Platforma kryesore e pasurive të paluajtshme",
+        alt: "Bleje Pronën | Platforma kryesore e pasurive të paluajtshme",
       },
     ],
     locale: "sq_AL",
@@ -48,9 +52,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bleje Pronën - Prona në Kosovë",
+    title: "Bleje Pronën | Prona në Kosovë, Shqipëri dhe Rajon",
     description:
-      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni.",
+      "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash në Kosovë, Shqipëri dhe Maqedoni direkt nga pronarët dhe agjencitë e verifikuara.",
     images: ["/og-image.png"],
   },
   manifest: "/manifest.webmanifest",
@@ -76,34 +80,7 @@ export const metadata: Metadata = {
   },
 };
 
-const structuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Bleje Pronën",
-    url: siteUrl,
-    logo: `${siteUrl}/logo-white.png`,
-    description: "Platforma kryesore shqipfolëse për blerje, shitje dhe qira pronash direkt nga pronarët.",
-    areaServed: ["XK", "AL", "MK"],
-    contactPoint: {
-      "@type": "ContactPoint",
-      email: "blejepronen@gmail.com",
-      contactType: "customer support",
-      availableLanguage: ["sq", "en"],
-    },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Bleje Pronën",
-    url: siteUrl,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${siteUrl}/listings?search={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  },
-];
+const structuredData = buildPlatformSchema();
 
 export default function RootLayout({
   children,
@@ -134,6 +111,10 @@ export default function RootLayout({
             <link rel="dns-prefetch" href={supabaseUrl} />
           </>
         )}
+        <meta name="geo.region" content="XK" />
+        <meta name="geo.placename" content="Prishtine, Kosove" />
+        <meta name="geo.position" content="42.6629;21.1655" />
+        <meta name="ICBM" content="42.6629, 21.1655" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-[#101828] overflow-x-hidden">

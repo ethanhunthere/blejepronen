@@ -32,8 +32,8 @@ import {
  *    `otp_send_count`), so it survives cold starts and extra instances.
  *  - Codes come from `crypto.randomInt`.
  *  - Responses are uniform. An address with no account gets the same cooldown,
- *    the same 429s and the same success body as a real one — it simply never
- *    receives mail — so this endpoint cannot be used to test whether an address
+ *    the same 429s and the same success body as a real one : it simply never
+ *    receives mail : so this endpoint cannot be used to test whether an address
  *    is registered.
  */
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null)
     const email = normalizeEmail(body?.email)
 
-    // Input shape only — this says nothing about whether the address exists.
+    // Input shape only : this says nothing about whether the address exists.
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: AUTH_COPY.invalidEmail }, { status: 400 })
     }

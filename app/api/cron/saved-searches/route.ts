@@ -120,7 +120,7 @@ async function notifyUser(
 ) {
   const first = matches[0]
   const more = matches.length > 1 ? ` +${matches.length - 1} të tjera` : ''
-  const body = `Pronë e re: ${first.title}${more} — ${first.city || 'Kosovë'}`
+  const body = `Pronë e re: ${first.title}${more} | ${first.city || 'Kosovë'}`
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blejepronen.com'
 
   if (search.notify_push) {
@@ -135,7 +135,7 @@ async function notifyUser(
             tokens.slice(0, 5).map((token) => ({
               to: token,
               sound: 'default',
-              title: 'Bleje Pronën — kërkimi i ruajtur',
+              title: 'Bleje Pronën | kërkimi i ruajtur',
               body,
               data: { url: `${siteUrl}/listings/${first.id}` },
             }))
@@ -166,7 +166,7 @@ async function notifyUser(
           from: 'Bleje Pronën <noreply@blejepronen.com>',
           to,
           subject: `Prona të reja për kërkimin tuaj (${matches.length})`,
-          html: `<div style="font-family:sans-serif;padding:24px"><h2 style="margin:0 0 12px;color:#101828">${search.title || 'Kërkimi i ruajtur'}</h2><ul style="padding-left:18px;margin:0">${items}</ul><p style="color:#6B7280;font-size:13px;margin-top:16px">Bleje Pronën — pa provizion, direkt nga pronari.</p></div>`,
+          html: `<div style="font-family:sans-serif;padding:24px"><h2 style="margin:0 0 12px;color:#101828">${search.title || 'Kërkimi i ruajtur'}</h2><ul style="padding-left:18px;margin:0">${items}</ul><p style="color:#6B7280;font-size:13px;margin-top:16px">Bleje Pronën | pa provizion, direkt nga pronari.</p></div>`,
         }),
       }).catch(() => {})
     }

@@ -4,7 +4,7 @@ import { API_BASE_URL } from './api'
 import { supabase } from './supabase'
 
 /**
- * Bleje Pronën — push token registration (audit §4.6).
+ * Bleje Pronën : push token registration (audit §4.6).
  * ─────────────────────────────────────────────────────────────────────
  * Tokens are uploaded to the app's OWN backend (`/api/push-token`), never
  * straight to Supabase from the device: the write lands in
@@ -87,7 +87,7 @@ async function resolveAuth(): Promise<{ userId: string; accessToken: string } | 
 
 /**
  * Registers (or re-registers) this device's push token for the signed-in user.
- * Resolves `true` when the backend accepted it — including when it was already
+ * Resolves `true` when the backend accepted it : including when it was already
  * registered, which the server reports as a no-op success.
  */
 export async function uploadPushToken(payload: PushTokenPayload): Promise<boolean> {
@@ -113,7 +113,7 @@ export async function uploadPushToken(payload: PushTokenPayload): Promise<boolea
   return result.ok
 }
 
-/** Removes this device's token — call on sign-out and before account deletion. */
+/** Removes this device's token : call on sign-out and before account deletion. */
 export async function unregisterPushToken(token?: string): Promise<boolean> {
   const auth = await resolveAuth()
   const target = token?.trim() || (await readMemo())?.token
@@ -157,7 +157,7 @@ async function sendToken(
     }
     return { ok: true, status: res.status }
   } catch (err: any) {
-    // Offline / endpoint not yet deployed — silent, retried on next launch.
+    // Offline / endpoint not yet deployed : silent, retried on next launch.
     return { ok: false, error: String(err?.message || err) }
   }
 }

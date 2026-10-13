@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — STRONGLY TYPED SWARM EVENT BUS
+ * BLEJE PRONËN : STRONGLY TYPED SWARM EVENT BUS
  * File: services/swarm/core/event-bus.ts
  *
  * In-memory typed pub/sub bus backed by Node.js EventEmitter.

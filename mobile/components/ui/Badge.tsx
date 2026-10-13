@@ -114,7 +114,7 @@ const SIZES: Record<
 }
 
 /**
- * Small status pill. Purely presentational — it renders a `View`, never a
+ * Small status pill. Purely presentational : it renders a `View`, never a
  * pressable, so a caller that needs a tappable chip wraps it in
  * `TactilePressable` and keeps ownership of the press semantics.
  *

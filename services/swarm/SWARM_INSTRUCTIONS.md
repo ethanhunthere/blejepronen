@@ -1,4 +1,4 @@
-# BLEJE PRONËN — SOVEREIGN AUTONOMOUS MULTI-AGENT SWARM OPERATING SYSTEM (BP-ASOS)
+# BLEJE PRONËN | SOVEREIGN AUTONOMOUS MULTI-AGENT SWARM OPERATING SYSTEM (BP-ASOS)
 ## GLOBAL COMMAND MANUAL & ENGINEERING DIRECTIVE COMPENDIUM
 
 ```
@@ -18,7 +18,7 @@ REVISION                 : 2026.10-SOVEREIGN-RELEASE-V4
 ## TABLE OF CONTENTS
 
 1. [Preamble & Sovereign Swarm Operating Philosophy](#1-preamble--sovereign-swarm-operating-philosophy)
-2. [Agent 0: Supreme Commander Thanos — Master Orchestrator Specification](#2-agent-0-supreme-commander-thanos--master-orchestrator-specification)
+2. [Agent 0: Supreme Commander Thanos, Master Orchestrator Specification](#2-agent-0-supreme-commander-thanos--master-orchestrator-specification)
    - 2.1 [Command Authority & OTP Supervision Tree Topology](#21-command-authority--otp-supervision-tree-topology)
    - 2.2 [The Mathematical Deduplication Engine & SHA-256 Collision Proofing](#22-the-mathematical-deduplication-engine--sha-256-collision-proofing)
    - 2.3 [Supervisor Tree Failure Domain Management & Exponential Backoff](#23-supervisor-tree-failure-domain-management--exponential-backoff)
@@ -26,70 +26,70 @@ REVISION                 : 2026.10-SOVEREIGN-RELEASE-V4
    - 2.5 [Inter-Agent IPC Typed Event Bus Contract](#25-inter-agent-ipc-typed-event-bus-contract)
    - 2.6 [Multi-Channel Notification Dispatch Hub & Anti-Fatigue Algorithms](#26-multi-channel-notification-dispatch-hub--anti-fatigue-algorithms)
    - 2.7 [Supabase Persistence & Offline Memory Synchronization](#27-supabase-persistence--offline-memory-synchronization)
-3. [Agent 1: Iron Man — Autonomous Bug Repair, Compiler Check & GitHub PR Engine](#3-agent-1-iron-man--autonomous-bug-repair-compiler-check--github-pr-engine)
+3. [Agent 1: Iron Man, Autonomous Bug Repair, Compiler Check & GitHub PR Engine](#3-agent-1-iron-man--autonomous-bug-repair-compiler-check--github-pr-engine)
    - 3.1 [Mission Profile & Functional Responsibilities](#31-mission-profile--functional-responsibilities)
    - 3.2 [Invocation Triggers & Triage Handshake](#32-invocation-triggers--triage-handshake)
    - 3.3 [Autonomous TypeScript Compiler Health & AST Validation](#33-autonomous-typescript-compiler-health--ast-validation)
    - 3.4 [Automated Git Branching, Patch Synthesis & Safety Sandboxing](#34-automated-git-branching-patch-synthesis--safety-sandboxing)
    - 3.5 [GitHub REST API Pull Request Generation Protocol](#35-github-rest-api-pull-request-generation-protocol)
    - 3.6 [Edge-Case Handling & Rollback Procedures](#36-edge-case-handling--rollback-procedures)
-4. [Agent 2: Thor — Infrastructure, API Latency & Database Pool Health](#4-agent-2-thor--infrastructure-api-latency--database-pool-health)
+4. [Agent 2: Thor, Infrastructure, API Latency & Database Pool Health](#4-agent-2-thor--infrastructure-api-latency--database-pool-health)
    - 4.1 [Mission Profile & System Boundary](#41-mission-profile--system-boundary)
    - 4.2 [Endpoint Surveillance Matrix & Probe Mechanics](#42-endpoint-surveillance-matrix--probe-mechanics)
    - 4.3 [Latency Profiling Mathematics (P50, P90, P95, P99)](#43-latency-profiling-mathematics-p50-p90-p95-p99)
    - 4.4 [HTTP 5xx Catastrophe Protocols & Edge Failover Triggers](#44-http-5xx-catastrophe-protocols--edge-failover-triggers)
    - 4.5 [Supabase PostgreSQL Pooler Health & Lock Contention Diagnostics](#45-supabase-postgresql-pooler-health--lock-contention-diagnostics)
    - 4.6 [SSL/TLS Certificate Life-Cycle & DNS Integrity Probing](#46-ssltls-certificate-life-cycle--dns-integrity-probing)
-5. [Agent 3: Hulk — Runtime Exceptions & Crash Telemetry Interceptor](#5-agent-3-hulk--runtime-exceptions--crash-telemetry-interceptor)
+5. [Agent 3: Hulk, Runtime Exceptions & Crash Telemetry Interceptor](#5-agent-3-hulk--runtime-exceptions--crash-telemetry-interceptor)
    - 5.1 [Mission Profile & Data Ingestion Pipelines](#51-mission-profile--data-ingestion-pipelines)
    - 5.2 [Telemetry Events Ingestion & Realtime Streaming](#52-telemetry-events-ingestion--realtime-streaming)
    - 5.3 [Client-Side Error Boundary Interception (Web & Mobile)](#53-client-side-error-boundary-interception-web--mobile)
    - 5.4 [Stack Trace De-Obfuscation, Normalization & Fingerprinting](#54-stack-trace-de-obfuscation-normalization--fingerprinting)
    - 5.5 [Crash Spike Anomaly Detection Mathematics (Z-Score Algorithm)](#55-crash-spike-anomaly-detection-mathematics-z-score-algorithm)
    - 5.6 [Incident Escalation & Iron Man Coupling](#56-incident-escalation--iron-man-coupling)
-6. [Agent 4: Hawkeye — UI/UX Ergonomics, Safe-Area Bounds & Pixel Auditor](#6-agent-4-hawkeye--uiux-ergonomics-safe-area-bounds--pixel-auditor)
+6. [Agent 4: Hawkeye, UI/UX Ergonomics, Safe-Area Bounds & Pixel Auditor](#6-agent-4-hawkeye--uiux-ergonomics-safe-area-bounds--pixel-auditor)
    - 6.1 [Mission Profile & Visual Reliability Standards](#61-mission-profile--visual-reliability-standards)
    - 6.2 [Headless Mobile Viewport Simulation Suite](#62-headless-mobile-viewport-simulation-suite)
    - 6.3 [Horizontal Scroll Leakage Detection Algorithm (Overflow-X Auditing)](#63-horizontal-scroll-leakage-detection-algorithm-overflow-x-auditing)
    - 6.4 [Touch Target Geometry & WCAG Ergonomics (<44px Violations)](#64-touch-target-geometry--wcag-ergonomics-44px-violations)
    - 6.5 [Safe-Area Inset & Dynamic Island Collision Audits](#65-safe-area-inset--dynamic-island-collision-audits)
    - 6.6 [Visual Regression & Layout Shift (CLS) Enforcement](#66-visual-regression--layout-shift-cls-enforcement)
-7. [Agent 5: Captain America — Synthetic User Journeys & End-to-End Funnels](#7-agent-5-captain-america--synthetic-user-journeys--end-to-end-funnels)
+7. [Agent 5: Captain America, Synthetic User Journeys & End-to-End Funnels](#7-agent-5-captain-america--synthetic-user-journeys--end-to-end-funnels)
    - 7.1 [Mission Profile & The Synthetic Actor Paradigm](#71-mission-profile--the-synthetic-actor-paradigm)
    - 7.2 [The 5 Canonical Real-Estate User Funnels](#72-the-5-canonical-real-estate-user-funnels)
    - 7.3 [DOM State Assertion Contracts & Zero-False-Positive Testing](#73-dom-state-assertion-contracts--zero-false-positive-testing)
    - 7.4 [API Contract Verification & Schema Integrity Guardrails](#74-api-contract-verification--schema-integrity-guardrails)
    - 7.5 [Authentication Token Lifecycle & Session Rotation Auditing](#75-authentication-token-lifecycle--session-rotation-auditing)
    - 7.6 [Degradation Reporting & Triage Dispatch](#76-degradation-reporting--triage-dispatch)
-8. [Agent 6: Loki — Security, Row-Level Security & OAuth Flow Integrity](#8-agent-6-loki--security-row-level-security--oauth-flow-integrity)
+8. [Agent 6: Loki, Security, Row-Level Security & OAuth Flow Integrity](#8-agent-6-loki--security-row-level-security--oauth-flow-integrity)
    - 8.1 [Mission Profile & Adversarial Verification Architecture](#81-mission-profile--adversarial-verification-architecture)
    - 8.2 [Row-Level Security (RLS) Permeability Testing](#82-row-level-security-rls-permeability-testing)
    - 8.3 [Authentication Barrier Probing & OTP Lockout Verification](#83-authentication-barrier-probing--otp-lockout-verification)
    - 8.4 [Injection Vectors & Parameter Tampering Audits](#84-injection-vectors--parameter-tampering-audits)
    - 8.5 [Cookie Hygiene, CORS & HTTP Security Header Auditing](#85-cookie-hygiene-cors--http-security-header-auditing)
    - 8.6 [Security Breach Catastrophe Escalation Protocols](#86-security-breach-catastrophe-escalation-protocols)
-9. [Agent 7: Black Widow — Real-Time Chat & WebSocket State Monitor](#9-agent-7-black-widow--real-time-chat--websocket-state-monitor)
+9. [Agent 7: Black Widow, Real-Time Chat & WebSocket State Monitor](#9-agent-7-black-widow--real-time-chat--websocket-state-monitor)
    - 9.1 [Mission Profile & Real-Time Communications Telemetry](#91-mission-profile--real-time-communications-telemetry)
    - 9.2 [Supabase Realtime WebSocket Protocol Auditing](#92-supabase-realtime-websocket-protocol-auditing)
    - 9.3 [Chat Message Delivery Latency & End-to-End Handshake](#93-chat-message-delivery-latency--end-to-end-handshake)
    - 9.4 [Read Receipts, Typing Indicators & State Synchronization](#94-read-receipts-typing-indicators--state-synchronization)
    - 9.5 [Connection Storm Mitigation & Backpressure Audits](#95-connection-storm-mitigation--backpressure-audits)
    - 9.6 [Channel Degraded Protocols & Recovery Signaling](#96-channel-degraded-protocols--recovery-signaling)
-10. [Agent 8: Doctor Strange — In-App Calling & WebRTC Audio Signaling](#10-agent-8-doctor-strange--in-app-calling--webrtc-audio-signaling)
+10. [Agent 8: Doctor Strange, In-App Calling & WebRTC Audio Signaling](#10-agent-8-doctor-strange--in-app-calling--webrtc-audio-signaling)
     - 10.1 [Mission Profile & Telecommunications Subsystem Overview](#101-mission-profile--telecommunications-subsystem-overview)
     - 10.2 [WebRTC Signaling State Machine Auditing](#102-webrtc-signaling-state-machine-auditing)
     - 10.3 [SDP Offer/Answer Negotiation & ICE Candidate Traversal](#103-sdp-offeranswer-negotiation--ice-candidate-traversal)
     - 10.4 [Native Audio Session Hardware Verification (iOS & Android)](#104-native-audio-session-hardware-verification-ios--android)
     - 10.5 [Call Gate Lifecycle & Frame-Zero Initialization Verification](#105-call-gate-lifecycle--frame-zero-initialization-verification)
     - 10.6 [Telecommunications Failure Triage & Emergency Recovery](#106-telecommunications-failure-triage--emergency-recovery)
-11. [Agent 9: Spider-Man — Social Graph Reactivity & Instant Profile Hydration](#11-agent-9-spider-man--social-graph-reactivity--instant-profile-hydration)
+11. [Agent 9: Spider-Man, Social Graph Reactivity & Instant Profile Hydration](#11-agent-9-spider-man--social-graph-reactivity--instant-profile-hydration)
     - 11.1 [Mission Profile & Social Graph Architecture](#111-mission-profile--social-graph-architecture)
     - 11.2 [Bidirectional Follow/Unfollow State Reactivity](#112-bidirectional-followunfollow-state-reactivity)
     - 11.3 [Frame-Zero Profile Hydration & Cache Layer Audits](#113-frame-zero-profile-hydration--cache-layer-audits)
     - 11.4 [Followers/Following Full-Screen Presentation & Search Audits](#114-followersfollowing-full-screen-presentation--search-audits)
     - 11.5 [PostgreSQL Counter Concurrency & Race-Condition Detection](#115-postgresql-counter-concurrency--race-condition-detection)
     - 11.6 [Social Graph Synchronization Failure Runbooks](#116-social-graph-synchronization-failure-runbooks)
-12. [Agent 10: Vision — Media Pipeline, Storage Buckets & Avatar Processing](#12-agent-10-vision--media-pipeline-storage-buckets--avatar-processing)
+12. [Agent 10: Vision, Media Pipeline, Storage Buckets & Avatar Processing](#12-agent-10-vision--media-pipeline-storage-buckets--avatar-processing)
     - 12.1 [Mission Profile & Digital Asset Pipeline Architecture](#121-mission-profile--digital-asset-pipeline-architecture)
     - 12.2 [Supabase Storage Bucket Integrity & RLS Policy Audits](#122-supabase-storage-bucket-integrity--rls-policy-audits)
     - 12.3 [Listing Image CDN Health, 404 Scanning & MIME Validation](#123-listing-image-cdn-health-404-scanning--mime-validation)
@@ -113,7 +113,7 @@ REVISION                 : 2026.10-SOVEREIGN-RELEASE-V4
 ## 1. PREAMBLE & SOVEREIGN SWARM OPERATING PHILOSOPHY
 
 ### 1.1 The Operational Mandate
-The Bleje Pronën platform is a distributed mission-critical real-estate ecosystem serving thousands of active property buyers, sellers, certified real-estate agencies, and brokerages across the Western Balkans. A single runtime failure—whether a broken VoIP WebRTC signaling gate, a missing safe-area inset on mobile devices, an untrapped database transaction deadlock, an uncaught TypeScript type regression, or an unhandled exception loop—directly inflicts financial, reputational, and operational damage.
+The Bleje Pronën platform is a distributed mission-critical real-estate ecosystem serving thousands of active property buyers, sellers, certified real-estate agencies, and brokerages across the Western Balkans. A single runtime failure-whether a broken VoIP WebRTC signaling gate, a missing safe-area inset on mobile devices, an untrapped database transaction deadlock, an uncaught TypeScript type regression, or an unhandled exception loop-directly inflicts financial, reputational, and operational damage.
 
 Human monitoring teams are fundamentally constrained by cognitive latency, fatigue, sleep cycles, and response-time overhead. The **Sovereign Autonomous Multi-Agent Swarm Operating System (BP-ASOS)** eliminates human latency entirely. BP-ASOS operates continuous, non-negotiable, 24/7/365 closed-loop surveillance and engineering execution over every layer of the platform stack.
 
@@ -126,7 +126,7 @@ Human monitoring teams are fundamentally constrained by cognitive latency, fatig
 
 ---
 
-## 2. AGENT 0: SUPREME COMMANDER THANOS — MASTER ORCHESTRATOR SPECIFICATION
+## 2. AGENT 0: SUPREME COMMANDER THANOS | MASTER ORCHESTRATOR SPECIFICATION
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -293,7 +293,7 @@ Persistence is handled via [`services/swarm/persistence/supabase-adapter.ts`](fi
 
 ---
 
-## 3. AGENT 1: IRON MAN — AUTONOMOUS BUG REPAIR, COMPILER CHECK & GITHUB PR ENGINE
+## 3. AGENT 1: IRON MAN | AUTONOMOUS BUG REPAIR, COMPILER CHECK & GITHUB PR ENGINE
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -379,7 +379,7 @@ If `SWARM_GITHUB_TOKEN` and `SWARM_GITHUB_REPO` are configured, Iron Man communi
 
 ---
 
-## 4. AGENT 2: THOR — INFRASTRUCTURE, API LATENCY & DATABASE POOL HEALTH
+## 4. AGENT 2: THOR | INFRASTRUCTURE, API LATENCY & DATABASE POOL HEALTH
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -487,7 +487,7 @@ WHERE datname = 'postgres' AND pid <> pg_backend_pid();
 
 ---
 
-## 5. AGENT 3: HULK — RUNTIME EXCEPTIONS & CRASH TELEMETRY INTERCEPTOR
+## 5. AGENT 3: HULK | RUNTIME EXCEPTIONS & CRASH TELEMETRY INTERCEPTOR
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -587,7 +587,7 @@ Whenever Hulk identifies a crash that breaches the `P1_CRITICAL` or `P2_HIGH` th
 
 ---
 
-## 6. AGENT 4: HAWKEYE — UI/UX ERGONOMICS, SAFE-AREA BOUNDS & PIXEL AUDITOR
+## 6. AGENT 4: HAWKEYE | UI/UX ERGONOMICS, SAFE-AREA BOUNDS & PIXEL AUDITOR
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -686,7 +686,7 @@ $$\text{CLS} = \sum \text{Impact Fraction} \times \text{Distance Fraction}$$
 
 ---
 
-## 7. AGENT 5: CAPTAIN AMERICA — SYNTHETIC USER JOURNEYS & END-TO-END FUNNELS
+## 7. AGENT 5: CAPTAIN AMERICA | SYNTHETIC USER JOURNEYS & END-TO-END FUNNELS
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -789,7 +789,7 @@ When any of the 5 canonical funnels fail:
 
 ---
 
-## 8. AGENT 6: LOKI — SECURITY, ROW-LEVEL SECURITY & OAUTH FLOW INTEGRITY
+## 8. AGENT 6: LOKI | SECURITY, ROW-LEVEL SECURITY & OAUTH FLOW INTEGRITY
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -894,7 +894,7 @@ If an RLS bypass or unauthorized data exposure is verified:
 
 ---
 
-## 9. AGENT 7: BLACK WIDOW — REAL-TIME CHAT & WEBSOCKET STATE MONITOR
+## 9. AGENT 7: BLACK WIDOW | REAL-TIME CHAT & WEBSOCKET STATE MONITOR
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -976,7 +976,7 @@ If Black Widow detects that chat channels are dropping packets or timing out:
 
 ---
 
-## 10. AGENT 8: DOCTOR STRANGE — IN-APP CALLING & WEBRTC AUDIO SIGNALING
+## 10. AGENT 8: DOCTOR STRANGE | IN-APP CALLING & WEBRTC AUDIO SIGNALING
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -1087,7 +1087,7 @@ If Doctor Strange detects signaling drops, ICE negotiation timeouts, or missing 
 
 ---
 
-## 11. AGENT 9: SPIDER-MAN — SOCIAL GRAPH REACTIVITY & INSTANT PROFILE HYDRATION
+## 11. AGENT 9: SPIDER-MAN | SOCIAL GRAPH REACTIVITY & INSTANT PROFILE HYDRATION
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -1172,7 +1172,7 @@ If Spider-Man detects desynchronized follow counters or profile hydration lag:
 
 ---
 
-## 12. AGENT 10: VISION — MEDIA PIPELINE, STORAGE BUCKETS & AVATAR PROCESSING
+## 12. AGENT 10: VISION | MEDIA PIPELINE, STORAGE BUCKETS & AVATAR PROCESSING
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -1226,7 +1226,7 @@ Vision samples active property listings from the database and verifies the HTTP 
 
 ### 12.4 Client-Side Avatar WebP Downsampling & Memory Safeguards
 Vision audits the client-side avatar upload pipeline in [`components/AvatarPickerModal.tsx`](file:///home/f0id/Downloads/blejepronen/components/AvatarPickerModal.tsx):
-- **Raw File Interception**: Prevents uploading uncompressed 10MB–20MB DSLR photos from mobile cameras.
+- **Raw File Interception**: Prevents uploading uncompressed 10MB-20MB DSLR photos from mobile cameras.
 - **Client-Side Square Crop & WebP Compression**:
   - Resizes avatar images to a standard **512 × 512 px** resolution.
   - Compresses to WebP format at **0.85 quality**.
@@ -1736,7 +1736,7 @@ $$\text{Priority} = 2^{24} \times \text{type\_preference} + 2^8 \times \text{loc
 - **Server Reflexive Candidate (STUN / Public IP)**: Type Preference = 100
 - **Relayed Candidate (TURN / Traversal Relay)**: Type Preference = 0
 
-If ICE gathering transitions to `failed`, Doctor Strange immediately investigates whether the local network is behind a Symmetric NAT or enterprise carrier firewall blocking UDP ports 1024–65535.
+If ICE gathering transitions to `failed`, Doctor Strange immediately investigates whether the local network is behind a Symmetric NAT or enterprise carrier firewall blocking UDP ports 1024-65535.
 
 ---
 
@@ -2651,7 +2651,7 @@ server {
 
 ### 25.1 Architectural Acronym & Concept Lexicon
 - **AST (Abstract Syntax Tree)**: The hierarchical, tree-structured syntactic representation of TypeScript and JavaScript source code used by Agent 1 (Iron Man) to perform structural diagnostics and code transformations.
-- **BP-ASOS**: Bleje Pronën Autonomous Swarm Operating System — the complete 11-agent multi-agent supervisory runtime.
+- **BP-ASOS**: Bleje Pronën Autonomous Swarm Operating System, the complete 11-agent multi-agent supervisory runtime.
 - **Circuit Breaker**: A fault-tolerance design pattern implemented in `SupervisorTree` with three operational states (`CLOSED`, `DEGRADED`, `OPEN`). Quarantines chronic crashers after 5 failures in 5 minutes to prevent CPU thrashing.
 - **CLS (Cumulative Layout Shift)**: A Core Web Vital metric measuring unexpected visual layout shifts during page render. Audited continuously by Hawkeye.
 - **Deduplication Sliding Window ($W$)**: The rolling time window ($3,600,000 \text{ ms} = 1 \text{ hour}$) during which identical incident signatures increment occurrence counters rather than firing duplicate alerts.
@@ -2750,7 +2750,7 @@ server {
 ```
 
 ### 27.1 Multi-Agent Task Pipeline Architecture
-Every operational task in Bleje Pronën—whether routine surveillance, code remediation, release verification, or disaster recovery—is structured as a **Directed Acyclic Graph (DAG)** orchestrated directly by Thanos. Child agents do not trigger ad-hoc side-effects on their own; they report observations to Thanos, and Thanos commands the subsequent agent in the pipeline.
+Every operational task in Bleje Pronën-whether routine surveillance, code remediation, release verification, or disaster recovery-is structured as a **Directed Acyclic Graph (DAG)** orchestrated directly by Thanos. Child agents do not trigger ad-hoc side-effects on their own; they report observations to Thanos, and Thanos commands the subsequent agent in the pipeline.
 
 ```
                                 [NEW TASK DISPATCHED BY THANOS]

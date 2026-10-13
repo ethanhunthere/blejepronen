@@ -47,7 +47,7 @@ export interface EmptyStateProps {
   testID?: string
 }
 
-/** Pressed feedback is an opacity dip, not a colour swap — theme-independent. */
+/** Pressed feedback is an opacity dip, not a colour swap : theme-independent. */
 const PRESSED_OPACITY = 0.82
 const MESSAGE_MAX_WIDTH = 320
 const ICON_STROKE_WIDTH = 1.75

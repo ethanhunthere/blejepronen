@@ -243,7 +243,7 @@ export default function ChatPage() {
             return [...prev, msg]
           })
           // Follow the conversation only when the user is already at the bottom
-          // — never hijack the viewport while they read history.
+          // : never hijack the viewport while they read history.
           setTimeout(() => scrollIfNearBottom(true), 50)
           if (msg.sender_id !== userId) {
             supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then(({ error }) => {
@@ -408,7 +408,7 @@ export default function ChatPage() {
       <h1 className="sr-only">Mesazhet</h1>
       {/* ---- HEADER ---- */}
       <header className="flex-shrink-0 bg-white border-b border-gray-100 shadow-sm px-3 py-2.5 flex items-center gap-3">
-        {/* Back button — mobile only (desktop shows the two-pane layout) */}
+        {/* Back button : mobile only (desktop shows the two-pane layout) */}
         <Link
           href="/mesazhet"
           aria-label="Kthehu te mesazhet"
@@ -417,7 +417,7 @@ export default function ChatPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        {/* Avatar + Name — link to public profile */}
+        {/* Avatar + Name : link to public profile */}
         <Link
           href={`/profili/${otherUserId}`}
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"

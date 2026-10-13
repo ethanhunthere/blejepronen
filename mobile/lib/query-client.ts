@@ -5,17 +5,17 @@
  * ───────────────
  * Every feature module used to declare its own `const cache = new Map()` at
  * module scope. Those maps were unbounded, had no expiry, could only be cleared
- * by reaching into the module that owned them, and survived nothing — a logout
+ * by reaching into the module that owned them, and survived nothing : a logout
  * or a "clear cache" action could not see them. This module replaces that
  * pattern with one small, typed store that has:
  *
- *   • TTL          — entries expire; staleness is a property of the entry, not
+ *   • TTL          : entries expire; staleness is a property of the entry, not
  *                    of whatever screen happened to read it last.
- *   • Groups       — 'listings' | 'favorites' | 'profile' | 'conversations',
+ *   • Groups       : 'listings' | 'favorites' | 'profile' | 'conversations',
  *                    each independently invalidatable in O(group size).
- *   • Bounds       — a global LRU cap, a per-group cap and a sticky cap, so no
+ *   • Bounds       : a global LRU cap, a per-group cap and a sticky cap, so no
  *                    browsing session can grow memory without limit.
- *   • Sticky pin   — authoritative state (the auth session snapshot) is exempt
+ *   • Sticky pin   : authoritative state (the auth session snapshot) is exempt
  *                    from LRU eviction and from bulk clears, so a cache purge
  *                    can never log the user out.
  *
@@ -27,7 +27,7 @@
  * ───
  * The store lives on `globalThis` under a versioned key so a hot reload of this
  * module (or of any module that imports it) reuses the live entries instead of
- * silently dropping the whole cache — and instead of leaking a second store.
+ * silently dropping the whole cache : and instead of leaking a second store.
  */
 
 /** Bounded invalidation groups. Keep this list closed on purpose: an
@@ -37,7 +37,7 @@ export type CacheGroup = 'listings' | 'favorites' | 'profile' | 'conversations'
 export interface CacheSetOptions {
   /**
    * Milliseconds until the entry counts as stale. `undefined`, `null`, `0` or
-   * a non-finite value means "never expires" — use that only for authoritative
+   * a non-finite value means "never expires" : use that only for authoritative
    * state, and pair it with `sticky` when it must also survive eviction.
    */
   ttlMs?: number | null
@@ -47,7 +47,7 @@ export interface CacheSetOptions {
    * Exempt from LRU eviction and from `cacheClear()`'s default bulk purge.
    * Targeted `cacheDelete` / `cacheInvalidate` still remove sticky entries, so
    * an explicit logout can always clear the session. Reserve for authoritative
-   * state — a cache full of sticky entries is a leak by another name.
+   * state : a cache full of sticky entries is a leak by another name.
    */
   sticky?: boolean
 }
@@ -76,7 +76,7 @@ const STORE_KEY = '__blejepronen_query_cache_v1__'
 
 /** Total non-sticky entries kept before the LRU tail is dropped. */
 const MAX_ENTRIES = 512
-/** Per-group ceiling — bounds how much one feature can occupy the store. */
+/** Per-group ceiling : bounds how much one feature can occupy the store. */
 const MAX_PER_GROUP = 160
 /** Hard ceiling on pinned entries; a runaway sticky writer still can't leak. */
 const MAX_STICKY = 24
@@ -327,7 +327,7 @@ export function cacheClear(options: { keepSticky?: boolean } = {}): number {
   return removed
 }
 
-/** Snapshot of occupancy and hit-rate counters — used for honest user copy. */
+/** Snapshot of occupancy and hit-rate counters : used for honest user copy. */
 export function cacheStats(): CacheStats {
   const byGroup: Record<CacheGroup, number> = {
     listings: 0,

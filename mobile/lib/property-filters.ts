@@ -21,7 +21,7 @@ import type { ListingsQueryParams, ListingsSort } from './listings-query'
  * to the shared `ListingsQueryParams` shape by `toListingsQueryParams` and then
  * applied to the Supabase query by `applyListingsFilters`
  * (see `lib/listings-query.ts`, a mirror of the canonical web module). There is
- * deliberately no client-side filtering or sorting of listing results here —
+ * deliberately no client-side filtering or sorting of listing results here -
  * mobile and web must not be able to drift.
  */
 
@@ -35,7 +35,7 @@ export const CATEGORY_ITEMS = [
   { id: 'garazh', label: 'Garazha', icon: Warehouse },
 ]
 
-/** Room chips are "N+" — the query applies `rooms >= N`, matching the web. */
+/** Room chips are "N+" : the query applies `rooms >= N`, matching the web. */
 export const ROOM_OPTIONS = [
   { id: 'all', label: 'Të gjitha' },
   { id: '1', label: '1+' },
@@ -59,7 +59,7 @@ export const FLOOR_OPTIONS = [
 ]
 
 // Derived from the writer vocabulary (lib/categories.ts) so every chip can
-// actually match a stored listing — hand-maintained lists had drifted.
+// actually match a stored listing : hand-maintained lists had drifted.
 const conditionUnion = (() => {
   const seen = new Map<string, string>()
   for (const cat of Object.values(CATEGORIES)) {
@@ -86,25 +86,25 @@ export const FEATURES_LIST = featureUnion
 
 export const PRICE_PRESETS_SALE = [
   { label: '< 50k €', min: '', max: '50000' },
-  { label: '50k – 100k €', min: '50000', max: '100000' },
-  { label: '100k – 150k €', min: '100000', max: '150000' },
-  { label: '150k – 250k €', min: '150000', max: '250000' },
+  { label: '50k-100k €', min: '50000', max: '100000' },
+  { label: '100k-150k €', min: '100000', max: '150000' },
+  { label: '150k-250k €', min: '150000', max: '250000' },
   { label: '> 250k €', min: '250000', max: '' },
 ]
 
 export const PRICE_PRESETS_RENT = [
   { label: '< 250 €', min: '', max: '250' },
-  { label: '250 – 400 €', min: '250', max: '400' },
-  { label: '400 – 600 €', min: '400', max: '600' },
-  { label: '600 – 1,000 €', min: '600', max: '1000' },
+  { label: '250-400 €', min: '250', max: '400' },
+  { label: '400-600 €', min: '400', max: '600' },
+  { label: '600-1,000 €', min: '600', max: '1000' },
   { label: '> 1,000 €', min: '1000', max: '' },
 ]
 
 export const AREA_PRESETS = [
   { label: '< 50 m²', min: '', max: '50' },
-  { label: '50 – 80 m²', min: '50', max: '80' },
-  { label: '80 – 120 m²', min: '80', max: '120' },
-  { label: '120 – 200 m²', min: '120', max: '200' },
+  { label: '50-80 m²', min: '50', max: '80' },
+  { label: '80-120 m²', min: '80', max: '120' },
+  { label: '120-200 m²', min: '120', max: '200' },
   { label: '> 200 m²', min: '200', max: '' },
 ]
 
@@ -146,7 +146,7 @@ export const SORT_OPTIONS = [
   },
 ] as const
 
-/** Same union as the web `ListingsSort` — the sort sheet drives query params. */
+/** Same union as the web `ListingsSort` : the sort sheet drives query params. */
 export type SortType = ListingsSort
 
 // Compile-time guard: the sheet may only offer sorts the server understands.

@@ -229,7 +229,7 @@ export default function ShpalljetEMiaScreen() {
   const [subFilter, setSubFilter] = useState<SubFilter>(initialSubFilter)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Robust status classification helpers — all three funnel through
+  // Robust status classification helpers : all three funnel through
   // readListingStatus(), so the sub-filter counts, the pill and the action row
   // can never disagree about what state a listing is in.
   const listingStatus = useCallback((l: Listing) => readListingStatus(l), [])
@@ -244,7 +244,7 @@ export default function ShpalljetEMiaScreen() {
 
   const isListingInactive = useCallback((l: Listing) => readListingStatus(l) === 'paused', [])
 
-  // Të Ruajturat (Saved listings) — DB-backed via Supabase `favorites`
+  // Të Ruajturat (Saved listings) : DB-backed via Supabase `favorites`
   const [savedListings, setSavedListings] = useState<Listing[]>([])
   const [loadingSaved, setLoadingSaved] = useState(false)
   // Latest-value mirror: `renderListingItem` is memoized without savedListings in its deps,
@@ -281,7 +281,7 @@ export default function ShpalljetEMiaScreen() {
       setCurrentUser(state.user)
       if (!state.user && isMountedRef.current) setLoading(false)
     })
-    // Hydration can finish between render and subscribe — resolve the flag immediately.
+    // Hydration can finish between render and subscribe : resolve the flag immediately.
     if (isAuthCacheHydrated()) setAuthChecking(false)
     return unsub
   }, [])
@@ -302,7 +302,7 @@ export default function ShpalljetEMiaScreen() {
     } catch (e) {
       console.warn('Listings fetch exception:', e)
     } finally {
-      // Progress flags always reset — a logout mid-flight must not wedge the spinner.
+      // Progress flags always reset : a logout mid-flight must not wedge the spinner.
       setLoading(false)
       setRefreshing(false)
     }
@@ -393,7 +393,7 @@ export default function ShpalljetEMiaScreen() {
    * Të Ruajturat tab, even when this screen instance was already mounted
    * (React Navigation reuses instances, so mount-time state alone isn't enough).
    */
-  // The ?filter= param is a one-shot entry intent — re-applying it on every focus would
+  // The ?filter= param is a one-shot entry intent : re-applying it on every focus would
   // yank the user back to that tab after they navigate elsewhere inside the screen.
   const hasAppliedDeepLinkParamRef = useRef(false)
 
@@ -502,7 +502,7 @@ export default function ShpalljetEMiaScreen() {
 
     const nextActive = STATUS_IS_ACTIVE[nextStatus]
 
-    // True for Postgres 42703 — `listings.status` is not on the live table yet
+    // True for Postgres 42703 : `listings.status` is not on the live table yet
     // because the migration has not been applied. Anything else (RLS, network)
     // is a real failure and must surface to the user.
     const isMissingStatusColumn = (err: { code?: string; message?: string }) =>
@@ -564,7 +564,7 @@ export default function ShpalljetEMiaScreen() {
   }
 
   // Reactivate: the listing goes back on the market exactly as it was. Nothing
-  // descriptive is touched — a sold home keeps its recorded condition, and a
+  // descriptive is touched : a sold home keeps its recorded condition, and a
   // paused home keeps whatever the owner had set.
   const handleReactivate = (item: Listing) =>
     applyStatusChange(
@@ -580,7 +580,7 @@ export default function ShpalljetEMiaScreen() {
       item,
       'paused',
       'Shpallja u Ndalua Përkohësisht',
-      `Prona "${item.title}" u fsheh përkohësisht. Riktheheni aktive kur të doni — asgjë nuk fshihet nga historiku.`
+      `Prona "${item.title}" u fsheh përkohësisht. Riktheheni aktive kur të doni | asgjë nuk fshihet nga historiku.`
     )
 
   // Close the deal: sold for a sale, rented for a rental. The listing leaves
@@ -610,7 +610,7 @@ export default function ShpalljetEMiaScreen() {
     if (!editPriceListing) return
     const sanitizedPrice = newPrice.trim().replace(/[^0-9.]/g, '')
 
-    // parseFloat('1.2.3') silently returns 1.2 — reject ambiguous decimal input outright
+    // parseFloat('1.2.3') silently returns 1.2 : reject ambiguous decimal input outright
     if ((sanitizedPrice.match(/\./g) || []).length > 1) {
       Alert.alert('Vërejtje', 'Çmimi mund të përmbajë vetëm një presje dhjetore.')
       return
@@ -701,7 +701,7 @@ export default function ShpalljetEMiaScreen() {
                 message: `Prona "${item.title}" u fshi me sukses nga llogaria juaj.`,
               })
 
-              // Best-effort Storage cleanup — the stored URLs are getPublicUrl outputs of
+              // Best-effort Storage cleanup : the stored URLs are getPublicUrl outputs of
               // `${userId}/...jpg` in the 'listings' bucket. A failure here must never
               // block or roll back the delete that already succeeded.
               try {
@@ -1034,7 +1034,7 @@ export default function ShpalljetEMiaScreen() {
 
   const renderListingItem = useCallback(
     ({ item }: { item: Listing }) => {
-      // Local brand placeholder — never hot-link Unsplash.
+      // Local brand placeholder : never hot-link Unsplash.
       const mainImage = item.images && item.images.length > 0 ? item.images[0] : null
 
       if (mainTab === 'saved') {
@@ -1235,7 +1235,7 @@ export default function ShpalljetEMiaScreen() {
             )}
 
             {/* Off-market stamp. A sold / rented listing keeps its full record and
-                photo history — it is only *marked* as closed, never deleted. */}
+                photo history, it is only *marked* as closed, never deleted. */}
             {isSold ? (
               <View style={styles.closedStamp} pointerEvents="none">
                 <Text style={styles.closedStampText}>{statusLabel(status).toUpperCase()}</Text>
@@ -1353,7 +1353,7 @@ export default function ShpalljetEMiaScreen() {
               { borderTopColor: specularBorder },
             ]}
           >
-            {/* 1. Lifecycle actions — explicit and separate, so a paused listing keeps
+            {/* 1. Lifecycle actions : explicit and separate, so a paused listing keeps
                    its real `condition`, and sold/rented listings stay reachable with
                    their full history instead of being deleted. */}
             <View style={[styles.statusActionRow, isCompact && { gap: 6 }]}>
@@ -1431,7 +1431,7 @@ export default function ShpalljetEMiaScreen() {
                 </>
               ) : (
                 /* Rikthe aktive: status → active, is_active true. The listing comes
-                   back exactly as it was — no descriptive field is rewritten. */
+                   back exactly as it was, no descriptive field is rewritten. */
                 <Pressable
                   style={[
                     styles.actionBtn,

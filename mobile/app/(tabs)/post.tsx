@@ -405,7 +405,7 @@ export default function PostPropertyScreen() {
       return
     }
 
-    // The rooms pill offers a '6+' label — map it to 6 so we never store 0 rooms.
+    // The rooms pill offers a '6+' label : map it to 6 so we never store 0 rooms.
     const roomsNum = rooms === '6+' ? 6 : Number(rooms) || 0
     // Storage paths uploaded during this attempt, so a failed insert can clean them up.
     const uploadedStoragePaths: string[] = []
@@ -485,7 +485,7 @@ export default function PostPropertyScreen() {
           Array.from({ length: Math.min(UPLOAD_CONCURRENCY, images.length) }, () => uploadWorker())
         )
 
-        // A local file:// URI must never reach listings.images — abort before the insert.
+        // A local file:// URI must never reach listings.images : abort before the insert.
         if (uploadFailure.message || results.some((url) => url === null)) {
           await discardUploadedPhotos(uploadedStoragePaths)
           if (Platform.OS !== 'web') {
@@ -557,7 +557,7 @@ export default function PostPropertyScreen() {
         router.replace('/(tabs)/listings' as any)
       }
     } catch (err: any) {
-      // The insert never landed — discard the photos already pushed to Storage
+      // The insert never landed : discard the photos already pushed to Storage
       await discardUploadedPhotos(uploadedStoragePaths)
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)

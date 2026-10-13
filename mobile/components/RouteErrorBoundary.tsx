@@ -20,16 +20,16 @@ import { Fonts, useTheme } from '@/constants/theme'
  *
  * Two exports, one visual language:
  *
- *  • `RouteErrorBoundary` — the *catch UI* handed to expo-router's
+ *  • `RouteErrorBoundary` : the *catch UI* handed to expo-router's
  *    `unstable_screenErrorBoundary` on the root `Stack` and the tab `Tabs`.
  *    The router wraps every leaf route in its own `Try`, so a screen that
  *    throws during render is replaced by this component **alone**: the
  *    navigation stack, the tab bar, the gesture handlers and every sibling
- *    screen stay mounted and keep animating. That is the whole point — the
+ *    screen stay mounted and keep animating. That is the whole point : the
  *    app-level `components/ErrorBoundary` can only offer "restart or go home",
  *    whereas this offers "retry just this screen" without losing the stack.
  *
- *  • `RouteErrorGuard` — a class boundary for sub-trees that are *not* routes
+ *  • `RouteErrorGuard` : a class boundary for sub-trees that are *not* routes
  *    and therefore not covered by the router's per-screen `Try`: the floating
  *    tab bar and the lazily-imported WebRTC call overlay. Both are rendered
  *    above every screen, so an unguarded throw in either takes the whole app
@@ -60,7 +60,7 @@ interface ErrorStateProps {
   resetLabel?: string
   /** Compact variant for chrome (tab bar) rather than a full-screen route. */
   compact?: boolean
-  /** Rendered under the actions — used by `RouteErrorGuard` for a fallback. */
+  /** Rendered under the actions : used by `RouteErrorGuard` for a fallback. */
   children?: ReactNode
 }
 

@@ -65,7 +65,7 @@ type FilterableQuery = {
 }
 
 /**
- * PostgREST-safe form of a user supplied search string — identical to the web:
+ * PostgREST-safe form of a user supplied search string : identical to the web:
  * `, ( )` are structural inside an `.or()` / `.ilike.%…%` condition, so they are
  * stripped and whitespace is collapsed.
  */
@@ -140,7 +140,7 @@ export function categoryOrExpression(category?: string): string | null {
 }
 
 /**
- * Mirror of the web `applyListingsFilters` — same columns, same operators, same
+ * Mirror of the web `applyListingsFilters` : same columns, same operators, same
  * sanitization, same sort switch. Do not add mobile-only branches here without
  * mirroring them on the web.
  */
@@ -213,7 +213,7 @@ export interface ListingsPage {
 
 /**
  * One page of listings with the exact server total for the same filter set.
- * `total` is what UI counters must render — the fetched window is only ever a
+ * `total` is what UI counters must render : the fetched window is only ever a
  * slice of it.
  */
 export async function fetchListingsPage(p: ListingsQueryParams = {}): Promise<ListingsPage> {
@@ -243,7 +243,7 @@ export async function fetchListingsPage(p: ListingsQueryParams = {}): Promise<Li
 }
 
 /**
- * Count-only probe (`head: true`, `count: 'exact'`) — used for chip badges and
+ * Count-only probe (`head: true`, `count: 'exact'`) : used for chip badges and
  * the filter modal preview so no counter is ever derived from a fetched window.
  * Returns `null` when the count is unavailable so callers can hide the badge
  * instead of showing a wrong number.
@@ -337,7 +337,7 @@ export async function fetchCategoryCounts(
 }
 
 /**
- * True when a param set is the canonical unfiltered "newest first" feed — the
+ * True when a param set is the canonical unfiltered "newest first" feed : the
  * only payload allowed to seed the shared offline cache, so a filtered or
  * re-ordered window can never be persisted as the global feed.
  */

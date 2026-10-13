@@ -200,7 +200,7 @@ export default function MesazhetLayout({ children }: { children: React.ReactNode
       setLoading(false)
 
       // Scoped realtime: only events for this user's conversations (plus new
-      // conversations addressed to them) trigger a debounced refetch — no
+      // conversations addressed to them) trigger a debounced refetch : no
       // cross-tenant firehose, no per-event full-inbox download.
       const ids = convIdsRef.current
       const msgFilter = ids.length

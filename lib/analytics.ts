@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Listing analytics — client half of the baseline funnel (audit §6).
+ * Listing analytics : client half of the baseline funnel (audit §6).
  *
  * Wire contract (server half lives in `app/api/analytics/route.ts`):
  *   POST /api/analytics  { listingId: string, event: 'view'|'favorite'|'lead', ownerId?: string }
@@ -11,7 +11,7 @@
  *
  * Design rules:
  *  • Fire-and-forget. Analytics must NEVER throw into a render path or fail a
- *    user action — every entry point swallows errors and resolves.
+ *    user action : every entry point swallows errors and resolves.
  *  • Honest counters. No optimistic inflation, no client-side totals: the
  *    numbers shown in "Postimet e Mia" come from the server aggregate.
  *  • Schema-drift safe. `listing_events` may not exist yet on the live DB; the
@@ -20,7 +20,7 @@
  * ⚠️ `useTrackListingView` / `<ListingViewTracker />` are the ONLY supported way
  *    to record a detail-page view. The listing detail page
  *    (app/listings/[id]/page.tsx) is a server component owned by another
- *    workstream — it must not be edited here, so the tracker is exported for the
+ *    workstream : it must not be edited here, so the tracker is exported for the
  *    integrator to drop in (see the header of ListingViewTracker below).
  */
 
@@ -46,7 +46,7 @@ export const MAX_STATS_IDS = 50
 // A view is one "someone opened this listing" signal, not one render. React 19
 // Strict Mode double-invokes effects and client-side navigation remounts pages,
 // so dedupe in memory for the tab lifetime and in sessionStorage across
-// soft navigations. This is a noise filter only — it is NOT a security control
+// soft navigations. This is a noise filter only : it is NOT a security control
 // (the server also drops views from the listing's own owner).
 const firedViews = new Set<string>()
 
@@ -60,7 +60,7 @@ function viewAlreadyFired(listingId: string): boolean {
       }
     }
   } catch {
-    // private mode / storage disabled — in-memory dedupe still applies
+    // private mode / storage disabled : in-memory dedupe still applies
   }
   return false
 }
@@ -96,7 +96,7 @@ export interface TrackEventOptions {
   /**
    * Pass the listing owner's id when it is already known (detail pages have it).
    * The route drops self-events so a host browsing their own listing does not
-   * inflate their funnel. Noise filter only — never a trust decision.
+   * inflate their funnel. Noise filter only : never a trust decision.
    */
   ownerId?: string | null
   /** Abort signal for callers that want to cancel on unmount. */
@@ -167,7 +167,7 @@ export interface UseTrackListingViewOptions extends TrackEventOptions {
  * Record exactly one `view` per listing per browser tab.
  *
  * INTEGRATION (app/listings/[id]/page.tsx is a server component, so the hook
- * cannot be called there directly — render the client component below, or call
+ * cannot be called there directly : render the client component below, or call
  * this hook from any existing client child):
  *
  *   import { ListingViewTracker } from '@/lib/analytics'
@@ -225,7 +225,7 @@ export interface ListingStatsResult {
  * Fetch funnel counts for the caller's OWN listings (the route re-checks
  * ownership server-side; ids belonging to somebody else are simply omitted).
  * Returns `{ available: false, stats: {} }` when the table is not migrated yet
- * or the request fails — callers must render nothing in that case rather than
+ * or the request fails : callers must render nothing in that case rather than
  * showing fake zeros.
  */
 export async function fetchMyListingStats(

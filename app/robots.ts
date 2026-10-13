@@ -6,21 +6,24 @@ const siteUrl =
     : 'https://blejepronen.com'
 
 const PRIVATE_PATHS = [
-  '/admin',
-  '/auth',
   '/api/',
-  '/mesazhet',
-  '/settings',
-  '/cilesimet',
-  '/posto-prona',
-  '/postimet-e-mia',
-  '/completo-profilin',
-  '/completo-profilin-fast',
-  '/completo-profilin-company',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
+  '/admin/',
+  '/profili/',
+  '/mesazhet/',
+  '/auth/',
+  '/settings/',
+  '/cilesimet/',
+  '/posto-prona/',
+  '/postimet-e-mia/',
+  '/completo-profilin/',
+  '/completo-profilin-fast/',
+  '/completo-profilin-company/',
+  '/login/',
+  '/register/',
+  '/forgot-password/',
+  '/reset-password/',
+  '/*?*sort=*',
+  '/*?*page=*',
 ]
 
 export default function robots(): MetadataRoute.Robots {
@@ -31,7 +34,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: PRIVATE_PATHS,
       },
-      // AI Crawlers & LLM Search Agents (OpenAI, Anthropic, Google, Perplexity, Apple)
+      // AI Crawlers and Search Engine Bots
       {
         userAgent: [
           'GPTBot',
@@ -46,10 +49,23 @@ export default function robots(): MetadataRoute.Robots {
           'Bytespider',
           'cohere-ai',
         ],
-        allow: ['/', '/listings', '/pronat', '/tregu', '/en', '/kontakti', '/kushtet', '/privatesia', '/llms.txt'],
+        allow: [
+          '/',
+          '/listings',
+          '/pronat',
+          '/tregu',
+          '/en',
+          '/kontakti',
+          '/kushtet',
+          '/privatesia',
+          '/llms.txt',
+        ],
         disallow: PRIVATE_PATHS,
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: [
+      `${siteUrl}/sitemap.xml`,
+      `${siteUrl}/sitemap-index.xml`,
+    ],
   }
 }

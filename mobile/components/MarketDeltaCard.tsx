@@ -84,7 +84,7 @@ export function MarketDeltaCard({ city, pricePerM2 }: MarketDeltaCardProps) {
           {above ? '+' : ''}
           {deltaPct}%
         </Text>{' '}
-        {flat ? '— sa mediana' : ' vs mediana'} e {city} ({fmt(median)} €/m², {sample} shpallje)
+        {flat ? '= sa mediana' : ' vs mediana'} e {city} ({fmt(median)} €/m², {sample} shpallje)
       </Text>
     </View>
   )

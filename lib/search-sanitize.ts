@@ -20,14 +20,14 @@
 /** Longest accepted search term. Bounds query cost and cache-key growth. */
 export const MAX_SEARCH_TERM_LENGTH = 80
 
-/** C0/C1 control characters (incl. NUL, newline, ESC) — never valid in a query. */
+/** C0/C1 control characters (incl. NUL, newline, ESC) : never valid in a query. */
 const CONTROL_CHARS_RE = /[\u0000-\u001F\u007F-\u009F]/g
 
 /**
  * PostgREST structural characters + SQL LIKE wildcards.
  * Kept: letters, digits, spaces, `-`, `.`, `/`, `@`, `#`, `+`, `~`, `ë`, `ç`…
  * (dots are safe: PostgREST splits `column.operator.value` on the first two
- * dots only, so a dot inside the value cannot start a new condition — and
+ * dots only, so a dot inside the value cannot start a new condition : and
  * commas, which could, are stripped.)
  */
 const STRUCTURAL_CHARS_RE = /[,()[\]{}<>=!&|;:*?%_"'`\\]/g
@@ -145,7 +145,7 @@ export function getSearchVariants(term: unknown): string[] {
  * Convenience builder for the common "match this term across these columns"
  * case. Sanitizes the term itself, so callers cannot forget.
  *
- * Returns `null` when the term sanitizes to empty — the caller must then skip
+ * Returns `null` when the term sanitizes to empty : the caller must then skip
  * the query rather than issue an unfiltered (full-table) one.
  */
 export function buildIlikeOr(

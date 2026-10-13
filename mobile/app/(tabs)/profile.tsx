@@ -413,7 +413,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     checkSession()
 
-    // Single consolidated auth bus — never open a raw onAuthStateChange here.
+    // Single consolidated auth bus : never open a raw onAuthStateChange here.
     // Handlers are NOT replayed on subscribe; `checkSession()` seeds on mount.
     const unsubscribeAuth = subscribeAuthEvents((event) => {
       if (isLogoutInProgress()) {

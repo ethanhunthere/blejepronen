@@ -1,4 +1,4 @@
-# 🎬 Bleje Pronën — Brand, Product & Video Production Guide
+# 🎬 Bleje Pronën | Brand, Product & Video Production Guide
 > **Internal Creative Brief for Video Editors, Motion Designers & Content Creators**
 
 ---
@@ -100,7 +100,7 @@ Use these exact HEX codes for motion graphics, lower thirds, typography highligh
 ```
 
 ### Typography Hierarchy
-* **Primary Typeface**: **`Albert Sans`** (Geometric humanist sans-serif — clean, modern, architectural).
+* **Primary Typeface**: **`Albert Sans`** (Geometric humanist sans-serif : clean, modern, architectural).
 * **Weights**:
   * `800 ExtraBold / 900 Black`: Hero headlines, prices, primary titles.
   * `600 SemiBold`: Button labels, navigation tabs, spec labels.
@@ -111,13 +111,13 @@ Use these exact HEX codes for motion graphics, lower thirds, typography highligh
 ## 5. Video Editing & Motion Guidelines
 
 ### Pacing & Rhythm
-* **Tempo**: Fast, dynamic, modern tech tempo (85–115 BPM electronic/sub-bass or chic lo-fi house).
+* **Tempo**: Fast, dynamic, modern tech tempo (85-115 BPM electronic/sub-bass or chic lo-fi house).
 * **Cuts**: Rapid, deliberate match cuts (e.g., tap on listing card $\rightarrow$ zoom into high-res hero image $\rightarrow$ swipe through living room photo $\rightarrow$ tap "Kalkulatori" $\rightarrow$ number counter spins up).
 * **Transitions**: Seamless camera punch-ins, subtle whip zooms, glass card slide-ups, clean UI pans. Avoid cheesy standard video transitions (no basic star wipes or generic dissolves).
 
 ### Device Framing & Mockups
 * **Mobile Shots**: Use modern **iPhone 16 Pro (Natural Titanium or Black Titanium)** with Dynamic Island and slim bezels.
-* **Desktop / Web Shots**: Use **MacBook Pro 16" / Pro Display XDR** floating bezel or clean clay mockup with subtle perspective tilt (isometric 15°–25° angle).
+* **Desktop / Web Shots**: Use **MacBook Pro 16" / Pro Display XDR** floating bezel or clean clay mockup with subtle perspective tilt (isometric 15°-25° angle).
 * **Backgrounds for Devices**: Soft blurred ambient gradients using brand teal (`#00675B`) and deep forest (`#002D26`) against dark slate or crisp white studio backdrops.
 
 ### Sound Design (SFX)

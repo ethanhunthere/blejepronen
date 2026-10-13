@@ -7,12 +7,12 @@ import { useReducedMotion as useReanimatedReducedMotion } from 'react-native-rea
  *
  * Three signals are OR-ed together:
  *
- * 1. `react-native-reanimated`'s `useReducedMotion()` — cheap and safe to call
+ * 1. `react-native-reanimated`'s `useReducedMotion()` : cheap and safe to call
  *    in any component that already uses Reanimated, but it is snapshotted once
  *    at module load, so it never re-renders on a live settings change.
  * 2. `AccessibilityInfo.isReduceMotionEnabled()` + the `reduceMotionChanged`
- *    subscription — the authoritative, *live* native signal on iOS/Android.
- * 3. `matchMedia('(prefers-reduced-motion: reduce)')` — the web equivalent,
+ *    subscription : the authoritative, *live* native signal on iOS/Android.
+ * 3. `matchMedia('(prefers-reduced-motion: reduce)')` : the web equivalent,
  *    because `AccessibilityInfo` reduce-motion is not implemented on
  *    react-native-web.
  *

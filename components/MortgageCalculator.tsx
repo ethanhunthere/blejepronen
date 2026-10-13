@@ -9,7 +9,7 @@ interface MortgageCalculatorProps {
   className?: string
 }
 
-/** Bounds for user-chosen down payment: keeps LTV inside 5%–95% (never >100%). */
+/** Bounds for user-chosen down payment: keeps LTV inside 5%-95% (never >100%). */
 const DOWN_PAYMENT_MIN = 5
 const DOWN_PAYMENT_MAX = 95
 

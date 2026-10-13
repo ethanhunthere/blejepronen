@@ -4,7 +4,7 @@
  * One module-level shared value drives the bar's width. Every tab screen
  * attaches `useTabBarCollapseOnScroll()` to its primary vertical scroller;
  * the scroll handler and the resulting springs run as worklets on the
- * native UI thread — no JS-thread hop, no gesture lag, locked 60/120 fps.
+ * native UI thread : no JS-thread hop, no gesture lag, locked 60/120 fps.
  *
  * Interaction model
  * ─────────────────
@@ -23,10 +23,10 @@ export const tabBarCollapse = makeMutable(0)
  *  Guards transitions so springs are triggered exactly once per change. */
 const collapseIntent = makeMutable(0)
 
-/** Last scroll offset (per-gesture baseline) — shared so it survives both threads */
+/** Last scroll offset (per-gesture baseline) : shared so it survives both threads */
 const lastScrollY = makeMutable(0)
 
-/** Instant-feeling expansion — reacts to the slightest upward intent */
+/** Instant-feeling expansion : reacts to the slightest upward intent */
 const EXPAND_SPRING = { damping: 22, stiffness: 320, mass: 0.55 }
 
 /** Restrained, elegant collapse while scrolling down */

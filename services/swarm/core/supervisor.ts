@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — OTP-STYLE SUPERVISOR TREE
+ * BLEJE PRONËN : OTP-STYLE SUPERVISOR TREE
  * File: services/swarm/core/supervisor.ts
  *
  * Implements one-for-one child supervision over all 10 Marvel agents.

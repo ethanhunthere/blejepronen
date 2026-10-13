@@ -83,7 +83,7 @@ export default function AuthShell({
         </div>
       </div>
 
-      {/* Right 45%: teal panel — brand statement floating above the globe */}
+      {/* Right 45%: teal panel : brand statement floating above the globe */}
       <AuthTealPanel headline={headline} subline={subline} />
     </div>
   )

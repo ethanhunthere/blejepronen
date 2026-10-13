@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — AUTONOMOUS SWARM ENTRYPOINT
+ * BLEJE PRONËN : AUTONOMOUS SWARM ENTRYPOINT
  * File: services/swarm/index.ts
  *
  * Boots Supreme Commander Thanos supervising the 10 Marvel child agents.

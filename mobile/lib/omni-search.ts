@@ -7,7 +7,7 @@ import { fetchListingsPage, sanitizeSearchText } from './listings-query'
  *
  * Listing matching is delegated to `lib/listings-query.ts` (the mobile mirror of
  * the canonical web query module) so search and catalog can never disagree on
- * sanitization, filters or sort — and so the listing tab count is the honest
+ * sanitization, filters or sort : and so the listing tab count is the honest
  * server total rather than the size of the fetched window.
  *
  * People matching uses the `profiles_public` view (the same source the web
@@ -124,7 +124,7 @@ function corporateNameExpression(): string {
   ).join(',')
 }
 
-/** Client-side twin of `corporateNameExpression` — keep the two in sync. */
+/** Client-side twin of `corporateNameExpression` : keep the two in sync. */
 function isCorporateName(firstName: string, lastName: string): boolean {
   const first = (firstName || '').toLowerCase()
   const last = (lastName || '').toLowerCase()
@@ -201,7 +201,7 @@ export async function executeMobileOmniSearch(query: string): Promise<OmniSearch
   const normQ = normalizeSearchString(cleanQ)
   const cacheKey = normQ
 
-  // 1. Instant cache hit (0.00ms) — also LRU-touch so hot queries survive eviction.
+  // 1. Instant cache hit (0.00ms) : also LRU-touch so hot queries survive eviction.
   const cached = searchCache.get(cacheKey)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     // Re-insert at the tail (Map preserves insertion order) so this key is
@@ -221,7 +221,7 @@ export async function executeMobileOmniSearch(query: string): Promise<OmniSearch
 
   try {
     const [listingsPage, peopleRes, corporateRes] = await Promise.all([
-      // A. Listings — shared query layer: card columns only, is_active, exact count.
+      // A. Listings : shared query layer: card columns only, is_active, exact count.
       fetchListingsPage({ search: sanitizeSearchText(cleanQ), limit: LISTINGS_WINDOW, sort: 'newest' }),
 
       // B. Public people profiles (no phone / email / account_type columns).

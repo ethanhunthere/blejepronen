@@ -1,5 +1,5 @@
 /**
- * Server-only auth security helpers (audit findings C1–C4).
+ * Server-only auth security helpers (audit findings C1-C4).
  *
  * Imported ONLY by Node-runtime route handlers. It pulls in `node:crypto` and
  * reads the service-role key, so it must never be imported from a client
@@ -9,11 +9,11 @@
  *  - CSPRNG OTP generation (replaces `Math.random()`).
  *  - Durable per-user OTP lockout state in `auth.users.user_metadata`
  *    (replaces the per-instance in-memory `Map` that a horizontal scale-out or
- *    a cold start wiped — audit finding C3).
+ *    a cold start wiped : audit finding C3).
  *  - Email → user resolution that prefers an indexed `profiles.email` lookup
  *    and only falls back to a paginated `auth.admin.listUsers()` scan, with a
  *    short-TTL cache (replaces the unconditional `listUsers({perPage: 1000})`
- *    full-directory fetch — audit finding C2).
+ *    full-directory fetch : audit finding C2).
  *  - Uniform Albanian response copy so no endpoint leaks whether an address is
  *    registered, confirmed, locked or throttled.
  */
@@ -118,7 +118,7 @@ const LIST_USERS_MAX_PAGES = 25
 type EmailCacheEntry = { userId: string | null; expiresAt: number }
 
 /**
- * Module-level cache. Only the *id* is cached — never the user object — so
+ * Module-level cache. Only the *id* is cached : never the user object : so
  * `user_metadata` (which carries the OTP lockout counters) is always re-read
  * fresh from GoTrue.
  */
@@ -155,7 +155,7 @@ export function invalidateEmailCache(email: string) {
  * `supabase/migrations/20260928_001_profiles_email_unique.sql`).
  *
  * Returns `null` when the indexed column is usable but has no row, and
- * `'unavailable'` when the live schema does not have the column yet — the
+ * `'unavailable'` when the live schema does not have the column yet : the
  * caller must then fall back to the bounded directory scan.
  */
 async function lookupIdViaProfiles(
@@ -233,7 +233,7 @@ export async function findAuthUserByEmail(
   if (cached) {
     const { data, error } = await admin.auth.admin.getUserById(cached)
     if (!error && data?.user) return data.user
-    // Id vanished (deleted account) — drop the entry and fall through.
+    // Id vanished (deleted account) : drop the entry and fall through.
     emailIdCache.delete(email)
   }
 
@@ -316,7 +316,7 @@ export function isLocked(state: OtpState): boolean {
  * Existing metadata is always spread in first: GoTrue's admin update replaces
  * `user_metadata` wholesale on some versions, and a bare patch would otherwise
  * wipe `account_type` / `company_name` / `onboarding_completed`.
- * Never throws — OTP throttling must not take down verification.
+ * Never throws : OTP throttling must not take down verification.
  */
 export async function patchUserMetadata(
   admin: SupabaseClient,

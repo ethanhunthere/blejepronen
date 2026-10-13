@@ -7,7 +7,7 @@ import { renderStateIcon, type StateIcon } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 
 /**
- * ErrorState — "this failed, here is the way out".
+ * ErrorState : "this failed, here is the way out".
  * Mirrors the mobile ErrorState API: icon / title / message / retry.
  */
 

@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ])
 
   const listings = (listingsRes.data || []) as ListingRow[]
-  // Only host profiles with live inventory belong in the sitemap — submitting
+  // Only host profiles with live inventory belong in the sitemap: submitting
   // empty profiles invites crawl waste and PII surface for no user value.
   const hostIds = new Set(
     ((hostsRes.data || []) as { user_id: string }[]).map((r) => r.user_id)

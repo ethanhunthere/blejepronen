@@ -4,20 +4,16 @@ import Link from 'next/link'
 import { fetchHubStaticParams } from '@/lib/listings-query'
 import { SITE_URL, hubPathSq } from '@/lib/seo-slugs'
 
+import { generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
+
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Pronat sipas qytetit — Bleje Pronën',
+  title: 'Pronat sipas Qytetit | Bleje Pronën',
   description:
     'Zgjidh qytetin dhe llojin e pronës për të parë listimet aktive, çmimet dhe statistikat e tregut.',
-  alternates: {
-    canonical: `${SITE_URL}/pronat`,
-    languages: {
-      sq: `${SITE_URL}/pronat`,
-      en: `${SITE_URL}/en/property`,
-      'x-default': `${SITE_URL}/pronat`,
-    },
-  },
+  alternates: generateHreflangAlternates('/pronat'),
+  other: getGeoMeta('prishtine'),
   robots: { index: true, follow: true },
 }
 
@@ -31,7 +27,7 @@ export default async function PronatIndex() {
           Pronat sipas qytetit
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          Hub-et e tregut me listime aktive — shitje dhe qira sipas komunës.
+          Hub-et e tregut me listime aktive: shitje dhe qira sipas komunës.
         </p>
 
         {cityTypes.length === 0 ? (
@@ -50,7 +46,7 @@ export default async function PronatIndex() {
                   href={hubPathSq(city, type)}
                   className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-[#101828] hover:border-[#00675B]/40 hover:text-[#00675B] transition-colors min-h-[44px]"
                 >
-                  <span>{`${city} — ${type === 'shitje' ? 'Në shitje' : 'Me qira'}`}</span>
+                  <span>{`${city} | ${type === 'shitje' ? 'Në shitje' : 'Me qira'}`}</span>
                   <span aria-hidden="true">→</span>
                 </Link>
               </li>

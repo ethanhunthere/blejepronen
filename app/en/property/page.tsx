@@ -4,20 +4,16 @@ import Link from 'next/link'
 import { fetchHubStaticParams } from '@/lib/listings-query'
 import { SITE_URL, hubPathEn } from '@/lib/seo-slugs'
 
+import { generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
+
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Property hubs by city — Bleje Pronën',
+  title: 'Property Hubs by City | Bleje Pronën',
   description:
     'Browse active listings, prices and market statistics by municipality and transaction type.',
-  alternates: {
-    canonical: `${SITE_URL}/en/property`,
-    languages: {
-      sq: `${SITE_URL}/pronat`,
-      en: `${SITE_URL}/en/property`,
-      'x-default': `${SITE_URL}/pronat`,
-    },
-  },
+  alternates: generateHreflangAlternates('/en/property'),
+  other: getGeoMeta('prishtine'),
   robots: { index: true, follow: true },
 }
 
@@ -31,7 +27,7 @@ export default async function EnPropertyIndex() {
           Property hubs by city
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          Market hubs with active inventory — sales and rentals by municipality.
+          Market hubs with active inventory: sales and rentals by municipality.
         </p>
 
         {cityTypes.length === 0 ? (
@@ -50,7 +46,7 @@ export default async function EnPropertyIndex() {
                   href={hubPathEn(city, type)}
                   className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-[#101828] hover:border-[#00675B]/40 hover:text-[#00675B] transition-colors min-h-[44px]"
                 >
-                  <span>{`${city} — ${type === 'shitje' ? 'For sale' : 'For rent'}`}</span>
+                  <span>{`${city} | ${type === 'shitje' ? 'For sale' : 'For rent'}`}</span>
                   <span aria-hidden="true">→</span>
                 </Link>
               </li>

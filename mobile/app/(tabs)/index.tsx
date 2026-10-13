@@ -112,7 +112,7 @@ const FeaturedPropertyCard = React.memo(function FeaturedPropertyCard({
 }) {
   const { colors, theme } = useTheme()
   const isSale = item.type === 'shitje'
-  // Local brand placeholder — never hot-link Unsplash (privacy + third-party
+  // Local brand placeholder : never hot-link Unsplash (privacy + third-party
   // dependency + offline failure). When the listing has no image the card
   // still paints a branded surface instead of an external URL.
   const mainImage = item.images?.[0] || null
@@ -259,7 +259,7 @@ export default function HomeScreen() {
   const [listings, setListings] = useState<Listing[]>(() => getCachedListings())
   const [loading, setLoading] = useState(() => !hasCachedListings())
   const [refreshing, setRefreshing] = useState(false)
-  // Honest server totals — `null` until the first counted response lands, so no
+  // Honest server totals : `null` until the first counted response lands, so no
   // counter ever renders the size of the fetched window.
   const [total, setTotal] = useState<number | null>(null)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -321,7 +321,7 @@ export default function HomeScreen() {
     }
 
     try {
-      // Card columns only, is_active enforced, exact count — one query shape
+      // Card columns only, is_active enforced, exact count : one query shape
       // shared with the web catalog (see lib/listings-query.ts).
       const { rows, total: serverTotal, error } = await fetchListingsPage({
         ...request,
@@ -329,7 +329,7 @@ export default function HomeScreen() {
         limit: HOME_WINDOW,
       })
 
-      // A newer request already superseded this one — drop the stale payload.
+      // A newer request already superseded this one : drop the stale payload.
       if (rid !== reqIdRef.current) return
 
       if (error) {
@@ -786,7 +786,7 @@ export default function HomeScreen() {
                     { backgroundColor: colors.chipActiveBg },
                   ]}
                 >
-                  {/* Exact server total for the active filters — never the window size. */}
+                  {/* Exact server total for the active filters : never the window size. */}
                   <Text
                     style={[
                       styles.activeCategoryBadgeText,

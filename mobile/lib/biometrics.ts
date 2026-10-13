@@ -30,7 +30,7 @@ export interface BiometricCapability {
 
 let cachedCapability: BiometricCapability | null = null
 
-// Session unlocked memory flag — stays unlocked while user navigates inside
+// Session unlocked memory flag : stays unlocked while user navigates inside
 // foreground app. Starts LOCKED: a fresh process has no verified session, so an
 // enabled lock must engage at cold start (a `true` default silently disabled
 // the entire cold-start gate).
@@ -46,12 +46,12 @@ export function isSessionUnlockedState(): boolean {
 
 /**
  * What the OS itself currently demands to unlock the device:
- * - `strong`   — Android Class 3 biometrics enrolled (fingerprint / 3D face)
- * - `weak`     — Android Class 2 biometrics enrolled (2D camera face unlock)
- * - `credential` — no biometrics, but a device PIN/pattern/password is set.
+ * - `strong`   : Android Class 3 biometrics enrolled (fingerprint / 3D face)
+ * - `weak`     : Android Class 2 biometrics enrolled (2D camera face unlock)
+ * - `credential` : no biometrics, but a device PIN/pattern/password is set.
  *                Also what BOTH platforms report while biometrics are in
- *                system lockout — the OS will demand the credential next.
- * - `none`     — device has no screen security at all
+ *                system lockout : the OS will demand the credential next.
+ * - `none`     : device has no screen security at all
  *
  * Source of truth is `getEnrolledLevelAsync()`, which reads the platform's
  * own enrollment state (iOS `canEvaluatePolicy`, Android `BiometricManager` +
@@ -301,13 +301,13 @@ const BIOMETRIC_UNAVAILABLE_ERRORS = new Set([
  * - none -> refused; nothing on the device could verify.
  *
  * Retry ladder (the old ladder downgraded to passcode/PIN policy on any
- * failure — that was the desync bug):
+ * failure : that was the desync bug):
  * 1. `system_cancel`/`app_cancel` scene races retry with the SAME policy.
- * 2. `missing_usage_description` fails closed (build misconfiguration) —
+ * 2. `missing_usage_description` fails closed (build misconfiguration) -
  *    never silently evaluated as passcode.
  * 3. Only when the OS itself declares biometrics unavailable (lockout,
  *    stale enrollment, class mismatch) do we re-probe posture and, if the
- *    device still has any lock, verify with the device credential — exactly
+ *    device still has any lock, verify with the device credential : exactly
  *    mirroring what the OS demands next.
  */
 export async function authenticateWithBiometrics(
@@ -381,7 +381,7 @@ export async function authenticateWithBiometrics(
     const currentError = () => (result as any).error as string | undefined
 
     // 1. Transient scene race (foregrounding, double-invoke): retry the SAME
-    // policy. Never downgrade — a race must not turn into a passcode prompt.
+    // policy. Never downgrade : a race must not turn into a passcode prompt.
     if (!result.success && (currentError() === 'system_cancel' || currentError() === 'app_cancel')) {
       await new Promise((resolve) => setTimeout(resolve, 250))
       result = await attempt(biometricOnly)
@@ -393,14 +393,14 @@ export async function authenticateWithBiometrics(
       return {
         success: false,
         error:
-          'NSFaceIDUsageDescription mungon në Info.plist — rindisni ndërtimin e aplikacionit për ta aktivizuar Face ID.',
+          'NSFaceIDUsageDescription mungon në Info.plist; rindisni ndërtimin e aplikacionit për ta aktivizuar Face ID.',
       }
     }
 
     // 3. The OS just declared biometrics unavailable (lockout after N tries,
     // enrollment removed between probe and prompt, sensor class mismatch).
     // Mirror the posture: if the device still has any lock, verify with the
-    // device credential — this is what the OS itself demands next.
+    // device credential : this is what the OS itself demands next.
     if (biometricOnly && !result.success && BIOMETRIC_UNAVAILABLE_ERRORS.has(currentError() ?? '')) {
       const postureNow = await getDevicePosture()
       if (postureNow !== 'none') {

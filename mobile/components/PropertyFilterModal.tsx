@@ -678,7 +678,7 @@ export function PropertyFilterModal({
                   />
                 </View>
 
-                <Text style={[styles.dashText, { color: colors.textMuted }]}>–</Text>
+                <Text style={[styles.dashText, { color: colors.textMuted }]}>-</Text>
 
                 <View style={styles.inputCol}>
                   <Text style={[styles.inputSubLabel, { color: colors.textMuted }]}>Max</Text>
@@ -779,7 +779,7 @@ export function PropertyFilterModal({
                   />
                 </View>
 
-                <Text style={[styles.dashText, { color: colors.textMuted }]}>–</Text>
+                <Text style={[styles.dashText, { color: colors.textMuted }]}>-</Text>
 
                 <View style={styles.inputCol}>
                   <Text style={[styles.inputSubLabel, { color: colors.textMuted }]}>Max</Text>

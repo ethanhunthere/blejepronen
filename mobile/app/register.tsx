@@ -222,7 +222,7 @@ export default function RegisterScreen() {
       const flowId = queryParams.get('sb_flow_id') || hashParams.get('sb_flow_id') || undefined
 
       if (!authCode && (accessToken || refreshToken)) {
-        // Implicit-flow tokens in the redirect URL — refuse. PKCE is required.
+        // Implicit-flow tokens in the redirect URL : refuse. PKCE is required.
         oauthHandledRef.current = false
         setOauthLoading(null)
         throw new Error(
@@ -254,7 +254,7 @@ export default function RegisterScreen() {
         if (accountType === 'company') {
           try {
             // profiles has no account_type column and email_verified is
-            // server-derived — only the persona metadata belongs here.
+            // server-derived : only the persona metadata belongs here.
             await supabase.auth.updateUser({
               data: { account_type: 'company' },
             })

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — TWO-HOUR SPECIAL OPS SQUAD (10 AGENTS)
+ * BLEJE PRONËN : TWO-HOUR SPECIAL OPS SQUAD (10 AGENTS)
  * File: services/swarm/squad/two-hour-squad.ts
  *
  * Dedicated 10-Agent Task Force running for exactly 2 hours (120 minutes):

@@ -94,33 +94,33 @@ export function generateProfessionalTitle(
           ? ` (${data.subtype})`
           : ''
       const floorPart = data.floor ? ` në Katin ${data.floor}` : ''
-      return `Banesë${roomPart}${subtypePart} ${actionText} ${areaPart}${floorPart} – ${locationPart}`.trim()
+      return `Banesë${roomPart}${subtypePart} ${actionText} ${areaPart}${floorPart} | ${locationPart}`.trim()
     }
 
     case 'shtepi': {
       const subtypePart = data.subtype ? ` ${data.subtype}` : ''
       const oborrPart = data.features?.includes('Oborr privat') ? ' me Oborr' : ''
-      return `Shtëpi${subtypePart} ${actionText} ${areaPart}${oborrPart} – ${locationPart}`.trim()
+      return `Shtëpi${subtypePart} ${actionText} ${areaPart}${oborrPart} | ${locationPart}`.trim()
     }
 
     case 'vile': {
       const subtypePart = data.subtype ? ` ${data.subtype}` : 'Moderne'
-      return `Vilë ${subtypePart} ${actionText} ${areaPart} – ${locationPart}`.trim()
+      return `Vilë ${subtypePart} ${actionText} ${areaPart} | ${locationPart}`.trim()
     }
 
     case 'lokal': {
       const subtypePart = data.subtype || 'Hapësirë Afariste'
-      return `${subtypePart} ${actionText} ${areaPart} në Pozitë Strategjike – ${locationPart}`.trim()
+      return `${subtypePart} ${actionText} ${areaPart} në Pozitë Strategjike | ${locationPart}`.trim()
     }
 
     case 'toke': {
       const subtypePart = data.subtype ? `${data.subtype}` : 'Truall Ndërtimi'
-      return `${subtypePart} ${actionText} prej ${areaPart} – ${locationPart}`.trim()
+      return `${subtypePart} ${actionText} prej ${areaPart} | ${locationPart}`.trim()
     }
 
     case 'garazhe':
     default: {
-      return `Garazhë e Sigurt ${actionText} – ${locationPart}`.trim()
+      return `Garazhë e Sigurt ${actionText} | ${locationPart}`.trim()
     }
   }
 }

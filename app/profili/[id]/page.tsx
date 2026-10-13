@@ -48,7 +48,7 @@ async function getPublicProfile(id: string) {
     ? (meta.company_name || profile.first_name)
     : `${profile.first_name} ${profile.last_name}`.trim()
 
-  // Render bio for companies AND individuals — individual agents/owners store
+  // Render bio for companies AND individuals : individual agents/owners store
   // it in individual_bio (with legacy fallbacks to bio).
   const bio = isCompany
     ? meta.company_description || meta.bio || ''
@@ -108,7 +108,7 @@ export async function generateMetadata({
   const data = await getPublicProfile(id)
   if (!data) return { title: 'Profili | Bleje Pronën' }
   return {
-    title: `${data.displayName} — Profili dhe Pronat | Bleje Pronën`,
+    title: `${data.displayName} | Profili dhe Pronat | Bleje Pronën`,
     description: data.bio || `Shiko profilin, rrjetet sociale dhe të gjitha pronat e listuara nga ${data.displayName} në Bleje Pronën.`,
   }
 }
@@ -232,7 +232,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             </div>
           </div>
 
-          {/* About — company description OR individual bio */}
+          {/* About : company description OR individual bio */}
           {bio && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">

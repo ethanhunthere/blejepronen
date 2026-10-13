@@ -393,7 +393,7 @@ export default function PublicProfileScreen() {
           setProfile((prev) => (prev ? { ...prev, phone: contacts.phone ?? null } : prev))
         }
       } catch {
-        // contact CTAs stay gated/disabled — never a crash
+        // contact CTAs stay gated/disabled : never a crash
       }
     })()
     return () => {

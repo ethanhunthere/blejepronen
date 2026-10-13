@@ -31,7 +31,7 @@ export interface SkeletonProps {
   style?: StyleProp<ViewStyle>
   testID?: string
   /**
-   * When omitted the placeholder is hidden from the accessibility tree — the
+   * When omitted the placeholder is hidden from the accessibility tree : the
    * surrounding screen owns the "loading" announcement. Supply a label to
    * expose this element itself as an indeterminate progressbar instead.
    */
@@ -61,7 +61,7 @@ const PULSE_MAX = 1
 /**
  * Token-driven loading placeholder.
  *
- * The pulse is an opacity loop on the native driver — no layout, no shadow
+ * The pulse is an opacity loop on the native driver : no layout, no shadow
  * recomputation, and no backdrop blur, so a feed full of these stays cheap to
  * scroll. Under reduced motion (or `animate={false}`) it renders at full
  * opacity with no timer at all.

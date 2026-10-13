@@ -211,7 +211,7 @@ export default function CompletoProfilinFastPage() {
   return (
     <div className="min-h-screen bg-[#F2F7F7] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Verification Success Pill — only when the server confirms it */}
+        {/* Verification Success Pill : only when the server confirms it */}
         {emailConfirmed && (
         <div className="mb-4 py-2.5 px-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs sm:text-sm font-medium flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">

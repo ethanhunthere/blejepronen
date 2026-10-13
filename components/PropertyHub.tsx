@@ -28,7 +28,7 @@ interface PropertyHubProps {
 /**
  * Server-rendered programmatic landing page body: real inventory, real
  * computed market statistics, extractable entity data for crawlers and LLM
- * grounding — no fabricated claims, every number derived from live rows.
+ * grounding: no fabricated claims, every number derived from live rows.
  */
 export async function PropertyHub({ city, type, hood, lang, rows, total, neighborhoods }: PropertyHubProps) {
   const stats = await fetchMarketStats(city)
@@ -101,8 +101,8 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
               '@type': 'Dataset',
               name:
                 lang === 'sq'
-                  ? `Statistika të tregut të pronave — ${city}`
-                  : `Property market statistics — ${city}, Kosovo`,
+                  ? `Statistika të tregut të pronave: ${city}`
+                  : `Property market statistics: ${city}, Kosovo`,
               description:
                 lang === 'sq'
                   ? 'Mesatarja e çmimit për m² dhe numri i listimeve aktive, llogaritur nga inventari live i Bleje Pronën.'
@@ -167,7 +167,7 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
               </dt>
               <dd className="text-xl font-extrabold text-[#101828] tabular-nums">{stats.forRent}</dd>
             </div>
-            {/* Sale median €/m² is only meaningful on sale hubs — rental hubs show neighborhood coverage instead */}
+            {/* Sale median €/m² is only meaningful on sale hubs: rental hubs show neighborhood coverage instead */}
             <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
               <dt className="text-[11px] uppercase tracking-wide text-gray-500">
                 {isSale
@@ -179,7 +179,7 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
                   : 'Neighborhoods'}
               </dt>
               <dd className="text-xl font-extrabold text-[#00675B] tabular-nums">
-                {isSale ? (median ? fmtInt(median) : '—') : stats.neighborhoods.length}
+                {isSale ? (median ? fmtInt(median) : '-') : stats.neighborhoods.length}
               </dd>
             </div>
           </dl>
@@ -212,7 +212,7 @@ export async function PropertyHub({ city, type, hood, lang, rows, total, neighbo
             href={lang === 'sq' ? marketPathSq(city) : marketPathEn(city)}
             className="text-xs font-semibold px-3 py-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-[#00675B]"
           >
-            {lang === 'sq' ? `Tregu i pronave — ${city}` : `Property market — ${city}`}
+            {lang === 'sq' ? `Tregu i pronave në ${city}` : `Property market in ${city}`}
           </Link>
           {neighborhoods.slice(0, 8).map((n) => (
             <Link

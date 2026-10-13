@@ -36,7 +36,7 @@ function deny(message: string): void {
 
 /**
  * Activate / deactivate a listing (moderation lever used by the admin table).
- * `listings.is_active` is the real availability switch — every public query
+ * `listings.is_active` is the real availability switch : every public query
  * (home, search, listing detail, sitemap) filters on it. The `status` column
  * from migration 20260928_003 is intentionally untouched: no read path uses it.
  */
@@ -61,7 +61,7 @@ export async function toggleListingStatus(listingId: string, nextActive: boolean
 /**
  * Ban / unban a user account.
  *
- * There is no `banned`/`locked` column on `public.profiles` — the closest real
+ * There is no `banned`/`locked` column on `public.profiles` : the closest real
  * mechanism is Supabase Auth's account ban (`auth.users.banned_until`), which
  * blocks sign-in and refresh-token grants at the Auth layer. `ban_duration`
  * flips it; 'none' lifts it.
@@ -96,7 +96,7 @@ export async function toggleUserBan(userId: string): Promise<void> {
  * Resolve an abuse report.
  *
  * `listing_reports` (migration 20260928_003) has no status/resolution column,
- * so "resolved" is modelled as removing the row from the open queue — the same
+ * so "resolved" is modelled as removing the row from the open queue : the same
  * effect the schema supports today.
  */
 export async function resolveListingReport(reportId: number): Promise<void> {
@@ -110,7 +110,7 @@ export async function resolveListingReport(reportId: number): Promise<void> {
   const { error } = await auth.admin.from('listing_reports').delete().eq('id', reportId)
   if (error) {
     if (error.code === '42P01') {
-      console.error('resolveListingReport: listing_reports table missing — apply migration 20260928_003')
+      console.error('resolveListingReport: listing_reports table missing, apply migration 20260928_003')
     } else {
       console.error('resolveListingReport failed:', error.code, error.message)
     }
@@ -131,7 +131,7 @@ export type TelemetrySnapshot = {
 /**
  * Live telemetry inspection for the admin dashboard.
  * `telemetry_events` is RLS-enabled with zero policies (write-only for
- * clients), so only the service-role client can read it — that is why this is
+ * clients), so only the service-role client can read it : that is why this is
  * a server action and not a client-side realtime subscription.
  */
 export async function getTelemetrySnapshot(): Promise<TelemetrySnapshot> {

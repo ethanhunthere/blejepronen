@@ -145,7 +145,7 @@ export default function ListingDetailScreen() {
   // Contact capability stays "pending" until the seller row (cache or network)
   // has resolved, so the action bar never flashes a false "Pa numër" state.
   // Feed caches embed the seller contact fragment, so warm entries resolve
-  // synchronously on frame one — no gray-to-green mutation.
+  // synchronously on frame one : no gray-to-green mutation.
   const [contactResolved, setContactResolved] = useState(() =>
     Boolean((cachedListing as any)?.profiles)
   )
@@ -624,8 +624,8 @@ export default function ListingDetailScreen() {
   const fmtInt = (val: number) => new Intl.NumberFormat('de-DE').format(val)
 
   // Mortgage affordability engine, calibrated for standard Kosovar retail lending
-  // and completely flexible for custom user inputs: tenors 1–40 years, down payments 0–95%,
-  // custom rates 0.1–30%, and repayment schedules (annuity & linear).
+  // and completely flexible for custom user inputs: tenors 1-40 years, down payments 0-95%,
+  // custom rates 0.1-30%, and repayment schedules (annuity & linear).
   const loanEstimate = useMemo(() => {
     if (!listing?.price || listing.price <= 0 || listing.type !== 'shitje') return null
 
@@ -987,7 +987,7 @@ export default function ListingDetailScreen() {
               variant={!isHeaderSticky || theme !== 'white' ? 'dark' : 'light'}
             />
 
-            {/* Report / flag — UGC moderation entry point */}
+            {/* Report / flag : UGC moderation entry point */}
             <TactilePressable
               style={styles.navActionBtnWrap}
               onPress={() => setReportOpen(true)}
@@ -1781,7 +1781,7 @@ export default function ListingDetailScreen() {
                     </View>
                   </View>
 
-                  {/* Repayment schedule method — Annuity vs Declining */}
+                  {/* Repayment schedule method : Annuity vs Declining */}
                   <View style={styles.loanSectionGroup}>
                     <View style={styles.loanSectionTitleRow}>
                       <Text style={[styles.loanGroupLabel, { color: colors.textPrimary }]}>
@@ -1861,7 +1861,7 @@ export default function ListingDetailScreen() {
                           Pagesë shtesë mujore (opsionale)
                         </Text>
                         <Text style={[styles.loanCustomInputSub, { color: colors.textMuted }]}>
-                          Rrit këstin mujor — matet te përballueshmëria (DTI)
+                          Rrit këstin mujor dhe ndikon në përballueshmërinë (DTI)
                         </Text>
                       </View>
                       <View
@@ -2250,7 +2250,7 @@ export default function ListingDetailScreen() {
                   </View>
 
                   <Text style={[styles.mortgageDisclaimer, { color: colors.textMuted }]}>
-                    Vlerësim orientues sipas praktikave të zakonshme të bankave në Kosovë (3,8–5,5%). Kushtet finale miratohen nga banka juaj.
+                    Vlerësim orientues sipas praktikave të zakonshme të bankave në Kosovë (3,8-5,5%). Kushtet finale miratohen nga banka juaj.
                   </Text>
                 </View>
               )}
@@ -2918,7 +2918,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bold,
   },
 
-  // 4. Architectural Specs Strip — hairline-ruled canvas band, no card chrome
+  // 4. Architectural Specs Strip : hairline-ruled canvas band, no card chrome
   specStrip: {
     flexDirection: 'row',
     alignItems: 'center',

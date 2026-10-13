@@ -1,7 +1,7 @@
 import { AppState, Platform } from 'react-native'
 
 /**
- * blejepronen — Expo/RN telemetry client (wave-1 scaffold).
+ * blejepronen : Expo/RN telemetry client (wave-1 scaffold).
  *
  * Mirror of the web logger in `lib/telemetry.ts`: call `track(event, props)`
  * from any component or lib module and events are buffered, then POSTed to the
@@ -14,7 +14,7 @@ import { AppState, Platform } from 'react-native'
  *  - Bounded memory: the queue is capped, oldest events are dropped first.
  *  - Mobile-specific: the app can be killed at any moment, so the batch is also
  *    flushed when React Native reports the app leaving the foreground.
- *  - No dependency on any other module in `mobile/lib/` — the shared-contract
+ *  - No dependency on any other module in `mobile/lib/` : the shared-contract
  *    import sweep happens in a later wave, so this file is intentionally
  *    self-contained. The endpoint mirrors `API_BASE_URL` in `mobile/lib/api.ts`.
  *
@@ -26,7 +26,7 @@ import { AppState, Platform } from 'react-native'
  *   search_submit, filter_apply, share_listing, app_error,
  *   telemetry_selftest
  *
- * Nothing is instrumented yet — that happens in a later wave.
+ * Nothing is instrumented yet : that happens in a later wave.
  */
 
 /** JSON-safe property bag attached to an event. */
@@ -127,7 +127,7 @@ function byteLength(value: string): number {
   try {
     encoded = encodeURIComponent(value)
   } catch {
-    // Lone surrogate or otherwise unencodable — fall back to a char count.
+    // Lone surrogate or otherwise unencodable : fall back to a char count.
     return value.length
   }
 
@@ -171,7 +171,7 @@ function sanitizeProps(props: TelemetryProps | undefined): TelemetryProps {
     }
 
     if (typeof value === 'number') {
-      // NaN/Infinity are not representable in JSON — normalize to null.
+      // NaN/Infinity are not representable in JSON : normalize to null.
       out[key] = Number.isFinite(value) ? value : null
       keys++
       continue
@@ -223,7 +223,7 @@ function scheduleFlush(): void {
 }
 
 /**
- * Flush when the app leaves the foreground — the last reliable moment before
+ * Flush when the app leaves the foreground : the last reliable moment before
  * iOS/Android suspends or kills the process. Hooked once, lazily.
  */
 function hookAppStateFlush(): void {
@@ -283,7 +283,7 @@ export function track(event: string, props?: TelemetryProps): void {
  * Send the buffered batch now. Resolves with the number of events handed to the
  * endpoint (0 when nothing was queued or a flush is already in flight).
  *
- * Failures are swallowed and counted — a rejected batch is dropped, not
+ * Failures are swallowed and counted : a rejected batch is dropped, not
  * retried, so telemetry can never become a request loop.
  */
 export async function flushTelemetry(): Promise<number> {
@@ -337,7 +337,7 @@ export async function flushTelemetry(): Promise<number> {
   return batch.length
 }
 
-/** Snapshot of the client counters — safe to call anywhere, has no side effects. */
+/** Snapshot of the client counters : safe to call anywhere, has no side effects. */
 export function getTelemetryStats(): TelemetryStats {
   return {
     dev: __DEV__,
@@ -361,7 +361,7 @@ export interface TelemetrySelfTestResult extends TelemetryStats {
 }
 
 /**
- * Self-test for the telemetry pipeline. Not wired into any screen — call it from
+ * Self-test for the telemetry pipeline. Not wired into any screen : call it from
  * a dev-only affordance (or Metro's debugger console) when instrumenting in a
  * later wave:
  *
@@ -386,7 +386,7 @@ export async function runTelemetrySelfTest(): Promise<TelemetrySelfTestResult> {
     ...stats,
     ok,
     verdict: ok
-      ? `ok — ${stats.sent} event(s) accepted by ${stats.endpoint}.`
-      : `failed — ${stats.dropped} event(s) dropped; last error: ${stats.lastError ?? 'unknown'}.`,
+      ? `ok, ${stats.sent} event(s) accepted by ${stats.endpoint}.`
+      : `failed, ${stats.dropped} event(s) dropped; last error: ${stats.lastError ?? 'unknown'}.`,
   }
 }

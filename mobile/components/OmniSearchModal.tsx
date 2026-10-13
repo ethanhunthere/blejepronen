@@ -98,8 +98,8 @@ export function OmniSearchContent({
 
   const inputRef = useRef<TextInput>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Newest debounced search wins: older in-flight responses — and anything that
-  // resolves after unmount — are dropped instead of writing to state.
+  // Newest debounced search wins: older in-flight responses : and anything that
+  // resolves after unmount : are dropped instead of writing to state.
   const reqIdRef = useRef(0)
 
   // Load recent searches from AsyncStorage

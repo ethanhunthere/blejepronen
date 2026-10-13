@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     async function verifySession() {
       // Supabase rejects expired/invalid recovery links at the callback and
-      // redirects here with ?error=... — a session never materialises, so
+      // redirects here with ?error=... : a session never materialises, so
       // neither does the form.
       const hasErrorParam = (() => {
         try {

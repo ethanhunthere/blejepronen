@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
  * Loading placeholders. Mirrors the mobile Skeleton API (base box plus
  * card / row / avatar / text composites).
  *
- * Deliberately free of `backdrop-blur` — the fill is a solid brand-tinted
+ * Deliberately free of `backdrop-blur` : the fill is a solid brand-tinted
  * colour so a long feed of skeletons costs paint, not compositing.
  */
 
@@ -29,7 +29,7 @@ export interface SkeletonProps {
   children?: ReactNode
 }
 
-/** Base placeholder block. Decorative — always hidden from assistive technology. */
+/** Base placeholder block. Decorative : always hidden from assistive technology. */
 export function Skeleton({ variant, className, style, children }: SkeletonProps) {
   return (
     <div
@@ -79,7 +79,7 @@ function Announce({
 export interface SkeletonTextProps extends AnnouncedProps {
   /** Number of lines to render. */
   lines?: number
-  /** Applied to every line — use it to vary widths, e.g. `last:w-2/3`. */
+  /** Applied to every line : use it to vary widths, e.g. `last:w-2/3`. */
   lineClassName?: string
 }
 

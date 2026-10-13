@@ -43,7 +43,7 @@ import {
  * declared dependency of the mobile app, so a freshly prebuilt native project
  * may not autolink its native module. RNGH calls
  * `TurboModuleRegistry.getEnforcing('RNGestureHandlerModule')` while its index
- * module is evaluated, which throws when the native side is absent — a static
+ * module is evaluated, which throws when the native side is absent : a static
  * import would therefore take the whole detail screen down.
  *
  * So we require it defensively, once, and cache the result. When the runtime is
@@ -132,11 +132,11 @@ function selectionHaptic() {
 }
 
 export interface MediaLightboxProps {
-  /** Photo sources — remote URLs or bundled `require()` ids. */
+  /** Photo sources : remote URLs or bundled `require()` ids. */
   images: ImageSourceish[]
   visible: boolean
   initialIndex?: number
-  /** Used for accessibility labels ("Foto 1 nga 4 — <title>"). */
+  /** Used for accessibility labels ("Foto 1 nga 4 : <title>"). */
   title?: string
   onClose: () => void
   /** Fired whenever the focused photo changes (keeps hero dots in sync). */
@@ -150,7 +150,7 @@ export interface MediaLightboxProps {
  * Interaction model (all on the UI thread via Reanimated + gesture-handler):
  *  • horizontal drag / fling → previous / next photo (rubber-banded at the ends)
  *  • vertical drag down → dismiss (backdrop fades with the drag)
- *  • pinch → zoom 1×–4×, anchored under the focal point
+ *  • pinch → zoom 1×-4×, anchored under the focal point
  *  • double-tap → zoom 2.4× centred on the tap point, second double-tap → 1×
  *  • single-finger drag while zoomed → pan inside the image bounds
  *  • single tap → hide / show the chrome (header, counter, thumbnails)
@@ -212,7 +212,7 @@ interface ViewerProps {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Shared chrome (header, counter, thumbnail strip) — driven by one opacity
+ * Shared chrome (header, counter, thumbnail strip) : driven by one opacity
  * shared value so both viewers animate it identically.
  * ────────────────────────────────────────────────────────────────────────── */
 interface ChromeProps {
@@ -249,7 +249,7 @@ function LightboxChrome({
     stripRef.current?.scrollTo({ x, animated: true })
   }, [index, total])
 
-  const counterLabel = `Foto ${index + 1} nga ${total}${title ? ` — ${title}` : ''}`
+  const counterLabel = `Foto ${index + 1} nga ${total}${title ? ` | ${title}` : ''}`
 
   return (
     <Animated.View
@@ -312,7 +312,7 @@ function LightboxChrome({
           </Text>
         ) : (
           <Text style={styles.hintText} numberOfLines={2}>
-            Rrëshqit majtas–djathtas për të ndërruar foton · Poshtë për ta mbyllur
+            Rrëshqit majtas ose djathtas për të ndërruar foton · Poshtë për ta mbyllur
           </Text>
         )}
 
@@ -352,7 +352,7 @@ function LightboxChrome({
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Gesture viewer — the real thing.
+ * Gesture viewer : the real thing.
  * ────────────────────────────────────────────────────────────────────────── */
 function GestureViewer({
   rngh,
@@ -419,7 +419,7 @@ function GestureViewer({
   const closeRemote = useMemo(() => runOnJS(onClose), [onClose])
   const hapticRemote = useMemo(() => runOnJS(selectionHaptic), [])
 
-  // Fade the viewer in on mount — the Modal window itself only fades the
+  // Fade the viewer in on mount : the Modal window itself only fades the
   // window, this gives the photo a subtle settle.
   useEffect(() => {
     appear.value = withTiming(1, { duration: 220 })
@@ -702,7 +702,7 @@ function GestureViewer({
                       priority={i === index ? 'high' : 'normal'}
                       recyclingKey={`lightbox-${i}`}
                       onLoad={(e) => handleImageLoad(i, e)}
-                      accessibilityLabel={`Foto ${i + 1} nga ${count}${title ? ` — ${title}` : ''}`}
+                      accessibilityLabel={`Foto ${i + 1} nga ${count}${title ? ` | ${title}` : ''}`}
                     />
                   </Animated.View>
                 )
@@ -727,7 +727,7 @@ function GestureViewer({
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Fallback viewer — used only when the gesture-handler native module is not
+ * Fallback viewer : used only when the gesture-handler native module is not
  * linked into the running build. Native paging stays smooth; pinch-zoom is
  * simply unavailable.
  * ────────────────────────────────────────────────────────────────────────── */
@@ -827,7 +827,7 @@ function StaticViewer({
               key={`static-slide-${i}`}
               style={{ width: W, height: H }}
               onPress={toggleChrome}
-              accessibilityLabel={`Foto ${i + 1} nga ${count}${title ? ` — ${title}` : ''}`}
+              accessibilityLabel={`Foto ${i + 1} nga ${count}${title ? ` | ${title}` : ''}`}
             >
               <Image
                 source={src}

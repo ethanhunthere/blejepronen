@@ -31,7 +31,7 @@ import { playSuccessSound, playTapSound } from '@/lib/sound'
 import { useBottomSheetGesture } from '@/lib/bottom-sheet-gesture'
 
 /**
- * ReportListingSheet — "Raporto këtë shpallje" bottom sheet (audit §6).
+ * ReportListingSheet : "Raporto këtë shpallje" bottom sheet (audit §6).
  *
  * Mobile counterpart of `components/ReportListingDialog.tsx` (web). Same
  * reasons, same payload, same endpoint:
@@ -56,7 +56,7 @@ import { useBottomSheetGesture } from '@/lib/bottom-sheet-gesture'
  *     listingCity={listing.city}
  *     onRequireAuth={() => openLoginScreen(router, { redirectTo: `/listings/${listing.id}` })}
  *   />
- * Reporting is for OTHERS' listings — hide the trigger when
+ * Reporting is for OTHERS' listings : hide the trigger when
  * `listing.user_id === currentUser.id` (the route 403s regardless).
  */
 

@@ -71,9 +71,9 @@ export function openRegisterScreen(router: Router, options?: AuthNavigationOptio
  */
 export function isSafeInternalRedirect(target: string): boolean {
   if (!target) return false
-  // Any scheme (http:, https:, javascript:, file:, etc.) — reject.
+  // Any scheme (http:, https:, javascript:, file:, etc.) : reject.
   if (/^[a-zA-Z][a-zA-Z0-9+.\-]*:/.test(target)) return false
-  // Protocol-relative or absolute-URL-looking — reject.
+  // Protocol-relative or absolute-URL-looking : reject.
   if (target.startsWith('//')) return false
   if (target.startsWith('\\')) return false
   // Must be an in-app absolute path.
@@ -85,7 +85,7 @@ export function isSafeInternalRedirect(target: string): boolean {
  * Deterministically resolves post-authentication transitions.
  *
  * 1. An explicit internal path (including `/(tabs)/…`) is replaced onto the
- *    stack — tab targets are legal destinations, not an error.
+ *    stack : tab targets are legal destinations, not an error.
  * 2. Unsafe targets (external URLs, schemes) are discarded; we fall through.
  * 3. If the user pushed the auth screen from an existing view, pop cleanly.
  * 4. Fallback: replace with the (already sanitized) target or root tabs.
@@ -98,7 +98,7 @@ export function resolveAuthSuccess(router: Router, redirectTo?: string | null): 
     console.warn('Post-auth redirectTo rejected (unsafe):', raw)
   }
 
-  // 1. Explicit internal destination — tabs and non-tabs alike.
+  // 1. Explicit internal destination : tabs and non-tabs alike.
   if (target) {
     try {
       router.replace(target as any)

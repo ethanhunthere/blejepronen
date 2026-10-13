@@ -116,6 +116,46 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/prona-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/prona-ne-shitje/:city/:hood',
+        destination: '/pronat/:city/shitje/:hood',
+      },
+      {
+        source: '/prona-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/prona-me-qira/:city/:hood',
+        destination: '/pronat/:city/qira/:hood',
+      },
+      {
+        source: '/banesa-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/shtepi-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/truall-ne-shitje/:city',
+        destination: '/pronat/:city/shitje',
+      },
+      {
+        source: '/banesa-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+      {
+        source: '/zyre-me-qira/:city',
+        destination: '/pronat/:city/qira',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

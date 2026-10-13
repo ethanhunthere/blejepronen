@@ -185,7 +185,7 @@ export const Fonts = {
 export interface SemanticColors {
   /** App canvas behind every screen. */
   background: string
-  /** Cards, sheets, bars — the primary raised container. */
+  /** Cards, sheets, bars : the primary raised container. */
   surface: string
   /** Inset wells, counters, disabled fills inside a `surface`. */
   surfaceMuted: string
@@ -203,11 +203,11 @@ export interface SemanticColors {
   primary: string
   /** `primary` pressed/hovered, or the deeper step on dark canvases. */
   primaryStrong: string
-  /** Translucent `primary` wash — selected chips, active tab pills. */
+  /** Translucent `primary` wash : selected chips, active tab pills. */
   primaryMuted: string
   /** Contrast-safe `primary` for text/icons on a light wash. */
   primaryText: string
-  /** Gold accent — verification, premium, brand highlights. */
+  /** Gold accent : verification, premium, brand highlights. */
   accent: string
   /** Translucent accent wash. */
   accentMuted: string
@@ -217,7 +217,7 @@ export interface SemanticColors {
   accentText: string
   /** Default hairline/border. */
   border: string
-  /** Emphasised border — focused inputs, dividers on raised cards. */
+  /** Emphasised border : focused inputs, dividers on raised cards. */
   borderStrong: string
 
   /**
@@ -515,7 +515,7 @@ export const Tracking = {
   t4: -0.4,
 } as const
 
-/** Ready-made `TextStyle` presets — family, size and tracking paired. */
+/** Ready-made `TextStyle` presets : family, size and tracking paired. */
 export const Typography = {
   micro: { fontFamily: Fonts.medium, fontSize: FontSizes.micro, letterSpacing: Tracking.t1 },
   caption: { fontFamily: Fonts.semiBold, fontSize: FontSizes.caption, letterSpacing: Tracking.t1 },
@@ -591,7 +591,7 @@ interface ThemeContextType {
   theme: ThemeMode
   /** Legacy component-level palette. Prefer `semantic` for new UI. */
   colors: ThemeColors
-  /** Role-based colour tokens — the layer new UI should consume. */
+  /** Role-based colour tokens : the layer new UI should consume. */
   semantic: SemanticColors
   /** Theme-tinted elevation presets, indexed by `ShadowLevel`. */
   shadows: Record<ShadowLevel, ShadowPreset>

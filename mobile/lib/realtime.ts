@@ -6,7 +6,7 @@ import { supabase } from './supabase'
  * Why this exists:
  * supabase-js keys channels by topic. Calling `supabase.channel(topic)` while a
  * previous channel with the SAME topic is still being torn down returns that
- * OLD, already-subscribed channel — and adding a `.on('postgres_changes', …)`
+ * OLD, already-subscribed channel : and adding a `.on('postgres_changes', …)`
  * callback afterwards throws:
  *
  *   "cannot add 'postgres_changes' callbacks for realtime:<topic> after 'subscribe()'"

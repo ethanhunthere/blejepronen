@@ -85,7 +85,7 @@ export function LogoutProvider({ children }: { children: React.ReactNode }) {
             await options.onBeforeTeardown()
           } catch (err) {
             // A failed pre-teardown (e.g. backend account deletion) must abort
-            // the whole flow — never claim success over a half-done operation.
+            // the whole flow : never claim success over a half-done operation.
             teardownFailure =
               err instanceof Error ? err.message : 'Veprimi dështoi pa një mesazh specifik.'
           }

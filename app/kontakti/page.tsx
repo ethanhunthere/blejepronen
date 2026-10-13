@@ -29,7 +29,7 @@ export default function ContactPage() {
           {/* Header */}
           <PageHeader
             title="Na Kontaktoni"
-            subtitle="Jemi këtu për t'ju ndihmuar në çdo hap — mbështetje e dedikuar, pa ndërmjetës dhe përgjigje brenda 24 orëve."
+            subtitle="Jemi këtu për t'ju ndihmuar në çdo hap me mbështetje të dedikuar, pa ndërmjetës dhe përgjigje brenda 24 orëve."
           />
 
           {/* Quick Contact Bento Grid */}

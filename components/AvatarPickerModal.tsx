@@ -199,7 +199,7 @@ export default function AvatarPickerModal({
           </div>
         </div>
 
-        {/* Footer Actions — rendered only if custom file upload is enabled */}
+        {/* Footer Actions : rendered only if custom file upload is enabled */}
         {onTriggerFileUpload && (
           <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between gap-3">
             {isUploadingCustom && (

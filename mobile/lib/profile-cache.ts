@@ -8,13 +8,13 @@ import { createTypedCache } from '@/lib/query-client'
  * revalidates in the background and writes fresh rows back here.
  *
  * Storage is delegated to the shared typed query cache (`lib/query-client`) so
- * this module owns *policy* — namespaces, TTL and invalidation group — rather
+ * this module owns *policy* : namespaces, TTL and invalidation group : rather
  * than a private unbounded `Map`. Both namespaces live in the `'profile'`
  * group, which means one `cacheInvalidateGroup('profile')` call (logout, a
  * user-triggered cache purge) reclaims every storefront seed at once, and the
  * per-group ceiling bounds how many profiles a long browsing session can hold.
  *
- * The public API is unchanged — every consumer keeps calling the same six
+ * The public API is unchanged : every consumer keeps calling the same six
  * functions with the same signatures and the same `null`-on-miss contract.
  */
 export type CachedProfile = Record<string, any> & { id: string }

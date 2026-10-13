@@ -48,7 +48,7 @@ const ICON_STROKE_WIDTH = 1.9
  * moment the failure paints instead of leaving the user facing a blank list.
  * The retry control is a real `button` role with its own label.
  *
- * Like `EmptyState` this is motion-free and blur-free — an error surface is
+ * Like `EmptyState` this is motion-free and blur-free : an error surface is
  * usually painted over a half-loaded feed, which is exactly when the frame
  * budget is tightest.
  */

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLEJE PRONËN — AUTONOMOUS SWARM TYPES & ROSTER DEFINITION
+ * BLEJE PRONËN : AUTONOMOUS SWARM TYPES & ROSTER DEFINITION
  * File: services/swarm/types/index.ts
  *
  * Supreme Commander "Thanos" (Agent 0) and the 10 Specialized Marvel Workers.

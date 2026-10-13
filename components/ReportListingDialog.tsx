@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * ReportListingDialog — "Raporto këtë shpallje" modal (audit §6, moderation).
+ * ReportListingDialog : "Raporto këtë shpallje" modal (audit §6, moderation).
  *
  * Web counterpart of `mobile/components/ReportListingSheet.tsx`. Both POST the
  * identical contract to `/api/reports`:
@@ -11,14 +11,14 @@
  *     note   : REQUIRED for `other`, optional otherwise (max 1000 chars)
  *
  * The server (not this component) enforces auth, self-report rejection, the
- * hourly quota and the reason allowlist — this UI only collects input and
+ * hourly quota and the reason allowlist : this UI only collects input and
  * renders whatever `message` the route returns, so a 429/403/503 explanation
  * reaches the user verbatim.
  *
  * INTEGRATION (the listing detail page is owned by another workstream):
  *   import { ReportListingButton } from '@/components/ReportListingDialog'
  *   <ReportListingButton listingId={listing.id} listingTitle={listing.title} />
- * — or drive the dialog yourself with `open` / `onOpenChange` from any existing
+ * : or drive the dialog yourself with `open` / `onOpenChange` from any existing
  *   "more actions" menu. Reporting is for OTHERS' listings: do not render the
  *   trigger when `listing.user_id === currentUserId` (the route 403s anyway).
  */

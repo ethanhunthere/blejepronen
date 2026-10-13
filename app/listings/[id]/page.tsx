@@ -48,6 +48,7 @@ import { type SocialLinks, hasAnySocial } from '@/lib/socials'
 import MortgageCalculator from '@/components/MortgageCalculator'
 import FollowButton from '@/components/FollowButton'
 import { slugify } from '@/lib/seo-slugs'
+import { buildListingSchema, generateHreflangAlternates, getGeoMeta } from '@/lib/geo-seo'
 import { fetchMarketStats } from '@/lib/listings-query'
 import { ListingViewTracker } from '@/lib/analytics'
 import {
@@ -313,18 +314,17 @@ export async function generateMetadata({
   }
 
   const priceFormatted = formatPrice(listing.price)
-  const metaTitle = `${listing.title} — ${priceFormatted} në ${listing.city} | Bleje Pronën`
+  const metaTitle = `${listing.title} | ${priceFormatted} në ${listing.city} | Bleje Pronën`
   const metaDesc =
     listing.description?.slice(0, 160) ||
-    `${listing.title} në ${listing.city}. ${listing.rooms} dhoma, ${listing.area_m2} m². Shiko çmimin dhe kontakto shitësin direkt në BlejePronën.`
+    `${listing.title} në ${listing.city}. ${listing.rooms} dhoma, ${listing.area_m2} m². Shiko çmimin dhe kontakto shitësin direkt në Bleje Pronën.`
   const canonicalUrl = `https://blejepronen.com/listings/${listing.id}`
 
   return {
     title: metaTitle,
     description: metaDesc,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates: generateHreflangAlternates(`/listings/${listing.id}`),
+    other: getGeoMeta(listing.city),
     openGraph: {
       title: metaTitle,
       description: metaDesc,
@@ -444,7 +444,7 @@ export default async function ListingDetailPage({
       ? Math.round(listing.price / listing.area_m2)
       : null
 
-  // Market delta signal (€/m² vs city median) — computed server-side from
+  // Market delta signal (€/m² vs city median) : computed server-side from
   // live inventory so the page stays a trustworthy, indexable money page.
   const marketStats =
     listing.type === 'shitje' && pricePerSqmValue ? await fetchMarketStats(listing.city) : null
@@ -453,86 +453,35 @@ export default async function ListingDetailPage({
       ? Math.round(((pricePerSqmValue - marketStats.medianSalePpm2) / marketStats.medianSalePpm2) * 100)
       : null
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'RealEstateListing',
-        '@id': `${siteUrl}/listings/${listing.id}#listing`,
-        name: listing.title,
-        description: listing.description,
-        url: `${siteUrl}/listings/${listing.id}`,
-        image: listing.images?.[0] || '',
-        datePosted: listing.created_at,
-        dateModified: typeof rawRecord.updated_at === 'string' ? rawRecord.updated_at : listing.created_at,
-        offers: {
-          '@type': 'Offer',
-          price: listing.price,
-          priceCurrency: 'EUR',
-          availability: listing.is_active
-            ? 'https://schema.org/InStock'
-            : 'https://schema.org/SoldOut',
-          url: `${siteUrl}/listings/${listing.id}`,
-        },
-        address: {
-          '@type': 'PostalAddress',
-          addressLocality: listing.city,
-          addressCountry: 'XK',
-          streetAddress: listing.address,
-        },
-        ...(lat && lng
-          ? { geo: { '@type': 'GeoCoordinates', latitude: lat, longitude: lng } }
-          : {}),
-        numberOfRooms: listing.rooms,
-        floorSize: {
-          '@type': 'QuantitativeValue',
-          value: listing.area_m2,
-          unitCode: 'MTK',
-        },
-        ...(pricePerSqmValue
-          ? {
-              additionalProperty: {
-                '@type': 'PropertyValue',
-                name: 'price_per_square_meter',
-                value: pricePerSqmValue,
-                unitText: 'EUR/MTK',
-              },
-            }
-          : {}),
-        ...(listing.profiles?.first_name
-          ? {
-              broker: {
-                '@type': sellerData.isCompany ? 'RealEstateAgent' : 'Person',
-                name: [listing.profiles.first_name, listing.profiles.last_name]
-                  .filter(Boolean)
-                  .join(' '),
-                url: `${siteUrl}/profili/${listing.user_id}`,
-              },
-            }
-          : {}),
-        isPartOf: { '@type': 'WebSite', name: 'Bleje Pronën', url: siteUrl },
-      },
-      {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Kreu', item: siteUrl },
-          { '@type': 'ListItem', position: 2, name: 'Pronat', item: `${siteUrl}/listings` },
-          {
-            '@type': 'ListItem',
-            position: 3,
-            name: listing.city,
-            item: `${siteUrl}/pronat/${slugify(listing.city)}/${listing.type}`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 4,
-            name: listing.title,
-            item: `${siteUrl}/listings/${listing.id}`,
-          },
-        ],
-      },
-    ],
-  }
+  const jsonLd = buildListingSchema({
+    id: listing.id,
+    title: listing.title,
+    description: listing.description,
+    price: listing.price,
+    city: listing.city,
+    neighborhood: listing.neighborhood,
+    address: listing.address,
+    type: listing.type,
+    apartment_type: listing.apartment_type,
+    rooms: listing.rooms,
+    area_m2: listing.area_m2,
+    floor: listing.floor,
+    features: listing.features,
+    images: listing.images,
+    is_active: listing.is_active,
+    created_at: listing.created_at,
+    updated_at: typeof rawRecord.updated_at === 'string' ? rawRecord.updated_at : listing.created_at,
+    latitude: lat,
+    longitude: lng,
+    seller: listing.profiles?.first_name
+      ? {
+          first_name: listing.profiles.first_name,
+          last_name: listing.profiles.last_name,
+          isCompany: sellerData.isCompany,
+          user_id: listing.user_id,
+        }
+      : null,
+  })
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-28 lg:pb-16">
@@ -730,7 +679,7 @@ export default async function ListingDetailPage({
                     </div>
                   </div>
 
-                  {/* Verification status — badge only via deriveTrustSignals() */}
+                  {/* Verification status : badge only via deriveTrustSignals() */}
                   <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
                     <div
                       className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
@@ -812,7 +761,7 @@ export default async function ListingDetailPage({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900">
-                      {listing.city} {listing.neighborhood ? `— ${listing.neighborhood}` : ''}
+                      {listing.city}{listing.neighborhood ? `, ${listing.neighborhood}` : ''}
                     </p>
                     {listing.address && (
                       <p className="text-xs text-slate-500 mt-0.5">
